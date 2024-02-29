@@ -24,6 +24,7 @@ using Penumbra.Interop.Services;
 using Penumbra.UI;
 using TextureType = Penumbra.Api.Enums.TextureType;
 using Penumbra.Interop.ResourceTree;
+using Penumbra.Mods.Editor;
 
 namespace Penumbra.Api;
 
@@ -141,6 +142,8 @@ public class PenumbraApi : IDisposable, IPenumbraApi
         _communicator.ModPathChanged.Subscribe(ModPathChangeSubscriber, ModPathChanged.Priority.Api);
         _communicator.ModSettingChanged.Subscribe(OnModSettingChange, Communication.ModSettingChanged.Priority.Api);
         _communicator.CreatedCharacterBase.Subscribe(OnCreatedCharacterBase, Communication.CreatedCharacterBase.Priority.Api);
+        _communicator.ModOptionChanged.Subscribe(OnModOptionEdited, ModOptionChanged.Priority.Api);
+        _communicator.ModFileChanged.Subscribe(OnModFileChanged, ModFileChanged.Priority.Api);
     }
 
     public unsafe void Dispose()
@@ -152,6 +155,8 @@ public class PenumbraApi : IDisposable, IPenumbraApi
         _communicator.ModPathChanged.Unsubscribe(ModPathChangeSubscriber);
         _communicator.ModSettingChanged.Unsubscribe(OnModSettingChange);
         _communicator.CreatedCharacterBase.Unsubscribe(OnCreatedCharacterBase);
+        _communicator.ModOptionChanged.Unsubscribe(OnModOptionEdited);
+        _communicator.ModFileChanged.Unsubscribe(OnModFileChanged);
         _lumina              = null;
         _communicator        = null!;
         _modManager          = null!;
@@ -342,10 +347,7 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         CheckInitialized();
         if (!_config.EnableMods)
-            return new[]
-            {
-                path,
-            };
+            return [path];
 
         var ret = _collectionManager.Active.Individual(NameToIdentifier(characterName, worldId)).ReverseResolvePath(new FullPath(path));
         return ret.Select(r => r.ToString()).ToArray();
@@ -355,10 +357,7 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         CheckInitialized();
         if (!_config.EnableMods)
-            return new[]
-            {
-                path,
-            };
+            return [path];
 
         AssociatedCollection(gameObjectIdx, out var collection);
         var ret = collection.ReverseResolvePath(new FullPath(path));
@@ -369,10 +368,7 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         CheckInitialized();
         if (!_config.EnableMods)
-            return new[]
-            {
-                path,
-            };
+            return [path];
 
         var ret = _collectionResolver.PlayerCollection().ReverseResolvePath(new FullPath(path));
         return ret.Select(r => r.ToString()).ToArray();
@@ -698,6 +694,9 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         switch (type)
         {
+            case ModPathChangeType.Reloaded:
+                TriggerSettingEdited(mod);
+                break;
             case ModPathChangeType.Deleted when oldDirectory != null:
                 ModDeleted?.Invoke(oldDirectory.Name);
                 break;
@@ -1262,4 +1261,39 @@ public class PenumbraApi : IDisposable, IPenumbraApi
 
     private void OnCreatedCharacterBase(nint gameObject, ModCollection collection, nint drawObject)
         => CreatedCharacterBase?.Invoke(gameObject, collection.Name, drawObject);
+
+    private void OnModOptionEdited(ModOptionChangeType type, Mod mod, int groupIndex, int optionIndex, int moveIndex)
+    {
+        switch (type)
+        {
+            case ModOptionChangeType.GroupDeleted:
+            case ModOptionChangeType.GroupMoved:
+            case ModOptionChangeType.GroupTypeChanged:
+            case ModOptionChangeType.PriorityChanged:
+            case ModOptionChangeType.OptionDeleted:
+            case ModOptionChangeType.OptionMoved:
+            case ModOptionChangeType.OptionFilesChanged:
+            case ModOptionChangeType.OptionFilesAdded:
+            case ModOptionChangeType.OptionSwapsChanged:
+            case ModOptionChangeType.OptionMetaChanged:
+                TriggerSettingEdited(mod);
+                break;
+        }
+    }
+
+    private void OnModFileChanged(Mod mod, FileRegistry file)
+    {
+        if (file.CurrentUsage == 0)
+            return;
+
+        TriggerSettingEdited(mod);
+    }
+
+    private void TriggerSettingEdited(Mod mod)
+    {
+        var collection = _collectionResolver.PlayerCollection();
+        var (settings, parent) = collection[mod.Index];
+        if (settings is { Enabled: true })
+            ModSettingChanged?.Invoke(ModSettingChange.Edited, collection.Name, mod.Identifier, parent != collection);
+    }
 }
