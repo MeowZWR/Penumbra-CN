@@ -1,4 +1,4 @@
-namespace Penumbra.UI.ModsTab;
+﻿namespace Penumbra.UI.ModsTab;
 
 [Flags]
 public enum ModFilter
@@ -32,26 +32,26 @@ public static class ModFilterExtensions
     public static string ToName(this ModFilter filter)
         => filter switch
         {
-            ModFilter.Enabled                => "Enabled",
-            ModFilter.Disabled               => "Disabled",
-            ModFilter.Favorite               => "Favorite",
-            ModFilter.NotFavorite            => "No Favorite",
-            ModFilter.NoConflict             => "No Conflicts",
-            ModFilter.SolvedConflict         => "Solved Conflicts",
-            ModFilter.UnsolvedConflict       => "Unsolved Conflicts",
-            ModFilter.HasNoMetaManipulations => "No Meta Manipulations",
-            ModFilter.HasMetaManipulations   => "Meta Manipulations",
-            ModFilter.HasNoFileSwaps         => "No File Swaps",
-            ModFilter.HasFileSwaps           => "File Swaps",
-            ModFilter.HasNoConfig            => "No Configuration",
-            ModFilter.HasConfig              => "Configuration",
-            ModFilter.HasNoFiles             => "No Files",
-            ModFilter.HasFiles               => "Files",
-            ModFilter.IsNew                  => "Newly Imported",
-            ModFilter.NotNew                 => "Not Newly Imported",
-            ModFilter.Inherited              => "Inherited Configuration",
-            ModFilter.Uninherited            => "Own Configuration",
-            ModFilter.Undefined              => "Not Configured",
+            ModFilter.Enabled                => "已启用",
+            ModFilter.Disabled               => "已禁用",
+            ModFilter.Favorite               => "已收藏",
+            ModFilter.NotFavorite            => "未收藏",
+            ModFilter.NoConflict             => "无冲突",
+            ModFilter.SolvedConflict         => "冲突已解决",
+            ModFilter.UnsolvedConflict       => "冲突未解决",
+            ModFilter.HasNoMetaManipulations => "无元素据操作",
+            ModFilter.HasMetaManipulations   => "有元素据操作",
+            ModFilter.HasNoFileSwaps         => "无文件转换",
+            ModFilter.HasFileSwaps           => "有文件转换",
+            ModFilter.HasNoConfig            => "无设置选项",
+            ModFilter.HasConfig              => "有设置选项",
+            ModFilter.HasNoFiles             => "无文件",
+            ModFilter.HasFiles               => "有文件",
+            ModFilter.IsNew                  => "最近导入",
+            ModFilter.NotNew                 => "不是最近导入",
+            ModFilter.Inherited              => "继承配置",
+            ModFilter.Uninherited            => "自己的配置",
+            ModFilter.Undefined              => "未被配置",
             _                                => throw new ArgumentOutOfRangeException(nameof(filter), filter, null),
         };
 }

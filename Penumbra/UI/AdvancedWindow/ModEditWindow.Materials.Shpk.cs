@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -85,7 +85,7 @@ public partial class ModEditWindow
 
         var ret = false;
         ImGui.SetNextItemWidth(UiHelpers.Scale * 250.0f);
-        using var c = ImRaii.Combo("Shader Package", tab.Mtrl.ShaderPackage.Name);
+        using var c = ImRaii.Combo("着色器包名称", tab.Mtrl.ShaderPackage.Name);
         if (c)
             foreach (var value in tab.GetShpkNames())
             {
@@ -121,16 +121,16 @@ public partial class ModEditWindow
     /// </summary>
     private void DrawCustomAssociations(MtrlTab tab)
     {
-        const string tooltip = "Click to copy file path to clipboard.";
+        const string tooltip = "单击复制文件路径到剪贴板。";
         var text = tab.AssociatedShpk == null
-            ? "Associated .shpk file: None"
-            : $"Associated .shpk file: {tab.LoadedShpkPathName}";
+            ? "关联的着色器包（.shpk）文件：无"
+            : $"关联的着色器包（.shpk）文件：{tab.LoadedShpkPathName}";
         var devkitText = tab.AssociatedShpkDevkit == null
-            ? "Associated dev-kit file: None"
-            : $"Associated dev-kit file: {tab.LoadedShpkDevkitPathName}";
+            ? "关联的开发工具包（dev-kit）文件：无"
+            : $"关联的开发工具包（dev-kit）文件：{tab.LoadedShpkDevkitPathName}";
         var baseDevkitText = tab.AssociatedBaseDevkit == null
-            ? "Base dev-kit file: None"
-            : $"Base dev-kit file: {tab.LoadedBaseDevkitPathName}";
+            ? "基本开发工具包（dev-kit）文件：无"
+            : $"基本开发工具包（dev-kit）文件：{tab.LoadedBaseDevkitPathName}";
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
 
@@ -138,8 +138,8 @@ public partial class ModEditWindow
         ImGuiUtil.CopyOnClickSelectable(devkitText,     tab.LoadedShpkDevkitPathName, tooltip);
         ImGuiUtil.CopyOnClickSelectable(baseDevkitText, tab.LoadedBaseDevkitPathName, tooltip);
 
-        if (ImGui.Button("Associate Custom .shpk File"))
-            _fileDialog.OpenFilePicker("Associate Custom .shpk File...", ".shpk", (success, name) =>
+        if (ImGui.Button( "关联自定义着色器包（.shpk）文件" ) )
+            _fileDialog.OpenFilePicker( "关联自定义着色器包（.shpk）文件...", ".shpk", (success, name) =>
             {
                 if (success)
                     tab.LoadShpk(new FullPath(name[0]));
@@ -147,14 +147,14 @@ public partial class ModEditWindow
 
         var moddedPath = tab.FindAssociatedShpk(out var defaultPath, out var gamePath);
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Associate Default .shpk File", Vector2.Zero, moddedPath.ToPath(),
+        if (ImGuiUtil.DrawDisabledButton( "关联默认着色器包（.shpk）文件", Vector2.Zero, moddedPath.ToPath(),
                 moddedPath.Equals(tab.LoadedShpkPath)))
             tab.LoadShpk(moddedPath);
 
         if (!gamePath.Path.Equals(moddedPath.InternalName))
         {
             ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton("Associate Unmodded .shpk File", Vector2.Zero, defaultPath,
+            if (ImGuiUtil.DrawDisabledButton( "关联原始着色器包（.shpk）文件", Vector2.Zero, defaultPath,
                     gamePath.Path.Equals(tab.LoadedShpkPath.InternalName)))
                 tab.LoadShpk(new FullPath(gamePath));
         }
@@ -237,7 +237,7 @@ public partial class ModEditWindow
             return false;
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (!ImGui.CollapsingHeader("Material Constants"))
+        if (!ImGui.CollapsingHeader("材质常量"))
             return false;
 
         using var _ = ImRaii.PushId("MaterialConstants");
@@ -367,7 +367,7 @@ public partial class ModEditWindow
         ImGuiUtil.LabeledHelpMarker("Minimum Level of Detail",
             "Most detailed mipmap level to use.\n\n0 is the full-sized texture, 1 is the half-sized texture, 2 is the quarter-sized texture, and so on.\n15 will forcibly reduce the texture to its smallest mipmap.");
 
-        using var t = ImRaii.TreeNode("Advanced Settings");
+        using var t = ImRaii.TreeNode("高级设置");
         if (!t)
             return ret;
 
@@ -415,8 +415,8 @@ public partial class ModEditWindow
             using var c = ImRaii.PushColor(ImGuiCol.Text, textColorWarning);
 
             ImGui.TextUnformatted(tab.AssociatedShpk == null
-                ? "Unable to find a suitable .shpk file for cross-references. Some functionality will be missing."
-                : "No dev-kit file found for this material's shaders. Please install one for optimal editing experience, such as actual constant names instead of hexadecimal identifiers.");
+                ? "找不到用于交叉引用的合适的.shpk文件。某些功能将丢失。"
+                : "找不到此材质着色器的开发包文件。请安装一个以获取最佳编辑体验，比如安装后就能显示实际的常量名称而不是十六进制标识符。");
         }
 
         return ret;

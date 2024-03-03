@@ -355,7 +355,7 @@ public partial class CombinedTexture
         ImGui.SameLine();
         ImGui.Dummy(ImGuiHelpers.ScaledVector2(20, 0));
         ImGui.SameLine();
-        ImGui.TextUnformatted("Invert");
+        ImGui.TextUnformatted("反转");
         ImGui.SameLine();
 
         Channels channels = 0;
@@ -383,7 +383,7 @@ public partial class CombinedTexture
 
     private static bool PresetCombo(ref Matrix4x4 multiplier, ref Vector4 constant)
     {
-        using var combo = ImRaii.Combo("Presets", string.Empty, ImGuiComboFlags.NoPreview);
+        using var combo = ImRaii.Combo("预设", string.Empty, ImGuiComboFlags.NoPreview);
         if (!combo)
             return false;
 

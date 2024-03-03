@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -16,19 +16,19 @@ internal sealed class ResourceWatcherTable : Table<Record>
     public ResourceWatcherTable(EphemeralConfig config, IReadOnlyCollection<Record> records)
         : base("##records",
             records,
-            new PathColumn { Label                     = "Path" },
-            new RecordTypeColumn(config) { Label       = "Record" },
-            new CollectionColumn { Label               = "Collection" },
-            new ObjectColumn { Label                   = "Game Object" },
-            new CustomLoadColumn { Label               = "Custom" },
-            new SynchronousLoadColumn { Label          = "Sync" },
-            new OriginalPathColumn { Label             = "Original Path" },
-            new ResourceCategoryColumn(config) { Label = "Category" },
-            new ResourceTypeColumn(config) { Label     = "Type" },
-            new HandleColumn { Label                   = "Resource" },
-            new LoadStateColumn { Label                = "State" },
+            new PathColumn { Label                     = "路径" },
+            new RecordTypeColumn(config) { Label       = "记录" },
+            new CollectionColumn { Label               = "合集" },
+            new ObjectColumn { Label                   = "游戏对象" },
+            new CustomLoadColumn { Label               = "自定义" },
+            new SynchronousLoadColumn { Label          = "同步" },
+            new OriginalPathColumn { Label             = "原始路径" },
+            new ResourceCategoryColumn(config) { Label = "类型" },
+            new ResourceTypeColumn(config) { Label     = "格式" },
+            new HandleColumn { Label                   = "资源" },
+            new LoadStateColumn { Label                = "状态" },
             new RefCountColumn { Label                 = "#Ref" },
-            new DateColumn { Label                     = "Time" }
+            new DateColumn { Label                     = "时间" }
         )
     { }
 

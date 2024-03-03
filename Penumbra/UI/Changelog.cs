@@ -1,4 +1,4 @@
-using OtterGui.Widgets;
+﻿using OtterGui.Widgets;
 
 namespace Penumbra.UI;
 
@@ -12,7 +12,7 @@ public class PenumbraChangelog
     public PenumbraChangelog(Configuration config)
     {
         _config   = config;
-        Changelog = new Changelog("Penumbra Changelog", ConfigData, Save);
+        Changelog = new Changelog("Penumbra更新日志", ConfigData, Save);
 
         Add5_7_0(Changelog);
         Add5_7_1(Changelog);

@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using OtterGui;
@@ -20,7 +20,7 @@ public partial class ModEditWindow
             return false;
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (!ImGui.CollapsingHeader("Color Table", ImGuiTreeNodeFlags.DefaultOpen))
+        if (!ImGui.CollapsingHeader("颜色表", ImGuiTreeNodeFlags.DefaultOpen))
             return false;
 
         ColorTableCopyAllClipboardButton(tab.Mtrl);
@@ -51,27 +51,27 @@ public partial class ModEditWindow
         ImGui.TableNextColumn();
         ImGui.TableHeader(string.Empty);
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Row");
+        ImGui.TableHeader("行");
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Diffuse");
+        ImGui.TableHeader("漫反射颜色");
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Specular");
+        ImGui.TableHeader("镜面反射颜色");
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Emissive");
+        ImGui.TableHeader("自发光颜色");
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Gloss");
+        ImGui.TableHeader("光泽度");
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Tile");
+        ImGui.TableHeader("陶瓷材质");
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Repeat");
+        ImGui.TableHeader("陶瓷计数");
         ImGui.TableNextColumn();
-        ImGui.TableHeader("Skew");
+        ImGui.TableHeader("陶瓷倾斜");
         if (hasDyeTable)
         {
             ImGui.TableNextColumn();
-            ImGui.TableHeader("Dye");
+            ImGui.TableHeader("染色模板");
             ImGui.TableNextColumn();
-            ImGui.TableHeader("Dye Preview");
+            ImGui.TableHeader("染色预览");
         }
 
         for (var i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
@@ -86,7 +86,7 @@ public partial class ModEditWindow
 
     private static void ColorTableCopyAllClipboardButton(MtrlFile file)
     {
-        if (!ImGui.Button("Export All Rows to Clipboard", ImGuiHelpers.ScaledVector2(200, 0)))
+        if (!ImGui.Button("导出所有行到剪贴板", ImGuiHelpers.ScaledVector2(200, 0)))
             return;
 
         try
@@ -109,9 +109,9 @@ public partial class ModEditWindow
     {
         var (dyeId, (name, dyeColor, gloss)) = _stainService.StainCombo.CurrentSelection;
         var tt = dyeId == 0
-            ? "Select a preview dye first."
-            : "Apply all preview values corresponding to the dye template and chosen dye where dyeing is enabled.";
-        if (ImGuiUtil.DrawDisabledButton("Apply Preview Dye", Vector2.Zero, tt, disabled || dyeId == 0))
+            ? "请先选择一个预览染色"
+            : "应用与启用染色的染料模板和所选染料相对应的所有预览值。";
+        if (ImGuiUtil.DrawDisabledButton("应用预览染色", Vector2.Zero, tt, disabled || dyeId == 0))
         {
             var ret = false;
             if (tab.Mtrl.HasDyeTable)
@@ -124,7 +124,7 @@ public partial class ModEditWindow
         }
 
         ImGui.SameLine();
-        var label = dyeId == 0 ? "Preview Dye###previewDye" : $"{name} (Preview)###previewDye";
+        var label = dyeId == 0 ? "预览染色###previewDye" : $"{name} (Preview)###previewDye";
         if (_stainService.StainCombo.Draw(label, dyeColor, string.Empty, true, gloss))
             tab.UpdateColorTablePreview();
         return false;
@@ -132,7 +132,7 @@ public partial class ModEditWindow
 
     private static unsafe bool ColorTablePasteAllClipboardButton(MtrlTab tab, bool disabled)
     {
-        if (!ImGuiUtil.DrawDisabledButton("Import All Rows from Clipboard", ImGuiHelpers.ScaledVector2(200, 0), string.Empty, disabled)
+        if (!ImGuiUtil.DrawDisabledButton("将剪贴板数据导入到所有行", ImGuiHelpers.ScaledVector2(200, 0), string.Empty, disabled)
          || !tab.Mtrl.HasTable)
             return false;
 
@@ -172,7 +172,7 @@ public partial class ModEditWindow
     private static unsafe void ColorTableCopyClipboardButton(MtrlFile.ColorTable.Row row, MtrlFile.ColorDyeTable.Row dye)
     {
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), ImGui.GetFrameHeight() * Vector2.One,
-                "Export this row to your clipboard.", false, true))
+                "将此行导出到剪贴板。", false, true))
             return;
 
         try
@@ -196,7 +196,7 @@ public partial class ModEditWindow
     private static bool ColorTableDyeableCheckbox(MtrlTab tab)
     {
         var dyeable = tab.Mtrl.HasDyeTable;
-        var ret     = ImGui.Checkbox("Dyeable", ref dyeable);
+        var ret     = ImGui.Checkbox("可染色", ref dyeable);
 
         if (ret)
         {
@@ -210,7 +210,7 @@ public partial class ModEditWindow
     private static unsafe bool ColorTablePasteFromClipboardButton(MtrlTab tab, int rowIdx, bool disabled)
     {
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), ImGui.GetFrameHeight() * Vector2.One,
-                "Import an exported row from your clipboard onto this row.", disabled, true))
+                "将剪贴板上的行数据导入到此行。", disabled, true))
             return false;
 
         try
@@ -241,7 +241,7 @@ public partial class ModEditWindow
     private static void ColorTableHighlightButton(MtrlTab tab, int rowIdx, bool disabled)
     {
         ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Crosshairs.ToIconString(), ImGui.GetFrameHeight() * Vector2.One,
-            "Highlight this row on your character, if possible.", disabled || tab.ColorTablePreviewers.Count == 0, true);
+            "如果可以，在你的角色上高亮此行。", disabled || tab.ColorTablePreviewers.Count == 0, true);
 
         if (ImGui.IsItemHovered())
             tab.HighlightColorTableRow(rowIdx);
@@ -275,7 +275,7 @@ public partial class ModEditWindow
 
         ImGui.TableNextColumn();
         using var dis = ImRaii.Disabled(disabled);
-        ret |= ColorPicker("##Diffuse", "Diffuse Color", row.Diffuse, c =>
+        ret |= ColorPicker("##Diffuse", "漫反射颜色", row.Diffuse, c =>
         {
             tab.Mtrl.Table[rowIdx].Diffuse = c;
             tab.UpdateColorTableRowPreview(rowIdx);
@@ -283,7 +283,7 @@ public partial class ModEditWindow
         if (hasDye)
         {
             ImGui.SameLine();
-            ret |= ImGuiUtil.Checkbox("##dyeDiffuse", "Apply Diffuse Color on Dye", dye.Diffuse,
+            ret |= ImGuiUtil.Checkbox("##dyeDiffuse", "在染色上应用此漫反射颜色", dye.Diffuse,
                 b =>
                 {
                     tab.Mtrl.DyeTable[rowIdx].Diffuse = b;
@@ -292,7 +292,7 @@ public partial class ModEditWindow
         }
 
         ImGui.TableNextColumn();
-        ret |= ColorPicker("##Specular", "Specular Color", row.Specular, c =>
+        ret |= ColorPicker("##Specular", "镜面反射颜色", row.Specular, c =>
         {
             tab.Mtrl.Table[rowIdx].Specular = c;
             tab.UpdateColorTableRowPreview(rowIdx);
@@ -308,19 +308,19 @@ public partial class ModEditWindow
             tab.UpdateColorTableRowPreview(rowIdx);
         }
 
-        ImGuiUtil.HoverTooltip("Specular Strength", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("镜面反射强度", ImGuiHoveredFlags.AllowWhenDisabled);
 
         if (hasDye)
         {
             ImGui.SameLine();
-            ret |= ImGuiUtil.Checkbox("##dyeSpecular", "Apply Specular Color on Dye", dye.Specular,
+            ret |= ImGuiUtil.Checkbox("##dyeSpecular", "应用此镜面反射到染色", dye.Specular,
                 b =>
                 {
                     tab.Mtrl.DyeTable[rowIdx].Specular = b;
                     tab.UpdateColorTableRowPreview(rowIdx);
                 }, ImGuiHoveredFlags.AllowWhenDisabled);
             ImGui.SameLine();
-            ret |= ImGuiUtil.Checkbox("##dyeSpecularStrength", "Apply Specular Strength on Dye", dye.SpecularStrength,
+            ret |= ImGuiUtil.Checkbox("##dyeSpecularStrength", "应用镜面反射强度到染色", dye.SpecularStrength,
                 b =>
                 {
                     tab.Mtrl.DyeTable[rowIdx].SpecularStrength = b;
@@ -329,7 +329,7 @@ public partial class ModEditWindow
         }
 
         ImGui.TableNextColumn();
-        ret |= ColorPicker("##Emissive", "Emissive Color", row.Emissive, c =>
+        ret |= ColorPicker("##Emissive", "自发光颜色", row.Emissive, c =>
         {
             tab.Mtrl.Table[rowIdx].Emissive = c;
             tab.UpdateColorTableRowPreview(rowIdx);
@@ -337,7 +337,7 @@ public partial class ModEditWindow
         if (hasDye)
         {
             ImGui.SameLine();
-            ret |= ImGuiUtil.Checkbox("##dyeEmissive", "Apply Emissive Color on Dye", dye.Emissive,
+            ret |= ImGuiUtil.Checkbox("##dyeEmissive", "应用此自发光颜色到染色", dye.Emissive,
                 b =>
                 {
                     tab.Mtrl.DyeTable[rowIdx].Emissive = b;
@@ -357,11 +357,11 @@ public partial class ModEditWindow
             tab.UpdateColorTableRowPreview(rowIdx);
         }
 
-        ImGuiUtil.HoverTooltip("Gloss Strength", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("光泽度", ImGuiHoveredFlags.AllowWhenDisabled);
         if (hasDye)
         {
             ImGui.SameLine();
-            ret |= ImGuiUtil.Checkbox("##dyeGloss", "Apply Gloss Strength on Dye", dye.Gloss,
+            ret |= ImGuiUtil.Checkbox("##dyeGloss", "应用此光泽度到染色", dye.Gloss,
                 b =>
                 {
                     tab.Mtrl.DyeTable[rowIdx].Gloss = b;
@@ -379,7 +379,7 @@ public partial class ModEditWindow
             tab.UpdateColorTableRowPreview(rowIdx);
         }
 
-        ImGuiUtil.HoverTooltip("Tile Set", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("陶瓷材质", ImGuiHoveredFlags.AllowWhenDisabled);
 
         ImGui.TableNextColumn();
         tmpFloat = row.MaterialRepeat.X;
@@ -392,7 +392,7 @@ public partial class ModEditWindow
             tab.UpdateColorTableRowPreview(rowIdx);
         }
 
-        ImGuiUtil.HoverTooltip("Repeat X", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("陶瓷计数 X", ImGuiHoveredFlags.AllowWhenDisabled);
         ImGui.SameLine();
         tmpFloat = row.MaterialRepeat.Y;
         ImGui.SetNextItemWidth(floatSize);
@@ -404,7 +404,7 @@ public partial class ModEditWindow
             tab.UpdateColorTableRowPreview(rowIdx);
         }
 
-        ImGuiUtil.HoverTooltip("Repeat Y", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("陶瓷计数 Y", ImGuiHoveredFlags.AllowWhenDisabled);
 
         ImGui.TableNextColumn();
         tmpFloat = row.MaterialSkew.X;
@@ -416,7 +416,7 @@ public partial class ModEditWindow
             tab.UpdateColorTableRowPreview(rowIdx);
         }
 
-        ImGuiUtil.HoverTooltip("Skew X", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("陶瓷倾斜 X", ImGuiHoveredFlags.AllowWhenDisabled);
 
         ImGui.SameLine();
         tmpFloat = row.MaterialSkew.Y;
@@ -428,7 +428,7 @@ public partial class ModEditWindow
             tab.UpdateColorTableRowPreview(rowIdx);
         }
 
-        ImGuiUtil.HoverTooltip("Skew Y", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("陶瓷倾斜 Y", ImGuiHoveredFlags.AllowWhenDisabled);
 
         if (hasDye)
         {
@@ -441,7 +441,7 @@ public partial class ModEditWindow
                 tab.UpdateColorTableRowPreview(rowIdx);
             }
 
-            ImGuiUtil.HoverTooltip("Dye Template", ImGuiHoveredFlags.AllowWhenDisabled);
+            ImGuiUtil.HoverTooltip("染色模板", ImGuiHoveredFlags.AllowWhenDisabled);
 
             ImGui.TableNextColumn();
             ret |= DrawDyePreview(tab, rowIdx, disabled, dye, floatSize);
@@ -461,7 +461,7 @@ public partial class ModEditWindow
         using var style  = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing / 2);
 
         var ret = ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.PaintBrush.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-            "Apply the selected dye to this row.", disabled, true);
+            "应用选择的染色到此行。", disabled, true);
 
         ret = ret && tab.Mtrl.ApplyDyeTemplate(_stainService.StmFile, rowIdx, stain);
         if (ret)

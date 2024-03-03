@@ -1,4 +1,4 @@
-using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using OtterGui;
@@ -49,11 +49,11 @@ public static class UiHelpers
             ImGuiNative.igSetClipboardText(text.Path);
 
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Click to copy to clipboard.");
+            ImGui.SetTooltip("复制到剪贴板。");
     }
 
     /// <summary> The longest support button text. </summary>
-    public const string SupportInfoButtonText = "Copy Support Info to Clipboard";
+    public const string SupportInfoButtonText = "复制支持信息到剪贴板";
 
     /// <summary>
     /// Draw a button that copies the support info to clipboards.
@@ -66,7 +66,7 @@ public static class UiHelpers
 
         var text = penumbra.GatherSupportInformation();
         ImGui.SetClipboardText(text);
-        Penumbra.Messager.NotificationMessage($"Copied Support Info to Clipboard.", NotificationType.Success, false);
+        Penumbra.Messager.NotificationMessage($"复制支持信息到剪贴板。", NotificationType.Success, false);
     }
 
     /// <summary> Draw a button to open a specific directory in a file explorer.</summary>
@@ -76,7 +76,7 @@ public static class UiHelpers
     public static void DrawOpenDirectoryButton(int id, DirectoryInfo directory, bool condition)
     {
         using var _ = ImRaii.PushId(id);
-        if (ImGuiUtil.DrawDisabledButton("Open Directory", Vector2.Zero, "Open this directory in your configured file explorer.",
+        if (ImGuiUtil.DrawDisabledButton("打开目录", Vector2.Zero, "此目录将在文件资源管理器中打开。",
                 !condition || !Directory.Exists(directory.FullName)))
             Process.Start(new ProcessStartInfo(directory.FullName)
             {

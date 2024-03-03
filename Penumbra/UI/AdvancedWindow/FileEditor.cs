@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using ImGuiNET;
@@ -57,13 +57,13 @@ public class FileEditor<T>(
     private void RedrawOnSaveBox()
     {
         var redraw = config.Ephemeral.ForceRedrawOnFileChange;
-        if (ImGui.Checkbox("Redraw on Save", ref redraw))
+        if (ImGui.Checkbox("保存时重绘", ref redraw))
         {
             config.Ephemeral.ForceRedrawOnFileChange = redraw;
             config.Ephemeral.Save();
         }
 
-        ImGuiUtil.HoverTooltip("Force a redraw of your player character whenever you save a file here.");
+        ImGuiUtil.HoverTooltip("每当你在这里保存文件时，强制重新绘制你的玩家角色。");
     }
 
     public void Dispose()
@@ -94,7 +94,7 @@ public class FileEditor<T>(
     {
         using var spacing = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing with { X = UiHelpers.ScaleX3 });
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (UiHelpers.ScaleX3 + ImGui.GetFrameHeight()));
-        ImGui.InputTextWithHint("##defaultInput", "Input game path to compare...", ref _defaultPath, Utf8GamePath.MaxGamePathLength);
+        ImGui.InputTextWithHint("##defaultInput", "输入游戏路径来比对...", ref _defaultPath, Utf8GamePath.MaxGamePathLength);
         _inInput = ImGui.IsItemActive();
         if (ImGui.IsItemDeactivatedAfterEdit() && _defaultPath.Length > 0)
         {
@@ -114,7 +114,7 @@ public class FileEditor<T>(
                 else
                 {
                     _defaultFile      = null;
-                    _defaultException = new Exception("File does not exist.");
+                    _defaultException = new Exception("文件不存在。");
                 }
             }
             catch (Exception e)
@@ -125,9 +125,9 @@ public class FileEditor<T>(
         }
 
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Save.ToIconString(), new Vector2(ImGui.GetFrameHeight()), "Export this file.",
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Save.ToIconString(), new Vector2(ImGui.GetFrameHeight()), "导出此文件。",
                 _defaultFile == null, true))
-            fileDialog.OpenSavePicker($"Export {_defaultPath} to...", fileType, Path.GetFileNameWithoutExtension(_defaultPath), fileType,
+            fileDialog.OpenSavePicker($"导出 {_defaultPath} 到...", fileType, Path.GetFileNameWithoutExtension(_defaultPath), fileType,
                 (success, name) =>
                 {
                     if (!success)
@@ -135,11 +135,11 @@ public class FileEditor<T>(
 
                     try
                     {
-                        compactor.WriteAllBytes(name, _defaultFile?.Write() ?? throw new Exception("File invalid."));
+                        compactor.WriteAllBytes(name, _defaultFile?.Write() ?? throw new Exception("文件无效。"));
                     }
                     catch (Exception e)
                     {
-                        Penumbra.Messager.NotificationMessage(e, $"Could not export {_defaultPath}.", NotificationType.Error);
+                        Penumbra.Messager.NotificationMessage(e, $"无法导出 {_defaultPath}。", NotificationType.Error);
                     }
                 }, getInitialPath(), false);
 
@@ -147,7 +147,7 @@ public class FileEditor<T>(
             ModEditWindow.QuickImportAction.Prepare(owner, _isDefaultPathUtf8Valid ? _defaultPathUtf8 : Utf8GamePath.Empty, _defaultFile);
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.FileImport.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                $"Add a copy of this file to {_quickImport.OptionName}.", !_quickImport.CanExecute, true))
+                $"添加此文件的副本到 {_quickImport.OptionName}.", !_quickImport.CanExecute, true))
         {
             try
             {
@@ -155,7 +155,7 @@ public class FileEditor<T>(
             }
             catch (Exception e)
             {
-                Penumbra.Log.Error($"Could not add a copy of {_quickImport.GamePath} to {_quickImport.OptionName}:\n{e}");
+                Penumbra.Log.Error($"无法添加 {_quickImport.GamePath} 的副本到 {_quickImport.OptionName}:\n{e}");
             }
 
             _quickImport = null;
@@ -173,7 +173,7 @@ public class FileEditor<T>(
 
     private void DrawFileSelectCombo()
     {
-        if (_combo.Draw("##fileSelect", _currentPath?.RelPath.ToString() ?? $"Select {fileType} File...", string.Empty,
+        if (_combo.Draw("##fileSelect", _currentPath?.RelPath.ToString() ?? $"选择 {fileType} 文件...", string.Empty,
                 ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight())
          && _combo.CurrentSelection != null)
             UpdateCurrentFile(_combo.CurrentSelection);
@@ -204,8 +204,8 @@ public class FileEditor<T>(
 
     private void SaveButton()
     {
-        if (ImGuiUtil.DrawDisabledButton("Save to File", Vector2.Zero,
-                $"Save the selected {fileType} file with all changes applied. This is not revertible.", !_changed))
+        if (ImGuiUtil.DrawDisabledButton("保存到文件", Vector2.Zero,
+                $"保存选中的{fileType}文件，应用所有修改。此操作不可恢复。", !_changed))
         {
             compactor.WriteAllBytes(_currentPath!.File.FullName, _currentFile!.Write());
             if (owner.Mod != null)
@@ -216,8 +216,8 @@ public class FileEditor<T>(
 
     private void ResetButton()
     {
-        if (ImGuiUtil.DrawDisabledButton("Reset Changes", Vector2.Zero,
-                $"Reset all changes made to the {fileType} file.", !_changed))
+        if (ImGuiUtil.DrawDisabledButton("重置修改", Vector2.Zero,
+                $"重置对{fileType}文件做的所有修改。", !_changed))
         {
             var tmp = _currentPath;
             _currentPath = null;
@@ -235,7 +235,7 @@ public class FileEditor<T>(
         {
             if (_currentFile == null)
             {
-                ImGui.TextUnformatted($"Could not parse selected {fileType} file.");
+                ImGui.TextUnformatted($"无法解析选中的 {fileType} 文件。");
                 if (_currentException != null)
                 {
                     using var tab = ImRaii.PushIndent();

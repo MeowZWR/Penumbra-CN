@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -111,7 +111,7 @@ public class ModPanelTabBar
 
     private void DrawAdvancedEditingButton(Mod mod)
     {
-        if (ImGui.TabItemButton("Advanced Editing", ImGuiTabItemFlags.Trailing | ImGuiTabItemFlags.NoTooltip))
+            if( ImGui.TabItemButton( "高级编辑", ImGuiTabItemFlags.Trailing | ImGuiTabItemFlags.NoTooltip ) )
         {
             _modEditWindow.ChangeMod(mod);
             _modEditWindow.ChangeOption((SubMod)mod.Default);
@@ -119,13 +119,15 @@ public class ModPanelTabBar
         }
 
         ImGuiUtil.HoverTooltip(
-            "Clicking this will open a new window in which you can\nedit the following things per option for this mod:\n\n"
-          + "\t\t- file redirections\n"
-          + "\t\t- file swaps\n"
-          + "\t\t- metadata manipulations\n"
-          + "\t\t- model materials\n"
-          + "\t\t- duplicates\n"
-          + "\t\t- textures");
+            "单击此按钮将打开一个新窗口，在此窗口中，你可以\n为此模组编辑以下的每一项内容：\n\n"
+          + "\t\t- 文件重定向\n"
+          + "\t\t- 文件替换\n"
+          + "\t\t- 元数据操作\n"
+          + "\t\t- 模型材质\n"
+          + "\t\t- 去重\n"
+          + "\t\t- 纹理\n"
+          + "\t\t- 道具转换\n"
+          + "\t\t- 合并模组");
     }
 
     private void DrawFavoriteButton(Mod mod, float height)
@@ -154,6 +156,6 @@ public class ModPanelTabBar
         _tutorial.OpenTutorial(BasicTutorialSteps.Favorites);
 
         if (hovered)
-            ImGui.SetTooltip("Favorite");
+            ImGui.SetTooltip("收藏");
     }
 }

@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.Import.Structs;
@@ -24,7 +24,7 @@ public partial class TexToolsImporter
     {
         if (_modPackCount == 0)
         {
-            ImGuiUtil.Center("Nothing to extract.");
+            ImGuiUtil.Center( "没有可提取的内容。" );
         }
         else if (_modPackCount == _currentModPackIdx)
         {
@@ -59,7 +59,7 @@ public partial class TexToolsImporter
             ImGui.ProgressBar(percentage, size, $"File {_currentFileIdx + 1} / {_currentNumFiles}");
             ImGui.NewLine();
             if (State != ImporterState.DeduplicatingFiles)
-                ImGui.TextUnformatted($"Extracting file {_currentFileName}...");
+                ImGui.TextUnformatted( $"提取文件 {_currentFileName}..." );
         }
     }
 
@@ -68,7 +68,7 @@ public partial class TexToolsImporter
     {
         var success = ExtractedMods.Count(t => t.Error == null);
 
-        ImGui.TextUnformatted($"Successfully extracted {success} / {ExtractedMods.Count} files.");
+        ImGui.TextUnformatted( $"已成功提取 {success} / {ExtractedMods.Count} 个文件。" );
         ImGui.NewLine();
         using var table = ImRaii.Table("##files", 2);
         if (!table)
@@ -82,7 +82,7 @@ public partial class TexToolsImporter
             if (ex == null)
             {
                 using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.FolderExpanded.Value());
-                ImGui.TextUnformatted(dir?.FullName[(_baseDirectory.FullName.Length + 1)..] ?? "Unknown Directory");
+                ImGui.TextUnformatted( dir?.FullName[ ( _baseDirectory.FullName.Length + 1 ).. ] ?? "未知目录" );
             }
             else
             {
@@ -94,5 +94,5 @@ public partial class TexToolsImporter
     }
 
     public bool DrawCancelButton(Vector2 size)
-        => ImGuiUtil.DrawDisabledButton("Cancel", size, string.Empty, _token.IsCancellationRequested);
+        => ImGuiUtil.DrawDisabledButton( "取消", size, string.Empty, _token.IsCancellationRequested );
 }

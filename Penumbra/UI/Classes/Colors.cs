@@ -1,4 +1,4 @@
-using OtterGui.Custom;
+﻿using OtterGui.Custom;
 
 namespace Penumbra.UI.Classes;
 
@@ -49,30 +49,30 @@ public static class Colors
         => color switch
         {
             // @formatter:off
-            ColorId.EnabledMod           => ( 0xFFFFFFFF, "Enabled Mod",                         "A mod that is enabled by the currently selected collection." ),
-            ColorId.DisabledMod          => ( 0xFF686880, "Disabled Mod",                        "A mod that is disabled by the currently selected collection." ),
-            ColorId.UndefinedMod         => ( 0xFF808080, "Mod With No Settings",                "A mod that is not configured in the currently selected collection or any of the collections it inherits from, and thus implicitly disabled." ),
-            ColorId.InheritedMod         => ( 0xFFD0FFFF, "Mod Enabled By Inheritance",          "A mod that is not configured in the currently selected collection, but enabled in a collection it inherits from." ),
-            ColorId.InheritedDisabledMod => ( 0xFF688080, "Mod Disabled By Inheritance",         "A mod that is not configured in the currently selected collection, but disabled in a collection it inherits from."),
-            ColorId.NewMod               => ( 0xFF66DD66, "New Mod",                             "A mod that was newly imported or created during this session and has not been enabled yet." ),
-            ColorId.ConflictingMod       => ( 0xFFAAAAFF, "Mod With Unresolved Conflicts",       "An enabled mod that has conflicts with another enabled mod on the same priority level." ),
-            ColorId.HandledConflictMod   => ( 0xFFD0FFD0, "Mod With Resolved Conflicts",         "An enabled mod that has conflicts with another enabled mod on a different priority level." ),
-            ColorId.FolderExpanded       => ( 0xFFFFF0C0, "Expanded Mod Folder",                 "A mod folder that is currently expanded." ),
-            ColorId.FolderCollapsed      => ( 0xFFFFF0C0, "Collapsed Mod Folder",                "A mod folder that is currently collapsed." ),
-            ColorId.FolderLine           => ( 0xFFFFF0C0, "Expanded Mod Folder Line",            "The line signifying which descendants belong to an expanded mod folder." ),
-            ColorId.ItemId               => ( 0xFF808080, "Item Id",                             "The numeric model id of the given item to the right of changed items." ),
-            ColorId.IncreasedMetaValue   => ( 0x80008000, "Increased Meta Manipulation Value",   "An increased meta manipulation value for floats or an enabled toggle where the default is disabled."),
-            ColorId.DecreasedMetaValue   => ( 0x80000080, "Decreased Meta Manipulation Value",   "A decreased meta manipulation value for floats or a disabled toggle where the default is enabled."),
-            ColorId.SelectedCollection   => ( 0x6069C056, "Currently Selected Collection",       "The collection that is currently selected and being edited."),
-            ColorId.RedundantAssignment  => ( 0x6050D0D0, "Redundant Collection Assignment",     "A collection assignment that currently has no effect as it is redundant with more general assignments."),
-            ColorId.NoModsAssignment     => ( 0x50000080, "'Use No Mods' Collection Assignment", "A collection assignment set to not use any mods at all."),
-            ColorId.NoAssignment         => ( 0x00000000, "Unassigned Collection Assignment",    "A collection assignment that is not configured to any collection and thus just has no specific treatment."),
-            ColorId.SelectorPriority     => ( 0xFF808080, "Mod Selector Priority",               "The priority displayed for non-zero priority mods in the mod selector."),
+            ColorId.EnabledMod           => ( 0xFFFFFFFF, "启用的模组",                         "此模组在当前选中合集中已启用。" ),
+            ColorId.DisabledMod          => ( 0xFF686880, "禁用的模组",                         "此模组在当前选中合集中已禁用。" ),
+            ColorId.UndefinedMod         => ( 0xFF808080, "未设置的模组",                       "此模组未在当前选择的合集或其继承的任何合集中配置，所以间接地禁用了。" ),
+            ColorId.InheritedMod         => ( 0xFFD0FFFF, "已在继承中启用的模组",               "此模组未在当前选中的合集中配置，但在选中合集继承的合集中已启用。" ),
+            ColorId.InheritedDisabledMod => ( 0xFF688080, "已在继承中禁用的模组",               "此模组未在当前选中的合集中配置，但在选中合集继承的合集中已禁用。"),
+            ColorId.NewMod               => ( 0xFF66DD66, "新模组",                             "此模组在此次Penumbra加载期间导入或创建，且尚未启用。" ),
+            ColorId.ConflictingMod       => ( 0xFFAAAAFF, "未解决冲突的模组",                   "此模组已启用，但与另一个处于同一优先级的已启用模组发生冲突。" ),
+            ColorId.HandledConflictMod   => ( 0xFFD0FFD0, "已解决冲突的模组",                   "此模组已启用，但与另一个处于不同优先级的已启用模组发生冲突。" ),
+            ColorId.FolderExpanded       => ( 0xFFFFF0C0, "已展开的折叠组",                     "此折叠组已展开。" ),
+            ColorId.FolderCollapsed      => ( 0xFFFFF0C0, "已最小化的折叠组",                   "此折叠组已最小化。" ),
+            ColorId.FolderLine           => ( 0xFFFFF0C0, "展开的折叠组的结构线",               "表示哪些模组属于当前展开的折叠组的指示线。" ),
+            ColorId.ItemId               => ( 0xFF808080, "物品ID",                             "更改项目右侧括号里显示的物品ID" ),
+            ColorId.IncreasedMetaValue   => ( 0x80008000, "增加的元数据操作值",                 "表示元数据操作设置的浮点值相对原始数值增加，或元数据选项的启用状态（默认状态是禁用时）。"),
+            ColorId.DecreasedMetaValue   => ( 0x80000080, "减少的元数据操作值",                 "表示元数据操作设置的浮点值相对原始数值减少，或元数据选项的禁用状态（默认状态是启用时）。"),
+            ColorId.SelectedCollection   => ( 0x6069C056, "当前选中合集的分配对象",       		"当前选中并正在编辑的合集，其影响的分配对象的颜色。"),
+            ColorId.RedundantAssignment  => ( 0x6050D0D0, "多余的合集分配",     				"当前无效的合集分配对象，因为它已经被其他包含它的对象涵盖了。"),
+            ColorId.NoModsAssignment     => ( 0x50000080, "合集分配设置为'不使用模组'", 		"此合集分配被设置为完全不使用任何模组。"),
+            ColorId.NoAssignment         => ( 0x00000000, "未分配合集的对象",    				"当前没有任何合集分配给该对象。"),
+            ColorId.SelectorPriority     => ( 0xFF808080, "模组选择器优先级标识",               "在模组选择器里模组名称后显示优先级非0数字。"),
             ColorId.InGameHighlight      => ( 0xFFEBCF89, "In-Game Highlight",                   "An in-game element that has been highlighted for ease of editing."),
-            ColorId.ResTreeLocalPlayer   => ( 0xFFFFE0A0, "On-Screen: You",                      "You and what you own (mount, minion, accessory, pets and so on), in the On-Screen tab." ),
-            ColorId.ResTreePlayer        => ( 0xFFC0FFC0, "On-Screen: Other Players",            "Other players and what they own, in the On-Screen tab." ),
-            ColorId.ResTreeNetworked     => ( 0xFFFFFFFF, "On-Screen: Non-Players (Networked)",  "Non-player entities handled by the game server, in the On-Screen tab." ),
-            ColorId.ResTreeNonNetworked  => ( 0xFFC0C0FF, "On-Screen: Non-Players (Local)",      "Non-player entities handled locally, in the On-Screen tab." ),
+            ColorId.ResTreeLocalPlayer   => ( 0xFFFFE0A0, "画面角色：你",                      "You and what you own (mount, minion, accessory, pets and so on), in the On-Screen tab." ),
+            ColorId.ResTreePlayer        => ( 0xFFC0FFC0, "画面角色：其他玩家",            "Other players and what they own, in the On-Screen tab." ),
+            ColorId.ResTreeNetworked     => ( 0xFFFFFFFF, "画面角色：NPC（网络）",  "Non-player entities handled by the game server, in the On-Screen tab." ),
+            ColorId.ResTreeNonNetworked  => ( 0xFFC0C0FF, "画面角色：NPC（本地）",      "Non-player entities handled locally, in the On-Screen tab." ),
             _                            => throw new ArgumentOutOfRangeException( nameof( color ), color, null ),
             // @formatter:on
         };

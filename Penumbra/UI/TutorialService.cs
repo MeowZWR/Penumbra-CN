@@ -1,4 +1,4 @@
-using OtterGui.Widgets;
+﻿using OtterGui.Widgets;
 using Penumbra.Collections;
 using Penumbra.Collections.Manager;
 using Penumbra.UI.Classes;
@@ -42,18 +42,18 @@ public enum BasicTutorialSteps
 /// <summary> Service for the in-game tutorial. </summary>
 public class TutorialService
 {
-    public const string SelectedCollection  = "Selected Collection";
-    public const string DefaultCollection   = "Base Collection";
-    public const string InterfaceCollection = "Interface Collection";
-    public const string AssignedCollections = "Assigned Collections";
+    public const string SelectedCollection    = "选中的合集";
+    public const string DefaultCollection     = "基础合集";
+    public const string InterfaceCollection   = "界面合集";
+    public const string AssignedCollections   = "指定的合集";
 
-    public const string SupportedRedrawModifiers = "    - nothing, to redraw all characters\n"
-      + "    - 'self' or '<me>': your own character\n"
-      + "    - 'target' or '<t>': your target\n"
-      + "    - 'focus' or '<f>: your focus target\n"
-      + "    - 'mouseover' or '<mo>': the actor you are currently hovering over\n"
-      + "    - 'furniture': most indoor furniture, does not currently work outdoors\n"
-      + "    - any specific actor name to redraw all actors of that exactly matching name.";
+    public const string SupportedRedrawModifiers = "    - 留空, 用于重绘所有角色\n"
+      + "    - 'self' or '<me>': 重绘自己\n"
+      + "    - 'target' or '<t>': 重绘目标\n"
+      + "    - 'focus' or '<f>: 重绘焦点目标\n"
+      + "    - 'mouseover' or '<mo>': 重绘当前鼠标悬停指向的角色\n"
+      + "    - 'furniture': 重绘大部分室内家具，目前不能在户外工作。\n"
+      + "    - 输入任意指定的角色名称来重绘带有该名称的角色";
 
     private readonly EphemeralConfig _config;
     private readonly Tutorial        _tutorial;
@@ -65,80 +65,80 @@ public class TutorialService
             {
                 BorderColor    = Colors.TutorialBorder,
                 HighlightColor = Colors.TutorialMarker,
-                PopupLabel     = "Settings Tutorial",
+                PopupLabel     = "设置教程",
             }
-            .Register("General Tooltips", "This symbol gives you further information about whatever setting it appears next to.\n\n"
-              + "Hover over them when you are unsure what something does or how to do something.")
-            .Register("Initial Setup, Step 1: Mod Directory",
-                "The first step is to set up your mod directory, which is where your mods are extracted to.\n\n"
-              + "The mod directory should be a short path - like 'C:\\FFXIVMods' - on your fastest available drive. Faster drives improve performance.\n\n"
-              + "The folder should be an empty folder no other applications write to.")
-            .Register("Initial Setup, Step 2: Enable Mods", "Do not forget to enable your mods in case they are not.")
+            .Register( "小贴士", "此符号会为你提供旁边选项更多的信息。\n\n"
+              + "当你不确定这个选项的功能，或者不知道怎么做时，将鼠标悬停到这个符号上方。" )
+            .Register( "初始设置，步骤1：模组目录",
+                "首先设置你的模组目录，这是你的模组文件存放的地方。\n\n"
+              + "模组目录的路径越短越好，比如'C:\\FFXIVMods'；并且最好位于读写速度最快的驱动器上以提高性能。\n\n"
+              + "该文件夹应该是没有其他应用程序在写入数据的空文件夹。" )
+            .Register( "初始设置，步骤2：启用模组", "不要忘记勾选启用模组，不然模组不会生效。" )
             .Deprecated()
-            .Register("General Settings", "Look through all of these settings before starting, they might help you a lot!\n\n"
-              + "If you do not know what some of these do yet, return to this later!")
-            .Register("Initial Setup, Step 3: Collections", "Collections are lists of settings for your installed mods.\n\n"
-              + "This is our next stop!\n\n"
-              + "Go here after setting up your root folder to continue the tutorial!")
-            .Register("Initial Setup, Step 4: Managing Collections",
-                "On the left, we have the collection selector. Here, we can create new collections - either empty ones or by duplicating existing ones - and delete any collections not needed anymore.\n"
-              + $"There will always be one collection called {ModCollection.DefaultCollectionName} that can not be deleted.")
-            .Register($"Initial Setup, Step 5: {SelectedCollection}",
-                $"The {SelectedCollection} is the one we highlighted in the selector. It is the collection we are currently looking at and editing.\nAny changes we make in our mod settings later in the next tab will edit this collection.\n"
-              + $"We should already have the collection named {ModCollection.DefaultCollectionName} selected, and for our simple setup, we do not need to do anything here.\n\n")
-            .Register("Initial Setup, Step 6: Simple Assignments",
-                "Aside from being a collection of settings, we can also assign collections to different functions. This is used to make different mods apply to different characters.\n"
-              + "The Simple Assignments panel shows you the possible assignments that are enough for most people along with descriptions.\n"
-              + $"If you are just starting, you can see that the {ModCollection.DefaultCollectionName} is currently assigned to {CollectionType.Default.ToName()} and {CollectionType.Interface.ToName()}.\n"
-              + "You can also assign 'Use No Mods' instead of a collection by clicking on the function buttons.")
-            .Register("Individual Assignments",
-                "In the Individual Assignments panel, you can manually create assignments for very specific characters or monsters, not just yourself or ones you can currently target.")
-            .Register("Group Assignments",
-                "In the Group Assignments panel, you can create Assignments for more specific groups of characters based on race or age.")
-            .Register("Collection Details",
-                "In the Collection Details panel, you can see a detailed overview over the usage of the currently selected collection, as well as remove outdated mod settings and setup inheritance.\n"
-              + "Inheritance can be used to make one collection take the settings of another as long as it does not setup the mod in question itself.")
-            .Register("Incognito Mode",
-                "This button can toggle Incognito Mode, which shortens all collection names to two letters and a number,\n"
-              + "and all displayed individual character names to their initials and world, in case you want to share screenshots.\n"
-              + "It is strongly recommended to not show your characters name in public screenshots when using Penumbra.")
+            .Register( "常规设置", "在开始使用之前查看里面的设置，或许会对你有很大的帮助。\n\n"
+              + "如果你不知道其中一些选项有什么用处，可以以后再看。" )
+            .Register( "初始设置，步骤3：合集", "合集是记录已安装模组的设置的列表。\n\n"
+	          + "这是我们的下一站\n\n"
+	          + "设置根目录后，点击此选项卡继续教程！" )
+            .Register("初始设置，步骤4: 管理合集",
+                "在左边，我们有合集选择器。在这里我们可以创建新的合集 - 创建空白合集或者复制现有的合集 - 并删除任何不再需要的合集。\n"
+              + $"名为'{ModCollection.DefaultCollectionName}'的合集不能被删除。")
+            .Register($"初始设置，步骤5: {SelectedCollection}",
+                $"在选择器中高亮显示的合集是'{SelectedCollection}'。这是我们正在查看和操作的合集。\n我们稍后在下一个选项卡中对模组做的任何修改都将应用到此合集。\n"
+              + $"我们应该已经选中了合集'{ModCollection.DefaultCollectionName}'，我们现在只是做基础设置，还不需要对它做任何操作。\n\n")
+            .Register("初始设置，步骤6: 简单分配",
+                "除了用合集来管理不同的模组设置，我们还可以使用分配功能来分配合集，可以让不同的模组设置生效于不同的角色。\n"
+              + "简单分配面板提供对大部分人来说按照说明就足够使用的分配功能。\n"
+              + $"如果你是初次使用，你可以看到合集'{ModCollection.DefaultCollectionName}'已经分配给了'{CollectionType.Default.ToName()}'和'{CollectionType.Interface.ToName()}'。\n"
+              + "你也可以单击下面的功能单元，为该单元分配'不使用模组'使其不使用任何合集。")
+            .Register("独立分配",
+                "在'独立分配'面板，你可以手动为特定角色或者NPC分配合集，不仅仅是你自己或者你当前可以选中的目标。")
+            .Register("组分配",
+                "在'组分配'面板，你可以按种族甚至年龄为更特定的角色组创建分配。")
+            .Register("合集详情",
+                "在'合集详情'面板，你可以查看当前合集的使用情况，除此之外，你还可以移除过时的模组设置、对继承进行配置。\n"
+              + "继承可以让一个合集同步另一个合集的设置，只要它本身没有出现问题的模组设置。")
+            .Register("匿名模式",
+                "此按钮可以切换匿名模式，匿名模式下所有合集名称缩短为两个字母和一个数字，\n"
+              + "所有角色名称显示为首字母缩写和世界名称，方便你分享截图。\n"
+              + "强烈建议你在使用Penumbra时不要在分享的截图上显示你的角色名称。")
             .Deprecated()
-            .Register("Initial Setup, Step 7: Mods", "Our last stop is the Mods tab, where you can import and setup your mods.\n\n"
-              + $"Please go there after verifying that your {SelectedCollection} and {DefaultCollection} are setup to your liking.")
-            .Register("Initial Setup, Step 8: Mod Import",
-                "Click this button to open a file selector with which to select TTMP mod files. You can select multiple at once.\n\n"
-              + "It is not recommended to import huge mod packs of all your TexTools mods, but rather import the mods themselves, otherwise you lose out on a lot of Penumbra features!\n\n"
-              + "A feature to import raw texture mods for Tattoos etc. is available under Advanced Editing, but is currently a work in progress.") // TODO
-            .Register("Advanced Help", "Click this button to get detailed information on what you can do in the mod selector.\n\n"
-              + "Import and select a mod now to continue.")
-            .Register("Mod Filters", "You can filter the available mods by name, author, changed items or various attributes here.")
-            .Register("Collection Selectors", $"This row provides shortcuts to set your {SelectedCollection}.\n\n"
-              + $"The first button sets it to your {DefaultCollection} (if any).\n\n"
-              + "The second button sets it to the collection the settings of the currently selected mod are inherited from (if any).\n\n"
-              + "The third is a regular collection selector to let you choose among all your collections.")
-            .Register("Redrawing",
-                "Whenever you change your mod configuration, changes do not immediately take effect. You will need to force the game to reload the relevant files (or if this is not possible, restart the game).\n\n"
-              + "For this, Penumbra has these buttons as well as the '/penumbra redraw' command, which redraws all actors at once. You can also use several modifiers described in the help marker instead.\n\n"
-              + "Feel free to use these slash commands (e.g. '/penumbra redraw self') as a macro, too.")
-            .Register("Initial Setup, Step 9: Enabling Mods",
-                "Enable a mod here. Disabled mods will not apply to anything in the current collection.\n\n"
-              + "Mods can be enabled or disabled in a collection, or they can be unconfigured, in which case they will use Inheritance.")
-            .Register("Initial Setup, Step 10: Priority",
-                "If two enabled mods in one collection change the same files, there is a conflict.\n\n"
-              + "Conflicts can be solved by setting a priority. The mod with the higher number will be used for all the conflicting files.\n\n"
-              + "Conflicts are not a problem, as long as they are correctly resolved with priorities. Negative priorities are possible.")
-            .Register("Mod Options", "Many mods have options themselves. You can also choose those here.\n\n"
-              + "Pulldown-options are mutually exclusive, whereas checkmark options can all be enabled separately.")
-            .Register("Initial Setup - Fin", "Now you should have all information to get Penumbra running and working!\n\n"
-              + "If there are further questions or you need more help for the advanced features, take a look at the guide linked in the settings page.")
+            .Register( "初始设置，步骤7: 模组", "最后一站是'模组'选项卡，在这里你可以导入和设置你的模组。\n\n"
+              + $"请在按你的喜好确认好{SelectedCollection}和{DefaultCollection}设置后前往。")
+            .Register( "初始设置，步骤8: 导入模组",
+                "单击此按钮打开文件选择器，选择TTMP模组文件。 你可以同时选中多个进行批量导入。\n\n"
+              + "不建议导入包含大量TexTool模组的大型模组包（比如从TT备份的那些），而是导入单个的模组包，否则你会失去很多的Penumbra独特功能！\n\n"
+              + "高级编辑下提供了为纹身等导入原始纹理模型的功能，可以使用，但目前仍正在开发中。" ) // TODO
+            .Register( "进阶帮助", "单击此按钮可以获取在模组选择器中一些操作的详细信息。\n\n"
+              + "导入并选中一个模组来进行下一步。" )
+            .Register( "模组筛选器", "你可以在此处按名称、作者、更改项目、或各种选项筛选模组。" )
+            .Register( "合集选择器", $"此行提供了设置{SelectedCollection}的快捷方式。\n\n"
+              + $"第一个选项设置为你的{DefaultCollection}（如果有）。n\n"
+              + "第二个选项设置为当前所选模组的设置继承来自什么合集（如果有）。\n\n"
+              + "第三个选项是常规合集选择菜单，你可以在这里选择所有存在的合集。" )
+            .Register( "重绘",
+                "当你修改模组设置，修改不会马上生效，你需要强制游戏重新加载相关文件。(如果重新加载不成功，应当重启游戏)。\n\n"
+              + "为此，Penumbra添加了重绘按钮，功能与命令'/penumbra redraw'相同，会将所有角色重绘一次。你也可以使用帮助图标中描述的几个修饰符来代替。\n\n"
+              + "你也可以将指令添加到宏(比如 '/penumbra redraw self' 重绘自己)。" )
+            .Register( "初始设置，步骤9: 启用模组",
+                "选中并启用一个模组，禁用的模组不会在当前合集中生效。\n\n"
+              + "模组可以在合集中启用或禁用，也可以点击右边的继承设置，在这种情况下它们将按设定继承其他合集。" )
+            .Register( "初始设置，步骤10: 优先级",
+                "如果两个启用的模组更改了相同的文件，则会发生冲突。\n\n"
+              + "可以通过设置不同的优先级来解决冲突，具有更高数字的模组其冲突的文件将优先使用。\n\n"
+              + "只要设置正确的优先级，冲突就不是问题。优先级可以设置为负数。" )
+            .Register( "模组选项", "许多模组自带选项。你可以在这里进行选择。\n\n"
+              + "下拉选项只能选择其中一个，有复选框的选项则每个都可以单独启用。" )
+            .Register( "初始设置 - 结束语", "现在，你已经知道可以让Penumbra运行和工作起来的所有信息了！\n\n"
+              + "如果还有其他问题，或你需要有关高级功能的更多帮助，请查看设置页链接中的新手指引。" )
             .Deprecated()
             .Register("FAQ 1",
-                "It is advised to not use TexTools and Penumbra at the same time. Penumbra may refuse to work if TexTools broke your game indices.")
-            .Register("FAQ 2", "Penumbra can change the skin material a mod uses. This is under advanced editing.")
-            .Register("Favorites",
-                "You can now toggle mods as favorites using this button. You can filter for favorited mods in the mod selector. Favorites are stored locally, not within the mod, but independently of collections.")
-            .Register("Tags",
-                "Mods can now have two types of tags:\n\n- Local Tags are those that you can set for yourself. They are stored locally and are not saved in any way in the mod directory itself.\n- Mod Tags are stored in the mod metadata, are set by the mod creator and are exported together with the mod, they can only be edited in the Edit Mod tab.\n\nIf a mod has a tag in its Mod Tags, this overwrites any identical Local Tags.\n\nYou can filter for tags in the mod selector via 't:text'.")
+                "不建议同时使用TexTools和Penumbra。如果TexTools损坏了你的游戏索引，Penumbra可能会停止工作。")
+            .Register("FAQ 2", "Penumbra可以重新分配模组使用的皮肤材质，在模组编辑选项卡中有个'更新Bibo材质'按钮会自动分配，如果不起作用，请使用高级编辑中的材质指定手动修改。")
+            .Register( "收藏",
+                "现在你可以通过此按钮来使用收藏功能了。你可以在模组选择器中筛选你喜欢的模组。收藏信息基于合集单独存储在本地，而不是在模组文件中。" )
+            .Register("标签",
+                "模组现在可以使用两种标签类型：\n\n- 本地标签，由你自行设置。他们单独存储在本地而不是模组目录。\n- 模组标签，存储在模组元数据中，该标签通常由模组作者设置，并随模组创建。只能在编辑选项卡中进行修改。\n\n模组设置的标签会覆盖本地设置的相同标签。\n\n你可以在模组筛选器中输入't:文本'进行筛选。")
             .EnsureSize(Enum.GetValues<BasicTutorialSteps>().Length);
     }
 

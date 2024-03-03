@@ -1,4 +1,4 @@
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
@@ -112,7 +112,7 @@ public class Penumbra : IDalamudPlugin
         _communicatorService.ChangedItemHover.Subscribe(it =>
         {
             if (it is (Item, FullEquipType))
-                ImGui.TextUnformatted("Left Click to create an item link in chat.");
+                ImGui.TextUnformatted("左键单击在聊天框创建一个物品链接。");
         }, ChangedItemHover.Priority.Link);
 
         _communicatorService.ChangedItemClick.Subscribe((button, it) =>

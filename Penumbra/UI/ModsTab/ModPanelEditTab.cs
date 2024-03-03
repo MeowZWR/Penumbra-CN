@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
@@ -51,7 +51,7 @@ public class ModPanelEditTab : ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "Edit Mod"u8;
+        => "编辑模组"u8;
 
     public void DrawContent()
     {
@@ -69,7 +69,7 @@ public class ModPanelEditTab : ITab
         EditRegularMeta();
         UiHelpers.DefaultLineSpace();
 
-        if (Input.Text("Mod Path", Input.Path, Input.None, _leaf.FullName(), out var newPath, 256, UiHelpers.InputTextWidth.X))
+        if (Input.Text( "模组路径（排序用）", Input.Path, Input.None, _leaf.FullName(), out var newPath, 256, UiHelpers.InputTextWidth.X))
             try
             {
                 _fileSystem.RenameAndMove(_leaf, newPath);
@@ -80,7 +80,7 @@ public class ModPanelEditTab : ITab
             }
 
         UiHelpers.DefaultLineSpace();
-        var tagIdx = _modTags.Draw("Mod Tags: ", "Edit tags by clicking them, or add new tags. Empty tags are removed.", _mod.ModTags,
+        var tagIdx = _modTags.Draw( "模组标签：", "点击修改，或添加新标签。空白标签会被移除。", _mod.ModTags,
             out var editedTag);
         if (tagIdx >= 0)
             _modManager.DataEditor.ChangeModTag(_mod, tagIdx, editedTag);
@@ -110,14 +110,14 @@ public class ModPanelEditTab : ITab
         var buttonSize   = new Vector2(150 * UiHelpers.Scale, 0);
         var folderExists = Directory.Exists(_mod.ModPath.FullName);
         var tt = folderExists
-            ? $"Open \"{_mod.ModPath.FullName}\" in the file explorer of your choice."
-            : $"Mod directory \"{_mod.ModPath.FullName}\" does not exist.";
-        if (ImGuiUtil.DrawDisabledButton("Open Mod Directory", buttonSize, tt, !folderExists))
+            ? $"在操作系统指定的文件浏览器中打开目录：\"{_mod.ModPath.FullName}\" 。"
+            : $"模组目录：\"{_mod.ModPath.FullName}\" 不存在。";
+        if (ImGuiUtil.DrawDisabledButton( "打开模组目录", buttonSize, tt, !folderExists))
             Process.Start(new ProcessStartInfo(_mod.ModPath.FullName) { UseShellExecute = true });
 
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Reload Mod", buttonSize, "Reload the current mod from its files.\n"
-              + "If the mod directory or meta file do not exist anymore or if the new mod name is empty, the mod is deleted instead.",
+        if (ImGuiUtil.DrawDisabledButton( "重新加载模组", buttonSize, "从文件中重新加载当前模组。\n"
+              + "如果模组目录或元文件不再存在，或者如果新的模组名称为空，则会删除模组。",
                 false))
             _modManager.ReloadMod(_mod);
 
@@ -132,7 +132,7 @@ public class ModPanelEditTab : ITab
 
     private void DrawUpdateBibo(Vector2 buttonSize)
     {
-        if (ImGui.Button("Update Bibo Material", buttonSize))
+        if (ImGui.Button( "更新Bibo材质", buttonSize))
         {
             _editor.LoadMod(_mod);
             _editor.MdlMaterialEditor.ReplaceAllMaterials("bibo",     "b");
@@ -142,35 +142,35 @@ public class ModPanelEditTab : ITab
         }
 
         ImGuiUtil.HoverTooltip(
-            "For every model in this mod, change all material names that end in a _b or _c suffix to a _bibo or _bibopube suffix respectively.\n"
-          + "Does nothing if the mod does not contain any such models or no model contains such materials.\n"
-          + "Use this for outdated mods made for old Bibo bodies.\n"
-          + "Go to Advanced Editing for more fine-tuned control over material assignment.");
+            "此模组中的每个模型，以'_b'或'_c'结尾的所有材质名称后缀分别改为'_bibo'和'_bibopube'后缀。\n"
+          + "如果不存在此类模型或此类材质，不会执行任何操作。\n"
+          + "使用这个按钮来升级使用旧Bibo的模组。\n"
+          + "进入'高级编辑'窗口可以对材质分配进行更精确的控制。" );
     }
 
     private void BackupButtons(Vector2 buttonSize)
     {
         var backup = new ModBackup(_modExportManager, _mod);
         var tt = ModBackup.CreatingBackup
-            ? "Already exporting a mod."
+            ? "已经创建了一个备份。"
             : backup.Exists
-                ? $"Overwrite current exported mod \"{backup.Name}\" with current mod."
-                : $"Create exported archive of current mod at \"{backup.Name}\".";
-        if (ImGuiUtil.DrawDisabledButton("Export Mod", buttonSize, tt, ModBackup.CreatingBackup))
+                ? $"用当前模组覆盖当前备份：\"{backup.Name}\"。"
+                : $"创建一个备份压缩包到：\"{backup.Name}\"。";
+        if (ImGuiUtil.DrawDisabledButton( "创建备份", buttonSize, tt, ModBackup.CreatingBackup))
             backup.CreateAsync();
 
         ImGui.SameLine();
         tt = backup.Exists
-            ? $"Delete existing mod export \"{backup.Name}\" (hold {_config.DeleteModModifier} while clicking)."
-            : $"Exported mod \"{backup.Name}\" does not exist.";
-        if (ImGuiUtil.DrawDisabledButton("Delete Export", buttonSize, tt, !backup.Exists || !_config.DeleteModModifier.IsActive()))
+            ? $"删除存在的备份文件\"{backup.Name}\"。"
+            : $"备份文件\"{backup.Name}\"不存在。";
+        if (ImGuiUtil.DrawDisabledButton( "删除备份", buttonSize, tt, !backup.Exists))
             backup.Delete();
 
         tt = backup.Exists
-            ? $"Restore mod from exported file \"{backup.Name}\" (hold {_config.DeleteModModifier} while clicking)."
-            : $"Exported mod \"{backup.Name}\" does not exist.";
+            ? $"从备份文件\"{backup.Name}\"恢复模组。"
+            : $"备份文件\"{backup.Name}\"不存在。";
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Restore From Export", buttonSize, tt, !backup.Exists || !_config.DeleteModModifier.IsActive()))
+        if (ImGuiUtil.DrawDisabledButton("从备份恢复", buttonSize, tt, !backup.Exists || !_config.DeleteModModifier.IsActive()))
             backup.Restore(_modManager);
         if (backup.Exists)
         {
@@ -180,38 +180,38 @@ public class ModPanelEditTab : ITab
                 ImGui.TextUnformatted(FontAwesomeIcon.CheckCircle.ToIconString());
             }
 
-            ImGuiUtil.HoverTooltip($"Export exists in \"{backup.Name}\".");
+            ImGuiUtil.HoverTooltip($"备份已存在于 \"{backup.Name}\".");
         }
     }
 
     /// <summary> Anything about editing the regular meta information about the mod. </summary>
     private void EditRegularMeta()
     {
-        if (Input.Text("Name", Input.Name, Input.None, _mod.Name, out var newName, 256, UiHelpers.InputTextWidth.X))
+        if (Input.Text( "模组名", Input.Name, Input.None, _mod.Name, out var newName, 256, UiHelpers.InputTextWidth.X))
             _modManager.DataEditor.ChangeModName(_mod, newName);
 
-        if (Input.Text("Author", Input.Author, Input.None, _mod.Author, out var newAuthor, 256, UiHelpers.InputTextWidth.X))
+        if (Input.Text( "作者", Input.Author, Input.None, _mod.Author, out var newAuthor, 256, UiHelpers.InputTextWidth.X))
             _modManager.DataEditor.ChangeModAuthor(_mod, newAuthor);
 
-        if (Input.Text("Version", Input.Version, Input.None, _mod.Version, out var newVersion, 32,
+        if (Input.Text( "版本", Input.Version, Input.None, _mod.Version, out var newVersion, 32,
                 UiHelpers.InputTextWidth.X))
             _modManager.DataEditor.ChangeModVersion(_mod, newVersion);
 
-        if (Input.Text("Website", Input.Website, Input.None, _mod.Website, out var newWebsite, 256,
+        if (Input.Text( "网址", Input.Website, Input.None, _mod.Website, out var newWebsite, 256,
                 UiHelpers.InputTextWidth.X))
             _modManager.DataEditor.ChangeModWebsite(_mod, newWebsite);
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(UiHelpers.ScaleX3));
 
         var reducedSize = new Vector2(UiHelpers.InputTextMinusButton3, 0);
-        if (ImGui.Button("Edit Description", reducedSize))
+        if (ImGui.Button( "编辑描述", reducedSize))
             _delayedActions.Enqueue(() => DescriptionEdit.OpenPopup(_mod, Input.Description));
 
         ImGui.SameLine();
         var fileExists = File.Exists(_filenames.ModMetaPath(_mod));
         var tt = fileExists
-            ? "Open the metadata json file in the text editor of your choice."
-            : "The metadata json file does not exist.";
+            ? "在指定的文本编辑器中打开元数据json文件。"
+            : "元数据json文件不存在。";
         if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.FileExport.ToIconString()}##metaFile", UiHelpers.IconButtonSize, tt,
                 !fileExists, true))
             Process.Start(new ProcessStartInfo(_filenames.ModMetaPath(_mod)) { UseShellExecute = true });
@@ -239,13 +239,13 @@ public class ModPanelEditTab : ITab
         {
             using var spacing = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(UiHelpers.ScaleX3));
             ImGui.SetNextItemWidth(UiHelpers.InputTextMinusButton3);
-            ImGui.InputTextWithHint("##newGroup", "Add new option group...", ref _newGroupName, 256);
+            ImGui.InputTextWithHint("##newGroup", "添加新的选项组...", ref _newGroupName, 256);
             ImGui.SameLine();
             var defaultFile = filenames.OptionGroupFile(mod, -1, onlyAscii);
             var fileExists  = File.Exists(defaultFile);
             var tt = fileExists
-                ? "Open the default option json file in the text editor of your choice."
-                : "The default option json file does not exist.";
+                ? "在你的操作系统文本编辑器中打开默认的json选项文件。"
+                : "默认的json选项文件不存在。";
             if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.FileExport.ToIconString()}##defaultFile", UiHelpers.IconButtonSize, tt,
                     !fileExists, true))
                 Process.Start(new ProcessStartInfo(defaultFile) { UseShellExecute = true });
@@ -253,7 +253,7 @@ public class ModPanelEditTab : ITab
             ImGui.SameLine();
 
             var nameValid = ModOptionEditor.VerifyFileName(mod, null, _newGroupName, false);
-            tt = nameValid ? "Add new option group to the mod." : "Can not add a group of this name.";
+            tt = nameValid ? "添加新的选项组到这个模组。" : "不能添加以此命名的组。";
             if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), UiHelpers.IconButtonSize,
                     tt, !nameValid, true))
                 return;
@@ -287,18 +287,18 @@ public class ModPanelEditTab : ITab
 
             var (disabled, tt) = _state switch
             {
-                NewDirectoryState.Identical      => (true, "Current directory name is identical to new one."),
-                NewDirectoryState.Empty          => (true, "Please enter a new directory name first."),
-                NewDirectoryState.NonExisting    => (false, $"Move mod from {mod.ModPath.Name} to {_currentModDirectory}."),
-                NewDirectoryState.ExistsEmpty    => (false, $"Move mod from {mod.ModPath.Name} to {_currentModDirectory}."),
-                NewDirectoryState.ExistsNonEmpty => (true, $"{_currentModDirectory} already exists and is not empty."),
-                NewDirectoryState.ExistsAsFile   => (true, $"{_currentModDirectory} exists as a file."),
+                NewDirectoryState.Identical      => (true, "当前目录名称与新目录名称相同。"),
+                NewDirectoryState.Empty          => (true, "请先输入一个目录名称。"),
+                NewDirectoryState.NonExisting    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}."),
+                NewDirectoryState.ExistsEmpty    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}."),
+                NewDirectoryState.ExistsNonEmpty => (true, $"{_currentModDirectory} 已存在并且不是空目录。"),
+                NewDirectoryState.ExistsAsFile   => (true, $"{_currentModDirectory} 已经以文件形式存在。"),
                 NewDirectoryState.ContainsInvalidSymbols => (true,
-                    $"{_currentModDirectory} contains invalid symbols for FFXIV."),
-                _ => (true, "Unknown error."),
+                    $"{_currentModDirectory} 包含不被游戏接受的非法字符。"),
+                _ => (true, "未知错误。"),
             };
             ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton("Rename Mod Directory", buttonSize, tt, disabled) && _currentModDirectory != null)
+            if (ImGuiUtil.DrawDisabledButton( "重命名模组目录", buttonSize, tt, disabled) && _currentModDirectory != null)
             {
                 modManager.MoveModDirectory(mod, _currentModDirectory);
                 Reset();
@@ -306,15 +306,15 @@ public class ModPanelEditTab : ITab
 
             ImGui.SameLine();
             ImGuiComponents.HelpMarker(
-                "The mod directory name is used to correspond stored settings and sort orders, otherwise it has no influence on anything that is displayed.\n"
-              + "This can currently not be used on pre-existing folders and does not support merges or overwriting.");
+                "模组目录名用于模组在操作系统中的存储文件、设置及排序。不会在模组选择器中显示。\n"
+              + "当前不能用于预先存在的文件夹，不支持合并或覆盖。" );
         }
     }
 
     /// <summary> Open a popup to edit a multi-line mod or option description. </summary>
     private static class DescriptionEdit
     {
-        private const  string PopupName                = "Edit Description";
+        private const  string           PopupName                = "编辑描述";
         private static string _newDescription          = string.Empty;
         private static string _oldDescription          = string.Empty;
         private static int    _newDescriptionIdx       = -1;
@@ -357,9 +357,9 @@ public class ModPanelEditTab : ITab
               + ImGui.GetStyle().ItemSpacing.X;
             ImGui.SetCursorPosX((800 * UiHelpers.Scale - width) / 2);
 
-            var tooltip = _newDescription != _oldDescription ? string.Empty : "No changes made yet.";
+            var tooltip = _newDescription != _oldDescription ? string.Empty : "还没有做任何修改。";
 
-            if (ImGuiUtil.DrawDisabledButton("Save", buttonSize, tooltip, tooltip.Length > 0))
+            if (ImGuiUtil.DrawDisabledButton("保存", buttonSize, tooltip, tooltip.Length > 0))
             {
                 switch (_newDescriptionIdx)
                 {
@@ -380,7 +380,7 @@ public class ModPanelEditTab : ITab
             }
 
             ImGui.SameLine();
-            if (!ImGui.Button("Cancel", buttonSize)
+            if (!ImGui.Button( "取消", buttonSize)
              && !ImGui.IsKeyPressed(ImGuiKey.Escape))
                 return;
 
@@ -394,7 +394,7 @@ public class ModPanelEditTab : ITab
     {
         var       group = _mod.Groups[groupIdx];
         using var id    = ImRaii.PushId(groupIdx);
-        using var frame = ImRaii.FramedGroup($"Group #{groupIdx + 1}");
+        using var frame = ImRaii.FramedGroup($"选项组 #{groupIdx + 1}");
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.CellPadding, _cellPadding)
             .Push(ImGuiStyleVar.ItemSpacing, _itemSpacing);
@@ -402,10 +402,10 @@ public class ModPanelEditTab : ITab
         if (Input.Text("##Name", groupIdx, Input.None, group.Name, out var newGroupName, 256, UiHelpers.InputTextWidth.X))
             _modManager.OptionEditor.RenameModGroup(_mod, groupIdx, newGroupName);
 
-        ImGuiUtil.HoverTooltip("Group Name");
+        ImGuiUtil.HoverTooltip( "组名称" );
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize,
-                "Delete this option group.\nHold Control while clicking to delete.", !ImGui.GetIO().KeyCtrl, true))
+                "删除此选项组。\n同时按住键盘Ctrl键点击来删除。", !ImGui.GetIO().KeyCtrl, true))
             _delayedActions.Enqueue(() => _modManager.OptionEditor.DeleteModGroup(_mod, groupIdx));
 
         ImGui.SameLine();
@@ -413,20 +413,20 @@ public class ModPanelEditTab : ITab
         if (Input.Priority("##Priority", groupIdx, Input.None, group.Priority, out var priority, 50 * UiHelpers.Scale))
             _modManager.OptionEditor.ChangeGroupPriority(_mod, groupIdx, priority);
 
-        ImGuiUtil.HoverTooltip("Group Priority");
+        ImGuiUtil.HoverTooltip( "组优先级" );
 
         DrawGroupCombo(group, groupIdx);
         ImGui.SameLine();
 
-        var tt = groupIdx == 0 ? "Can not move this group further upwards." : $"Move this group up to group {groupIdx}.";
+        var tt = groupIdx == 0 ? "到顶了。" : $"移动此组到[选项组 #{groupIdx}]之前。";
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowUp.ToIconString(), UiHelpers.IconButtonSize,
                 tt, groupIdx == 0, true))
             _delayedActions.Enqueue(() => _modManager.OptionEditor.MoveModGroup(_mod, groupIdx, groupIdx - 1));
 
         ImGui.SameLine();
         tt = groupIdx == _mod.Groups.Count - 1
-            ? "Can not move this group further downwards."
-            : $"Move this group down to group {groupIdx + 2}.";
+            ? "到底了。"
+            : $"移动此组到[选项组 #{groupIdx + 2}]之后。";
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowDown.ToIconString(), UiHelpers.IconButtonSize,
                 tt, groupIdx == _mod.Groups.Count - 1, true))
             _delayedActions.Enqueue(() => _modManager.OptionEditor.MoveModGroup(_mod, groupIdx, groupIdx + 1));
@@ -434,15 +434,15 @@ public class ModPanelEditTab : ITab
         ImGui.SameLine();
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Edit.ToIconString(), UiHelpers.IconButtonSize,
-                "Edit group description.", false, true))
+                "编辑组描述", false, true))
             _delayedActions.Enqueue(() => DescriptionEdit.OpenPopup(_mod, groupIdx));
 
         ImGui.SameLine();
         var fileName   = _filenames.OptionGroupFile(_mod, groupIdx, _config.ReplaceNonAsciiOnImport);
         var fileExists = File.Exists(fileName);
         tt = fileExists
-            ? $"Open the {group.Name} json file in the text editor of your choice."
-            : $"The {group.Name} json file does not exist.";
+            ? $"在文本编辑器中打开 {group.Name} 的json文件。"
+            : $"{group.Name} 的json文件不存在。";
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.FileExport.ToIconString(), UiHelpers.IconButtonSize, tt, !fileExists, true))
             Process.Start(new ProcessStartInfo(fileName) { UseShellExecute = true });
 
@@ -498,7 +498,7 @@ public class ModPanelEditTab : ITab
             using var id     = ImRaii.PushId(optionIdx);
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
-            ImGui.Selectable($"Option #{optionIdx + 1}");
+            ImGui.Selectable($"选项 #{optionIdx + 1}");
             Source(group, groupIdx, optionIdx);
             Target(panel, group, groupIdx, optionIdx);
 
@@ -510,7 +510,7 @@ public class ModPanelEditTab : ITab
                 if (ImGui.RadioButton("##default", group.DefaultSettings == optionIdx))
                     panel._modManager.OptionEditor.ChangeModGroupDefaultOption(panel._mod, groupIdx, (uint)optionIdx);
 
-                ImGuiUtil.HoverTooltip($"Set {option.Name} as the default choice for this group.");
+                ImGuiUtil.HoverTooltip($"将'{option.Name}' 设置为此组的默认选项。" );
             }
             else
             {
@@ -520,7 +520,7 @@ public class ModPanelEditTab : ITab
                         ? group.DefaultSettings | (1u << optionIdx)
                         : group.DefaultSettings & ~(1u << optionIdx));
 
-                ImGuiUtil.HoverTooltip($"{(isDefaultOption ? "Disable" : "Enable")} {option.Name} per default in this group.");
+                ImGuiUtil.HoverTooltip($"将'{option.Name}'在此组中默认设置为：{( isDefaultOption ? "'禁用'" : "'启用'" )} " );
             }
 
             ImGui.TableNextColumn();
@@ -528,13 +528,13 @@ public class ModPanelEditTab : ITab
                 panel._modManager.OptionEditor.RenameOption(panel._mod, groupIdx, optionIdx, newOptionName);
 
             ImGui.TableNextColumn();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Edit.ToIconString(), UiHelpers.IconButtonSize, "Edit option description.",
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Edit.ToIconString(), UiHelpers.IconButtonSize, "编辑选项描述。",
                     false, true))
                 panel._delayedActions.Enqueue(() => DescriptionEdit.OpenPopup(panel._mod, groupIdx, optionIdx));
 
             ImGui.TableNextColumn();
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize,
-                    "Delete this option.\nHold Control while clicking to delete.", !ImGui.GetIO().KeyCtrl, true))
+                    "删除此选项。\n按住键盘Ctrl键点击来删除。", !ImGui.GetIO().KeyCtrl, true))
                 panel._delayedActions.Enqueue(() => panel._modManager.OptionEditor.DeleteOption(panel._mod, groupIdx, optionIdx));
 
             ImGui.TableNextColumn();
@@ -545,7 +545,7 @@ public class ModPanelEditTab : ITab
                     50 * UiHelpers.Scale))
                 panel._modManager.OptionEditor.ChangeOptionPriority(panel._mod, groupIdx, optionIdx, priority);
 
-            ImGuiUtil.HoverTooltip("Option priority.");
+            ImGuiUtil.HoverTooltip( "选项优先级。" );
         }
 
         /// <summary> Draw the line to add a new option. </summary>
@@ -555,13 +555,13 @@ public class ModPanelEditTab : ITab
             var group = mod.Groups[groupIdx];
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
-            ImGui.Selectable($"Option #{group.Count + 1}");
+            ImGui.Selectable($"选项 #{group.Count + 1}");
             Target(panel, group, groupIdx, group.Count);
             ImGui.TableNextColumn();
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1);
             var tmp = _newOptionNameIdx == groupIdx ? _newOptionName : string.Empty;
-            if (ImGui.InputTextWithHint("##newOption", "Add new option...", ref tmp, 256))
+            if (ImGui.InputTextWithHint("##newOption", "添加新选项...", ref tmp, 256))
             {
                 _newOptionName    = tmp;
                 _newOptionNameIdx = groupIdx;
@@ -571,8 +571,8 @@ public class ModPanelEditTab : ITab
             var canAddGroup = mod.Groups[groupIdx].Type != GroupType.Multi || mod.Groups[groupIdx].Count < IModGroup.MaxMultiOptions;
             var validName   = _newOptionName.Length > 0 && _newOptionNameIdx == groupIdx;
             var tt = canAddGroup
-                ? validName ? "Add a new option to this group." : "Please enter a name for the new option."
-                : $"Can not add more than {IModGroup.MaxMultiOptions} options to a multi group.";
+                ? validName ? "添加一个新选项到此组。" : "请先为新选项命名。"
+                : $"不能添加超过 {IModGroup.MaxMultiOptions} 个选项到多选项组。";
             if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconButtonSize,
                     tt, !(canAddGroup && validName), true))
                 return;
@@ -594,7 +594,7 @@ public class ModPanelEditTab : ITab
                 _dragDropOptionIdx = optionIdx;
             }
 
-            ImGui.TextUnformatted($"Dragging option {group[optionIdx].Name} from group {group.Name}...");
+            ImGui.TextUnformatted($"从组 {group.Name} 拖拽选项 {group[optionIdx].Name} ..." );
         }
 
         private static void Target(ModPanelEditTab panel, IModGroup group, int groupIdx, int optionIdx)
@@ -640,9 +640,9 @@ public class ModPanelEditTab : ITab
         static string GroupTypeName(GroupType type)
             => type switch
             {
-                GroupType.Single => "Single Group",
-                GroupType.Multi  => "Multi Group",
-                _                => "Unknown",
+                GroupType.Single => "单选项组",
+                GroupType.Multi  => "多选项组",
+                _                => "未知",
             };
 
         ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X - 2 * UiHelpers.IconButtonSize.X - 2 * ImGui.GetStyle().ItemSpacing.X);
@@ -660,7 +660,7 @@ public class ModPanelEditTab : ITab
 
         style.Pop();
         if (!canSwitchToMulti)
-            ImGuiUtil.HoverTooltip($"Can not convert group to multi group since it has more than {IModGroup.MaxMultiOptions} options.");
+            ImGuiUtil.HoverTooltip($"无法将组转换为多选项组，因为数量超过 {IModGroup.MaxMultiOptions} 个选项。" );
     }
 
     /// <summary> Handles input text and integers in separate fields without buffers for every single one. </summary>

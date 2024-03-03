@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using OtterGui.Filesystem;
 using Penumbra.Communication;
@@ -35,10 +35,10 @@ public sealed class ModFileSystem : FileSystem<Mod>, IDisposable, ISavable
     public struct ImportDate : ISortMode<Mod>
     {
         public string Name
-            => "Import Date (Older First)";
+            => "导入日期 (旧的优先)";
 
         public string Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their import date.";
+            => "统一将所有折叠组按字典顺序排序，然后将其中的模组按导入日期由旧向新排序。";
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.ImportDate));
@@ -47,10 +47,10 @@ public sealed class ModFileSystem : FileSystem<Mod>, IDisposable, ISavable
     public struct InverseImportDate : ISortMode<Mod>
     {
         public string Name
-            => "Import Date (Newer First)";
+            => "导入日期 (新的优先)";
 
         public string Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse import date.";
+            => "统一将所有折叠组按字典顺序排序，然后将其中的模组按导入日期由新向旧排序。";
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.ImportDate));
@@ -64,7 +64,7 @@ public sealed class ModFileSystem : FileSystem<Mod>, IDisposable, ISavable
         if (Load(jObj, _modManager, ModToIdentifier, ModToName))
             _saveService.ImmediateSave(this);
 
-        Penumbra.Log.Debug("Reloaded mod filesystem.");
+        Penumbra.Log.Debug( "重新加载模组文件系统。" );
     }
 
     // Save the filesystem on every filesystem change except full reloading.

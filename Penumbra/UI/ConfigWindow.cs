@@ -1,4 +1,4 @@
-using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ImGuiNET;
 using OtterGui;
@@ -67,34 +67,36 @@ public sealed class ConfigWindow : Window
             if (_validityChecker.ImcExceptions.Count > 0)
             {
                 DrawProblemWindow(
-                    $"There were {_validityChecker.ImcExceptions.Count} errors while trying to load IMC files from the game data.\n"
-                  + "This usually means that your game installation was corrupted by updating the game while having TexTools mods still active.\n"
-                  + "It is recommended to not use TexTools and Penumbra (or other Lumina-based tools) at the same time.\n\n"
-                  + "Please use the Launcher's Repair Game Files function to repair your client installation.");
+                    $"在尝试从游戏数据加载IMC文件时发生了 {_validityChecker.ImcExceptions.Count} 个错误。\n"
+                  + "这通常意味着你用TexTools装了mod，但没有初始化就更新游戏而对游戏文件产生了损坏。\n"
+                  + "建议不要同时使用TexTools和Penumbra（或其他基于Lumina的工具)。\n\n"
+                  + "请修复客户端。");
                 DrawImcExceptions();
             }
             else if (!_validityChecker.IsValidSourceRepo)
             {
                 DrawProblemWindow(
-                    $"You are loading a release version of Penumbra from the repository \"{_pluginInterface.SourceRepository}\" instead of the official repository.\n"
-                  + $"Please use the official repository at {ValidityChecker.Repository} or the suite repository at {ValidityChecker.SeaOfStars}.\n\n"
-                  + "If you are developing for Penumbra and see this, you should compile your version in debug mode to avoid it.");
+                    $"你正在从其他仓库 \"{_pluginInterface.SourceRepository}\" 而不是官方仓库加载Penumbra的发行版本。\n"
+                  + $"请使用獭三方： {ValidityChecker.OtterCnRepositoryLower}。\n"
+                  + $"或：{ValidityChecker.Repository}。\n"
+                  + $"需要原版请使用原作者仓库：\"https://raw.githubusercontent.com/xivdev/Penumbra/master/repo.json\"（最新版可能不适用国服）\n\n"
+                  + "如果你正在进行Penumbra的开发并看到这条信息，请在编译器切换到Debug模式避免出现这个情况。");
             }
             else if (_validityChecker.IsNotInstalledPenumbra)
             {
                 DrawProblemWindow(
-                    $"You are loading a release version of Penumbra from \"{_pluginInterface.AssemblyLocation.Directory?.FullName ?? "Unknown"}\" instead of the installedPlugins directory.\n\n"
-                  + "You should not install Penumbra manually, but rather add the plugin repository under settings and then install it via the plugin installer.\n\n"
-                  + "If you do not know how to do this, please take a look at the readme in Penumbras github repository or join us in discord.\n"
-                  + "If you are developing for Penumbra and see this, you should compile your version in debug mode to avoid it.");
+                    $"你正在从 \"{_pluginInterface.AssemblyLocation.Directory?.FullName ?? "未知"}\" 目录而不是 \"installedPlugins\" 目录加载Penumbra的发行版本。\n\n"
+                  + "你不应该手动安装Penumbra，而应该在\"卫月设置-测试版-自定义插件仓库\"下添加仓库地址后，在\"插件中心\"进行安装。\n\n"
+                  + "如果你不清楚怎么做，请在Penumbras的github仓库下查看readme或加入我们的Discord.\n"
+                  + "如果你正在进行Penumbra的开发并看到这条信息，请在编译器切换到Debug模式避免出现这个情况。");
             }
             else if (_validityChecker.DevPenumbraExists)
             {
                 DrawProblemWindow(
-                    $"You are loading a installed version of Penumbra from \"{_pluginInterface.AssemblyLocation.Directory?.FullName ?? "Unknown"}\", "
-                  + "but also still have some remnants of a custom install of Penumbra in your devPlugins folder.\n\n"
-                  + "This can cause some issues, so please go to your \"%%appdata%%\\XIVLauncher\\devPlugins\" folder and delete the Penumbra folder from there.\n\n"
-                  + "If you are developing for Penumbra, try to avoid mixing versions. This warning will not appear if compiled in Debug mode.");
+                    $"你正在使用来自 \"{_pluginInterface.AssemblyLocation.Directory?.FullName ?? "未知"}\"目录下的Penmubra。 "
+                  + "但在你的\"DevPlugins\"文件夹中仍然有自定义安装留下的残余文件。\n\n"
+                  + "这可能会导致一些问题，请前往 \"%%appdata%%\\XIVLauncher\\devPlugins\" 目录并删除其中的Penumbra文件夹。\n\n"
+                  + "如果你正在开发Penumbra，请尽量避免混淆版本。在Debug模式下编译不会出现这个警告。");
             }
             else
             {
@@ -123,7 +125,7 @@ public sealed class ConfigWindow : Window
                 _lastException = e.ToString();
             }
 
-            Penumbra.Log.Error($"Exception thrown during UI Render:\n{_lastException}");
+            Penumbra.Log.Error($"渲染UI时出现异常：\n{_lastException}");
         }
     }
 
@@ -151,7 +153,7 @@ public sealed class ConfigWindow : Window
 
     private void DrawImcExceptions()
     {
-        ImGui.TextUnformatted("Exceptions");
+        ImGui.TextUnformatted("异常");
         ImGui.Separator();
         using var box = ImRaii.ListBox("##Exceptions", new Vector2(-1, -1));
         foreach (var exception in _validityChecker.ImcExceptions)

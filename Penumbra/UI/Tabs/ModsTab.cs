@@ -1,4 +1,4 @@
-using Dalamud.Game.ClientState.Objects;
+﻿using Dalamud.Game.ClientState.Objects;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -52,7 +52,7 @@ public class ModsTab : ITab
         => _modManager.Valid;
 
     public ReadOnlySpan<byte> Label
-        => "Mods"u8;
+        => "模组列表"u8;
 
     public void DrawHeader()
         => _tutorial.OpenTutorial(BasicTutorialSteps.Mods);
@@ -131,13 +131,13 @@ public class ModsTab : ITab
                 ImGui.SameLine();
             }
 
-            ImGuiUtil.DrawTextButton("Redraw:        ", frameHeight, frameColor);
+            ImGuiUtil.DrawTextButton( "重绘:        ", frameHeight, frameColor);
         }
 
         var hovered = ImGui.IsItemHovered();
         _tutorial.OpenTutorial(BasicTutorialSteps.Redrawing);
         if (hovered)
-            ImGui.SetTooltip($"The supported modifiers for '/penumbra redraw' are:\n{TutorialService.SupportedRedrawModifiers}");
+            ImGui.SetTooltip($"/penumbra redraw'命令支持的修饰符为：\n{TutorialService.SupportedRedrawModifiers}");
 
         using var id       = ImRaii.PushId("Redraw");
         using var disabled = ImRaii.Disabled(_clientState.LocalPlayer == null);
@@ -146,27 +146,27 @@ public class ModsTab : ITab
         var tt = _objectTable.GetObjectAddress(0) == nint.Zero
             ? "\nCan only be used when you are logged in and your character is available."
             : string.Empty;
-        DrawButton(buttonWidth, "All", string.Empty, tt);
+        DrawButton(buttonWidth, "全部", string.Empty, tt);
         ImGui.SameLine();
-        DrawButton(buttonWidth, "Self", "self", tt);
+        DrawButton(buttonWidth, "自己", "self", tt);
         ImGui.SameLine();
 
         tt = _targets.Target == null && _targets.GPoseTarget == null
             ? "\nCan only be used when you have a target."
             : string.Empty;
-        DrawButton(buttonWidth, "Target", "target", tt);
+        DrawButton(buttonWidth, "目标", "target", tt);
         ImGui.SameLine();
 
         tt = _targets.FocusTarget == null
             ? "\nCan only be used when you have a focus target."
             : string.Empty;
-        DrawButton(buttonWidth, "Focus", "focus", tt);
+        DrawButton(buttonWidth, "焦点", "focus", tt);
         ImGui.SameLine();
 
         tt = !IsIndoors()
             ? "\nCan currently only be used for indoor furniture."
             : string.Empty;
-        DrawButton(frameHeight with { X = ImGui.GetContentRegionAvail().X - 1 }, "Furniture", "furniture", tt);
+        DrawButton(frameHeight with { X = ImGui.GetContentRegionAvail().X - 1 }, "家具", "furniture", tt);
         return;
 
         void DrawButton(Vector2 size, string label, string lower, string additionalTooltip)

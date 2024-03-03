@@ -1,4 +1,4 @@
-using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.Internal.Notifications;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -451,21 +451,21 @@ public class ActiveCollections : ISavable, IDisposable
                 var female       = ByType(CollectionType.FemalePlayerCharacter);
                 if (male == yourself && female == yourself)
                     return
-                        $"Assignment is redundant due to overwriting Male Players and Female Players{racialString} with an identical collection.\nYou can remove it.";
+                        $"多余的分配。与一个完全相同的合集覆盖了{racialString}的男性和女性玩家。\n你可以移除它。";
 
                 if (male == null)
                 {
                     if (female == null && @base == yourself)
                         return
-                            $"Assignment is redundant due to overwriting Base{racialString} with an identical collection.\nYou can remove it.";
+                            $"多余的分配。与一个完全相同的合集覆盖了{racialString}基础。\n你可以移除它。";
                     if (female == yourself && @base == yourself)
                         return
-                            $"Assignment is redundant due to overwriting Base and Female Players{racialString} with an identical collection.\nYou can remove it.";
+                            $"多余的分配。与一个完全相同的合集覆盖了{racialString}基础和女性玩家。\n你可以移除它。";
                 }
                 else if (male == yourself && female == null && @base == yourself)
                 {
                     return
-                        $"Assignment is redundant due to overwriting Base and Male Players{racialString} with an identical collection.\nYou can remove it.";
+                        $"多余的分配。与一个完全相同的合集覆盖了{racialString} 基础和男性玩家。\n你可以移除它。";
                 }
 
                 break;
@@ -477,7 +477,7 @@ public class ActiveCollections : ISavable, IDisposable
                     {
                         var global = ByType(CollectionType.Individual, _actors.CreatePlayer(id.PlayerName, ushort.MaxValue));
                         return global?.Index == checkAssignment.Index
-                            ? "Assignment is redundant due to an identical Any-World assignment existing.\nYou can remove it."
+                            ? "多余的分配。Assignment is redundant due to an identical Any-World assignment existing.\n你可以移除它。"
                             : string.Empty;
                     }
                     case IdentifierType.Owned:
@@ -486,12 +486,12 @@ public class ActiveCollections : ISavable, IDisposable
                             var global = ByType(CollectionType.Individual,
                                 _actors.CreateOwned(id.PlayerName, ushort.MaxValue, id.Kind, id.DataId));
                             if (global?.Index == checkAssignment.Index)
-                                return "Assignment is redundant due to an identical Any-World assignment existing.\nYou can remove it.";
+                                return "多余的分配。Assignment is redundant due to an identical Any-World assignment existing.\n你可以移除它。";
                         }
 
                         var unowned = ByType(CollectionType.Individual, _actors.CreateNpc(id.Kind, id.DataId));
                         return unowned?.Index == checkAssignment.Index
-                            ? "Assignment is redundant due to an identical unowned NPC assignment existing.\nYou can remove it."
+                            ? "多余的分配。Assignment is redundant due to an identical unowned NPC assignment existing.\n你可以移除它。"
                             : string.Empty;
                 }
 
@@ -522,8 +522,8 @@ public class ActiveCollections : ISavable, IDisposable
                 }
 
                 return collection1 == collection2
-                    ? $"Assignment is currently redundant due to overwriting {collection1.ToName()} with an identical collection.\nYou can remove them."
-                    : $"Assignment is currently redundant due to overwriting {collection1.ToName()} and {collection2.ToName()} with an identical collection.\nYou can remove them.";
+                    ? $"与有包含关系的对象'{collection1.ToName()}'分配了相同的合集。\n你可以移除它们。"
+                    : $"与有包含关系的对象'{collection1.ToName()}'和'{collection2.ToName()}'分配了相同的合集。\n你可以移除它们。";
 
             // For other assignments, check the inheritance order, unassigned means fall-through,
             // assigned needs identical assignments to be redundant.
@@ -537,7 +537,7 @@ public class ActiveCollections : ISavable, IDisposable
 
                     if (assignment.Index == checkAssignment.Index)
                         return
-                            $"Assignment is currently redundant due to overwriting {parentType.ToName()} with an identical collection.\nYou can remove it.";
+                            $"与有包含关系的对象'{parentType.ToName()}'分配了相同的合集。\n你可以移除它。";
                 }
 
                 break;

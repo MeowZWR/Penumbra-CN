@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using OtterGui.Raii;
@@ -55,7 +55,7 @@ public class ResourceTreeViewer
         if (!_task.IsCompleted)
         {
             ImGui.NewLine();
-            ImGui.TextUnformatted("Calculating character list...");
+            ImGui.TextUnformatted("正在计算角色列表...");
         }
         else if (_task.Exception != null)
         {
@@ -88,7 +88,7 @@ public class ResourceTreeViewer
 
                 using var id = ImRaii.PushId(index);
 
-                ImGui.TextUnformatted($"Collection: {tree.CollectionName}");
+                ImGui.TextUnformatted($"合集：{tree.CollectionName}");
 
                 using var table = ImRaii.Table("##ResourceTree", _actionCapacity > 0 ? 4 : 3,
                     ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
@@ -96,8 +96,8 @@ public class ResourceTreeViewer
                     continue;
 
                 ImGui.TableSetupColumn(string.Empty,  ImGuiTableColumnFlags.WidthStretch, 0.2f);
-                ImGui.TableSetupColumn("Game Path",   ImGuiTableColumnFlags.WidthStretch, 0.3f);
-                ImGui.TableSetupColumn("Actual Path", ImGuiTableColumnFlags.WidthStretch, 0.5f);
+                ImGui.TableSetupColumn("游戏路径",   ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                ImGui.TableSetupColumn("实际路径", ImGuiTableColumnFlags.WidthStretch, 0.5f);
                 if (_actionCapacity > 0)
                     ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed,
                         (_actionCapacity - 1) * 3 * ImGuiHelpers.GlobalScale + _actionCapacity * ImGui.GetFrameHeight());
@@ -113,7 +113,7 @@ public class ResourceTreeViewer
         var yOffset = (ChangedItemDrawer.TypeFilterIconSize.Y - ImGui.GetFrameHeight()) / 2f;
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + yOffset);
 
-        if (ImGui.Button("Refresh Character List"))
+        if (ImGui.Button("刷新角色列表"))
             _task = RefreshCharacterList();
 
         var checkSpacing = ImGui.GetStyle().ItemInnerSpacing.X;
@@ -139,7 +139,7 @@ public class ResourceTreeViewer
         _changedItemDrawer.DrawTypeFilter(ref _typeFilter, -yOffset);
 
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        ImGui.InputTextWithHint("##TreeNameFilter", "Filter by Character/Entity Name...", ref _nameFilter, 128);
+        ImGui.InputTextWithHint("##TreeNameFilter", "按角色/实体名称筛选...", ref _nameFilter, 128);
     }
 
     private Task<ResourceTree[]> RefreshCharacterList()
@@ -251,7 +251,7 @@ public class ResourceTreeViewer
                 var allPaths = string.Join('\n', resourceNode.PossibleGamePaths);
                 if (ImGui.IsItemClicked())
                     ImGui.SetClipboardText(allPaths);
-                ImGuiUtil.HoverTooltip($"{allPaths}\n\nClick to copy to clipboard.");
+                ImGuiUtil.HoverTooltip($"{allPaths}\n\n点击复制到剪贴板。");
             }
 
             ImGui.TableNextColumn();
@@ -260,7 +260,7 @@ public class ResourceTreeViewer
                 ImGui.Selectable(resourceNode.FullPath.ToPath(), false, 0, new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
                 if (ImGui.IsItemClicked())
                     ImGui.SetClipboardText(resourceNode.FullPath.ToPath());
-                ImGuiUtil.HoverTooltip($"{resourceNode.FullPath.ToPath()}\n\nClick to copy to clipboard.");
+                ImGuiUtil.HoverTooltip($"{resourceNode.FullPath.ToPath()}\n\n点击复制到剪贴板。");
             }
             else
             {
@@ -314,10 +314,10 @@ public class ResourceTreeViewer
     private static string CategoryFilterDescription(TreeCategory category)
         => category switch
         {
-            TreeCategory.LocalPlayer  => "Show you and what you own (mount, minion, accessory, pets and so on).",
-            TreeCategory.Player       => "Show other players and what they own.",
-            TreeCategory.Networked    => "Show non-player entities handled by the game server.",
-            TreeCategory.NonNetworked => "Show non-player entities handled locally.",
+            TreeCategory.LocalPlayer  => "显示你和从属于你的对象（坐骑、宠物、时尚配饰、战斗伙伴等等）。",
+            TreeCategory.Player       => "显示其他玩家和从属于他们的对象",
+            TreeCategory.Networked    => "显示由游戏服务器处理的NPC对象。",
+            TreeCategory.NonNetworked => "显示由本地处理的NPC对象。",
             _                         => throw new ArgumentException(),
         };
 

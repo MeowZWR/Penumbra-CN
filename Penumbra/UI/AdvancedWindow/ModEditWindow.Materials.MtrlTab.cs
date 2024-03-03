@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using ImGuiNET;
@@ -98,7 +98,7 @@ public partial class ModEditWindow
 
         public void LoadShpk(FullPath path)
         {
-            ShaderHeader = $"Shader ({Mtrl.ShaderPackage.Name})###Shader";
+            ShaderHeader = $"着色器 ({Mtrl.ShaderPackage.Name})###Shader";
 
             try
             {
@@ -181,7 +181,7 @@ public partial class ModEditWindow
             }
             catch (Exception e)
             {
-                // Some element in the JSON was undefined or invalid (wrong type, key that doesn't exist in the ShPk, index out of range, �)
+                // Some element in the JSON was undefined or invalid (wrong type, key that doesn't exist in the ShPk, index out of range, ?
                 Penumbra.Log.Error($"Error while traversing the ShPk dev-kit file at {devkitPathName}: {e}");
                 return null;
             }

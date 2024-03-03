@@ -1,4 +1,4 @@
-using OtterGui.Widgets;
+﻿using OtterGui.Widgets;
 using Penumbra.Interop.ResourceTree;
 using Penumbra.UI.AdvancedWindow;
 
@@ -16,7 +16,7 @@ public class OnScreenTab : ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "On-Screen"u8;
+        => "画面角色"u8;
 
     public void DrawContent()
         => _viewer.Draw();

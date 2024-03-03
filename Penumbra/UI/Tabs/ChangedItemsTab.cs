@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
@@ -29,7 +29,7 @@ public class ChangedItemsTab : ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "Changed Items"u8;
+        => "更改项目"u8;
 
     private LowerString _changedItemFilter    = LowerString.Empty;
     private LowerString _changedItemModFilter = LowerString.Empty;
@@ -66,10 +66,10 @@ public class ChangedItemsTab : ITab
           - 450 * UiHelpers.Scale
           - ImGui.GetStyle().ItemSpacing.X;
         ImGui.SetNextItemWidth(450 * UiHelpers.Scale);
-        LowerString.InputWithHint("##changedItemsFilter", "Filter Item...", ref _changedItemFilter, 128);
+        LowerString.InputWithHint("##changedItemsFilter", "按项目筛选...", ref _changedItemFilter, 128);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(varWidth);
-        LowerString.InputWithHint("##changedItemsModFilter", "Filter Mods...", ref _changedItemModFilter, 128);
+        LowerString.InputWithHint("##changedItemsModFilter", "按模组筛选...", ref _changedItemModFilter, 128);
         return varWidth;
     }
 

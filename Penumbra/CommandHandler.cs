@@ -51,7 +51,7 @@ public class CommandHandler : IDisposable
                 _commandManager.RemoveHandler(CommandName);
             _commandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Without arguments, toggles the main window. Use /penumbra help to get further command help.",
+                HelpMessage = "不带参数开关主窗口。 在聊天框输入'/penumbra help'查看命令行参数使用说明。",
                 ShowInHelp  = true,
             });
             Penumbra.Log.Information($"Registered {CommandName} with Dalamud.");
@@ -89,37 +89,37 @@ public class CommandHandler : IDisposable
 
     private bool PrintHelp(string arguments)
     {
-        if (!string.Equals(arguments, "help", StringComparison.OrdinalIgnoreCase) && arguments != "?")
-            _chat.Print(new SeStringBuilder().AddText("The given argument ").AddRed(arguments, true)
-                .AddText(" is not valid. Valid arguments are:").BuiltString);
+        if (!string.Equals(arguments, "help", StringComparison.OrdinalIgnoreCase) && arguments == "?")
+            _chat.Print(new SeStringBuilder().AddText("给出的参数 ").AddRed(arguments, true)
+                .AddText(" 无效.。有效的参数为：").BuiltString);
         else
-            _chat.Print("Valid arguments for /penumbra are:");
+            _chat.Print("/penumbra'命令的有效参数为：");
 
         _chat.Print(new SeStringBuilder().AddCommand("window",
-                "Toggle the Penumbra main config window. Can be used with [on|off] to force specific state. Also used when no argument is provided.")
+                "开关Penumbra的主设置窗口。可与[on|off]一起使用以强制维持特定状态。未提供参数时则切换状态。")
             .BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("enable", "Enable modding and force a redraw of all game objects if it was previously disabled.").BuiltString);
+            .AddCommand("enable", "启用模组并强制重绘所有游戏对象（如果以前取消勾选了'启用模组'）。").BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("disable", "Disable modding and force a redraw of all game objects if it was previously enabled.").BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("toggle", "Toggle modding and force a redraw of all game objects.")
+            .AddCommand("disable", "禁用模组并强制重绘所有游戏对象（如果以前勾选了'启用模组'）。").BuiltString);
+        _chat.Print(new SeStringBuilder().AddCommand("toggle", "切换启用模组的状态，并强制重绘所有游戏对象。")
             .BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("reload", "Rediscover the mod directory and reload all mods.").BuiltString);
+        _chat.Print(new SeStringBuilder().AddCommand("reload", "重新搜寻模组目录并加载所有模组。").BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("redraw", "Redraw all game objects. Specify a placeholder or a name to redraw specific objects.").BuiltString);
+            .AddCommand("redraw", "重绘所有游戏对象。可以指定一个名称重绘特定对象。").BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("lockui", "Toggle the locked state of the main Penumbra window. Can be used with [on|off] to force specific state.")
+            .AddCommand("lockui", "切换Penumbra主窗口的锁定状态。可与[on|off]一起使用以强制维持特定状态。")
             .BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("size", "Reset the minimum config window size to its default values.").BuiltString);
+        _chat.Print(new SeStringBuilder().AddCommand("尺寸", "将配置窗口的最小尺寸重设为默认值。").BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("debug", "Toggle debug mode for Penumbra. Can be used with [on|off] to force specific state.").BuiltString);
+            .AddCommand("debug", "切换Penumbra的调试模式。可与[on|off]一起使用以强制维持特定状态。").BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("collection", "Change your active collection setup. Use without further parameters for more detailed help.")
+            .AddCommand("collection", "更改激活合集的设置，不加参数获取此命令的详细说明。")
             .BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("mod", "Change a specific mods settings. Use without further parameters for more detailed help.").BuiltString);
+            .AddCommand("mod", "更改特定模组的设置，不加参数获取此命令的详细说明。").BuiltString);
         _chat.Print(new SeStringBuilder()
-            .AddCommand("bulktag", "Change multiple mods settings based on their tags. Use without further parameters for more detailed help.")
+            .AddCommand("bulktag", "根据标签来修改多个模组的设置，不加参数获取此命令的详细说明。")
             .BuiltString);
         return true;
     }
@@ -137,7 +137,7 @@ public class CommandHandler : IDisposable
     private bool Reload(string _)
     {
         _modManager.DiscoverMods();
-        Print($"Reloaded Penumbra mods. You have {_modManager.Count} mods.");
+        Print($"重新加载了Penumbra模组. 你有 {_modManager.Count} 个模组。");
         return true;
     }
 
@@ -157,7 +157,7 @@ public class CommandHandler : IDisposable
         if (value == _config.DebugMode)
             return false;
 
-        Print(value ? "Debug mode enabled." : "Debug mode disabled.");
+        Print(value ? "调试模式已启用。" : "调试模式已禁用。" );
 
         _config.DebugMode = value;
         _config.Save();
@@ -171,14 +171,14 @@ public class CommandHandler : IDisposable
         if (value == _config.EnableMods)
         {
             Print(value
-                ? "Your mods are already enabled. To disable your mods, please run the following command instead: /penumbra disable"
-                : "Your mods are already disabled. To enable your mods, please run the following command instead: /penumbra enable");
+                ? "你的模组已经启用。要禁用模组，请使用此命令：/penumbra disable"
+                : "你的模组已经禁用。要启用模组，请使用此命令：/penumbra enable" );
             return false;
         }
 
         Print(value
-            ? "Your mods have been enabled."
-            : "Your mods have been disabled.");
+            ? "你的模组已启用。"
+            : "你的模组已禁用。" );
         return _penumbra.SetEnabled(value);
     }
 

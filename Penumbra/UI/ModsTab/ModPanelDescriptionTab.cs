@@ -1,4 +1,4 @@
-using Dalamud.Interface.Utility;
+﻿using Dalamud.Interface.Utility;
 using ImGuiNET;
 using OtterGui.Raii;
 using OtterGui;
@@ -23,7 +23,7 @@ public class ModPanelDescriptionTab : ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "Description"u8;
+        => "模组描述"u8;
 
     public void DrawContent()
     {
@@ -34,16 +34,16 @@ public class ModPanelDescriptionTab : ITab
         ImGui.Dummy(ImGuiHelpers.ScaledVector2(2));
 
         ImGui.Dummy(ImGuiHelpers.ScaledVector2(2));
-        var tagIdx = _localTags.Draw("Local Tags: ",
-            "Custom tags you can set personally that will not be exported to the mod data but only set for you.\n"
-          + "If the mod already contains a local tag in its own tags, the local tag will be ignored.", _selector.Selected!.LocalTags,
+        var tagIdx = _localTags.Draw( "本地标签：",
+            "个人设置的自定义标签，不会导出到模组。\n"
+          + "如果模组已经有与本地标签相同的标签，此本地标签会被忽略。", _selector.Selected!.LocalTags,
             out var editedTag);
         _tutorial.OpenTutorial(BasicTutorialSteps.Tags);
         if (tagIdx >= 0)
             _modManager.DataEditor.ChangeLocalTag(_selector.Selected!, tagIdx, editedTag);
 
         if (_selector.Selected!.ModTags.Count > 0)
-            _modTags.Draw("Mod Tags: ", "Tags assigned by the mod creator and saved with the mod data. To edit these, look at Edit Mod.",
+            _modTags.Draw( "模组标签：", "由模组作者创建的标签，随模组数据保存，通过编辑选项卡来修改。",
                 _selector.Selected!.ModTags, out var _, false,
                 ImGui.CalcTextSize("Local ").X - ImGui.CalcTextSize("Mod ").X);
 

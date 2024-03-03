@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
@@ -14,7 +14,7 @@ public class ModPanelChangedItemsTab : ITab
     private ChangedItemDrawer.ChangedItemIcon _filter = Enum.GetValues<ChangedItemDrawer.ChangedItemIcon>().Aggregate((a, b) => a | b);
 
     public ReadOnlySpan<byte> Label
-        => "Changed Items"u8;
+        => "更改项目"u8;
 
     public ModPanelChangedItemsTab(ModFileSystemSelector selector, ChangedItemDrawer drawer)
     {

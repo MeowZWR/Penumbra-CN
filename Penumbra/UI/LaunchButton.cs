@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -50,7 +50,7 @@ public class LaunchButton : IDisposable
         {
             _icon = _uiBuilder.LoadImage(_fileName);
             if (_icon != null)
-                _entry = _title.AddEntry("Manage Penumbra", _icon, OnTriggered);
+                _entry = _title.AddEntry("管理Penumbra", _icon, OnTriggered);
 
             _uiBuilder.Draw -= CreateEntry;
         }

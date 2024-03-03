@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using OtterGui;
@@ -38,7 +38,7 @@ public partial class ModEditWindow
         if (disabled)
             return;
 
-        if (ImGui.Button("Reload live preview"))
+        if (ImGui.Button("重载加载实时预览"))
             tab.BindToMaterialInstances();
 
         if (tab.MaterialPreviewers.Count != 0 || tab.ColorTablePreviewers.Count != 0)
@@ -47,7 +47,7 @@ public partial class ModEditWindow
         ImGui.SameLine();
         using var c = ImRaii.PushColor(ImGuiCol.Text, Colors.RegexWarningBorder);
         ImGui.TextUnformatted(
-            "The current material has not been found on your character. Please check the Import from Screen tab for more information.");
+            "在你的角色上找不到当前材质。有关详细信息，请查看“从画面导入”选项卡。" );
     }
 
     private static bool DrawMaterialTextureChange(MtrlTab tab, bool disabled)
@@ -56,7 +56,7 @@ public partial class ModEditWindow
             return false;
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (!ImGui.CollapsingHeader("Textures and Samplers", ImGuiTreeNodeFlags.DefaultOpen))
+        if (!ImGui.CollapsingHeader("纹理和采样器", ImGuiTreeNodeFlags.DefaultOpen))
             return false;
 
         var       frameHeight = ImGui.GetFrameHeight();
@@ -126,7 +126,7 @@ public partial class ModEditWindow
         using var dis = ImRaii.Disabled(disabled);
 
         var tmp = (tab.Mtrl.ShaderPackage.Flags & transparencyBit) != 0;
-        if (ImGui.Checkbox("Enable Transparency", ref tmp))
+        if( ImGui.Checkbox( "启用透明度", ref tmp ) )
         {
             tab.Mtrl.ShaderPackage.Flags =
                 tmp ? tab.Mtrl.ShaderPackage.Flags | transparencyBit : tab.Mtrl.ShaderPackage.Flags & ~transparencyBit;
@@ -136,7 +136,7 @@ public partial class ModEditWindow
 
         ImGui.SameLine(200 * UiHelpers.Scale + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X);
         tmp = (tab.Mtrl.ShaderPackage.Flags & backfaceBit) != 0;
-        if (ImGui.Checkbox("Hide Backfaces", ref tmp))
+        if( ImGui.Checkbox( "隐藏背面", ref tmp ) )
         {
             tab.Mtrl.ShaderPackage.Flags = tmp ? tab.Mtrl.ShaderPackage.Flags | backfaceBit : tab.Mtrl.ShaderPackage.Flags & ~backfaceBit;
             ret                          = true;
@@ -148,7 +148,7 @@ public partial class ModEditWindow
 
     private static void DrawOtherMaterialDetails(MtrlFile file, bool _)
     {
-        if (!ImGui.CollapsingHeader("Further Content"))
+        if( !ImGui.CollapsingHeader( "更多信息" ) )
             return;
 
         using (var sets = ImRaii.TreeNode("UV Sets", ImGuiTreeNodeFlags.DefaultOpen))
@@ -178,7 +178,7 @@ public partial class ModEditWindow
         if (_editor.Files.Mdl.Count == 0)
             return;
 
-        using var tab = ImRaii.TabItem("Material Reassignment");
+        using var tab = ImRaii.TabItem( "材质指定" );
         if (!tab)
             return;
 
@@ -200,12 +200,12 @@ public partial class ModEditWindow
             using var id = ImRaii.PushId(idx);
             ImGui.TableNextColumn();
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Save.ToIconString(), iconSize,
-                    "Save the changed mdl file.\nUse at own risk!", !info.Changed, true))
+                   "保存修改过的mdl文件。\n请注意此操作有风险！", !info.Changed, true ) )
                 info.Save(_editor.Compactor);
 
             ImGui.TableNextColumn();
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Recycle.ToIconString(), iconSize,
-                    "Restore current changes to default.", !info.Changed, true))
+                   "撤销当前修改到默认状态。", !info.Changed, true ) )
                 info.Restore();
 
             ImGui.TableNextColumn();

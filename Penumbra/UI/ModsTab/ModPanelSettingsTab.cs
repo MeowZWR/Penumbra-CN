@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui.Raii;
 using OtterGui;
 using OtterGui.Widgets;
@@ -40,7 +40,7 @@ public class ModPanelSettingsTab : ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "Settings"u8;
+        => "模组设置"u8;
 
     public void DrawHeader()
         => _tutorial.OpenTutorial(BasicTutorialSteps.ModOptions);
@@ -107,20 +107,22 @@ public class ModPanelSettingsTab : ITab
         if (!_inherited)
             return;
 
-        using var color = ImRaii.PushColor(ImGuiCol.Button, Colors.PressEnterWarningBg);
-        var       width = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-        if (ImGui.Button($"These settings are inherited from {_collection.Name}.", width))
+        //using var color = ImRaii.PushColor(ImGuiCol.Button, Colors.PressEnterWarningBg);
+        var InheritanceBorderColor = ImGui.GetColorU32( ImGuiCol.Border );//不喜欢红色，常见现象没必要这么刺眼。
+        using var color = ImRaii.PushColor( ImGuiCol.Border, InheritanceBorderColor );
+        var width = new Vector2( ImGui.GetContentRegionAvail().X, 0 );
+        if (ImGui.Button($"此模组设置继承自'{_collection.Name}'合集。", width))
             _collectionManager.Editor.SetModInheritance(_collectionManager.Active.Current, _selector.Selected!, false);
 
-        ImGuiUtil.HoverTooltip("You can click this button to copy the current settings to the current selection.\n"
-          + "You can also just change any setting, which will copy the settings with the single setting changed to the current selection.");
+        ImGuiUtil.HoverTooltip( "你可以点击这个按钮将当前设置独立到此合集。\n"
+          + "你也可以在下面随意修改设置，修改后此模组的设置也会独立到此合集。" );
     }
 
     /// <summary> Draw a checkbox for the enabled status of the mod. </summary>
     private void DrawEnabledInput()
     {
         var enabled = _settings.Enabled;
-        if (!ImGui.Checkbox("Enabled", ref enabled))
+        if (!ImGui.Checkbox("启用", ref enabled))
             return;
 
         _modManager.SetKnown(_selector.Selected!);
@@ -147,8 +149,8 @@ public class ModPanelSettingsTab : ITab
             _currentPriority = null;
         }
 
-        ImGuiUtil.LabeledHelpMarker("Priority", "Mods with a higher number here take precedence before Mods with a lower number.\n"
-          + "That means, if Mod A should overwrite changes from Mod B, Mod A should have a higher priority number than Mod B.");
+        ImGuiUtil.LabeledHelpMarker( "优先级", "优先级更高的模组文件将优先使用。\n"
+          + "如果要用模组A覆盖模组B，则模组A的优先级应高于模组B。" );
     }
 
     /// <summary>
@@ -157,7 +159,7 @@ public class ModPanelSettingsTab : ITab
     /// </summary>
     private void DrawRemoveSettings()
     {
-        const string text = "Inherit Settings";
+        const string text = "继承设置";
         if (_inherited || _empty)
             return;
 
@@ -166,8 +168,8 @@ public class ModPanelSettingsTab : ITab
         if (ImGui.Button(text))
             _collectionManager.Editor.SetModInheritance(_collectionManager.Active.Current, _selector.Selected!, true);
 
-        ImGuiUtil.HoverTooltip("Remove current settings from this collection so that it can inherit them.\n"
-          + "If no inherited collection has settings for this mod, it will be disabled.");
+        ImGuiUtil.HoverTooltip( "在此合集中移除当前模组的设置，以便它可以从其他合集继承设置。\n"
+          + "在继承的合集中如果没有设置这个模组，此模组将被禁用。" );
     }
 
     /// <summary>
@@ -244,8 +246,8 @@ public class ModPanelSettingsTab : ITab
         {
             var collapseId     = ImGui.GetID("Collapse");
             var shown          = ImGui.GetStateStorage().GetBool(collapseId, true);
-            var buttonTextShow = $"Show {group.Count} Options";
-            var buttonTextHide = $"Hide {group.Count} Options";
+            var buttonTextShow = $"显示 {group.Count} 个选项";
+            var buttonTextHide = $"隐藏 {group.Count} 个选项";
             var buttonWidth = Math.Max(ImGui.CalcTextSize(buttonTextShow).X, ImGui.CalcTextSize(buttonTextHide).X)
               + 2 * ImGui.GetStyle().FramePadding.X;
             minWidth = Math.Max(buttonWidth, minWidth);
@@ -327,13 +329,13 @@ public class ModPanelSettingsTab : ITab
 
         ImGui.TextUnformatted(group.Name);
         ImGui.Separator();
-        if (ImGui.Selectable("Enable All"))
+        if (ImGui.Selectable("启用全部"))
         {
             flags = group.Count == 32 ? uint.MaxValue : (1u << group.Count) - 1u;
             _collectionManager.Editor.SetModSetting(_collectionManager.Active.Current, _selector.Selected!, groupIdx, flags);
         }
 
-        if (ImGui.Selectable("Disable All"))
+        if (ImGui.Selectable("禁用全部"))
             _collectionManager.Editor.SetModSetting(_collectionManager.Active.Current, _selector.Selected!, groupIdx, 0);
     }
 }

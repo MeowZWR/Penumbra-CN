@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui.Raii;
 using OtterGui;
 using Penumbra.Collections;
@@ -47,7 +47,7 @@ public class CollectionSelectHeader
         _tutorial.OpenTutorial(BasicTutorialSteps.CollectionSelectors);
 
         if (!_activeCollections.CurrentCollectionInUse)
-            ImGuiUtil.DrawTextButton("The currently selected collection is not used in any way.", -Vector2.UnitX, Colors.PressEnterWarningBg);
+            ImGuiUtil.DrawTextButton("当前选中的合集未在任何地方使用。", -Vector2.UnitX, Colors.PressEnterWarningBg);
     }
 
     private enum CollectionState
@@ -75,7 +75,7 @@ public class CollectionSelectHeader
         var collection = _activeCollections.Default;
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => (collection, "None", "The base collection is configured to use no mods.", true),
+            CollectionState.Empty => (collection, "无", "基础合集已被配置为无mod。", true),
             CollectionState.Selected => (collection, collection.Name,
                 "The configured base collection is already selected as the current collection.", true),
             CollectionState.Available => (collection, collection.Name,
@@ -117,8 +117,8 @@ public class CollectionSelectHeader
         var collection = _selector.Selected == null ? null : _selector.SelectedSettingCollection;
         return CheckCollection(collection, true) switch
         {
-            CollectionState.Unavailable => (null, "Not Inherited",
-                "The settings of the selected mod are not inherited from another collection.", true),
+            CollectionState.Unavailable => (null, "未继承",
+                "选中的模组的设置未继承自其他合集。", true),
             CollectionState.Available => (collection, collection!.Name,
                 $"Select the collection {collection!.Name} from which the selected mod inherits its settings as the current collection.",
                 false),

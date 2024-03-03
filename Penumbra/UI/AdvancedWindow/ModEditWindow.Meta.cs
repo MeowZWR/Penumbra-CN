@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -16,40 +16,40 @@ namespace Penumbra.UI.AdvancedWindow;
 public partial class ModEditWindow
 {
     private const string ModelSetIdTooltip =
-        "Model Set ID - You can usually find this as the 'e####' part of an item path.\nThis should generally not be left <= 1 unless you explicitly want that.";
+        "模型ID - 通常可以在物品路径部分找到（比如在'文件重定向'或'材质指定'里，装备是'e####'，武器是'w####'）。\n当然也可以借助Anamnesis或Textools等工具来获取。\n这个ID一般不应该保持为默认值'1'(<= 1)，除非你明确需要这个值。";
 
     private const string PrimaryIdTooltip =
-        "Primary ID - You can usually find this as the 'x####' part of an item path.\nThis should generally not be left <= 1 unless you explicitly want that.";
+        "主ID - 通常可以在物品路径部分找到（比如'x####'）。\n这个ID一般不应该保持为默认值'1'(<= 1)，除非你明确需要这个值。";
 
-    private const string ModelSetIdTooltipShort = "Model Set ID";
-    private const string EquipSlotTooltip       = "Equip Slot";
-    private const string ModelRaceTooltip       = "Model Race";
-    private const string GenderTooltip          = "Gender";
-    private const string ObjectTypeTooltip      = "Object Type";
-    private const string SecondaryIdTooltip     = "Secondary ID";
-    private const string PrimaryIDTooltip       = "Primary ID";
-    private const string VariantIdTooltip       = "Variant ID";
-    private const string EstTypeTooltip         = "EST Type";
-    private const string RacialTribeTooltip     = "Racial Tribe";
-    private const string ScalingTypeTooltip     = "Scaling Type";
+    private const string ModelSetIdTooltipShort = "模型ID";
+    private const string EquipSlotTooltip       = "装备槽";
+    private const string ModelRaceTooltip       = "模型种族";
+    private const string GenderTooltip          = "性别";
+    private const string ObjectTypeTooltip      = "对象类型";
+    private const string SecondaryIdTooltip     = "次要ID";
+    private const string PrimaryIDTooltip       = "主ID";
+    private const string VariantIdTooltip       = "变量/变体ID";
+    private const string EstTypeTooltip         = "EST类型";
+    private const string RacialTribeTooltip     = "种族";
+    private const string ScalingTypeTooltip     = "缩放类型";
 
     private void DrawMetaTab()
     {
-        using var tab = ImRaii.TabItem("Meta Manipulations");
+        using var tab = ImRaii.TabItem( "元数据操作" );
         if (!tab)
             return;
 
         DrawOptionSelectHeader();
 
         var setsEqual = !_editor.MetaEditor.Changes;
-        var tt        = setsEqual ? "No changes staged." : "Apply the currently staged changes to the option.";
+        var tt        = setsEqual ? "没有进行任何更改。" : "应用当前暂存的更改。";
         ImGui.NewLine();
-        if (ImGuiUtil.DrawDisabledButton("Apply Changes", Vector2.Zero, tt, setsEqual))
+        if( ImGuiUtil.DrawDisabledButton( "应用更改", Vector2.Zero, tt, setsEqual ) )
             _editor.MetaEditor.Apply(_editor.Mod!, _editor.GroupIdx, _editor.OptionIdx);
 
         ImGui.SameLine();
-        tt = setsEqual ? "No changes staged." : "Revert all currently staged changes.";
-        if (ImGuiUtil.DrawDisabledButton("Revert Changes", Vector2.Zero, tt, setsEqual))
+        tt = setsEqual ? "没有进行任何更改。" : "撤销当前进行的所有更改。";
+        if( ImGuiUtil.DrawDisabledButton( "撤销更改", Vector2.Zero, tt, setsEqual ) )
             _editor.MetaEditor.Load(_editor.Mod!, _editor.Option!);
 
         ImGui.SameLine();
@@ -57,25 +57,25 @@ public partial class ModEditWindow
         ImGui.SameLine();
         SetFromClipboardButton();
         ImGui.SameLine();
-        CopyToClipboardButton("Copy all current manipulations to clipboard.", _iconSize, _editor.MetaEditor.Recombine());
+        CopyToClipboardButton("将当前的所有操作复制到剪贴板。", _iconSize, _editor.MetaEditor.Recombine());
         ImGui.SameLine();
-        if (ImGui.Button("Write as TexTools Files"))
+        if( ImGui.Button( "写入为TexTools文件" ) )
             _metaFileManager.WriteAllTexToolsMeta(Mod!);
 
         using var child = ImRaii.Child("##meta", -Vector2.One, true);
         if (!child)
             return;
 
-        DrawEditHeader(_editor.MetaEditor.Eqp, "Equipment Parameter Edits (EQP)###EQP", 5, EqpRow.Draw, EqpRow.DrawNew,
+        DrawEditHeader(_editor.MetaEditor.Eqp, "装备参数设置(设置可见性)(EQP)###EQP", 5, EqpRow.Draw, EqpRow.DrawNew,
             _editor.MetaEditor.OtherEqpCount);
-        DrawEditHeader(_editor.MetaEditor.Eqdp, "Racial Model Edits (EQDP)###EQDP", 7, EqdpRow.Draw, EqdpRow.DrawNew,
+        DrawEditHeader(_editor.MetaEditor.Eqdp, "种族模型编辑(EQDP)###EQDP", 7, EqdpRow.Draw, EqdpRow.DrawNew,
             _editor.MetaEditor.OtherEqdpCount);
-        DrawEditHeader(_editor.MetaEditor.Imc, "Variant Edits (IMC)###IMC", 10, ImcRow.Draw, ImcRow.DrawNew, _editor.MetaEditor.OtherImcCount);
-        DrawEditHeader(_editor.MetaEditor.Est, "Extra Skeleton Parameters (EST)###EST", 7, EstRow.Draw, EstRow.DrawNew,
+        DrawEditHeader(_editor.MetaEditor.Imc, "变体(变量)设置(IMC)###IMC", 10, ImcRow.Draw, ImcRow.DrawNew, _editor.MetaEditor.OtherImcCount);
+        DrawEditHeader(_editor.MetaEditor.Est, "额外骨骼参数(EST)###EST", 7, EstRow.Draw, EstRow.DrawNew,
             _editor.MetaEditor.OtherEstCount);
-        DrawEditHeader(_editor.MetaEditor.Gmp, "Visor/Gimmick Edits (GMP)###GMP", 7, GmpRow.Draw, GmpRow.DrawNew,
+        DrawEditHeader(_editor.MetaEditor.Gmp, "面罩/面具(可调整头部装备)编辑(GMP)###GMP", 7, GmpRow.Draw, GmpRow.DrawNew,
             _editor.MetaEditor.OtherGmpCount);
-        DrawEditHeader(_editor.MetaEditor.Rsp, "Racial Scaling Edits (RSP)###RSP", 5, RspRow.Draw, RspRow.DrawNew,
+        DrawEditHeader(_editor.MetaEditor.Rsp, "种族缩放编辑(全局修改)(RSP)###RSP", 5, RspRow.Draw, RspRow.DrawNew,
             _editor.MetaEditor.OtherRspCount);
     }
 
@@ -92,7 +92,7 @@ public partial class ModEditWindow
         var newPos = ImGui.GetCursorPos();
         if (otherCount > 0)
         {
-            var text = $"{otherCount} Edits in other Options";
+            var text = $"在其他选项中有 {otherCount} 个修改";
             var size = ImGui.CalcTextSize(text).X;
             ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - size, oldPos + ImGui.GetStyle().FramePadding.Y));
             ImGuiUtil.TextColored(ColorId.RedundantAssignment.Value() | 0xFF000000, text);
@@ -128,11 +128,11 @@ public partial class ModEditWindow
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
-            CopyToClipboardButton("Copy all current EQP manipulations to clipboard.", iconSize,
+            CopyToClipboardButton( "将所有 EQP 操作复制到剪贴板。", iconSize,
                 editor.MetaEditor.Eqp.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
             var canAdd       = editor.MetaEditor.CanAdd(_new);
-            var tt           = canAdd ? "Stage this edit." : "This entry is already edited.";
+            var tt           = canAdd ? "进行此条目的编辑。" : "这个条目已经在编辑了。";
             var defaultEntry = ExpandedEqpFile.GetDefault(metaFileManager, _new.SetId);
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
                 editor.MetaEditor.Add(_new.Copy(defaultEntry));
@@ -212,14 +212,14 @@ public partial class ModEditWindow
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
-            CopyToClipboardButton("Copy all current EQDP manipulations to clipboard.", iconSize,
+            CopyToClipboardButton( "将当前所有 EQDP 操作复制到剪贴板。", iconSize,
                 editor.MetaEditor.Eqdp.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
             var raceCode      = Names.CombinedRace(_new.Gender, _new.Race);
             var validRaceCode = CharacterUtilityData.EqdpIdx(raceCode, false) >= 0;
             var canAdd        = validRaceCode && editor.MetaEditor.CanAdd(_new);
-            var tt = canAdd   ? "Stage this edit." :
-                validRaceCode ? "This entry is already edited." : "This combination of race and gender can not be used.";
+            var tt = canAdd   ? "进行此项编辑。" :
+                validRaceCode ? "此项已经编辑过了。" : "这个种族不能和这个性别组合使用。";
             var defaultEntry = validRaceCode
                 ? ExpandedEqdpFile.GetDefault(metaFileManager, Names.CombinedRace(_new.Gender, _new.Race), _new.Slot.IsAccessory(), _new.SetId)
                 : 0;
@@ -271,9 +271,9 @@ public partial class ModEditWindow
             using var disabled = ImRaii.Disabled();
             ImGui.TableNextColumn();
             var (bit1, bit2) = defaultEntry.ToBits(_new.Slot);
-            Checkmark("Material##eqdpCheck1", string.Empty, bit1, bit1, out _);
+            Checkmark( "材质##eqdpCheck1", string.Empty, bit1, bit1, out _ );
             ImGui.SameLine();
-            Checkmark("Model##eqdpCheck2", string.Empty, bit2, bit2, out _);
+            Checkmark( "模型##eqdpCheck2", string.Empty, bit2, bit2, out _ );
         }
 
         public static void Draw(MetaFileManager metaFileManager, EqdpManipulation meta, ModEditor editor, Vector2 iconSize)
@@ -304,11 +304,11 @@ public partial class ModEditWindow
             var (defaultBit1, defaultBit2) = defaultEntry.ToBits(meta.Slot);
             var (bit1, bit2)               = meta.Entry.ToBits(meta.Slot);
             ImGui.TableNextColumn();
-            if (Checkmark("Material##eqdpCheck1", string.Empty, bit1, defaultBit1, out var newBit1))
+            if( Checkmark( "材质##eqdpCheck1", string.Empty, bit1, defaultBit1, out var newBit1 ) )
                 editor.MetaEditor.Change(meta.Copy(Eqdp.FromSlotAndBits(meta.Slot, newBit1, bit2)));
 
             ImGui.SameLine();
-            if (Checkmark("Model##eqdpCheck2", string.Empty, bit2, defaultBit2, out var newBit2))
+            if( Checkmark( "模型##eqdpCheck2", string.Empty, bit2, defaultBit2, out var newBit2 ) )
                 editor.MetaEditor.Change(meta.Copy(Eqdp.FromSlotAndBits(meta.Slot, bit1, newBit2)));
         }
     }
@@ -339,12 +339,12 @@ public partial class ModEditWindow
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
-            CopyToClipboardButton("Copy all current IMC manipulations to clipboard.", iconSize,
+            CopyToClipboardButton( "将当前所有IMC操作复制到剪贴板。", iconSize,
                 editor.MetaEditor.Imc.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
             var defaultEntry = GetDefault(metaFileManager, _new);
             var canAdd = defaultEntry != null && editor.MetaEditor.CanAdd(_new);
-            var tt = canAdd ? "Stage this edit." : defaultEntry == null ? "This IMC file does not exist." : "This entry is already edited.";
+            var tt           = canAdd ? "进行此项编辑。" : defaultEntry == null ? "此IMC文件不存在。" : "此选项已经修改过了。";
             defaultEntry ??= new ImcEntry();
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
                 editor.MetaEditor.Add(_new.Copy(defaultEntry.Value));
@@ -438,19 +438,19 @@ public partial class ModEditWindow
             // Values
             using var disabled = ImRaii.Disabled();
             ImGui.TableNextColumn();
-            IntDragInput("##imcMaterialId", "Material ID", SmallIdWidth, defaultEntry.Value.MaterialId, defaultEntry.Value.MaterialId, out _,
+            IntDragInput( "##imcMaterialId", "材质集ID", SmallIdWidth, defaultEntry.Value.MaterialId, defaultEntry.Value.MaterialId, out _,
                 1,                          byte.MaxValue, 0f);
             ImGui.SameLine();
-            IntDragInput("##imcMaterialAnimId",         "Material Animation ID", SmallIdWidth, defaultEntry.Value.MaterialAnimationId,
+            IntDragInput( "##imcMaterialAnimId", "材质动画ID", SmallIdWidth, defaultEntry.Value.MaterialAnimationId,
                 defaultEntry.Value.MaterialAnimationId, out _,                   0,            byte.MaxValue, 0.01f);
             ImGui.TableNextColumn();
-            IntDragInput("##imcDecalId", "Decal ID", SmallIdWidth, defaultEntry.Value.DecalId, defaultEntry.Value.DecalId, out _, 0,
+            IntDragInput( "##imcDecalId", "贴花ID", SmallIdWidth, defaultEntry.Value.DecalId, defaultEntry.Value.DecalId, out _, 0,
                 byte.MaxValue,           0f);
             ImGui.SameLine();
-            IntDragInput("##imcVfxId", "VFX ID", SmallIdWidth, defaultEntry.Value.VfxId, defaultEntry.Value.VfxId, out _, 0, byte.MaxValue,
+            IntDragInput( "##imcVfxId", "特效ID", SmallIdWidth, defaultEntry.Value.VfxId, defaultEntry.Value.VfxId, out _, 0, byte.MaxValue,
                 0f);
             ImGui.SameLine();
-            IntDragInput("##imcSoundId", "Sound ID", SmallIdWidth, defaultEntry.Value.SoundId, defaultEntry.Value.SoundId, out _, 0, 0b111111,
+            IntDragInput( "##imcSoundId", "音效ID", SmallIdWidth, defaultEntry.Value.SoundId, defaultEntry.Value.SoundId, out _, 0, 0b111111,
                 0f);
             ImGui.TableNextColumn();
             for (var i = 0; i < 10; ++i)
@@ -510,27 +510,27 @@ public partial class ModEditWindow
                 new Vector2(3 * UiHelpers.Scale, ImGui.GetStyle().ItemSpacing.Y));
             ImGui.TableNextColumn();
             var defaultEntry = GetDefault(metaFileManager, meta) ?? new ImcEntry();
-            if (IntDragInput("##imcMaterialId", $"Material ID\nDefault Value: {defaultEntry.MaterialId}", SmallIdWidth, meta.Entry.MaterialId,
+            if( IntDragInput( "##imcMaterialId", $"Material ID\n默认值： {defaultEntry.MaterialId}", SmallIdWidth, meta.Entry.MaterialId,
                     defaultEntry.MaterialId,    out var materialId,                                       1,            byte.MaxValue, 0.01f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { MaterialId = (byte)materialId }));
 
             ImGui.SameLine();
-            if (IntDragInput("##imcMaterialAnimId", $"Material Animation ID\nDefault Value: {defaultEntry.MaterialAnimationId}", SmallIdWidth,
+            if( IntDragInput( "##imcMaterialAnimId", $"Material Animation ID\n默认值： {defaultEntry.MaterialAnimationId}", SmallIdWidth,
                     meta.Entry.MaterialAnimationId, defaultEntry.MaterialAnimationId, out var materialAnimId, 0, byte.MaxValue, 0.01f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { MaterialAnimationId = (byte)materialAnimId }));
 
             ImGui.TableNextColumn();
-            if (IntDragInput("##imcDecalId", $"Decal ID\nDefault Value: {defaultEntry.DecalId}", SmallIdWidth, meta.Entry.DecalId,
+            if( IntDragInput( "##imcDecalId", $"Decal ID\n默认值： {defaultEntry.DecalId}", SmallIdWidth, meta.Entry.DecalId,
                     defaultEntry.DecalId,    out var decalId,                                    0,            byte.MaxValue, 0.01f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { DecalId = (byte)decalId }));
 
             ImGui.SameLine();
-            if (IntDragInput("##imcVfxId", $"VFX ID\nDefault Value: {defaultEntry.VfxId}", SmallIdWidth,  meta.Entry.VfxId, defaultEntry.VfxId,
+            if( IntDragInput( "##imcVfxId", $"VFX ID\n默认值： {defaultEntry.VfxId}", SmallIdWidth, meta.Entry.VfxId, defaultEntry.VfxId,
                     out var vfxId,         0,                                              byte.MaxValue, 0.01f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { VfxId = (byte)vfxId }));
 
             ImGui.SameLine();
-            if (IntDragInput("##imcSoundId", $"Sound ID\nDefault Value: {defaultEntry.SoundId}", SmallIdWidth, meta.Entry.SoundId,
+            if( IntDragInput( "##imcSoundId", $"Sound ID\n默认值： {defaultEntry.SoundId}", SmallIdWidth, meta.Entry.SoundId,
                     defaultEntry.SoundId,    out var soundId,                                    0,            0b111111, 0.01f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { SoundId = (byte)soundId }));
 
@@ -563,11 +563,11 @@ public partial class ModEditWindow
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
-            CopyToClipboardButton("Copy all current EST manipulations to clipboard.", iconSize,
+            CopyToClipboardButton( "将当前所有 EST 操作复制到剪贴板。", iconSize,
                 editor.MetaEditor.Est.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
             var canAdd       = editor.MetaEditor.CanAdd(_new);
-            var tt           = canAdd ? "Stage this edit." : "This entry is already edited.";
+            var tt           = canAdd ? "进行此项编辑" : "此项已经在编辑了。";
             var defaultEntry = EstFile.GetDefault(metaFileManager, _new.Slot, Names.CombinedRace(_new.Gender, _new.Race), _new.SetId);
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
                 editor.MetaEditor.Add(_new.Copy(defaultEntry));
@@ -612,7 +612,7 @@ public partial class ModEditWindow
             // Values
             using var disabled = ImRaii.Disabled();
             ImGui.TableNextColumn();
-            IntDragInput("##estSkeleton", "Skeleton Index", IdWidth, _new.Entry, defaultEntry, out _, 0, ushort.MaxValue, 0.05f);
+            IntDragInput( "##estSkeleton", "骨骼索引", IdWidth, _new.Entry, defaultEntry, out _, 0, ushort.MaxValue, 0.05f );
         }
 
         public static void Draw(MetaFileManager metaFileManager, EstManipulation meta, ModEditor editor, Vector2 iconSize)
@@ -640,7 +640,7 @@ public partial class ModEditWindow
             // Values
             var defaultEntry = EstFile.GetDefault(metaFileManager, meta.Slot, Names.CombinedRace(meta.Gender, meta.Race), meta.SetId);
             ImGui.TableNextColumn();
-            if (IntDragInput("##estSkeleton", $"Skeleton Index\nDefault Value: {defaultEntry}", IdWidth,         meta.Entry, defaultEntry,
+            if( IntDragInput( "##estSkeleton", $"骨骼索引\n默认值： {defaultEntry}", IdWidth, meta.Entry, defaultEntry,
                     out var entry,            0,                                                ushort.MaxValue, 0.05f))
                 editor.MetaEditor.Change(meta.Copy((ushort)entry));
         }
@@ -662,11 +662,11 @@ public partial class ModEditWindow
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
-            CopyToClipboardButton("Copy all current GMP manipulations to clipboard.", iconSize,
+            CopyToClipboardButton( "将当前所有GMP操作复制到剪贴板。", iconSize,
                 editor.MetaEditor.Gmp.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
             var canAdd       = editor.MetaEditor.CanAdd(_new);
-            var tt           = canAdd ? "Stage this edit." : "This entry is already edited.";
+            var tt           = canAdd ? "进行此项编辑。" : "此项已经在编辑了。";
             var defaultEntry = ExpandedGmpFile.GetDefault(metaFileManager, _new.SetId);
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
                 editor.MetaEditor.Add(_new.Copy(defaultEntry));
@@ -681,22 +681,22 @@ public partial class ModEditWindow
             // Values
             using var disabled = ImRaii.Disabled();
             ImGui.TableNextColumn();
-            Checkmark("##gmpEnabled", "Gimmick Enabled", defaultEntry.Enabled, defaultEntry.Enabled, out _);
+            Checkmark( "##gmpEnabled", "调整启用", defaultEntry.Enabled, defaultEntry.Enabled, out _ );
             ImGui.TableNextColumn();
-            Checkmark("##gmpAnimated", "Gimmick Animated", defaultEntry.Animated, defaultEntry.Animated, out _);
+            Checkmark( "##gmpAnimated", "调整动画(过渡/瞬间)", defaultEntry.Animated, defaultEntry.Animated, out _ );
             ImGui.TableNextColumn();
-            IntDragInput("##gmpRotationA", "Rotation A in Degrees", RotationWidth, defaultEntry.RotationA, defaultEntry.RotationA, out _, 0,
+            IntDragInput( "##gmpRotationA", "A方向旋转角度值", RotationWidth, defaultEntry.RotationA, defaultEntry.RotationA, out _, 0,
                 360,                       0f);
             ImGui.SameLine();
-            IntDragInput("##gmpRotationB", "Rotation B in Degrees", RotationWidth, defaultEntry.RotationB, defaultEntry.RotationB, out _, 0,
+            IntDragInput( "##gmpRotationB", "B方向旋转角度值", RotationWidth, defaultEntry.RotationB, defaultEntry.RotationB, out _, 0,
                 360,                       0f);
             ImGui.SameLine();
-            IntDragInput("##gmpRotationC", "Rotation C in Degrees", RotationWidth, defaultEntry.RotationC, defaultEntry.RotationC, out _, 0,
+            IntDragInput( "##gmpRotationC", "C方向旋转角度值", RotationWidth, defaultEntry.RotationC, defaultEntry.RotationC, out _, 0,
                 360,                       0f);
             ImGui.TableNextColumn();
-            IntDragInput("##gmpUnkA", "Animation Type A?", UnkWidth, defaultEntry.UnknownA, defaultEntry.UnknownA, out _, 0, 15, 0f);
+            IntDragInput( "##gmpUnkA", "动画类型 A?（但似乎是能发光的头部装备的发光强度）", UnkWidth, defaultEntry.UnknownA, defaultEntry.UnknownA, out _, 0, 15, 0f );
             ImGui.SameLine();
-            IntDragInput("##gmpUnkB", "Animation Type B?", UnkWidth, defaultEntry.UnknownB, defaultEntry.UnknownB, out _, 0, 15, 0f);
+            IntDragInput( "##gmpUnkB", "动画类型 B?", UnkWidth, defaultEntry.UnknownB, defaultEntry.UnknownB, out _, 0, 15, 0f );
         }
 
         public static void Draw(MetaFileManager metaFileManager, GmpManipulation meta, ModEditor editor, Vector2 iconSize)
@@ -712,35 +712,35 @@ public partial class ModEditWindow
             // Values
             var defaultEntry = ExpandedGmpFile.GetDefault(metaFileManager, meta.SetId);
             ImGui.TableNextColumn();
-            if (Checkmark("##gmpEnabled", "Gimmick Enabled", meta.Entry.Enabled, defaultEntry.Enabled, out var enabled))
+            if( Checkmark( "##gmpEnabled", "调整启用", meta.Entry.Enabled, defaultEntry.Enabled, out var enabled ) )
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { Enabled = enabled }));
 
             ImGui.TableNextColumn();
-            if (Checkmark("##gmpAnimated", "Gimmick Animated", meta.Entry.Animated, defaultEntry.Animated, out var animated))
+            if( Checkmark( "##gmpAnimated", "调整动画", meta.Entry.Animated, defaultEntry.Animated, out var animated ) )
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { Animated = animated }));
 
             ImGui.TableNextColumn();
-            if (IntDragInput("##gmpRotationA", $"Rotation A in Degrees\nDefault Value: {defaultEntry.RotationA}", RotationWidth,
+            if( IntDragInput( "##gmpRotationA", $"A方向旋转角度值\n默认值： {defaultEntry.RotationA}", RotationWidth,
                     meta.Entry.RotationA,      defaultEntry.RotationA, out var rotationA, 0, 360, 0.05f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { RotationA = (ushort)rotationA }));
 
             ImGui.SameLine();
-            if (IntDragInput("##gmpRotationB", $"Rotation B in Degrees\nDefault Value: {defaultEntry.RotationB}", RotationWidth,
+            if( IntDragInput( "##gmpRotationB", $"B方向旋转角度值\n默认值： {defaultEntry.RotationB}", RotationWidth,
                     meta.Entry.RotationB,      defaultEntry.RotationB, out var rotationB, 0, 360, 0.05f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { RotationB = (ushort)rotationB }));
 
             ImGui.SameLine();
-            if (IntDragInput("##gmpRotationC", $"Rotation C in Degrees\nDefault Value: {defaultEntry.RotationC}", RotationWidth,
+            if( IntDragInput( "##gmpRotationC", $"C方向旋转角度值\n默认值： {defaultEntry.RotationC}", RotationWidth,
                     meta.Entry.RotationC,      defaultEntry.RotationC, out var rotationC, 0, 360, 0.05f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { RotationC = (ushort)rotationC }));
 
             ImGui.TableNextColumn();
-            if (IntDragInput("##gmpUnkA",  $"Animation Type A?\nDefault Value: {defaultEntry.UnknownA}", UnkWidth, meta.Entry.UnknownA,
+            if( IntDragInput( "##gmpUnkA", $"动画类型A?\n默认值： {defaultEntry.UnknownA}", UnkWidth, meta.Entry.UnknownA,
                     defaultEntry.UnknownA, out var unkA,                                                 0,        15, 0.01f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { UnknownA = (byte)unkA }));
 
             ImGui.SameLine();
-            if (IntDragInput("##gmpUnkB",  $"Animation Type B?\nDefault Value: {defaultEntry.UnknownB}", UnkWidth, meta.Entry.UnknownB,
+            if( IntDragInput( "##gmpUnkB", $"动画类型B?\n默认值： {defaultEntry.UnknownB}", UnkWidth, meta.Entry.UnknownB,
                     defaultEntry.UnknownB, out var unkB,                                                 0,        15, 0.01f))
                 editor.MetaEditor.Change(meta.Copy(meta.Entry with { UnknownA = (byte)unkB }));
         }
@@ -756,11 +756,11 @@ public partial class ModEditWindow
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
-            CopyToClipboardButton("Copy all current RSP manipulations to clipboard.", iconSize,
+            CopyToClipboardButton( "复制所有RSP操作到剪贴板.", iconSize,
                 editor.MetaEditor.Rsp.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
             var canAdd       = editor.MetaEditor.CanAdd(_new);
-            var tt           = canAdd ? "Stage this edit." : "This entry is already edited.";
+            var tt           = canAdd ? "进行此项编辑。" : "此选项已经在编辑了。";
             var defaultEntry = CmpFile.GetDefault(metaFileManager, _new.SubRace, _new.Attribute);
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
                 editor.MetaEditor.Add(_new.Copy(defaultEntry));
@@ -873,7 +873,7 @@ public partial class ModEditWindow
 
     private void AddFromClipboardButton()
     {
-        if (ImGui.Button("Add from Clipboard"))
+        if( ImGui.Button( "添加剪贴板中的设置" ) )
         {
             var clipboard = ImGuiUtil.GetClipboardText();
 
@@ -884,12 +884,12 @@ public partial class ModEditWindow
         }
 
         ImGuiUtil.HoverTooltip(
-            "Try to add meta manipulations currently stored in the clipboard to the current manipulations.\nOverwrites already existing manipulations.");
+            "尝试将存储在剪贴板中的元数据操作添加到当前设置。\n会覆盖已存在的操作，不会移除此模组中做过的其他操作。" );
     }
 
     private void SetFromClipboardButton()
     {
-        if (ImGui.Button("Set from Clipboard"))
+        if( ImGui.Button( "应用剪贴板中的设置" ) )
         {
             var clipboard = ImGuiUtil.GetClipboardText();
             var version   = Functions.FromCompressedBase64<MetaManipulation[]>(clipboard, out var manips);
@@ -902,16 +902,16 @@ public partial class ModEditWindow
         }
 
         ImGuiUtil.HoverTooltip(
-            "Try to set the current meta manipulations to the set currently stored in the clipboard.\nRemoves all other manipulations.");
+            "尝试将剪贴板中存储的元数据操作应用到当前的设置中。\n会移除此模组中做过的其他元数据操作。" );
     }
 
     private static void DrawMetaButtons(MetaManipulation meta, ModEditor editor, Vector2 iconSize)
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("Copy this manipulation to clipboard.", iconSize, Array.Empty<MetaManipulation>().Append(meta));
+        CopyToClipboardButton( "将此操作复制到剪贴板。", iconSize, Array.Empty< MetaManipulation >().Append( meta ) );
 
         ImGui.TableNextColumn();
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), iconSize, "Delete this meta manipulation.", false, true))
+        if( ImGuiUtil.DrawDisabledButton( FontAwesomeIcon.Trash.ToIconString(), iconSize, "删除这个元数据操作。", false, true ) )
             editor.MetaEditor.Delete(meta);
     }
 }

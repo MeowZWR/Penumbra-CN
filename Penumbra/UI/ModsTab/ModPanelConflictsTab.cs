@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using OtterGui;
@@ -28,7 +28,7 @@ public class ModPanelConflictsTab : ITab
     private int? _currentPriority = null;
 
     public ReadOnlySpan<byte> Label
-        => "Conflicts"u8;
+        => "模组冲突"u8;
 
     public bool IsVisible
         => _collectionManager.Active.Current.Conflicts(_selector.Selected!).Count > 0;
@@ -54,9 +54,9 @@ public class ModPanelConflictsTab : ITab
         var       priorityRowWidth = ImGui.CalcTextSize("Priority").X + 20 * ImGuiHelpers.GlobalScale + 2 * buttonSize.X;
         var       priorityWidth    = priorityRowWidth - 2 * (buttonSize.X + spacing.X);
         using var style            = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
-        ImGui.TableSetupColumn("Conflicting Mod", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("Priority",        ImGuiTableColumnFlags.WidthFixed, priorityRowWidth);
-        ImGui.TableSetupColumn("Files",           ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Files").X + spacing.X);
+        ImGui.TableSetupColumn("冲突的模组", ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("优先级",        ImGuiTableColumnFlags.WidthFixed, priorityRowWidth);
+        ImGui.TableSetupColumn("文件",           ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Files").X + spacing.X);
 
         ImGui.TableSetupScrollFreeze(2, 2);
         ImGui.TableHeadersRow();
@@ -110,7 +110,7 @@ public class ModPanelConflictsTab : ITab
         if (conflict.Mod2 is Mod otherMod2)
         {
             if (hovered)
-                ImGui.SetTooltip("Click to jump to mod, Control + Right-Click to disable mod.");
+                ImGui.SetTooltip("点击跳转到此模组，CTRL+右键点击禁用此模组。");
             if (rightClicked && ImGui.GetIO().KeyCtrl)
                 _collectionManager.Editor.SetModState(_collectionManager.Active.Current, otherMod2, false);
         }
@@ -155,8 +155,8 @@ public class ModPanelConflictsTab : ITab
     private void DrawExpandButton(IMod mod, bool expanded, Vector2 buttonSize)
     {
         var (icon, tt) = expanded
-            ? (FontAwesomeIcon.CaretUp.ToIconString(), "Hide the conflicting files for this mod.")
-            : (FontAwesomeIcon.CaretDown.ToIconString(), "Show the conflicting files for this mod.");
+            ? (FontAwesomeIcon.CaretUp.ToIconString(), "隐藏此模组的冲突文件。")
+            : (FontAwesomeIcon.CaretDown.ToIconString(), "显示此模组的冲突文件。");
         if (ImGuiUtil.DrawDisabledButton(icon, buttonSize, tt, false, true))
         {
             if (expanded)
@@ -195,11 +195,11 @@ public class ModPanelConflictsTab : ITab
     private void DrawPriorityButtons(Mod? conflict, int conflictPriority, int selectedPriority, Vector2 buttonSize)
     {
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.SortNumericUpAlt.ToIconString(), buttonSize,
-                $"Set the priority of the currently selected mod to this mods priority plus one. ({selectedPriority} -> {conflictPriority + 1})", selectedPriority > conflictPriority, true))
+                $"将当前所选模组的优先级设置为此模组优先级加1。({selectedPriority} -> {conflictPriority + 1})", selectedPriority > conflictPriority, true))
             _collectionManager.Editor.SetModPriority(_collectionManager.Active.Current, _selector.Selected!, conflictPriority + 1);
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.SortNumericDownAlt.ToIconString(), buttonSize,
-                $"Set the priority of this mod to the currently selected mods priority minus one. ({conflictPriority} -> {selectedPriority - 1})",
+                $"将此模组的优先级设置为当前所选模组优先级减1。({conflictPriority} -> {selectedPriority - 1})",
                 selectedPriority > conflictPriority || conflict == null, true))
             _collectionManager.Editor.SetModPriority(_collectionManager.Active.Current, conflict!, selectedPriority - 1);
     }

@@ -1,4 +1,4 @@
-using Dalamud.Game.ClientState.Objects;
+﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
@@ -56,7 +56,7 @@ public sealed class CollectionsTab : IDisposable, ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "Collections"u8;
+        => "合集设置"u8;
 
     public void DrawContent()
     {
@@ -89,28 +89,28 @@ public sealed class CollectionsTab : IDisposable, ITab
 
         using var _     = ImRaii.Group();
         using var color = ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.TabActive), Mode is PanelMode.SimpleAssignment);
-        if (ImGui.Button("Simple Assignments", buttonSize))
+        if (ImGui.Button("简单分配", buttonSize))
             Mode = PanelMode.SimpleAssignment;
         color.Pop();
         _tutorial.OpenTutorial(BasicTutorialSteps.SimpleAssignments);
         ImGui.SameLine();
 
         color.Push(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.TabActive), Mode is PanelMode.IndividualAssignment);
-        if (ImGui.Button("Individual Assignments", buttonSize))
+        if (ImGui.Button("独立分配", buttonSize))
             Mode = PanelMode.IndividualAssignment;
         color.Pop();
         _tutorial.OpenTutorial(BasicTutorialSteps.IndividualAssignments);
         ImGui.SameLine();
 
         color.Push(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.TabActive), Mode is PanelMode.GroupAssignment);
-        if (ImGui.Button("Group Assignments", buttonSize))
+        if (ImGui.Button("组分配", buttonSize))
             Mode = PanelMode.GroupAssignment;
         color.Pop();
         _tutorial.OpenTutorial(BasicTutorialSteps.GroupAssignments);
         ImGui.SameLine();
 
         color.Push(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.TabActive), Mode is PanelMode.Details);
-        if (ImGui.Button("Collection Details", buttonSize))
+        if (ImGui.Button("合集详情", buttonSize))
             Mode = PanelMode.Details;
         color.Pop();
         _tutorial.OpenTutorial(BasicTutorialSteps.CollectionDetails);
@@ -127,7 +127,7 @@ public sealed class CollectionsTab : IDisposable, ITab
         _tutorial.OpenTutorial(BasicTutorialSteps.Incognito);
         color.Pop(2);
         if (hovered)
-            ImGui.SetTooltip(_selector.IncognitoMode ? "Toggle incognito mode off." : "Toggle incognito mode on.");
+            ImGui.SetTooltip(_selector.IncognitoMode ? "切换匿名模式为[关闭]" : "切换匿名模式为[开启]");
     }
 
     private void DrawPanel()

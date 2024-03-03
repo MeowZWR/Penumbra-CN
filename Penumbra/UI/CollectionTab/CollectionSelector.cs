@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.Collections;
@@ -52,8 +52,8 @@ public sealed class CollectionSelector : ItemSelector<ModCollection>, IDisposabl
 
     protected override string DeleteButtonTooltip()
         => _storage.DefaultNamed == Current
-            ? $"The selected collection {Name(Current)} can not be deleted."
-            : $"Delete the currently selected collection {(Current != null ? Name(Current) : string.Empty)}. Hold {_config.DeleteModModifier} to delete.";
+            ? $"选中的合集'{Name(Current)}'不能被删除。"
+            : $"要删除选中的合集'{(Current != null ? Name(Current) : string.Empty)}'， 按住'{_config.DeleteModModifier}'点击此按钮来删除。";
 
     protected override bool OnAdd(string name)
         => _storage.AddCollection(name, null);
@@ -84,7 +84,7 @@ public sealed class CollectionSelector : ItemSelector<ModCollection>, IDisposabl
         {
             _dragging = Items[idx];
             ImGui.SetDragDropPayload(PayloadString, nint.Zero, 0);
-            ImGui.TextUnformatted($"Assigning {Name(_dragging)} to...");
+            ImGui.TextUnformatted($"分配 {Name(_dragging)} 到...");
         }
 
         if (ret)

@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using OtterGui.Compression;
 using Penumbra.Import.Structs;
 using Penumbra.Mods.Editor;
@@ -83,7 +83,7 @@ public partial class TexToolsImporter : IDisposable
             _currentModDirectory = null;
             if (_token.IsCancellationRequested)
             {
-                ExtractedMods.Add((file, null, new TaskCanceledException("Task canceled by user.")));
+                ExtractedMods.Add( ( file, null, new TaskCanceledException( "任务被用户取消。" ) ) );
                 continue;
             }
 
@@ -124,7 +124,7 @@ public partial class TexToolsImporter : IDisposable
 
         var mpl = FindZipEntry(extractedModPack, "TTMPL.mpl");
         if (mpl == null)
-            throw new FileNotFoundException("ZIP does not contain a TTMPL.mpl file.");
+            throw new FileNotFoundException("压缩包未包含“TTMPL.mpl”文件.");
 
         var modRaw = GetStringFromZipEntry(mpl, Encoding.UTF8);
 
@@ -132,13 +132,13 @@ public partial class TexToolsImporter : IDisposable
         if (modRaw.Contains("\"TTMPVersion\":"))
         {
             if (modPackFile.Extension != ".ttmp2")
-                Penumbra.Log.Warning($"File {modPackFile.FullName} seems to be a V2 TTMP, but has the wrong extension.");
+                Penumbra.Log.Warning($"文件“{modPackFile.FullName}”似乎是V2版本的TTMP，但是后缀名不正确。");
 
             return ImportV2ModPack(modPackFile, extractedModPack, modRaw);
         }
 
         if (modPackFile.Extension != ".ttmp")
-            Penumbra.Log.Warning($"File {modPackFile.FullName} seems to be a V1 TTMP, but has the wrong extension.");
+            Penumbra.Log.Warning($"文件“{modPackFile.FullName}”似乎是V1版本的TTMP，但是后缀名不正确。");
 
         return ImportV1ModPack(modPackFile, extractedModPack, modRaw);
     }
@@ -174,7 +174,7 @@ public partial class TexToolsImporter : IDisposable
         // write shitty zip garbage to disk
         var entry = FindZipEntry(file, entryName);
         if (entry == null)
-            throw new FileNotFoundException($"ZIP does not contain a file named {entryName}.");
+            throw new FileNotFoundException($"ZIP压缩包未包含名为“{entryName}”的文件。");
 
         using var s = entry.OpenEntryStream();
 

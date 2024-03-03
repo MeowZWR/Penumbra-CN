@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
@@ -190,7 +190,7 @@ public class ChangedItemDrawer : IDisposable
             _communicator.ChangedItemHover.Invoke(Convert(data));
             group.Dispose();
             if (ImGui.GetItemRectSize() == Vector2.Zero)
-                ImGui.TextUnformatted("No actions available.");
+                ImGui.TextUnformatted("没有可用的操作。");
         }
     }
 
@@ -243,7 +243,7 @@ public class ChangedItemDrawer : IDisposable
 
             using var popup = ImRaii.ContextPopupItem(type.ToString());
             if (popup)
-                if (ImGui.MenuItem("Enable Only This"))
+                if (ImGui.MenuItem("仅显示此项"))
                 {
                     typeFilter = type;
                     ret        = true;
@@ -366,15 +366,15 @@ public class ChangedItemDrawer : IDisposable
             ChangedItemIcon.Ears          => EquipSlot.Ears.ToName(),
             ChangedItemIcon.Neck          => EquipSlot.Neck.ToName(),
             ChangedItemIcon.Wrists        => EquipSlot.Wrists.ToName(),
-            ChangedItemIcon.Finger        => "Ring",
-            ChangedItemIcon.Monster       => "Monster",
-            ChangedItemIcon.Demihuman     => "Demi-Human",
-            ChangedItemIcon.Customization => "Customization",
-            ChangedItemIcon.Action        => "Action",
-            ChangedItemIcon.Emote         => "Emote",
-            ChangedItemIcon.Mainhand      => "Weapon (Mainhand)",
-            ChangedItemIcon.Offhand       => "Weapon (Offhand)",
-            _                             => "Other",
+            ChangedItemIcon.Finger        => "戒指",
+            ChangedItemIcon.Monster       => "怪物",
+            ChangedItemIcon.Demihuman     => "蛮族",
+            ChangedItemIcon.Customization => "外貌",
+            ChangedItemIcon.Action        => "技能",
+            ChangedItemIcon.Emote         => "表情",
+            ChangedItemIcon.Mainhand      => "武器（主手）",
+            ChangedItemIcon.Offhand       => "武器（副手）",
+            _                             => "其他",
         };
 
     internal static ApiChangedItemIcon ToApiIcon(ChangedItemIcon icon)
