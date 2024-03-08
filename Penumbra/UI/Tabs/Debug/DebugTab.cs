@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -140,7 +140,7 @@ public class DebugTab : Window, ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "Debug"u8;
+        => "插件调试"u8;
 
     public bool IsVisible
         => _config is { DebugMode: true, Ephemeral.DebugSeparateWindow: false };

@@ -75,11 +75,11 @@ public class CollectionSelectHeader
         var collection = _activeCollections.Default;
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => (collection, "无", "基础合集已被配置为无mod。", true),
+            CollectionState.Empty => (collection, "无", "基础合集已被配置为不使用模组。", true),
             CollectionState.Selected => (collection, collection.Name,
-                "The configured base collection is already selected as the current collection.", true),
+                "已将配置的基础合集选择为当前操作的合集。", true),
             CollectionState.Available => (collection, collection.Name,
-                $"Select the configured base collection {collection.Name} as the current collection.", false),
+                $"选择被配置给基础合集使用的合集[{collection.Name}]作为当前可操作的合集。", false),
             _ => throw new Exception("Can not happen."),
         };
     }
@@ -89,11 +89,11 @@ public class CollectionSelectHeader
         var collection = _resolver.PlayerCollection();
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => (collection, "None", "The base collection is configured to use no mods.", true),
+            CollectionState.Empty => (collection, "无", "基础合集已被配置为不使用模组。", true),
             CollectionState.Selected => (collection, collection.Name,
-                "The collection configured to apply to the loaded player character is already selected as the current collection.", true),
+                "配置为用于当前玩家角色的合集已被选择为当前操作合集。", true),
             CollectionState.Available => (collection, collection.Name,
-                $"Select the collection {collection.Name} that applies to the loaded player character as the current collection.", false),
+                $"选择分配给当前玩家的合集[{collection.Name}]作为当前可操作的合集。", false),
             _ => throw new Exception("Can not happen."),
         };
     }
@@ -103,11 +103,11 @@ public class CollectionSelectHeader
         var collection = _activeCollections.Interface;
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => (collection, "None", "The interface collection is configured to use no mods.", true),
+            CollectionState.Empty => (collection, "无", "界面合集已被配置为不使用模组。", true),
             CollectionState.Selected => (collection, collection.Name,
-                "The configured interface collection is already selected as the current collection.", true),
+                "配置为用于游戏界面的合集已被选择为当前操作合集。", true),
             CollectionState.Available => (collection, collection.Name,
-                $"Select the configured interface collection {collection.Name} as the current collection.", false),
+                $"选择分配给界面的合集[{collection.Name}]作为当前可操作的合集。", false),
             _ => throw new Exception("Can not happen."),
         };
     }
@@ -120,7 +120,7 @@ public class CollectionSelectHeader
             CollectionState.Unavailable => (null, "未继承",
                 "选中的模组的设置未继承自其他合集。", true),
             CollectionState.Available => (collection, collection!.Name,
-                $"Select the collection {collection!.Name} from which the selected mod inherits its settings as the current collection.",
+                $"当前选中模组设置继承自[{collection!.Name}]，点击切换到此合集作为当前可操作的合集。",
                 false),
             _ => throw new Exception("Can not happen."),
         };

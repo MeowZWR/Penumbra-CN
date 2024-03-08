@@ -1,4 +1,4 @@
-using Dalamud.Game;
+﻿using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Resource;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
@@ -26,7 +26,7 @@ public class ResourceTab : ITab
     }
 
     public ReadOnlySpan<byte> Label
-        => "Resource Manager"u8;
+        => "资源管理器"u8;
 
     public bool IsVisible
         => _config.DebugMode;
@@ -36,7 +36,7 @@ public class ResourceTab : ITab
     {
         // Filter for resources containing the input string.
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##resourceFilter", "Filter...", ref _resourceManagerFilter, Utf8GamePath.MaxGamePathLength);
+        ImGui.InputTextWithHint("##resourceFilter", "筛选...", ref _resourceManagerFilter, Utf8GamePath.MaxGamePathLength);
 
         using var child = ImRaii.Child("##ResourceManagerTab", -Vector2.One);
         if (!child)

@@ -144,7 +144,7 @@ public class ModsTab : ITab
         ImGui.SameLine();
         var buttonWidth = frameHeight with { X = ImGui.GetContentRegionAvail().X / 5 };
         var tt = _objectTable.GetObjectAddress(0) == nint.Zero
-            ? "\nCan only be used when you are logged in and your character is available."
+            ? "\n仅当您已登录并且您的角色可用时才能使用。"
             : string.Empty;
         DrawButton(buttonWidth, "全部", string.Empty, tt);
         ImGui.SameLine();
@@ -152,19 +152,19 @@ public class ModsTab : ITab
         ImGui.SameLine();
 
         tt = _targets.Target == null && _targets.GPoseTarget == null
-            ? "\nCan only be used when you have a target."
+            ? "\n仅当您有目标时才能使用。"
             : string.Empty;
         DrawButton(buttonWidth, "目标", "target", tt);
         ImGui.SameLine();
 
         tt = _targets.FocusTarget == null
-            ? "\nCan only be used when you have a focus target."
+            ? "\n仅当您有焦点目标时才能使用。"
             : string.Empty;
         DrawButton(buttonWidth, "焦点", "focus", tt);
         ImGui.SameLine();
 
         tt = !IsIndoors()
-            ? "\nCan currently only be used for indoor furniture."
+            ? "\n目前只能用于室内家具。"
             : string.Empty;
         DrawButton(frameHeight with { X = ImGui.GetContentRegionAvail().X - 1 }, "家具", "furniture", tt);
         return;
@@ -183,8 +183,8 @@ public class ModsTab : ITab
             }
 
             ImGuiUtil.HoverTooltip(lower.Length > 0
-                ? $"Execute '/penumbra redraw {lower}'.{additionalTooltip}"
-                : $"Execute '/penumbra redraw'.{additionalTooltip}", ImGuiHoveredFlags.AllowWhenDisabled);
+                ? $"执行命令 '/penumbra redraw {lower}'.{additionalTooltip}"
+                : $"执行命令 '/penumbra redraw'.{additionalTooltip}", ImGuiHoveredFlags.AllowWhenDisabled);
         }
     }
 

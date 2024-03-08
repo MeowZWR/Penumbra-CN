@@ -10,14 +10,13 @@ public class ValidityChecker : IService
     public const string Repository          = "https://raw.githubusercontent.com/MeowZWR/DalamudPlugin/main/repo.json";
     public const string RepositoryLower = "https://raw.githubusercontent.com/meowzwr/dalamudplugin/main/repo.json";
 	public const string MeowrsRepositoryLower = "https://meowrs.com/https://raw.githubusercontent.com/meowzwr/dalamudplugin/main/meowrs.json";
-    public const string FastRepositoryLower     = "https://raw.fgit.cf/meowzwr/dalamudplugin/main/repo_fgit.json";
-    public const string GhProxyRepositoryLower  = "https://gh-proxy.com/https://raw.githubusercontent.com/meowzwr/dalamudplugin/main/repo_gh.json";
     public const string OtterRepositoryLower = "https://raw.githubusercontent.com/bluefissure/penumbra/cn/repo.json";
     public const string OtterTestRepositoryLower = "https://raw.githubusercontent.com/bluefissure/penumbra/test/repo.json";
     public const string OtterFastRepositoryLower = "https://raw.fastgit.org/bluefissure/penumbra/cn/repo.json";
     public const string OtterGhProxyRepositoryLower = "https://ghproxy.com/https://raw.githubusercontent.com/bluefissure/penumbra/cn/repo.json";
     public const string OtterCnRepositoryLower = "https://dalamud_cn_3rd.otters.cloud/plugins/all";
     public const string OtterCnRepositoryLowerPen = "https://dalamud_cn_3rd.otters.cloud/plugins/penumbra";
+    public const string SeaOfStarsLower = "https://raw.githubusercontent.com/ottermandias/seaofstars/main/repo.json";
 
     public readonly bool DevPenumbraExists;
     public readonly bool IsNotInstalledPenumbra;
@@ -92,14 +91,13 @@ public class ValidityChecker : IService
             null                => false,
             RepositoryLower     => true,
             MeowrsRepositoryLower       => true,
-            FastRepositoryLower         => true,
-            GhProxyRepositoryLower      => true,
             OtterRepositoryLower        => true,
             OtterTestRepositoryLower    => true,
             OtterFastRepositoryLower    => true,
             OtterGhProxyRepositoryLower => true,
             OtterCnRepositoryLower      => true,
             OtterCnRepositoryLowerPen   => true,
+            SeaOfStarsLower             => true,
             _                   => false,
         };
 #else
