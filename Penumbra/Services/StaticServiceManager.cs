@@ -6,7 +6,6 @@ using Dalamud.Plugin.Services;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui;
 using OtterGui.Classes;
-using OtterGui.Compression;
 using OtterGui.Log;
 using OtterGui.Services;
 using Penumbra.Api;
@@ -14,14 +13,12 @@ using Penumbra.Collections.Cache;
 using Penumbra.Collections.Manager;
 using Penumbra.GameData.Actors;
 using Penumbra.Import.Models;
-using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Structs;
 using Penumbra.Import.Textures;
 using Penumbra.Interop.PathResolving;
 using Penumbra.Interop.ResourceLoading;
 using Penumbra.Interop.ResourceTree;
 using Penumbra.Interop.Services;
-using Penumbra.Interop.Structs;
 using Penumbra.Meta;
 using Penumbra.Mods;
 using Penumbra.Mods.Editor;
@@ -38,7 +35,7 @@ using ResidentResourceManager = Penumbra.Interop.Services.ResidentResourceManage
 
 namespace Penumbra.Services;
 
-public static class ServiceManagerA
+public static class StaticServiceManager
 {
     public static ServiceManager CreateProvider(Penumbra penumbra, DalamudPluginInterface pi, Logger log)
     {
@@ -81,7 +78,8 @@ public static class ServiceManagerA
             .AddDalamudService<ITextureProvider>(pi)
             .AddDalamudService<ITextureSubstitutionProvider>(pi)
             .AddDalamudService<IGameInteropProvider>(pi)
-            .AddDalamudService<IPluginLog>(pi);
+            .AddDalamudService<IPluginLog>(pi)
+            .AddDalamudService<INotificationManager>(pi);
 
     private static ServiceManager AddInterop(this ServiceManager services)
         => services.AddSingleton<FrameworkManager>()
@@ -92,6 +90,7 @@ public static class ServiceManagerA
                 return new CutsceneResolver(cutsceneService.GetParentIndex);
             })
             .AddSingleton<CharacterUtility>()
+            .AddSingleton<ModelRenderer>()
             .AddSingleton<ResourceManagerService>()
             .AddSingleton<ResourceService>()
             .AddSingleton<FileReadService>()
@@ -103,7 +102,8 @@ public static class ServiceManagerA
 
     private static ServiceManager AddConfiguration(this ServiceManager services)
         => services.AddSingleton<Configuration>()
-            .AddSingleton<EphemeralConfig>();
+            .AddSingleton<EphemeralConfig>()
+            .AddSingleton<PredefinedTagManager>();
 
     private static ServiceManager AddCollections(this ServiceManager services)
         => services.AddSingleton<CollectionStorage>()
@@ -131,8 +131,7 @@ public static class ServiceManagerA
         => services.AddSingleton<ResourceLoader>()
             .AddSingleton<ResourceWatcher>()
             .AddSingleton<ResourceTreeFactory>()
-            .AddSingleton<MetaFileManager>()
-            .AddSingleton<SkinFixer>();
+            .AddSingleton<MetaFileManager>();
 
     private static ServiceManager AddResolvers(this ServiceManager services)
         => services.AddSingleton<CollectionResolver>()

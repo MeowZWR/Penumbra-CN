@@ -12,6 +12,7 @@ using Penumbra.Collections.Manager;
 using Penumbra.Communication;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 using Penumbra.Import.Models;
 using Penumbra.Import.Textures;
 using Penumbra.Interop.Hooks.Objects;
@@ -46,7 +47,7 @@ public partial class ModEditWindow : Window, IDisposable
     private readonly IDragDropManager        _dragDropManager;
     private readonly IDataManager            _gameData;
     private readonly IFramework              _framework;
-    private readonly IObjectTable            _objects;
+    private readonly ObjectManager           _objects;
     private readonly CharacterBaseDestructor _characterBaseDestructor;
 
     private Vector2 _iconSize = Vector2.Zero;
@@ -326,7 +327,7 @@ public partial class ModEditWindow : Window, IDisposable
         else if (ImGuiUtil.DrawDisabledButton("重新复制文件并将模组标准化", Vector2.Zero, tt, !_allowReduplicate && !modifier))
         {
             _editor.ModNormalizer.Normalize(Mod!);
-            _editor.ModNormalizer.Worker.ContinueWith(_ => _editor.LoadMod(Mod!, _editor.GroupIdx, _editor.OptionIdx));
+            _editor.ModNormalizer.Worker.ContinueWith(_ => _editor.LoadMod(Mod!, _editor.GroupIdx, _editor.OptionIdx), TaskScheduler.Default);
         }
 
         if (!_editor.Duplicates.Worker.IsCompleted)
@@ -446,7 +447,7 @@ public partial class ModEditWindow : Window, IDisposable
 
         DrawOptionSelectHeader();
 
-        var setsEqual = !_editor!.SwapEditor.Changes;
+        var setsEqual = !_editor.SwapEditor.Changes;
         var tt        = setsEqual ? "未暂存任何修改" : "应用当前暂存的修改到此选项。";
         ImGui.NewLine();
         if( ImGuiUtil.DrawDisabledButton( "应用修改", Vector2.Zero, tt, setsEqual ) )
@@ -577,7 +578,7 @@ public partial class ModEditWindow : Window, IDisposable
         Configuration config, ModEditor editor, ResourceTreeFactory resourceTreeFactory, MetaFileManager metaFileManager,
         StainService stainService, ActiveCollections activeCollections, ModMergeTab modMergeTab,
         CommunicatorService communicator, TextureManager textures, ModelManager models, IDragDropManager dragDropManager,
-        ChangedItemDrawer changedItemDrawer, IObjectTable objects, IFramework framework, CharacterBaseDestructor characterBaseDestructor)
+        ChangedItemDrawer changedItemDrawer, ObjectManager objects, IFramework framework, CharacterBaseDestructor characterBaseDestructor)
         : base(WindowBaseLabel)
     {
         _performance             = performance;

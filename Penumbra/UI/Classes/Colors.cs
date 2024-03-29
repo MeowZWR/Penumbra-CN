@@ -28,6 +28,8 @@ public enum ColorId
     ResTreePlayer,
     ResTreeNetworked,
     ResTreeNonNetworked,
+    PredefinedTagAdd,
+    PredefinedTagRemove,
 }
 
 public static class Colors
@@ -68,11 +70,13 @@ public static class Colors
             ColorId.NoModsAssignment     => ( 0x50000080, "合集分配设置为'不使用模组'", 		"此合集分配被设置为完全不使用任何模组。"),
             ColorId.NoAssignment         => ( 0x00000000, "未分配合集的对象",    				"当前没有任何合集分配给该对象。"),
             ColorId.SelectorPriority     => ( 0xFF808080, "模组选择器优先级标识",               "在模组选择器里模组名称后显示优先级非0数字。"),
-            ColorId.InGameHighlight      => ( 0xFFEBCF89, "In-Game Highlight",                   "An in-game element that has been highlighted for ease of editing."),
-            ColorId.ResTreeLocalPlayer   => ( 0xFFFFE0A0, "画面角色：你",                      "You and what you own (mount, minion, accessory, pets and so on), in the On-Screen tab." ),
-            ColorId.ResTreePlayer        => ( 0xFFC0FFC0, "画面角色：其他玩家",            "Other players and what they own, in the On-Screen tab." ),
-            ColorId.ResTreeNetworked     => ( 0xFFFFFFFF, "画面角色：NPC（网络）",  "Non-player entities handled by the game server, in the On-Screen tab." ),
-            ColorId.ResTreeNonNetworked  => ( 0xFFC0C0FF, "画面角色：NPC（本地）",      "Non-player entities handled locally, in the On-Screen tab." ),
+            ColorId.InGameHighlight      => ( 0xFFEBCF89, "游戏中高亮",                   		"为便于编辑而高亮显示的游戏中元素。"),
+            ColorId.ResTreeLocalPlayer   => ( 0xFFFFE0A0, "画面角色：你",                       "在画面角色选项卡中，你和属于你的东西(坐骑，时尚配饰，宠物等等)。" ),
+            ColorId.ResTreePlayer        => ( 0xFFC0FFC0, "画面角色：其他玩家",           		"在画面角色选项卡中，其他玩家和属于他们的东西" ),
+            ColorId.ResTreeNetworked     => ( 0xFFFFFFFF, "画面角色：NPC（网络）",  			"在画面角色选项卡中，由游戏服务器处理的NPC。" ),
+            ColorId.ResTreeNonNetworked  => ( 0xFFC0C0FF, "画面角色：NPC（本地）",      		"在画面角色选项卡中，由本地处理的NPC。" ),
+            ColorId.PredefinedTagAdd     => ( 0xFF44AA44, "预定义标签：添加标签",               "当前MOD上不存在且可以添加的预定义标签。" ),
+            ColorId.PredefinedTagRemove  => ( 0xFF2222AA, "预定义标签：删除标签",             	"当前MOD上已存在且可以删除的预定义标签。" ),
             _                            => throw new ArgumentOutOfRangeException( nameof( color ), color, null ),
             // @formatter:on
         };

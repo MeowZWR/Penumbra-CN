@@ -61,13 +61,15 @@ public class ModPanelSettingsTab : ITab
 
         DrawInheritedWarning();
         UiHelpers.DefaultLineSpace();
-        _communicator.PreSettingsPanelDraw.Invoke(_selector.Selected!.ModPath.Name);
+        _communicator.PreSettingsPanelDraw.Invoke(_selector.Selected!.Identifier);
         DrawEnabledInput();
         _tutorial.OpenTutorial(BasicTutorialSteps.EnablingMods);
         ImGui.SameLine();
         DrawPriorityInput();
         _tutorial.OpenTutorial(BasicTutorialSteps.Priority);
         DrawRemoveSettings();
+
+        _communicator.PostEnabledDraw.Invoke(_selector.Selected!.Identifier);
 
         if (_selector.Selected!.Groups.Count > 0)
         {
@@ -98,7 +100,7 @@ public class ModPanelSettingsTab : ITab
         }
 
         UiHelpers.DefaultLineSpace();
-        _communicator.PostSettingsPanelDraw.Invoke(_selector.Selected!.ModPath.Name);
+        _communicator.PostSettingsPanelDraw.Invoke(_selector.Selected!.Identifier);
     }
 
     /// <summary> Draw a big red bar if the current setting is inherited. </summary>
@@ -110,7 +112,7 @@ public class ModPanelSettingsTab : ITab
         //using var color = ImRaii.PushColor(ImGuiCol.Button, Colors.PressEnterWarningBg);
         var InheritanceBorderColor = ImGui.GetColorU32( ImGuiCol.Border );//不喜欢红色，常见现象没必要这么刺眼。
         using var color = ImRaii.PushColor( ImGuiCol.Border, InheritanceBorderColor );
-        var width = new Vector2( ImGui.GetContentRegionAvail().X, 0 );
+        var       width = new Vector2(ImGui.GetContentRegionAvail().X, 0);
         if (ImGui.Button($"此模组设置继承自'{_collection.Name}'合集。", width))
             _collectionManager.Editor.SetModInheritance(_collectionManager.Active.Current, _selector.Selected!, false);
 
@@ -213,6 +215,11 @@ public class ModPanelSettingsTab : ITab
         var       selectedOption = _empty ? (int)group.DefaultSettings : (int)_settings.Settings[groupIdx];
         var       minWidth       = Widget.BeginFramedGroup(group.Name, description:group.Description);
 
+        DrawCollapseHandling(group, minWidth, DrawOptions);
+
+        Widget.EndFramedGroup();
+        return;
+
         void DrawOptions()
         {
             for (var idx = 0; idx < group.Count; ++idx)
@@ -229,10 +236,6 @@ public class ModPanelSettingsTab : ITab
                 ImGuiComponents.HelpMarker(option.Description);
             }
         }
-
-        DrawCollapseHandling(group, minWidth, DrawOptions);
-
-        Widget.EndFramedGroup();
     }
 
 

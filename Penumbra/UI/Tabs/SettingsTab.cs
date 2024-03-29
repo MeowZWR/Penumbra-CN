@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
@@ -41,15 +42,19 @@ public class SettingsTab : ITab
     private readonly DalamudConfigService        _dalamudConfig;
     private readonly DalamudPluginInterface      _pluginInterface;
     private readonly IDataManager                _gameData;
+    private readonly PredefinedTagManager        _predefinedTagManager;
+    private readonly CrashHandlerService         _crashService;
 
     private int _minimumX = int.MaxValue;
     private int _minimumY = int.MaxValue;
+
+    private readonly TagButtons _sharedTags = new();
 
     public SettingsTab(DalamudPluginInterface pluginInterface, Configuration config, FontReloader fontReloader, TutorialService tutorial,
         Penumbra penumbra, FileDialogService fileDialog, ModManager modManager, ModFileSystemSelector selector,
         CharacterUtility characterUtility, ResidentResourceManager residentResources, ModExportManager modExportManager, HttpApi httpApi,
         DalamudSubstitutionProvider dalamudSubstitutionProvider, FileCompactor compactor, DalamudConfigService dalamudConfig,
-        IDataManager gameData)
+        IDataManager gameData, PredefinedTagManager predefinedTagConfig, CrashHandlerService crashService)
     {
         _pluginInterface             = pluginInterface;
         _config                      = config;
@@ -69,6 +74,8 @@ public class SettingsTab : ITab
         _gameData                    = gameData;
         if (_compactor.CanCompact)
             _compactor.Enabled = _config.UseFileSystemCompression;
+        _predefinedTagManager = predefinedTagConfig;
+        _crashService         = crashService;
     }
 
     public void DrawHeader()
@@ -96,6 +103,7 @@ public class SettingsTab : ITab
 
         DrawGeneralSettings();
         DrawColorSettings();
+        DrawPredefinedTagsSection();
         DrawAdvancedSettings();
         DrawSupportButtons();
     }
@@ -222,29 +230,38 @@ public class SettingsTab : ITab
         if (_newModDirectory.IsNullOrEmpty())
             _newModDirectory = _config.ModDirectory;
 
-        using var group = ImRaii.Group();
-        ImGui.SetNextItemWidth(UiHelpers.InputTextMinusButton3);
-        var       save = ImGui.InputText("##rootDirectory", ref _newModDirectory, RootDirectoryMaxLength, ImGuiInputTextFlags.EnterReturnsTrue);
-        var       selected = ImGui.IsItemActive();
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(UiHelpers.ScaleX3, 0));
-        ImGui.SameLine();
-        DrawDirectoryPickerButton();
-        style.Pop();
-        ImGui.SameLine();
+        bool save, selected;
+        using (ImRaii.Group())
+        {
+            ImGui.SetNextItemWidth(UiHelpers.InputTextMinusButton3);
+            using (ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale, !_modManager.Valid))
+            {
+                using var color = ImRaii.PushColor(ImGuiCol.Border, Colors.RegexWarningBorder)
+                    .Push(ImGuiCol.TextDisabled, Colors.RegexWarningBorder, !_modManager.Valid);
+                save = ImGui.InputTextWithHint("##rootDirectory", "Enter Root Directory here (MANDATORY)...", ref _newModDirectory,
+                    RootDirectoryMaxLength, ImGuiInputTextFlags.EnterReturnsTrue);
+            }
 
-        const string tt = "这是Penumbra即将存储提取到的模组文件的地方。\n"
-          + "TTMP文件将被解压到这里。\n"
-          + "此目录需要你有读写权限。\n"
-          + "建议将此目录放置于读写速度快的硬盘上，最好是固态硬盘。\n"
-          + "它还应该放在逻辑驱动器的根目录附近，总之此文件夹的总路径越短越好。\n"
-          + "绝对不要将此目录放在卫月目录或其子目录中。";
-        ImGuiComponents.HelpMarker(tt);
-        _tutorial.OpenTutorial(BasicTutorialSteps.GeneralTooltips);
-        ImGui.SameLine();
-        ImGui.TextUnformatted( "根目录" );
-        ImGuiUtil.HoverTooltip(tt);
+            selected = ImGui.IsItemActive();
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(UiHelpers.ScaleX3, 0));
+            ImGui.SameLine();
+            DrawDirectoryPickerButton();
+            style.Pop();
+            ImGui.SameLine();
 
-        group.Dispose();
+	        const string tt = "这是Penumbra即将存储提取到的模组文件的地方。\n"
+	          + "TTMP文件将被解压到这里。\n"
+	          + "此目录需要你有读写权限。\n"
+	          + "建议将此目录放置于读写速度快的硬盘上，最好是固态硬盘。\n"
+	          + "它还应该放在逻辑驱动器的根目录附近，总之此文件夹的总路径越短越好。\n"
+	          + "绝对不要将此目录放在卫月目录或其子目录中。";
+            ImGuiComponents.HelpMarker(tt);
+            _tutorial.OpenTutorial(BasicTutorialSteps.GeneralTooltips);
+            ImGui.SameLine();
+        	ImGui.TextUnformatted( "根目录" );
+            ImGuiUtil.HoverTooltip(tt);
+        }
+
         _tutorial.OpenTutorial(BasicTutorialSteps.ModDirectory);
         ImGui.SameLine();
         var pos = ImGui.GetCursorPosX();
@@ -375,7 +392,7 @@ public class SettingsTab : ITab
             "手动隐藏游戏UI时，隐藏Penumbra的主窗口。", _config.HideUiWhenUiHidden,
             v =>
             {
-                _config.HideUiWhenUiHidden           = v;
+                _config.HideUiWhenUiHidden                   = v;
                 _pluginInterface.UiBuilder.DisableUserUiHide = !v;
             });
         Checkbox( "过场动画时，隐藏设置窗口",
@@ -690,6 +707,7 @@ public class SettingsTab : ITab
         if (!header)
             return;
 
+        DrawCrashHandler();
         DrawMinimumDimensionConfig();
         Checkbox("在导入时自动清除重复文件",
             "导入时自动清除模组中的重复文件。这将使模组文件的占用变小，但会删除（二进制相同的）文件。",
@@ -705,6 +723,20 @@ public class SettingsTab : ITab
         DrawReloadResourceButton();
         DrawReloadFontsButton();
         ImGui.NewLine();
+    }
+
+    private void DrawCrashHandler()
+    {
+        Checkbox("启用Penumbra崩溃记录（实验性）",
+            "使Penumbra能够启动一个二级进程，记录一些游戏活动，这可能对诊断与Penumbra相关的游戏崩溃有帮助，也可能没帮助。",
+            _config.UseCrashHandler ?? false,
+            v =>
+            {
+                if (v)
+                    _crashService.Enable();
+                else
+                    _crashService.Disable();
+            });
     }
 
     private void DrawCompressionBox()
@@ -896,7 +928,7 @@ public class SettingsTab : ITab
         CustomGui.DrawCNDiscordButton( Penumbra.Messager, width );
 
         ImGui.SetCursorPos(new Vector2(xPos, 4 * ImGui.GetFrameHeightWithSpacing()));
-        if (ImGui.Button("重新启动内置教程", new Vector2(width, 0)))
+        if (ImGui.Button("重新启动教程", new Vector2(width, 0)))
         {
             _config.Ephemeral.TutorialStep = 0;
             _config.Ephemeral.Save();
@@ -905,5 +937,18 @@ public class SettingsTab : ITab
         ImGui.SetCursorPos(new Vector2(xPos, 5 * ImGui.GetFrameHeightWithSpacing()));
         if (ImGui.Button("查看更新日志", new Vector2(width, 0)))
             _penumbra.ForceChangelogOpen();
+    }
+
+    private void DrawPredefinedTagsSection()
+    {
+        if (!ImGui.CollapsingHeader("标签"))
+            return;
+
+        var tagIdx = _sharedTags.Draw("预定义标签：",
+            "预定义标签，可以通过单个点击从模组中添加或删除。", _predefinedTagManager,
+            out var editedTag);
+
+        if (tagIdx >= 0)
+            _predefinedTagManager.ChangeSharedTag(tagIdx, editedTag);
     }
 }

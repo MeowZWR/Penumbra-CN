@@ -10,6 +10,7 @@ using Penumbra.Meta.Manipulations;
 using Penumbra.Mods;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using OtterGui.Compression;
+using OtterGui.Log;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Actors;
 using Penumbra.Interop.ResourceLoading;
@@ -19,6 +20,7 @@ using Penumbra.String.Classes;
 using Penumbra.Services;
 using Penumbra.Collections.Manager;
 using Penumbra.Communication;
+using Penumbra.GameData.Interop;
 using Penumbra.Import.Textures;
 using Penumbra.Interop.Services;
 using Penumbra.UI;
@@ -31,12 +33,24 @@ namespace Penumbra.Api;
 public class PenumbraApi : IDisposable, IPenumbraApi
 {
     public (int, int) ApiVersion
-        => (4, 23);
+        => (4, 24);
+
+    public event Action<string, float, float>? PreSettingsTabBarDraw
+    {
+        add => _communicator.PreSettingsTabBarDraw.Subscribe(value!, Communication.PreSettingsTabBarDraw.Priority.Default);
+        remove => _communicator.PreSettingsTabBarDraw.Unsubscribe(value!);
+    }
 
     public event Action<string>? PreSettingsPanelDraw
     {
         add => _communicator.PreSettingsPanelDraw.Subscribe(value!, Communication.PreSettingsPanelDraw.Priority.Default);
         remove => _communicator.PreSettingsPanelDraw.Unsubscribe(value!);
+    }
+
+    public event Action<string>? PostEnabledDraw
+    {
+        add => _communicator.PostEnabledDraw.Subscribe(value!, Communication.PostEnabledDraw.Priority.Default);
+        remove => _communicator.PostEnabledDraw.Unsubscribe(value!);
     }
 
     public event Action<string>? PostSettingsPanelDraw
@@ -92,7 +106,7 @@ public class PenumbraApi : IDisposable, IPenumbraApi
 
     private IDataManager          _gameData;
     private IFramework            _framework;
-    private IObjectTable          _objects;
+    private ObjectManager         _objects;
     private ModManager            _modManager;
     private ResourceLoader        _resourceLoader;
     private Configuration         _config;
@@ -110,7 +124,7 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     private TextureManager        _textureManager;
     private ResourceTreeFactory   _resourceTreeFactory;
 
-    public unsafe PenumbraApi(CommunicatorService communicator, IDataManager gameData, IFramework framework, IObjectTable objects,
+    public unsafe PenumbraApi(CommunicatorService communicator, IDataManager gameData, IFramework framework, ObjectManager objects,
         ModManager modManager, ResourceLoader resourceLoader, Configuration config, CollectionManager collectionManager,
         TempCollectionManager tempCollections, TempModManager tempMods, ActorManager actors, CollectionResolver collectionResolver,
         CutsceneService cutsceneService, ModImportManager modImportManager, CollectionEditor collectionEditor, RedrawService redrawService,
@@ -642,10 +656,10 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         CheckInitialized();
         if (!_modManager.TryGetMod(modDirectory, modName, out var mod))
-            return PenumbraApiEc.ModMissing;
+            return Return(PenumbraApiEc.ModMissing, Args("ModDirectory", modDirectory, "ModName", modName));
 
         _modManager.ReloadMod(mod);
-        return PenumbraApiEc.Success;
+        return Return(PenumbraApiEc.Success, Args("ModDirectory", modDirectory, "ModName", modName));
     }
 
     public PenumbraApiEc InstallMod(string modFilePackagePath)
@@ -653,11 +667,11 @@ public class PenumbraApi : IDisposable, IPenumbraApi
         if (File.Exists(modFilePackagePath))
         {
             _modImportManager.AddUnpack(modFilePackagePath);
-            return PenumbraApiEc.Success;
+            return Return(PenumbraApiEc.Success, Args("ModFilePackagePath", modFilePackagePath));
         }
         else
         {
-            return PenumbraApiEc.FileMissing;
+            return Return(PenumbraApiEc.FileMissing, Args("ModFilePackagePath", modFilePackagePath));
         }
     }
 
@@ -666,23 +680,24 @@ public class PenumbraApi : IDisposable, IPenumbraApi
         CheckInitialized();
         var dir = new DirectoryInfo(Path.Join(_modManager.BasePath.FullName, Path.GetFileName(modDirectory)));
         if (!dir.Exists)
-            return PenumbraApiEc.FileMissing;
+            return Return(PenumbraApiEc.FileMissing, Args("ModDirectory", modDirectory));
+
 
         _modManager.AddMod(dir);
         if (_config.UseFileSystemCompression)
             new FileCompactor(Penumbra.Log).StartMassCompact(dir.EnumerateFiles("*.*", SearchOption.AllDirectories),
                 CompressionAlgorithm.Xpress8K);
-        return PenumbraApiEc.Success;
+        return Return(PenumbraApiEc.Success, Args("ModDirectory", modDirectory));
     }
 
     public PenumbraApiEc DeleteMod(string modDirectory, string modName)
     {
         CheckInitialized();
         if (!_modManager.TryGetMod(modDirectory, modName, out var mod))
-            return PenumbraApiEc.NothingChanged;
+            return Return(PenumbraApiEc.NothingChanged, Args("ModDirectory", modDirectory, "ModName", modName));
 
         _modManager.DeleteMod(mod);
-        return PenumbraApiEc.Success;
+        return Return(PenumbraApiEc.Success, Args("ModDirectory", modDirectory, "ModName", modName));
     }
 
     public event Action<string>?         ModDeleted;
@@ -784,22 +799,33 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         CheckInitialized();
         if (!_collectionManager.Storage.ByName(collectionName, out var collection))
-            return PenumbraApiEc.CollectionMissing;
+            return Return(PenumbraApiEc.CollectionMissing,
+                Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                    "OptionName",      optionName));
 
         if (!_modManager.TryGetMod(modDirectory, modName, out var mod))
-            return PenumbraApiEc.ModMissing;
+            return Return(PenumbraApiEc.ModMissing,
+                Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                    "OptionName",      optionName));
 
         var groupIdx = mod.Groups.IndexOf(g => g.Name == optionGroupName);
         if (groupIdx < 0)
-            return PenumbraApiEc.OptionGroupMissing;
+            return Return(PenumbraApiEc.OptionGroupMissing,
+                Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                    "OptionName",      optionName));
 
         var optionIdx = mod.Groups[groupIdx].IndexOf(o => o.Name == optionName);
         if (optionIdx < 0)
-            return PenumbraApiEc.OptionMissing;
+            return Return(PenumbraApiEc.OptionMissing,
+                Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                    "OptionName",      optionName));
 
         var setting = mod.Groups[groupIdx].Type == GroupType.Multi ? 1u << optionIdx : (uint)optionIdx;
 
-        return _collectionEditor.SetModSetting(collection, mod, groupIdx, setting) ? PenumbraApiEc.Success : PenumbraApiEc.NothingChanged;
+        return Return(
+            _collectionEditor.SetModSetting(collection, mod, groupIdx, setting) ? PenumbraApiEc.Success : PenumbraApiEc.NothingChanged,
+            Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                "OptionName",      optionName));
     }
 
     public PenumbraApiEc TrySetModSettings(string collectionName, string modDirectory, string modName, string optionGroupName,
@@ -807,14 +833,20 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         CheckInitialized();
         if (!_collectionManager.Storage.ByName(collectionName, out var collection))
-            return PenumbraApiEc.CollectionMissing;
+            return Return(PenumbraApiEc.CollectionMissing,
+                Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                    "#optionNames",    optionNames.Count.ToString()));
 
         if (!_modManager.TryGetMod(modDirectory, modName, out var mod))
-            return PenumbraApiEc.ModMissing;
+            return Return(PenumbraApiEc.ModMissing,
+                Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                    "#optionNames",    optionNames.Count.ToString()));
 
         var groupIdx = mod.Groups.IndexOf(g => g.Name == optionGroupName);
         if (groupIdx < 0)
-            return PenumbraApiEc.OptionGroupMissing;
+            return Return(PenumbraApiEc.OptionGroupMissing,
+                Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                    "#optionNames",    optionNames.Count.ToString()));
 
         var group = mod.Groups[groupIdx];
 
@@ -823,7 +855,9 @@ public class PenumbraApi : IDisposable, IPenumbraApi
         {
             var optionIdx = optionNames.Count == 0 ? -1 : group.IndexOf(o => o.Name == optionNames[^1]);
             if (optionIdx < 0)
-                return PenumbraApiEc.OptionMissing;
+                return Return(PenumbraApiEc.OptionMissing,
+                    Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                        "#optionNames",    optionNames.Count.ToString()));
 
             setting = (uint)optionIdx;
         }
@@ -833,13 +867,18 @@ public class PenumbraApi : IDisposable, IPenumbraApi
             {
                 var optionIdx = group.IndexOf(o => o.Name == name);
                 if (optionIdx < 0)
-                    return PenumbraApiEc.OptionMissing;
+                    return Return(PenumbraApiEc.OptionMissing,
+                        Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName",
+                            optionGroupName,   "#optionNames", optionNames.Count.ToString()));
 
                 setting |= 1u << optionIdx;
             }
         }
 
-        return _collectionEditor.SetModSetting(collection, mod, groupIdx, setting) ? PenumbraApiEc.Success : PenumbraApiEc.NothingChanged;
+        return Return(
+            _collectionEditor.SetModSetting(collection, mod, groupIdx, setting) ? PenumbraApiEc.Success : PenumbraApiEc.NothingChanged,
+            Args("CollectionName", collectionName, "ModDirectory", modDirectory, "ModName", modName, "OptionGroupName", optionGroupName,
+                "#optionNames",    optionNames.Count.ToString()));
     }
 
 
@@ -902,10 +941,10 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     {
         CheckInitialized();
 
-        if (actorIndex < 0 || actorIndex >= _objects.Length)
+        if (actorIndex < 0 || actorIndex >= _objects.TotalCount)
             return PenumbraApiEc.InvalidArgument;
 
-        var identifier = _actors.FromObject(_objects[actorIndex], false, false, true);
+        var identifier = _actors.FromObject(_objects[actorIndex], out _, false, false, true);
         if (!identifier.IsValid)
             return PenumbraApiEc.InvalidArgument;
 
@@ -1050,11 +1089,11 @@ public class PenumbraApi : IDisposable, IPenumbraApi
 
     public IReadOnlyDictionary<string, string[]>?[] GetGameObjectResourcePaths(ushort[] gameObjects)
     {
-        var characters       = gameObjects.Select(index => _objects[index]).OfType<Character>();
+        var characters       = gameObjects.Select(index => _objects.GetDalamudObject((int) index)).OfType<Character>();
         var resourceTrees    = _resourceTreeFactory.FromCharacters(characters, 0);
         var pathDictionaries = ResourceTreeApiHelper.GetResourcePathDictionaries(resourceTrees);
 
-        return Array.ConvertAll(gameObjects, obj => pathDictionaries.TryGetValue(obj, out var pathDict) ? pathDict : null);
+        return Array.ConvertAll(gameObjects, obj => pathDictionaries.GetValueOrDefault(obj));
     }
 
     public IReadOnlyDictionary<ushort, IReadOnlyDictionary<string, string[]>> GetPlayerResourcePaths()
@@ -1065,39 +1104,39 @@ public class PenumbraApi : IDisposable, IPenumbraApi
         return pathDictionaries.AsReadOnly();
     }
 
-    public IReadOnlyDictionary<nint, (string, string, ChangedItemIcon)>?[] GetGameObjectResourcesOfType(ResourceType type, bool withUIData,
+    public IReadOnlyDictionary<nint, (string, string, ChangedItemIcon)>?[] GetGameObjectResourcesOfType(ResourceType type, bool withUiData,
         params ushort[] gameObjects)
     {
-        var characters      = gameObjects.Select(index => _objects[index]).OfType<Character>();
-        var resourceTrees   = _resourceTreeFactory.FromCharacters(characters, withUIData ? ResourceTreeFactory.Flags.WithUiData : 0);
+        var characters      = gameObjects.Select(index => _objects.GetDalamudObject((int)index)).OfType<Character>();
+        var resourceTrees   = _resourceTreeFactory.FromCharacters(characters, withUiData ? ResourceTreeFactory.Flags.WithUiData : 0);
         var resDictionaries = ResourceTreeApiHelper.GetResourcesOfType(resourceTrees, type);
 
-        return Array.ConvertAll(gameObjects, obj => resDictionaries.TryGetValue(obj, out var resDict) ? resDict : null);
+        return Array.ConvertAll(gameObjects, obj => resDictionaries.GetValueOrDefault(obj));
     }
 
     public IReadOnlyDictionary<ushort, IReadOnlyDictionary<nint, (string, string, ChangedItemIcon)>> GetPlayerResourcesOfType(ResourceType type,
-        bool withUIData)
+        bool withUiData)
     {
         var resourceTrees = _resourceTreeFactory.FromObjectTable(ResourceTreeFactory.Flags.LocalPlayerRelatedOnly
-          | (withUIData ? ResourceTreeFactory.Flags.WithUiData : 0));
+          | (withUiData ? ResourceTreeFactory.Flags.WithUiData : 0));
         var resDictionaries = ResourceTreeApiHelper.GetResourcesOfType(resourceTrees, type);
 
         return resDictionaries.AsReadOnly();
     }
 
-    public Ipc.ResourceTree?[] GetGameObjectResourceTrees(bool withUIData, params ushort[] gameObjects)
+    public Ipc.ResourceTree?[] GetGameObjectResourceTrees(bool withUiData, params ushort[] gameObjects)
     {
-        var characters    = gameObjects.Select(index => _objects[index]).OfType<Character>();
-        var resourceTrees = _resourceTreeFactory.FromCharacters(characters, withUIData ? ResourceTreeFactory.Flags.WithUiData : 0);
+        var characters    = gameObjects.Select(index => _objects.GetDalamudObject((int)index)).OfType<Character>();
+        var resourceTrees = _resourceTreeFactory.FromCharacters(characters, withUiData ? ResourceTreeFactory.Flags.WithUiData : 0);
         var resDictionary = ResourceTreeApiHelper.EncapsulateResourceTrees(resourceTrees);
 
-        return Array.ConvertAll(gameObjects, obj => resDictionary.TryGetValue(obj, out var nodes) ? nodes : null);
+        return Array.ConvertAll(gameObjects, obj => resDictionary.GetValueOrDefault(obj));
     }
 
-    public IReadOnlyDictionary<ushort, Ipc.ResourceTree> GetPlayerResourceTrees(bool withUIData)
+    public IReadOnlyDictionary<ushort, Ipc.ResourceTree> GetPlayerResourceTrees(bool withUiData)
     {
         var resourceTrees = _resourceTreeFactory.FromObjectTable(ResourceTreeFactory.Flags.LocalPlayerRelatedOnly
-          | (withUIData ? ResourceTreeFactory.Flags.WithUiData : 0));
+          | (withUiData ? ResourceTreeFactory.Flags.WithUiData : 0));
         var resDictionary = ResourceTreeApiHelper.EncapsulateResourceTrees(resourceTrees);
 
         return resDictionary.AsReadOnly();
@@ -1139,11 +1178,11 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     private unsafe bool AssociatedCollection(int gameObjectIdx, out ModCollection collection)
     {
         collection = _collectionManager.Active.Default;
-        if (gameObjectIdx < 0 || gameObjectIdx >= _objects.Length)
+        if (gameObjectIdx < 0 || gameObjectIdx >= _objects.TotalCount)
             return false;
 
-        var ptr  = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)_objects.GetObjectAddress(gameObjectIdx);
-        var data = _collectionResolver.IdentifyCollection(ptr, false);
+        var ptr  = _objects[gameObjectIdx];
+        var data = _collectionResolver.IdentifyCollection(ptr.AsObject, false);
         if (data.Valid)
             collection = data.ModCollection;
 
@@ -1153,10 +1192,10 @@ public class PenumbraApi : IDisposable, IPenumbraApi
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private unsafe ActorIdentifier AssociatedIdentifier(int gameObjectIdx)
     {
-        if (gameObjectIdx < 0 || gameObjectIdx >= _objects.Length)
+        if (gameObjectIdx < 0 || gameObjectIdx >= _objects.TotalCount)
             return ActorIdentifier.Invalid;
 
-        var ptr = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)_objects.GetObjectAddress(gameObjectIdx);
+        var ptr = _objects[gameObjectIdx];
         return _actors.FromObject(ptr, out _, false, true, true);
     }
 
@@ -1295,5 +1334,34 @@ public class PenumbraApi : IDisposable, IPenumbraApi
         var (settings, parent) = collection[mod.Index];
         if (settings is { Enabled: true })
             ModSettingChanged?.Invoke(ModSettingChange.Edited, collection.Name, mod.Identifier, parent != collection);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static LazyString Args(params string[] arguments)
+    {
+        if (arguments.Length == 0)
+            return new LazyString(() => "no arguments");
+
+        return new LazyString(() =>
+        {
+            var sb = new StringBuilder();
+            for (var i = 0; i < arguments.Length / 2; ++i)
+            {
+                sb.Append(arguments[2 * i]);
+                sb.Append(" = ");
+                sb.Append(arguments[2 * i + 1]);
+                sb.Append(", ");
+            }
+
+            return sb.ToString(0, sb.Length - 2);
+        });
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static PenumbraApiEc Return(PenumbraApiEc ec, LazyString args, [CallerMemberName] string name = "Unknown")
+    {
+        Penumbra.Log.Debug(
+            $"[{name}] Called with {args}, returned {ec}.");
+        return ec;
     }
 }

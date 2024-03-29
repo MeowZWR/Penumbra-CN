@@ -181,7 +181,7 @@ public partial class ModEditWindow
             }
             catch (Exception e)
             {
-                // Some element in the JSON was undefined or invalid (wrong type, key that doesn't exist in the ShPk, index out of range, ?
+                // Some element in the JSON was undefined or invalid (wrong type, key that doesn't exist in the ShPk, index out of range, …)
                 Penumbra.Log.Error($"Error while traversing the ShPk dev-kit file at {devkitPathName}: {e}");
                 return null;
             }

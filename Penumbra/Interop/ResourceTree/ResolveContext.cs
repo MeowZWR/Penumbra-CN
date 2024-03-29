@@ -9,6 +9,7 @@ using Penumbra.Collections;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.Interop.Services;
 using Penumbra.String;
 using Penumbra.String.Classes;
 using Penumbra.UI;
@@ -54,6 +55,7 @@ internal unsafe partial record ResolveContext(
         return GetOrCreateNode(ResourceType.Shpk, (nint)resourceHandle->ShaderPackage, &resourceHandle->ResourceHandle, path);
     }
 
+    [SkipLocalsInit]
     private ResourceNode? CreateNodeFromTex(TextureResourceHandle* resourceHandle, ByteString gamePath, bool dx11)
     {
         if (resourceHandle == null)
@@ -141,6 +143,14 @@ internal unsafe partial record ResolveContext(
             return null;
 
         return GetOrCreateNode(ResourceType.Imc, 0, imc, path);
+    }
+
+    public ResourceNode? CreateNodeFromPbd(ResourceHandle* pbd)
+    {
+        if (pbd == null)
+            return null;
+
+        return GetOrCreateNode(ResourceType.Pbd, 0, pbd, PreBoneDeformerReplacer.PreBoneDeformerPath);
     }
 
     public ResourceNode? CreateNodeFromTex(TextureResourceHandle* tex, string gamePath)

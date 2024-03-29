@@ -53,7 +53,7 @@ public class MaterialExporter
         var normal = material.Textures[TextureUsage.SamplerNormal];
 
         var operation = new ProcessCharacterNormalOperation(normal, table);
-        ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, normal.Bounds(), in operation);
+        ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, normal.Bounds, in operation);
 
         // Check if full textures are provided, and merge in if available.
         var baseColor = operation.BaseColor;
@@ -144,8 +144,7 @@ public class MaterialExporter
 
                 // Specular (table)
                 var lerpedSpecularColor = Vector3.Lerp(prevRow.Specular, nextRow.Specular, tableRow.Weight);
-                // float.Lerp is .NET8 ;-; #TODO
-                var lerpedSpecularFactor = prevRow.SpecularStrength * (1.0f - tableRow.Weight) + nextRow.SpecularStrength * tableRow.Weight;
+                var lerpedSpecularFactor = float.Lerp(prevRow.SpecularStrength, nextRow.SpecularStrength, tableRow.Weight);
                 specularSpan[x].FromVector4(new Vector4(lerpedSpecularColor, lerpedSpecularFactor));
 
                 // Emissive (table)
@@ -199,7 +198,7 @@ public class MaterialExporter
             small.Mutate(context => context.Resize(large.Width, large.Height));
 
             var operation = new MultiplyOperation<TPixel1, TPixel2>(target, multiplier);
-            ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, target.Bounds(), in operation);
+            ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, target.Bounds, in operation);
         }
     }
 

@@ -86,8 +86,8 @@ public class ModMergeTab(ModMerger modMerger)
             ImGuiUtil.HoverTooltip( "如果被合并模组没有真正的选项（默认选项或者只有一个单选项都不算），你必须为其在目标模组中分配一个选项。",
                 ImGuiHoveredFlags.AllowWhenDisabled);
 
-        if (ImGuiUtil.DrawDisabledButton("Merge", new Vector2(size, 0),
-                modMerger.CanMerge ? string.Empty : "Please select a target mod different from the current mod.", !modMerger.CanMerge))
+        if (ImGuiUtil.DrawDisabledButton("合并", new Vector2(size, 0),
+                modMerger.CanMerge ? string.Empty : "请选择一个不同于当前模组的目标模组。", !modMerger.CanMerge))
             modMerger.Merge();
     }
 

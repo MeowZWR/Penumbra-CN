@@ -17,17 +17,20 @@ using Penumbra.UI.AdvancedWindow;
 
 namespace Penumbra.UI.ModsTab;
 
-public class ModPanelEditTab : ITab
+public class ModPanelEditTab(
+    ModManager modManager,
+    ModFileSystemSelector selector,
+    ModFileSystem fileSystem,
+    Services.MessageService messager,
+    ModEditWindow editWindow,
+    ModEditor editor,
+    FilenameService filenames,
+    ModExportManager modExportManager,
+    Configuration config,
+    PredefinedTagManager predefinedTagManager)
+    : ITab
 {
-    private readonly Services.MessageService _messager;
-    private readonly FilenameService         _filenames;
-    private readonly ModManager              _modManager;
-    private readonly ModExportManager        _modExportManager;
-    private readonly ModFileSystem           _fileSystem;
-    private readonly ModFileSystemSelector   _selector;
-    private readonly ModEditWindow           _editWindow;
-    private readonly ModEditor               _editor;
-    private readonly Configuration           _config;
+    private readonly ModManager _modManager = modManager;
 
     private readonly TagButtons _modTags = new();
 
@@ -35,20 +38,6 @@ public class ModPanelEditTab : ITab
     private Vector2            _itemSpacing = Vector2.Zero;
     private ModFileSystem.Leaf _leaf        = null!;
     private Mod                _mod         = null!;
-
-    public ModPanelEditTab(ModManager modManager, ModFileSystemSelector selector, ModFileSystem fileSystem, Services.MessageService messager,
-        ModEditWindow editWindow, ModEditor editor, FilenameService filenames, ModExportManager modExportManager, Configuration config)
-    {
-        _modManager       = modManager;
-        _selector         = selector;
-        _fileSystem       = fileSystem;
-        _messager         = messager;
-        _editWindow       = editWindow;
-        _editor           = editor;
-        _filenames        = filenames;
-        _modExportManager = modExportManager;
-        _config           = config;
-    }
 
     public ReadOnlySpan<byte> Label
         => "编辑模组"u8;
@@ -59,8 +48,8 @@ public class ModPanelEditTab : ITab
         if (!child)
             return;
 
-        _leaf = _selector.SelectedLeaf!;
-        _mod  = _selector.Selected!;
+        _leaf = selector.SelectedLeaf!;
+        _mod  = selector.Selected!;
 
         _cellPadding = ImGui.GetStyle().CellPadding with { X = 2 * UiHelpers.Scale };
         _itemSpacing = ImGui.GetStyle().CellPadding with { X = 4 * UiHelpers.Scale };
@@ -72,21 +61,27 @@ public class ModPanelEditTab : ITab
         if (Input.Text( "模组路径（排序用）", Input.Path, Input.None, _leaf.FullName(), out var newPath, 256, UiHelpers.InputTextWidth.X))
             try
             {
-                _fileSystem.RenameAndMove(_leaf, newPath);
+                fileSystem.RenameAndMove(_leaf, newPath);
             }
             catch (Exception e)
             {
-                _messager.NotificationMessage(e.Message, NotificationType.Warning, false);
+                messager.NotificationMessage(e.Message, NotificationType.Warning, false);
             }
 
         UiHelpers.DefaultLineSpace();
-        var tagIdx = _modTags.Draw( "模组标签：", "点击修改，或添加新标签。空白标签会被移除。", _mod.ModTags,
-            out var editedTag);
+        var sharedTagsEnabled     = predefinedTagManager.Count > 0;
+        var sharedTagButtonOffset = sharedTagsEnabled ? ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X : 0;
+        var tagIdx = _modTags.Draw("模组标签：", "点击修改，或添加新标签。空白标签会被移除。", _mod.ModTags,
+            out var editedTag, rightEndOffset: sharedTagButtonOffset);
         if (tagIdx >= 0)
             _modManager.DataEditor.ChangeModTag(_mod, tagIdx, editedTag);
 
+        if (sharedTagsEnabled)
+            predefinedTagManager.DrawAddFromSharedTagsAndUpdateTags(selector.Selected!.LocalTags, selector.Selected!.ModTags, false,
+                selector.Selected!);
+
         UiHelpers.DefaultLineSpace();
-        AddOptionGroup.Draw(_filenames, _modManager, _mod, _config.ReplaceNonAsciiOnImport);
+        AddOptionGroup.Draw(filenames, _modManager, _mod, config.ReplaceNonAsciiOnImport);
         UiHelpers.DefaultLineSpace();
 
         for (var groupIdx = 0; groupIdx < _mod.Groups.Count; ++groupIdx)
@@ -134,11 +129,11 @@ public class ModPanelEditTab : ITab
     {
         if (ImGui.Button( "更新Bibo材质", buttonSize))
         {
-            _editor.LoadMod(_mod);
-            _editor.MdlMaterialEditor.ReplaceAllMaterials("bibo",     "b");
-            _editor.MdlMaterialEditor.ReplaceAllMaterials("bibopube", "c");
-            _editor.MdlMaterialEditor.SaveAllModels(_editor.Compactor);
-            _editWindow.UpdateModels();
+            editor.LoadMod(_mod);
+            editor.MdlMaterialEditor.ReplaceAllMaterials("bibo",     "b");
+            editor.MdlMaterialEditor.ReplaceAllMaterials("bibopube", "c");
+            editor.MdlMaterialEditor.SaveAllModels(editor.Compactor);
+            editWindow.UpdateModels();
         }
 
         ImGuiUtil.HoverTooltip(
@@ -150,7 +145,7 @@ public class ModPanelEditTab : ITab
 
     private void BackupButtons(Vector2 buttonSize)
     {
-        var backup = new ModBackup(_modExportManager, _mod);
+        var backup = new ModBackup(modExportManager, _mod);
         var tt = ModBackup.CreatingBackup
             ? "已经创建了一个备份。"
             : backup.Exists
@@ -161,16 +156,16 @@ public class ModPanelEditTab : ITab
 
         ImGui.SameLine();
         tt = backup.Exists
-            ? $"删除存在的备份文件\"{backup.Name}\"。"
+            ? $"删除存在的备份文件 \"{backup.Name}\" (点击时按住{config.DeleteModModifier})."
             : $"备份文件\"{backup.Name}\"不存在。";
-        if (ImGuiUtil.DrawDisabledButton( "删除备份", buttonSize, tt, !backup.Exists))
+        if (ImGuiUtil.DrawDisabledButton("删除备份", buttonSize, tt, !backup.Exists || !config.DeleteModModifier.IsActive()))
             backup.Delete();
 
         tt = backup.Exists
-            ? $"从备份文件\"{backup.Name}\"恢复模组。"
+            ? $"从备份文件\"{backup.Name}\"恢复模组。(点击时按住{ config.DeleteModModifier})."
             : $"备份文件\"{backup.Name}\"不存在。";
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("从备份恢复", buttonSize, tt, !backup.Exists || !_config.DeleteModModifier.IsActive()))
+        if (ImGuiUtil.DrawDisabledButton("从备份恢复", buttonSize, tt, !backup.Exists || !config.DeleteModModifier.IsActive()))
             backup.Restore(_modManager);
         if (backup.Exists)
         {
@@ -208,13 +203,13 @@ public class ModPanelEditTab : ITab
             _delayedActions.Enqueue(() => DescriptionEdit.OpenPopup(_mod, Input.Description));
 
         ImGui.SameLine();
-        var fileExists = File.Exists(_filenames.ModMetaPath(_mod));
+        var fileExists = File.Exists(filenames.ModMetaPath(_mod));
         var tt = fileExists
             ? "在指定的文本编辑器中打开元数据json文件。"
             : "元数据json文件不存在。";
         if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.FileExport.ToIconString()}##metaFile", UiHelpers.IconButtonSize, tt,
                 !fileExists, true))
-            Process.Start(new ProcessStartInfo(_filenames.ModMetaPath(_mod)) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(filenames.ModMetaPath(_mod)) { UseShellExecute = true });
     }
 
     /// <summary> Do some edits outside of iterations. </summary>
@@ -438,7 +433,7 @@ public class ModPanelEditTab : ITab
             _delayedActions.Enqueue(() => DescriptionEdit.OpenPopup(_mod, groupIdx));
 
         ImGui.SameLine();
-        var fileName   = _filenames.OptionGroupFile(_mod, groupIdx, _config.ReplaceNonAsciiOnImport);
+        var fileName   = filenames.OptionGroupFile(_mod, groupIdx, config.ReplaceNonAsciiOnImport);
         var fileExists = File.Exists(fileName);
         tt = fileExists
             ? $"在文本编辑器中打开 {group.Name} 的json文件。"
