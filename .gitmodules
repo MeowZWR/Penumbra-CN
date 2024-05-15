@@ -1,16 +1,16 @@
 [submodule "OtterGui"]
 	path = OtterGui
 	url = https://github.com/MeowZWR/OtterGui.git
-	branch = main
+	branch = CN
 [submodule "Penumbra.Api"]
 	path = Penumbra.Api
 	url = https://github.com/MeowZWR/Penumbra.Api.git
-	branch = main
+	branch = CN
 [submodule "Penumbra.String"]
 	path = Penumbra.String
 	url = https://github.com/MeowZWR/Penumbra.String.git
-	branch = main
+	branch = CN
 [submodule "Penumbra.GameData"]
 	path = Penumbra.GameData
 	url = https://github.com/MeowZWR/Penumbra.GameData.git
-	branch = main
+	branch = CN

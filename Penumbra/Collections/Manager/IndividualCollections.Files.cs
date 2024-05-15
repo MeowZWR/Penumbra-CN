@@ -1,4 +1,4 @@
-using Dalamud.Game.ClientState.Objects.Enums;
+﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
@@ -47,56 +47,56 @@ public partial class IndividualCollections
 
     private bool ReadJObjectInternal(JArray? obj, CollectionStorage storage)
     {
-        Penumbra.Log.Debug("[Collections] Reading individual assignments...");
+        Penumbra.Log.Debug("[Collections] 读取单个分配...");
         if (obj == null)
         {
-            Penumbra.Log.Debug($"[Collections] Finished reading {Count} individual assignments...");
+            Penumbra.Log.Debug($"[Collections] 完成读取 {Count} 个单个分配...");
             return true;
         }
 
-        var changes = false;
+        bool changes = false;
+
+        void LogChange(string message, NotificationType type)
+        {
+            changes = true;
+            Penumbra.Messager.NotificationMessage(message, type);
+        }
+
         foreach (var data in obj)
         {
             try
             {
                 var identifier = _actors.FromJson(data as JObject);
-                var group      = GetGroup(identifier);
+                var group = GetGroup(identifier);
                 if (group.Length == 0 || group.Any(i => !i.IsValid))
                 {
-                    changes = true;
-                    Penumbra.Messager.NotificationMessage("Could not load an unknown individual collection, removed.",
-                        NotificationType.Error);
+                    LogChange("无法加载未知的独立合集，已删除。", NotificationType.Error);
                     continue;
                 }
 
                 var collectionName = data["Collection"]?.ToObject<string>() ?? string.Empty;
                 if (collectionName.Length == 0 || !storage.ByName(collectionName, out var collection))
                 {
-                    changes = true;
-                    Penumbra.Messager.NotificationMessage(
-                        $"Could not load the collection \"{collectionName}\" as individual collection for {identifier}, set to None.",
-                        NotificationType.Warning);
+                    LogChange($"无法加载合集 \"{collectionName}\" 作为 {identifier} 的独立合集，已设为None。", NotificationType.Warning);
                     continue;
                 }
 
                 if (!Add(group, collection))
                 {
-                    changes = true;
-                    Penumbra.Messager.NotificationMessage($"Could not add an individual collection for {identifier}, removed.",
-                        NotificationType.Warning);
+                    LogChange($"无法添加 {identifier} 的独立合集，已删除。", NotificationType.Warning);
                 }
             }
             catch (Exception e)
             {
-                changes = true;
-                Penumbra.Messager.NotificationMessage(e, $"Could not load an unknown individual collection, removed.", NotificationType.Error);
+                LogChange(e.ToString(), NotificationType.Error);
             }
         }
 
-        Penumbra.Log.Debug($"Finished reading {Count} individual assignments...");
+        Penumbra.Log.Debug($"完成读取 {Count} 个单独分配...");
 
         return changes;
     }
+
 
     internal void Migrate0To1(Dictionary<string, ModCollection> old)
     {

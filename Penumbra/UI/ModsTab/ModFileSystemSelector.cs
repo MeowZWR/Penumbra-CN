@@ -534,7 +534,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
           + "输入 t:[文字] 按模组标签筛选。\n"
           + "输入 n:[文字] 按模组名字筛选。\n"
           + "输入 a:[文字] 按作者名称筛选。"
-          + $"输入 s:[文字] 按模组修改的物品的类别(1-{ChangedItemDrawer.NumCategories + 1}或不完整的类别名称)来进行帅选。\n"
+          + $"输入 s:[文字] 按模组修改的物品的类别(1-{ChangedItemDrawer.NumCategories + 1}或不完整的类别名称)来进行筛选。\n"
           + "使用[None]作为占位符值仅匹配空列表或名称。";
     }
 
