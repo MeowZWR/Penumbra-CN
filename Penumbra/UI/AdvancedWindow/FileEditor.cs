@@ -204,8 +204,9 @@ public class FileEditor<T>(
 
     private void SaveButton()
     {
+        var canSave = _changed && _currentFile is { Valid: true };
         if (ImGuiUtil.DrawDisabledButton("Save to File", Vector2.Zero,
-                $"Save the selected {fileType} file with all changes applied. This is not revertible.", !_changed))
+                $"Save the selected {fileType} file with all changes applied. This is not revertible.", !canSave))
         {
             compactor.WriteAllBytes(_currentPath!.File.FullName, _currentFile!.Write());
             if (owner.Mod != null)
@@ -305,7 +306,7 @@ public class FileEditor<T>(
                     UiHelpers.Text(gamePath.Path);
                     ImGui.TableNextColumn();
                     using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.ItemId.Value());
-                    ImGui.TextUnformatted(option.FullName);
+                    ImGui.TextUnformatted(option.GetFullName());
                 }
             }
 

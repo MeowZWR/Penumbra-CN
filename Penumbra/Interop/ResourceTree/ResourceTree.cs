@@ -1,4 +1,3 @@
-using Dalamud.Game.ClientState.Objects.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
@@ -6,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.Interop.Services;
 using Penumbra.UI;
 using CustomizeData = FFXIVClientStructs.FFXIV.Client.Game.Character.CustomizeData;
 using CustomizeIndex = Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex;
@@ -15,6 +15,7 @@ namespace Penumbra.Interop.ResourceTree;
 public class ResourceTree
 {
     public readonly string                Name;
+    public readonly string                AnonymizedName;
     public readonly int                   GameObjectIndex;
     public readonly nint                  GameObjectAddress;
     public readonly nint                  DrawObjectAddress;
@@ -22,6 +23,7 @@ public class ResourceTree
     public readonly bool                  PlayerRelated;
     public readonly bool                  Networked;
     public readonly string                CollectionName;
+    public readonly string                AnonymizedCollectionName;
     public readonly List<ResourceNode>    Nodes;
     public readonly HashSet<ResourceNode> FlatNodes;
 
@@ -29,18 +31,20 @@ public class ResourceTree
     public CustomizeData CustomizeData;
     public GenderRace    RaceCode;
 
-    public ResourceTree(string name, int gameObjectIndex, nint gameObjectAddress, nint drawObjectAddress, bool localPlayerRelated, bool playerRelated, bool networked, string collectionName)
+    public ResourceTree(string name, string anonymizedName, int gameObjectIndex, nint gameObjectAddress, nint drawObjectAddress, bool localPlayerRelated, bool playerRelated, bool networked, string collectionName, string anonymizedCollectionName)
     {
-        Name               = name;
-        GameObjectIndex    = gameObjectIndex;
-        GameObjectAddress  = gameObjectAddress;
-        DrawObjectAddress  = drawObjectAddress;
-        LocalPlayerRelated = localPlayerRelated;
-        Networked          = networked;
-        PlayerRelated      = playerRelated;
-        CollectionName     = collectionName;
-        Nodes              = new List<ResourceNode>();
-        FlatNodes          = new HashSet<ResourceNode>();
+        Name                     = name;
+        AnonymizedName           = anonymizedName;
+        GameObjectIndex          = gameObjectIndex;
+        GameObjectAddress        = gameObjectAddress;
+        DrawObjectAddress        = drawObjectAddress;
+        LocalPlayerRelated       = localPlayerRelated;
+        Networked                = networked;
+        PlayerRelated            = playerRelated;
+        CollectionName           = collectionName;
+        AnonymizedCollectionName = anonymizedCollectionName;
+        Nodes                    = new List<ResourceNode>();
+        FlatNodes                = new HashSet<ResourceNode>();
     }
 
     public void ProcessPostfix(Action<ResourceNode, ResourceNode?> action)
@@ -154,6 +158,22 @@ public class ResourceTree
     private unsafe void AddHumanResources(GlobalResolveContext globalContext, Human* human)
     {
         var genericContext = globalContext.CreateContext(&human->CharacterBase);
+
+        var cache = globalContext.Collection._cache;
+        if (cache != null && cache.CustomResources.TryGetValue(PreBoneDeformerReplacer.PreBoneDeformerPath, out var pbdHandle))
+        {
+            var pbdNode = genericContext.CreateNodeFromPbd(pbdHandle.ResourceHandle);
+            if (pbdNode != null)
+            {
+                if (globalContext.WithUiData)
+                {
+                    pbdNode = pbdNode.Clone();
+                    pbdNode.FallbackName = "Racial Deformer";
+                    pbdNode.Icon = ChangedItemDrawer.ChangedItemIcon.Customization;
+                }
+                Nodes.Add(pbdNode);
+            }
+        }
 
         var decalId = (byte)(human->Customize[(int)CustomizeIndex.Facepaint] & 0x7F);
         var decalPath = decalId != 0

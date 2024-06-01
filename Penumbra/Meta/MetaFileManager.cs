@@ -11,7 +11,7 @@ using Penumbra.Interop.Services;
 using Penumbra.Interop.Structs;
 using Penumbra.Meta.Files;
 using Penumbra.Mods;
-using Penumbra.Mods.Subclasses;
+using Penumbra.Mods.Groups;
 using Penumbra.Services;
 using ResidentResourceManager = Penumbra.Interop.Services.ResidentResourceManager;
 
@@ -27,6 +27,7 @@ public unsafe class MetaFileManager
     internal readonly ValidityChecker         ValidityChecker;
     internal readonly ObjectIdentification    Identifier;
     internal readonly FileCompactor           Compactor;
+    internal readonly ImcChecker              ImcChecker;
 
     public MetaFileManager(CharacterUtility characterUtility, ResidentResourceManager residentResources, IDataManager gameData,
         ActiveCollectionData activeCollections, Configuration config, ValidityChecker validityChecker, ObjectIdentification identifier,
@@ -40,6 +41,7 @@ public unsafe class MetaFileManager
         ValidityChecker   = validityChecker;
         Identifier        = identifier;
         Compactor         = compactor;
+        ImcChecker        = new ImcChecker(this);
         interop.InitializeFromAttributes(this);
     }
 
@@ -50,11 +52,15 @@ public unsafe class MetaFileManager
             TexToolsMeta.WriteTexToolsMeta(this, mod.Default.Manipulations, mod.ModPath);
             foreach (var group in mod.Groups)
             {
+                if (group is not ITexToolsGroup texToolsGroup)
+                    continue;
+
                 var dir = ModCreator.NewOptionDirectory(mod.ModPath, group.Name, Config.ReplaceNonAsciiOnImport);
                 if (!dir.Exists)
                     dir.Create();
 
-                foreach (var option in group.OfType<SubMod>())
+
+                foreach (var option in texToolsGroup.OptionData)
                 {
                     var optionDir = ModCreator.NewOptionDirectory(dir, option.Name, Config.ReplaceNonAsciiOnImport);
                     if (!optionDir.Exists)
@@ -93,7 +99,7 @@ public unsafe class MetaFileManager
             return;
 
         ResidentResources.Reload();
-        if (collection?._cache == null)
+        if (collection._cache == null)
             CharacterUtility.ResetAll();
         else
             collection._cache.Meta.SetFiles();

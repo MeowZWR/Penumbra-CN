@@ -1,5 +1,7 @@
 using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using ImGuiNET;
+using Lumina.Data.Parsing;
 using OtterGui;
 using OtterGui.Custom;
 using OtterGui.Raii;
@@ -14,9 +16,13 @@ namespace Penumbra.UI.AdvancedWindow;
 
 public partial class ModEditWindow
 {
-    private const int    MdlMaterialMaximum     = 4;
-    private const string MdlImportDocumentation = @"https://github.com/xivdev/Penumbra/wiki/Model-IO#user-content-9b49d296-23ab-410a-845b-a3be769b71ea";
-    private const string MdlExportDocumentation = @"https://github.com/xivdev/Penumbra/wiki/Model-IO#user-content-25968400-ebe5-4861-b610-cb1556db7ec4";
+    private const int MdlMaterialMaximum = 4;
+
+    private const string MdlImportDocumentation =
+        @"https://github.com/xivdev/Penumbra/wiki/Model-IO#user-content-9b49d296-23ab-410a-845b-a3be769b71ea";
+
+    private const string MdlExportDocumentation =
+        @"https://github.com/xivdev/Penumbra/wiki/Model-IO#user-content-25968400-ebe5-4861-b610-cb1556db7ec4";
 
     private readonly FileEditor<MdlTab> _modelTab;
     private readonly ModelManager       _models;
@@ -25,11 +31,15 @@ public partial class ModEditWindow
     private readonly List<TagButtons> _subMeshAttributeTagWidgets = [];
     private          string           _customPath                 = string.Empty;
     private          Utf8GamePath     _customGamePath             = Utf8GamePath.Empty;
+    private          MdlFile          _lastFile                   = null!;
+    private          long[]           _lodTriCount                = [];
 
-    private bool DrawModelPanel(MdlTab tab, bool disabled)
+    private void UpdateFile(MdlFile file, bool force)
     {
-        var file = tab.Mdl;
+        if (file == _lastFile && !force)
+            return;
 
+        _lastFile = file;
         var subMeshTotal = file.Meshes.Aggregate(0, (count, mesh) => count + mesh.SubMeshCount);
         if (_subMeshAttributeTagWidgets.Count != subMeshTotal)
         {
@@ -39,17 +49,22 @@ public partial class ModEditWindow
             );
         }
 
-        DrawImportExport(tab, disabled);
+        _lodTriCount = Enumerable.Range(0, file.Lods.Length).Select(l => GetTriangleCountForLod(file, l)).ToArray();
+    }
 
+    private bool DrawModelPanel(MdlTab tab, bool disabled)
+    {
         var ret = tab.Dirty;
+        UpdateFile(tab.Mdl, ret);
+        DrawImportExport(tab, disabled);
 
         ret |= DrawModelMaterialDetails(tab, disabled);
 
-        if (ImGui.CollapsingHeader($"Meshes ({file.Meshes.Length})###meshes"))
-            for (var i = 0; i < file.LodCount; ++i)
+        if (ImGui.CollapsingHeader($"Meshes ({_lastFile.Meshes.Length})###meshes"))
+            for (var i = 0; i < _lastFile.LodCount; ++i)
                 ret |= DrawModelLodDetails(tab, i, disabled);
 
-        ret |= DrawOtherModelDetails(file, disabled);
+        ret |= DrawOtherModelDetails(disabled);
 
         return !disabled && ret;
     }
@@ -85,7 +100,7 @@ public partial class ModEditWindow
 
         using (var frame = ImRaii.FramedGroup("Import", size, headerPreIcon: FontAwesomeIcon.FileImport))
         {
-            ImGui.Checkbox("Keep current materials", ref tab.ImportKeepMaterials);
+            ImGui.Checkbox("Keep current materials",  ref tab.ImportKeepMaterials);
             ImGui.Checkbox("Keep current attributes", ref tab.ImportKeepAttributes);
 
             if (ImGuiUtil.DrawDisabledButton("Import from glTF", Vector2.Zero, "Imports a glTF file, overriding the content of this mdl.",
@@ -111,10 +126,7 @@ public partial class ModEditWindow
 
         if (tab.GamePaths == null)
         {
-            if (tab.IoExceptions.Count == 0)
-                ImGui.TextUnformatted("Resolving model game paths.");
-            else
-                ImGui.TextUnformatted("Failed to resolve model game paths.");
+            ImGui.TextUnformatted(tab.IoExceptions.Count == 0 ? "Resolving model game paths." : "Failed to resolve model game paths.");
 
             return;
         }
@@ -134,8 +146,8 @@ public partial class ModEditWindow
 
         if (ImGuiUtil.DrawDisabledButton("Export to glTF", Vector2.Zero, "Exports this mdl file to glTF, for use in 3D authoring applications.",
                 tab.PendingIo || gamePath.IsEmpty))
-            _fileDialog.OpenSavePicker("Save model as glTF.", ".gltf", Path.GetFileNameWithoutExtension(gamePath.Filename().ToString()),
-                ".gltf", (valid, path) =>
+            _fileDialog.OpenSavePicker("Save model as glTF.", ".glb", Path.GetFileNameWithoutExtension(gamePath.Filename().ToString()),
+                ".glb", (valid, path) =>
                 {
                     if (!valid)
                         return;
@@ -149,14 +161,15 @@ public partial class ModEditWindow
         ImGui.SameLine();
         DrawDocumentationLink(MdlExportDocumentation);
     }
-    
+
     private static void DrawIoExceptions(MdlTab tab)
     {
         if (tab.IoExceptions.Count == 0)
             return;
 
         var size = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-        using var frame = ImRaii.FramedGroup("Exceptions", size, headerPreIcon: FontAwesomeIcon.TimesCircle, borderColor: Colors.RegexWarningBorder);
+        using var frame = ImRaii.FramedGroup("Exceptions", size, headerPreIcon: FontAwesomeIcon.TimesCircle,
+            borderColor: Colors.RegexWarningBorder);
 
         var spaceAvail = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X - 100;
         foreach (var (exception, index) in tab.IoExceptions.WithIndex())
@@ -181,7 +194,7 @@ public partial class ModEditWindow
         if (tab.IoWarnings.Count == 0)
             return;
 
-        var size = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+        var       size  = new Vector2(ImGui.GetContentRegionAvail().X, 0);
         using var frame = ImRaii.FramedGroup("Warnings", size, headerPreIcon: FontAwesomeIcon.ExclamationCircle, borderColor: 0xFF40FFFF);
 
         var spaceAvail = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X - 100;
@@ -280,10 +293,24 @@ public partial class ModEditWindow
 
     private bool DrawModelMaterialDetails(MdlTab tab, bool disabled)
     {
-        if (!ImGui.CollapsingHeader("Materials"))
+        var invalidMaterialCount = tab.Mdl.Materials.Count(material => !tab.ValidateMaterial(material));
+
+        var oldPos = ImGui.GetCursorPosY();
+        var header = ImGui.CollapsingHeader("Materials");
+        var newPos = ImGui.GetCursorPos();
+        if (invalidMaterialCount > 0)
+        {
+            var text = $"{invalidMaterialCount} invalid material{(invalidMaterialCount > 1 ? "s" : "")}";
+            var size = ImGui.CalcTextSize(text).X;
+            ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - size, oldPos + ImGui.GetStyle().FramePadding.Y));
+            ImGuiUtil.TextColored(0xFF0000FF, text);
+            ImGui.SetCursorPos(newPos);
+        }
+
+        if (!header)
             return false;
 
-        using var table = ImRaii.Table(string.Empty, disabled ? 2 : 3, ImGuiTableFlags.SizingFixedFit);
+        using var table = ImRaii.Table(string.Empty, disabled ? 2 : 4, ImGuiTableFlags.SizingFixedFit);
         if (!table)
             return false;
 
@@ -293,7 +320,10 @@ public partial class ModEditWindow
         ImGui.TableSetupColumn("index", ImGuiTableColumnFlags.WidthFixed,   80 * UiHelpers.Scale);
         ImGui.TableSetupColumn("path",  ImGuiTableColumnFlags.WidthStretch, 1);
         if (!disabled)
+        {
             ImGui.TableSetupColumn("actions", ImGuiTableColumnFlags.WidthFixed, UiHelpers.IconButtonSize.X);
+            ImGui.TableSetupColumn("help", ImGuiTableColumnFlags.WidthFixed, UiHelpers.IconButtonSize.X);
+        }
 
         var inputFlags = disabled ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None;
         for (var materialIndex = 0; materialIndex < materials.Length; materialIndex++)
@@ -307,14 +337,19 @@ public partial class ModEditWindow
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(-1);
         ImGui.InputTextWithHint("##newMaterial", "Add new material...", ref _modelNewMaterial, Utf8GamePath.MaxGamePathLength, inputFlags);
-        var validName = _modelNewMaterial.Length > 0 && _modelNewMaterial[0] == '/';
+        var validName = tab.ValidateMaterial(_modelNewMaterial);
         ImGui.TableNextColumn();
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), UiHelpers.IconButtonSize, string.Empty, !validName, true))
-            return ret;
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), UiHelpers.IconButtonSize, string.Empty, !validName, true))
+        {
+            ret |= true;
+            tab.Mdl.Materials = materials.AddItem(_modelNewMaterial);
+            _modelNewMaterial = string.Empty;
+        }
+        ImGui.TableNextColumn();
+        if (!validName && _modelNewMaterial.Length > 0)
+            DrawInvalidMaterialMarker();
 
-        tab.Mdl.Materials = materials.AddItem(_modelNewMaterial);
-        _modelNewMaterial = string.Empty;
-        return true;
+        return ret;
     }
 
     private bool DrawMaterialRow(MdlTab tab, bool disabled, string[] materials, int materialIndex, ImGuiInputTextFlags inputFlags)
@@ -341,20 +376,38 @@ public partial class ModEditWindow
             return ret;
 
         ImGui.TableNextColumn();
-
         // Need to have at least one material.
-        if (materials.Length <= 1)
-            return ret;
+        if (materials.Length > 1)
+        {
+            var tt             = "Delete this material.\nAny meshes targeting this material will be updated to use material #1.";
+            var modifierActive = _config.DeleteModModifier.IsActive();
+            if (!modifierActive)
+                tt += $"\nHold {_config.DeleteModModifier} to delete.";
 
-        var tt             = "Delete this material.\nAny meshes targeting this material will be updated to use material #1.";
-        var modifierActive = _config.DeleteModModifier.IsActive();
-        if (!modifierActive)
-            tt += $"\nHold {_config.DeleteModModifier} to delete.";
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize, tt, !modifierActive, true))
-            return ret;
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize, tt, !modifierActive, true))
+            {
+                tab.RemoveMaterial(materialIndex);
+                ret |= true;
+            }
+        }
 
-        tab.RemoveMaterial(materialIndex);
-        return true;
+        ImGui.TableNextColumn();
+        // Add markers to invalid materials.
+        if (!tab.ValidateMaterial(temp))
+            DrawInvalidMaterialMarker();
+        
+        return ret;
+    }
+
+    private void DrawInvalidMaterialMarker()
+    {
+        using (var font = ImRaii.PushFont(UiBuilder.IconFont))
+            ImGuiUtil.TextColored(0xFF0000FF, FontAwesomeIcon.TimesCircle.ToIconString());
+
+        ImGuiUtil.HoverTooltip(
+            "Materials must be either relative (e.g. \"/filename.mtrl\")\n"
+          + "or absolute (e.g. \"bg/full/path/to/filename.mtrl\"),\n"
+          + "and must end in \".mtrl\".");
     }
 
     private bool DrawModelLodDetails(MdlTab tab, int lodIndex, bool disabled)
@@ -389,6 +442,14 @@ public partial class ModEditWindow
         var file = tab.Mdl;
         var mesh = file.Meshes[meshIndex];
 
+        // Vertex elements
+        ImGui.TableNextColumn();
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Vertex Elements");
+
+        ImGui.TableNextColumn();
+        DrawVertexElementDetails(file.VertexDeclarations[meshIndex].VertexElements);
+
         // Mesh material
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
@@ -402,6 +463,40 @@ public partial class ModEditWindow
             ret |= DrawSubMeshAttributes(tab, meshIndex, subMeshOffset, disabled);
 
         return ret;
+    }
+
+    private static void DrawVertexElementDetails(MdlStructs.VertexElement[] vertexElements)
+    {
+        using var node = ImRaii.TreeNode($"Click to expand");
+        if (!node)
+            return;
+        
+        var flags = ImGuiTableFlags.SizingFixedFit
+            | ImGuiTableFlags.RowBg
+            | ImGuiTableFlags.Borders
+            | ImGuiTableFlags.NoHostExtendX;
+        using var table = ImRaii.Table(string.Empty, 4, flags);
+        if (!table)
+            return;
+
+        ImGui.TableSetupColumn("Usage");
+        ImGui.TableSetupColumn("Type");
+        ImGui.TableSetupColumn("Stream");
+        ImGui.TableSetupColumn("Offset");
+
+        ImGui.TableHeadersRow();
+
+        foreach (var element in vertexElements)
+        {
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{(MdlFile.VertexUsage)element.Usage}");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{(MdlFile.VertexType)element.Type}");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{element.Stream}");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted($"{element.Offset}");
+        }
     }
 
     private static bool DrawMaterialCombo(MdlTab tab, int meshIndex, bool disabled)
@@ -445,7 +540,7 @@ public partial class ModEditWindow
         if (attributes == null)
         {
             attributes = ["invalid attribute data"];
-            disabled = true;
+            disabled   = true;
         }
 
         var tagIndex = widget.Draw(string.Empty, string.Empty, attributes,
@@ -460,7 +555,7 @@ public partial class ModEditWindow
         return true;
     }
 
-    private static bool DrawOtherModelDetails(MdlFile file, bool _)
+    private bool DrawOtherModelDetails(bool _)
     {
         using var header = ImRaii.CollapsingHeader("Further Content");
         if (!header)
@@ -471,79 +566,84 @@ public partial class ModEditWindow
             if (table)
             {
                 ImGuiUtil.DrawTableColumn("Version");
-                ImGuiUtil.DrawTableColumn(file.Version.ToString());
+                ImGuiUtil.DrawTableColumn($"0x{_lastFile.Version:X}");
                 ImGuiUtil.DrawTableColumn("Radius");
-                ImGuiUtil.DrawTableColumn(file.Radius.ToString(CultureInfo.InvariantCulture));
+                ImGuiUtil.DrawTableColumn(_lastFile.Radius.ToString(CultureInfo.InvariantCulture));
                 ImGuiUtil.DrawTableColumn("Model Clip Out Distance");
-                ImGuiUtil.DrawTableColumn(file.ModelClipOutDistance.ToString(CultureInfo.InvariantCulture));
+                ImGuiUtil.DrawTableColumn(_lastFile.ModelClipOutDistance.ToString(CultureInfo.InvariantCulture));
                 ImGuiUtil.DrawTableColumn("Shadow Clip Out Distance");
-                ImGuiUtil.DrawTableColumn(file.ShadowClipOutDistance.ToString(CultureInfo.InvariantCulture));
+                ImGuiUtil.DrawTableColumn(_lastFile.ShadowClipOutDistance.ToString(CultureInfo.InvariantCulture));
                 ImGuiUtil.DrawTableColumn("LOD Count");
-                ImGuiUtil.DrawTableColumn(file.LodCount.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.LodCount.ToString());
                 ImGuiUtil.DrawTableColumn("Enable Index Buffer Streaming");
-                ImGuiUtil.DrawTableColumn(file.EnableIndexBufferStreaming.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.EnableIndexBufferStreaming.ToString());
                 ImGuiUtil.DrawTableColumn("Enable Edge Geometry");
-                ImGuiUtil.DrawTableColumn(file.EnableEdgeGeometry.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.EnableEdgeGeometry.ToString());
                 ImGuiUtil.DrawTableColumn("Flags 1");
-                ImGuiUtil.DrawTableColumn(file.Flags1.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.Flags1.ToString());
                 ImGuiUtil.DrawTableColumn("Flags 2");
-                ImGuiUtil.DrawTableColumn(file.Flags2.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.Flags2.ToString());
                 ImGuiUtil.DrawTableColumn("Vertex Declarations");
-                ImGuiUtil.DrawTableColumn(file.VertexDeclarations.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.VertexDeclarations.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Bone Bounding Boxes");
-                ImGuiUtil.DrawTableColumn(file.BoneBoundingBoxes.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.BoneBoundingBoxes.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Bone Tables");
-                ImGuiUtil.DrawTableColumn(file.BoneTables.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.BoneTables.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Element IDs");
-                ImGuiUtil.DrawTableColumn(file.ElementIds.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.ElementIds.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Extra LoDs");
-                ImGuiUtil.DrawTableColumn(file.ExtraLods.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.ExtraLods.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Meshes");
-                ImGuiUtil.DrawTableColumn(file.Meshes.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.Meshes.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Shape Meshes");
-                ImGuiUtil.DrawTableColumn(file.ShapeMeshes.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.ShapeMeshes.Length.ToString());
                 ImGuiUtil.DrawTableColumn("LoDs");
-                ImGuiUtil.DrawTableColumn(file.Lods.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.Lods.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Vertex Declarations");
-                ImGuiUtil.DrawTableColumn(file.VertexDeclarations.Length.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.VertexDeclarations.Length.ToString());
                 ImGuiUtil.DrawTableColumn("Stack Size");
-                ImGuiUtil.DrawTableColumn(file.StackSize.ToString());
+                ImGuiUtil.DrawTableColumn(_lastFile.StackSize.ToString());
+                foreach (var (triCount, lod) in _lodTriCount.WithIndex())
+                {
+                    ImGuiUtil.DrawTableColumn($"LOD #{lod + 1} Triangle Count");
+                    ImGuiUtil.DrawTableColumn(triCount.ToString());
+                }
             }
         }
 
         using (var materials = ImRaii.TreeNode("Materials", ImGuiTreeNodeFlags.DefaultOpen))
         {
             if (materials)
-                foreach (var material in file.Materials)
+                foreach (var material in _lastFile.Materials)
                     ImRaii.TreeNode(material, ImGuiTreeNodeFlags.Leaf).Dispose();
         }
 
         using (var attributes = ImRaii.TreeNode("Attributes", ImGuiTreeNodeFlags.DefaultOpen))
         {
             if (attributes)
-                foreach (var attribute in file.Attributes)
+                foreach (var attribute in _lastFile.Attributes)
                     ImRaii.TreeNode(attribute, ImGuiTreeNodeFlags.Leaf).Dispose();
         }
 
         using (var bones = ImRaii.TreeNode("Bones", ImGuiTreeNodeFlags.DefaultOpen))
         {
             if (bones)
-                foreach (var bone in file.Bones)
+                foreach (var bone in _lastFile.Bones)
                     ImRaii.TreeNode(bone, ImGuiTreeNodeFlags.Leaf).Dispose();
         }
 
         using (var shapes = ImRaii.TreeNode("Shapes", ImGuiTreeNodeFlags.DefaultOpen))
         {
             if (shapes)
-                foreach (var shape in file.Shapes)
+                foreach (var shape in _lastFile.Shapes)
                     ImRaii.TreeNode(shape.ShapeName, ImGuiTreeNodeFlags.Leaf).Dispose();
         }
 
-        if (file.RemainingData.Length > 0)
+        if (_lastFile.RemainingData.Length > 0)
         {
-            using var t = ImRaii.TreeNode($"Additional Data (Size: {file.RemainingData.Length})###AdditionalData");
+            using var t = ImRaii.TreeNode($"Additional Data (Size: {_lastFile.RemainingData.Length})###AdditionalData");
             if (t)
-                ImGuiUtil.TextWrapped(string.Join(' ', file.RemainingData.Select(c => $"{c:X2}")));
+                Widget.DrawHexViewer(_lastFile.RemainingData);
         }
 
         return false;
@@ -553,6 +653,18 @@ public partial class ModEditWindow
     {
         file = files.FirstOrDefault(f => ValidModelExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
         return file != null;
+    }
+
+    private static long GetTriangleCountForLod(MdlFile model, int lod)
+    {
+        var vertSum   = 0u;
+        var meshIndex = model.Lods[lod].MeshIndex;
+        var meshCount = model.Lods[lod].MeshCount;
+
+        for (var i = meshIndex; i < meshIndex + meshCount; i++)
+            vertSum += model.Meshes[i].IndexCount;
+
+        return vertSum / 3;
     }
 
     private static readonly string[] ValidModelExtensions =

@@ -12,6 +12,7 @@ using Penumbra.Collections.Manager;
 using Penumbra.Communication;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 using Penumbra.Import.Models;
 using Penumbra.Import.Textures;
 using Penumbra.Interop.Hooks.Objects;
@@ -20,7 +21,7 @@ using Penumbra.Meta;
 using Penumbra.Mods;
 using Penumbra.Mods.Editor;
 using Penumbra.Mods.Manager;
-using Penumbra.Mods.Subclasses;
+using Penumbra.Mods.SubMods;
 using Penumbra.Services;
 using Penumbra.String;
 using Penumbra.String.Classes;
@@ -46,7 +47,7 @@ public partial class ModEditWindow : Window, IDisposable
     private readonly IDragDropManager        _dragDropManager;
     private readonly IDataManager            _gameData;
     private readonly IFramework              _framework;
-    private readonly IObjectTable            _objects;
+    private readonly ObjectManager           _objects;
     private readonly CharacterBaseDestructor _characterBaseDestructor;
 
     private Vector2 _iconSize = Vector2.Zero;
@@ -76,8 +77,11 @@ public partial class ModEditWindow : Window, IDisposable
         _forceTextureStartPath = true;
     }
 
-    public void ChangeOption(SubMod? subMod)
-        => _editor.LoadOption(subMod?.GroupIdx ?? -1, subMod?.OptionIdx ?? 0);
+    public void ChangeOption(IModDataContainer? subMod)
+    {
+        var (groupIdx, dataIdx) = subMod?.GetDataIndices() ?? (-1, 0);
+        _editor.LoadOption(groupIdx, dataIdx);
+    }
 
     public void UpdateModels()
     {
@@ -107,7 +111,7 @@ public partial class ModEditWindow : Window, IDisposable
         });
         var manipulations = 0;
         var subMods       = 0;
-        var swaps = Mod!.AllSubMods.Sum(m =>
+        var swaps = Mod!.AllDataContainers.Sum(m =>
         {
             ++subMods;
             manipulations += m.Manipulations.Count;
@@ -326,7 +330,7 @@ public partial class ModEditWindow : Window, IDisposable
         else if (ImGuiUtil.DrawDisabledButton("Re-Duplicate and Normalize Mod", Vector2.Zero, tt, !_allowReduplicate && !modifier))
         {
             _editor.ModNormalizer.Normalize(Mod!);
-            _editor.ModNormalizer.Worker.ContinueWith(_ => _editor.LoadMod(Mod!, _editor.GroupIdx, _editor.OptionIdx));
+            _editor.ModNormalizer.Worker.ContinueWith(_ => _editor.LoadMod(Mod!, _editor.GroupIdx, _editor.DataIdx), TaskScheduler.Default);
         }
 
         if (!_editor.Duplicates.Worker.IsCompleted)
@@ -401,7 +405,7 @@ public partial class ModEditWindow : Window, IDisposable
         var          width         = new Vector2(ImGui.GetContentRegionAvail().X / 3, 0);
         var          ret           = false;
         if (ImGuiUtil.DrawDisabledButton(defaultOption, width, "Switch to the default option for the mod.\nThis resets unsaved changes.",
-                _editor.Option!.IsDefault))
+                _editor.Option is DefaultSubMod))
         {
             _editor.LoadOption(-1, 0);
             ret = true;
@@ -410,7 +414,7 @@ public partial class ModEditWindow : Window, IDisposable
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Refresh Data", width, "Refresh data for the current option.\nThis resets unsaved changes.", false))
         {
-            _editor.LoadMod(_editor.Mod!, _editor.GroupIdx, _editor.OptionIdx);
+            _editor.LoadMod(_editor.Mod!, _editor.GroupIdx, _editor.DataIdx);
             ret = true;
         }
 
@@ -418,16 +422,17 @@ public partial class ModEditWindow : Window, IDisposable
         ImGui.SetNextItemWidth(width.X);
         style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
         using var color = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value());
-        using var combo = ImRaii.Combo("##optionSelector", _editor.Option.FullName);
+        using var combo = ImRaii.Combo("##optionSelector", _editor.Option!.GetFullName());
         if (!combo)
             return ret;
 
-        foreach (var (option, idx) in Mod!.AllSubMods.WithIndex())
+        foreach (var (option, idx) in Mod!.AllDataContainers.WithIndex())
         {
             using var id = ImRaii.PushId(idx);
-            if (ImGui.Selectable(option.FullName, option == _editor.Option))
+            if (ImGui.Selectable(option.GetFullName(), option == _editor.Option))
             {
-                _editor.LoadOption(option.GroupIdx, option.OptionIdx);
+                var (groupIdx, dataIdx) = option.GetDataIndices();
+                _editor.LoadOption(groupIdx, dataIdx);
                 ret = true;
             }
         }
@@ -446,11 +451,11 @@ public partial class ModEditWindow : Window, IDisposable
 
         DrawOptionSelectHeader();
 
-        var setsEqual = !_editor!.SwapEditor.Changes;
+        var setsEqual = !_editor.SwapEditor.Changes;
         var tt        = setsEqual ? "No changes staged." : "Apply the currently staged changes to the option.";
         ImGui.NewLine();
         if (ImGuiUtil.DrawDisabledButton("Apply Changes", Vector2.Zero, tt, setsEqual))
-            _editor.SwapEditor.Apply(_editor.Mod!, _editor.GroupIdx, _editor.OptionIdx);
+            _editor.SwapEditor.Apply(_editor.Option!);
 
         ImGui.SameLine();
         tt = setsEqual ? "No changes staged." : "Revert all currently staged changes.";
@@ -539,13 +544,16 @@ public partial class ModEditWindow : Window, IDisposable
             return currentFile.Value;
 
         if (Mod != null)
-            foreach (var option in Mod.Groups.OrderByDescending(g => g.Priority)
-                         .SelectMany(g => g.WithIndex().OrderByDescending(o => g.OptionPriority(o.Index)).Select(g => g.Value))
-                         .Append(Mod.Default))
+        {
+            foreach (var option in Mod.Groups.OrderByDescending(g => g.Priority))
             {
-                if (option.Files.TryGetValue(path, out var value) || option.FileSwaps.TryGetValue(path, out value))
-                    return value;
+                if (option.FindBestMatch(path) is { } fullPath)
+                    return fullPath;
             }
+
+            if (Mod.Default.Files.TryGetValue(path, out var value) || Mod.Default.FileSwaps.TryGetValue(path, out value))
+                return value;
+        }
 
         return new FullPath(path);
     }
@@ -561,7 +569,7 @@ public partial class ModEditWindow : Window, IDisposable
         }
 
         if (Mod != null)
-            foreach (var option in Mod.Groups.SelectMany(g => g).Append(Mod.Default))
+            foreach (var option in Mod.AllDataContainers)
             {
                 foreach (var path in option.Files.Keys)
                 {
@@ -577,7 +585,8 @@ public partial class ModEditWindow : Window, IDisposable
         Configuration config, ModEditor editor, ResourceTreeFactory resourceTreeFactory, MetaFileManager metaFileManager,
         StainService stainService, ActiveCollections activeCollections, ModMergeTab modMergeTab,
         CommunicatorService communicator, TextureManager textures, ModelManager models, IDragDropManager dragDropManager,
-        ChangedItemDrawer changedItemDrawer, IObjectTable objects, IFramework framework, CharacterBaseDestructor characterBaseDestructor)
+        ResourceTreeViewerFactory resourceTreeViewerFactory, ObjectManager objects, IFramework framework,
+        CharacterBaseDestructor characterBaseDestructor)
         : base(WindowBaseLabel)
     {
         _performance             = performance;
@@ -610,8 +619,7 @@ public partial class ModEditWindow : Window, IDisposable
         _center              = new CombinedTexture(_left, _right);
         _textureSelectCombo  = new TextureDrawer.PathSelectCombo(textures, editor, () => GetPlayerResourcesOfType(ResourceType.Tex));
         _resourceTreeFactory = resourceTreeFactory;
-        _quickImportViewer =
-            new ResourceTreeViewer(_config, resourceTreeFactory, changedItemDrawer, 2, OnQuickImportRefresh, DrawQuickImportActions);
+        _quickImportViewer   = resourceTreeViewerFactory.Create(2, OnQuickImportRefresh, DrawQuickImportActions);
         _communicator.ModPathChanged.Subscribe(OnModPathChange, ModPathChanged.Priority.ModEditWindow);
         IsOpen = _config is { OpenWindowAtStart: true, Ephemeral.AdvancedEditingOpen: true };
     }
@@ -619,7 +627,7 @@ public partial class ModEditWindow : Window, IDisposable
     public void Dispose()
     {
         _communicator.ModPathChanged.Unsubscribe(OnModPathChange);
-        _editor?.Dispose();
+        _editor.Dispose();
         _materialTab.Dispose();
         _modelTab.Dispose();
         _shaderPackageTab.Dispose();

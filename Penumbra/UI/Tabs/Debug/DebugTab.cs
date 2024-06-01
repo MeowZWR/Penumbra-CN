@@ -21,6 +21,7 @@ using Penumbra.Collections.Manager;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 using Penumbra.Import.Structs;
 using Penumbra.Import.Textures;
 using Penumbra.Interop.PathResolving;
@@ -39,6 +40,7 @@ using CharacterUtility = Penumbra.Interop.Services.CharacterUtility;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 using ResidentResourceManager = Penumbra.Interop.Services.ResidentResourceManager;
 using ImGuiClip = OtterGui.ImGuiClip;
+using Penumbra.Api.IpcTester;
 
 namespace Penumbra.UI.Tabs.Debug;
 
@@ -53,7 +55,7 @@ public class Diagnostics(IServiceProvider provider)
         foreach (var type in typeof(ActorManager).Assembly.GetTypes()
                      .Where(t => t is { IsAbstract: false, IsInterface: false } && t.IsAssignableTo(typeof(IAsyncDataContainer))))
         {
-            var container = (IAsyncDataContainer) provider.GetRequiredService(type);
+            var container = (IAsyncDataContainer)provider.GetRequiredService(type);
             ImGuiUtil.DrawTableColumn(container.Name);
             ImGuiUtil.DrawTableColumn(container.Time.ToString());
             ImGuiUtil.DrawTableColumn(Functions.HumanReadableSize(container.Memory));
@@ -75,7 +77,6 @@ public class DebugTab : Window, ITab
     private readonly CharacterUtility          _characterUtility;
     private readonly ResidentResourceManager   _residentResources;
     private readonly ResourceManagerService    _resourceManager;
-    private readonly PenumbraIpcProviders      _ipc;
     private readonly CollectionResolver        _collectionResolver;
     private readonly DrawObjectState           _drawObjectState;
     private readonly PathState                 _pathState;
@@ -86,20 +87,24 @@ public class DebugTab : Window, ITab
     private readonly ImportPopup               _importPopup;
     private readonly FrameworkManager          _framework;
     private readonly TextureManager            _textureManager;
-    private readonly SkinFixer                 _skinFixer;
+    private readonly ShaderReplacementFixer    _shaderReplacementFixer;
     private readonly RedrawService             _redraws;
-    private readonly DictEmote                _emotes;
+    private readonly DictEmote                 _emotes;
     private readonly Diagnostics               _diagnostics;
-    private readonly IObjectTable              _objects;
+    private readonly ObjectManager             _objects;
     private readonly IClientState              _clientState;
     private readonly IpcTester                 _ipcTester;
+    private readonly CrashHandlerPanel         _crashHandlerPanel;
 
-    public DebugTab(PerformanceTracker performance, Configuration config, CollectionManager collectionManager, IObjectTable objects, IClientState clientState,
-        ValidityChecker validityChecker, ModManager modManager, HttpApi httpApi, ActorManager actors, StainService stains, CharacterUtility characterUtility, ResidentResourceManager residentResources,
-        ResourceManagerService resourceManager, PenumbraIpcProviders ipc, CollectionResolver collectionResolver,
+    public DebugTab(PerformanceTracker performance, Configuration config, CollectionManager collectionManager, ObjectManager objects,
+        IClientState clientState,
+        ValidityChecker validityChecker, ModManager modManager, HttpApi httpApi, ActorManager actors, StainService stains,
+        CharacterUtility characterUtility, ResidentResourceManager residentResources,
+        ResourceManagerService resourceManager, CollectionResolver collectionResolver,
         DrawObjectState drawObjectState, PathState pathState, SubfileHelper subfileHelper, IdentifiedCollectionCache identifiedCollectionCache,
         CutsceneService cutsceneService, ModImportManager modImporter, ImportPopup importPopup, FrameworkManager framework,
-        TextureManager textureManager, SkinFixer skinFixer, RedrawService redraws, DictEmote emotes, Diagnostics diagnostics, IpcTester ipcTester)
+        TextureManager textureManager, ShaderReplacementFixer shaderReplacementFixer, RedrawService redraws, DictEmote emotes,
+        Diagnostics diagnostics, IpcTester ipcTester, CrashHandlerPanel crashHandlerPanel)
         : base("Penumbra Debug Window", ImGuiWindowFlags.NoCollapse)
     {
         IsOpen = true;
@@ -119,7 +124,6 @@ public class DebugTab : Window, ITab
         _characterUtility          = characterUtility;
         _residentResources         = residentResources;
         _resourceManager           = resourceManager;
-        _ipc                       = ipc;
         _collectionResolver        = collectionResolver;
         _drawObjectState           = drawObjectState;
         _pathState                 = pathState;
@@ -130,11 +134,12 @@ public class DebugTab : Window, ITab
         _importPopup               = importPopup;
         _framework                 = framework;
         _textureManager            = textureManager;
-        _skinFixer                 = skinFixer;
+        _shaderReplacementFixer    = shaderReplacementFixer;
         _redraws                   = redraws;
         _emotes                    = emotes;
         _diagnostics               = diagnostics;
-        _ipcTester            = ipcTester;
+        _ipcTester                 = ipcTester;
+        _crashHandlerPanel         = crashHandlerPanel;
         _objects                   = objects;
         _clientState               = clientState;
     }
@@ -158,6 +163,9 @@ public class DebugTab : Window, ITab
             return;
 
         DrawDebugTabGeneral();
+        ImGui.NewLine();
+        _crashHandlerPanel.Draw();
+        ImGui.NewLine();
         _diagnostics.DrawDiagnostics();
         DrawPerformanceTab();
         ImGui.NewLine();
@@ -202,7 +210,7 @@ public class DebugTab : Window, ITab
                 color.Pop();
                 foreach (var (mod, paths, manips) in collection._cache!.ModData.Data.OrderBy(t => t.Item1.Name))
                 {
-                    using var id    = mod is TemporaryMod t ? PushId(t.Priority) : PushId(((Mod)mod).ModPath.Name);
+                    using var id    = mod is TemporaryMod t ? PushId(t.Priority.Value) : PushId(((Mod)mod).ModPath.Name);
                     using var node2 = TreeNode(mod.Name.Text);
                     if (!node2)
                         continue;
@@ -256,6 +264,7 @@ public class DebugTab : Window, ITab
                 PrintValue("Web Server Enabled",               _httpApi.Enabled.ToString());
             }
         }
+
 
         var issues = _modManager.WithIndex().Count(p => p.Index != p.Value.Index);
         using (var tree = TreeNode($"Mods ({issues} Issues)###Mods"))
@@ -394,7 +403,7 @@ public class DebugTab : Window, ITab
     private void DrawPerformanceTab()
     {
         ImGui.NewLine();
-        if (ImGui.CollapsingHeader("Performance"))
+        if (!ImGui.CollapsingHeader("Performance"))
             return;
 
         using (var start = TreeNode("Startup Performance", ImGuiTreeNodeFlags.DefaultOpen))
@@ -428,9 +437,11 @@ public class DebugTab : Window, ITab
             ImGuiUtil.DrawTableColumn(obj.Address == nint.Zero
                 ? string.Empty
                 : $"0x{(nint)((Character*)obj.Address)->GameObject.GetDrawObject():X}");
-            var identifier = _actors.FromObject(obj, false, true, false);
+            var identifier = _actors.FromObject(obj, out _, false, true, false);
             ImGuiUtil.DrawTableColumn(_actors.ToString(identifier));
-            var id = obj.ObjectKind == ObjectKind.BattleNpc ? $"{identifier.DataId} | {obj.DataId}" : identifier.DataId.ToString();
+            var id = obj.AsObject->ObjectKind == (byte)ObjectKind.BattleNpc
+                ? $"{identifier.DataId} | {obj.AsObject->DataID}"
+                : identifier.DataId.ToString();
             ImGuiUtil.DrawTableColumn(id);
         }
 
@@ -702,20 +713,25 @@ public class DebugTab : Window, ITab
         if (!ImGui.CollapsingHeader("Character Utility"))
             return;
 
-        var enableSkinFixer = _skinFixer.Enabled;
-        if (ImGui.Checkbox("Enable Skin Fixer", ref enableSkinFixer))
-            _skinFixer.Enabled = enableSkinFixer;
+        var enableShaderReplacementFixer = _shaderReplacementFixer.Enabled;
+        if (ImGui.Checkbox("Enable Shader Replacement Fixer", ref enableShaderReplacementFixer))
+            _shaderReplacementFixer.Enabled = enableShaderReplacementFixer;
 
-        if (enableSkinFixer)
+        if (enableShaderReplacementFixer)
         {
             ImGui.SameLine();
             ImGui.Dummy(ImGuiHelpers.ScaledVector2(20, 0));
+            var slowPathCallDeltas = _shaderReplacementFixer.GetAndResetSlowPathCallDeltas();
             ImGui.SameLine();
-            ImGui.TextUnformatted($"\u0394 Slow-Path Calls: {_skinFixer.GetAndResetSlowPathCallDelta()}");
+            ImGui.TextUnformatted($"\u0394 Slow-Path Calls for skin.shpk: {slowPathCallDeltas.Skin}");
+            ImGui.SameLine();
+            ImGui.TextUnformatted($"characterglass.shpk: {slowPathCallDeltas.CharacterGlass}");
             ImGui.SameLine();
             ImGui.Dummy(ImGuiHelpers.ScaledVector2(20, 0));
             ImGui.SameLine();
-            ImGui.TextUnformatted($"Materials with Modded skin.shpk: {_skinFixer.ModdedSkinShpkCount}");
+            ImGui.TextUnformatted($"Materials with Modded skin.shpk: {_shaderReplacementFixer.ModdedSkinShpkCount}");
+            ImGui.SameLine();
+            ImGui.TextUnformatted($"characterglass.shpk: {_shaderReplacementFixer.ModdedCharacterGlassShpkCount}");
         }
 
         using var table = Table("##CharacterUtility", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit,
@@ -954,13 +970,8 @@ public class DebugTab : Window, ITab
     /// <summary> Draw information about IPC options and availability. </summary>
     private void DrawDebugTabIpc()
     {
-        if (!ImGui.CollapsingHeader("IPC"))
-        {
-            _ipcTester.UnsubscribeEvents();
-            return;
-        }
-
-        _ipcTester.Draw();
+        if (ImGui.CollapsingHeader("IPC"))
+            _ipcTester.Draw();
     }
 
     /// <summary> Helper to print a property and its value in a 2-column table. </summary>

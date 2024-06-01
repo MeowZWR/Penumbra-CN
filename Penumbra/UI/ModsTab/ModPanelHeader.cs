@@ -18,6 +18,7 @@ public class ModPanelHeader : IDisposable
     private readonly IFontHandle _nameFont;
 
     private readonly CommunicatorService _communicator;
+    private          float               _lastPreSettingsHeight = 0;
 
     public ModPanelHeader(DalamudPluginInterface pi, CommunicatorService communicator)
     {
@@ -32,9 +33,20 @@ public class ModPanelHeader : IDisposable
     /// </summary>
     public void Draw()
     {
-        var offset = DrawModName();
-        DrawVersion(offset);
-        DrawSecondRow(offset);
+        var height     = ImGui.GetContentRegionAvail().Y;
+        var maxHeight = 3 * height / 4;
+        using var child = _lastPreSettingsHeight > maxHeight && _communicator.PreSettingsTabBarDraw.HasSubscribers
+            ? ImRaii.Child("HeaderChild", new Vector2(ImGui.GetContentRegionAvail().X, maxHeight), false)
+            : null;
+        using (ImRaii.Group())
+        {
+            var offset = DrawModName();
+            DrawVersion(offset);
+            DrawSecondRow(offset);
+        }
+
+        _communicator.PreSettingsTabBarDraw.Invoke(_mod.Identifier, ImGui.GetItemRectSize().X, _nameWidth);
+        _lastPreSettingsHeight = ImGui.GetCursorPosY();
     }
 
     /// <summary>
@@ -43,6 +55,8 @@ public class ModPanelHeader : IDisposable
     /// </summary>
     public void UpdateModData(Mod mod)
     {
+        _lastPreSettingsHeight = 0;
+        _mod = mod;
         // Name
         var name = $" {mod.Name} ";
         if (name != _modName)
@@ -90,6 +104,7 @@ public class ModPanelHeader : IDisposable
     }
 
     // Header data.
+    private Mod    _mod              = null!;
     private string _modName          = string.Empty;
     private string _modAuthor        = string.Empty;
     private string _modVersion       = string.Empty;
@@ -102,6 +117,8 @@ public class ModPanelHeader : IDisposable
     private float _modVersionWidth;
     private float _modWebsiteButtonWidth;
     private float _secondRowWidth;
+
+    private float _nameWidth;
 
     /// <summary>
     /// Draw the mod name in the game font with a 2px border, centered,
@@ -124,6 +141,7 @@ public class ModPanelHeader : IDisposable
         using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * UiHelpers.Scale);
         using var f     = _nameFont.Push();
         ImGuiUtil.DrawTextButton(_modName, Vector2.Zero, 0);
+        _nameWidth = ImGui.GetItemRectSize().X;
         return offset;
     }
 

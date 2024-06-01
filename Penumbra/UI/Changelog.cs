@@ -47,18 +47,90 @@ public class PenumbraChangelog
         Add8_2_0(Changelog);
         Add8_3_0(Changelog);
         Add1_0_0_0(Changelog);
+        AddDummy(Changelog);
+        AddDummy(Changelog);
+        Add1_1_0_0(Changelog);
     }
 
     #region Changelogs
+
+    private static void Add1_1_0_0(Changelog log)
+        => log.NextVersion("Version 1.1.0.0")
+            .RegisterImportant(
+                "This update comes, again, with a lot of very heavy backend changes (collections and groups) and thus may introduce new issues.")
+            .RegisterEntry("Updated to .net8 and XIV 6.58, using some new framework facilities to improve performance and stability.")
+            .RegisterHighlight(
+                "Added an experimental crash handler that is supposed to write a Penumbra.log file when the game crashes, containing Penumbra-specific information.")
+            .RegisterEntry("This is disabled by default. It can be enabled in Advanced Settings.", 1)
+            .RegisterHighlight("Collections now have associated GUIDs as identifiers instead of their names, so they can now be renamed.")
+            .RegisterEntry("Migrating those collections may introduce issues, please let me know as soon as possible if you encounter any.", 1)
+            .RegisterEntry("A permanent (non-rolling) backup should be created before the migration in case of any issues.",                 1)
+            .RegisterHighlight(
+                "Added predefined tags that can be setup in the Settings tab and can be more easily applied or removed from mods. (by DZD)")
+            .RegisterHighlight(
+                "A total rework of how options and groups are handled internally, and introduction of the first new group type, the IMC Group.")
+            .RegisterEntry(
+                "Mod Creators can add a IMC Group to their mod that controls a single IMC Manipulation, so they can provide options for the separate attributes for it.",
+                1)
+            .RegisterEntry(
+                "This makes it a lot easier to have combined options: No need for 'A', 'B' and 'AB', you can just define 'A' and 'B' and skip their combinations",
+                1)
+            .RegisterHighlight("A new type of Meta Manipulation was added, 'Global EQP Manipulation'.")
+            .RegisterEntry(
+                "Global EQP Manipulations allow accessories to make other equipment pieces not hide them, e.g. whenever a character is wearing a specific Bracelet, neither body nor hand items will ever hide bracelets.",
+                1)
+            .RegisterEntry(
+                "This can be used if something like a jacket or a stole is put onto an accessory to prevent it from being hidden in general.",
+                1)
+            .RegisterEntry(
+                "The first empty option in a single-select option group imported from a TTMP will now keep its location instead of being moved to the first option.")
+            .RegisterEntry("Further empty options are still removed.", 1)
+            .RegisterHighlight(
+                "Added a field to rename mods directly from the mod selector context menu, instead of moving them in the filesystem.")
+            .RegisterEntry("You can choose which rename field (none, either one or both) to display in the settings.", 1)
+            .RegisterEntry("Added the characterglass.shpk shader file to special shader treatment to fix issues when replacing it. (By Ny)")
+            .RegisterEntry("Made it more obvious if a user has not set their root directory yet.")
+            .RegisterEntry(
+                "You can now paste your current clipboard text into the mod selector filter with a simple right-click as long as it is not focused.")
+            .RegisterHighlight(
+                "Added the option to display VFX for accessories if added via IMC edits, which the game does not do inherently (by Ocealot).")
+            .RegisterEntry("Added support for reading and writing the new material and model file formats from the benchmark.")
+            .RegisterEntry(
+                "Added the option to hide Machinist Offhands from the Changed Items tabs (because any change to it changes ALL of them), which is on by default.")
+            .RegisterEntry("Removed the auto-generated descriptions for newly created groups in Penumbra.")
+            .RegisterEntry(
+                "Made some improvements to the Advanced Editing window, for example a much better and more performant Hex Viewer for unstructured data was added.")
+            .RegisterEntry("Various improvements to model import/export by ackwell (throughout all patches).")
+            .RegisterEntry("Hovering over meta manipulations in other options in the advanced editing window now shows a list of those options.")
+            .RegisterEntry("Reworked the API and IPC structure heavily.")
+            .RegisterImportant("This means some plugins interacting with Penumbra may not work correctly until they update.", 1)
+            .RegisterEntry("Worked around the UI IPC possibly displacing all settings when the drawn additions became too big.")
+            .RegisterEntry("Fixed an issue where reloading a mod did not ensure settings for that mod being correct afterwards.")
+            .RegisterEntry("Fixed some issues with the file sizes of compressed files.")
+            .RegisterEntry("Fixed an issue with merging and deduplicating mods.")
+            .RegisterEntry("Fixed a crash when scanning for mods without access rights to the folder.")
+            .RegisterEntry(
+                "Made plugin conform to Dalamud requirements by adding a punchline and another button to open the menu from the installer.")
+            .RegisterEntry("Added an option to automatically redraw the player character when saving files. (1.0.0.8)")
+            .RegisterEntry("Fixed issue with manipulating mods not triggering some events.  (1.0.0.7)")
+            .RegisterEntry("Fixed issue with temporary mods not triggering some events.  (1.0.0.6)")
+            .RegisterEntry("Fixed issue when renaming mods while the advanced edit window is open. (1.0.0.6)")
+            .RegisterEntry("Fixed issue with empty option groups. (1.0.0.5)")
+            .RegisterEntry("Fixed issues with cutscene character identification. (1.0.0.4)")
+            .RegisterEntry("Added locale environment information to support info. (1.0.0.4)")
+            .RegisterEntry("Fixed an issue with copied mod settings in IPC missing unused settings. (1.0.0.3)");
 
     private static void Add1_0_0_0(Changelog log)
         => log.NextVersion("Version 1.0.0.0")
             .RegisterHighlight("Mods in the mod selector can now be filtered by changed item categories.")
             .RegisterHighlight("Model Editing options in the Advanced Editing Window have been greatly extended (by ackwell):")
             .RegisterEntry("Attributes and referenced materials can now be set per mesh.", 1)
-            .RegisterEntry("Model files (.mdl) can now be exported to the well-established glTF format, which can be imported e.g. by Blender.", 1)
+            .RegisterEntry("Model files (.mdl) can now be exported to the well-established glTF format, which can be imported e.g. by Blender.",
+                1)
             .RegisterEntry("glTF files can also be imported back to a .mdl file.", 1)
-            .RegisterHighlight("Model Export and Import are a work in progress and may encounter issues, not support all cases or produce wrong results, please let us know!", 1)
+            .RegisterHighlight(
+                "Model Export and Import are a work in progress and may encounter issues, not support all cases or produce wrong results, please let us know!",
+                1)
             .RegisterEntry("The last selected mod and the open/close state of the Advanced Editing Window are now stored across launches.")
             .RegisterEntry("Footsteps of certain mounts will now be associated to collections correctly.")
             .RegisterEntry("Save-in-Place in the texture tab now requires the configurable modifier.")
@@ -67,7 +139,8 @@ public class PenumbraChangelog
             .RegisterEntry("Fixed an issue with the mod panels header not updating its data when the selected mod updates.")
             .RegisterEntry("Fixed some issues with EQDP files for invalid characters.")
             .RegisterEntry("Fixed an issue with the FileDialog being drawn twice in certain situations.")
-            .RegisterEntry("A lot of backend changes that should not have an effect on users, but may cause issues if something got messed up.");
+            .RegisterEntry(
+                "A lot of backend changes that should not have an effect on users, but may cause issues if something got messed up.");
 
     private static void Add8_3_0(Changelog log)
         => log.NextVersion("Version 0.8.3.0")
@@ -688,6 +761,9 @@ public class PenumbraChangelog
             .RegisterEntry("Added some additional functionality for Mare Synchronos.");
 
     #endregion
+
+    private static void AddDummy(Changelog log)
+        => log.NextVersion(string.Empty);
 
     private (int, ChangeLogDisplayType) ConfigData()
         => (_config.Ephemeral.LastSeenVersion, _config.ChangeLogDisplayType);

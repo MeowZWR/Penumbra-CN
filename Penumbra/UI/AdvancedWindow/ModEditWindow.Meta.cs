@@ -2,6 +2,7 @@ using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.Interop.Structs;
@@ -10,6 +11,7 @@ using Penumbra.Meta.Files;
 using Penumbra.Meta.Manipulations;
 using Penumbra.Mods.Editor;
 using Penumbra.UI.Classes;
+using Penumbra.UI.ModsTab;
 
 namespace Penumbra.UI.AdvancedWindow;
 
@@ -18,16 +20,13 @@ public partial class ModEditWindow
     private const string ModelSetIdTooltip =
         "Model Set ID - You can usually find this as the 'e####' part of an item path.\nThis should generally not be left <= 1 unless you explicitly want that.";
 
-    private const string PrimaryIdTooltip =
-        "Primary ID - You can usually find this as the 'x####' part of an item path.\nThis should generally not be left <= 1 unless you explicitly want that.";
-
     private const string ModelSetIdTooltipShort = "Model Set ID";
     private const string EquipSlotTooltip       = "Equip Slot";
     private const string ModelRaceTooltip       = "Model Race";
     private const string GenderTooltip          = "Gender";
     private const string ObjectTypeTooltip      = "Object Type";
     private const string SecondaryIdTooltip     = "Secondary ID";
-    private const string PrimaryIDTooltip       = "Primary ID";
+    private const string PrimaryIdTooltipShort  = "Primary ID";
     private const string VariantIdTooltip       = "Variant ID";
     private const string EstTypeTooltip         = "EST Type";
     private const string RacialTribeTooltip     = "Racial Tribe";
@@ -45,7 +44,7 @@ public partial class ModEditWindow
         var tt        = setsEqual ? "No changes staged." : "Apply the currently staged changes to the option.";
         ImGui.NewLine();
         if (ImGuiUtil.DrawDisabledButton("Apply Changes", Vector2.Zero, tt, setsEqual))
-            _editor.MetaEditor.Apply(_editor.Mod!, _editor.GroupIdx, _editor.OptionIdx);
+            _editor.MetaEditor.Apply(_editor.Option!);
 
         ImGui.SameLine();
         tt = setsEqual ? "No changes staged." : "Revert all currently staged changes.";
@@ -67,35 +66,45 @@ public partial class ModEditWindow
             return;
 
         DrawEditHeader(_editor.MetaEditor.Eqp, "Equipment Parameter Edits (EQP)###EQP", 5, EqpRow.Draw, EqpRow.DrawNew,
-            _editor.MetaEditor.OtherEqpCount);
+            _editor.MetaEditor.OtherData[MetaManipulation.Type.Eqp]);
         DrawEditHeader(_editor.MetaEditor.Eqdp, "Racial Model Edits (EQDP)###EQDP", 7, EqdpRow.Draw, EqdpRow.DrawNew,
-            _editor.MetaEditor.OtherEqdpCount);
-        DrawEditHeader(_editor.MetaEditor.Imc, "Variant Edits (IMC)###IMC", 10, ImcRow.Draw, ImcRow.DrawNew, _editor.MetaEditor.OtherImcCount);
+            _editor.MetaEditor.OtherData[MetaManipulation.Type.Eqdp]);
+        DrawEditHeader(_editor.MetaEditor.Imc, "Variant Edits (IMC)###IMC", 10, ImcRow.Draw, ImcRow.DrawNew,
+            _editor.MetaEditor.OtherData[MetaManipulation.Type.Imc]);
         DrawEditHeader(_editor.MetaEditor.Est, "Extra Skeleton Parameters (EST)###EST", 7, EstRow.Draw, EstRow.DrawNew,
-            _editor.MetaEditor.OtherEstCount);
+            _editor.MetaEditor.OtherData[MetaManipulation.Type.Est]);
         DrawEditHeader(_editor.MetaEditor.Gmp, "Visor/Gimmick Edits (GMP)###GMP", 7, GmpRow.Draw, GmpRow.DrawNew,
-            _editor.MetaEditor.OtherGmpCount);
+            _editor.MetaEditor.OtherData[MetaManipulation.Type.Gmp]);
         DrawEditHeader(_editor.MetaEditor.Rsp, "Racial Scaling Edits (RSP)###RSP", 5, RspRow.Draw, RspRow.DrawNew,
-            _editor.MetaEditor.OtherRspCount);
+            _editor.MetaEditor.OtherData[MetaManipulation.Type.Rsp]);
+        DrawEditHeader(_editor.MetaEditor.GlobalEqp, "Global Equipment Parameter Edits (Global EQP)###GEQP", 4, GlobalEqpRow.Draw,
+            GlobalEqpRow.DrawNew,                    _editor.MetaEditor.OtherData[MetaManipulation.Type.GlobalEqp]);
     }
 
 
     /// <summary> The headers for the different meta changes all have basically the same structure for different types.</summary>
     private void DrawEditHeader<T>(IReadOnlyCollection<T> items, string label, int numColumns,
-        Action<MetaFileManager, T, ModEditor, Vector2> draw,
-        Action<MetaFileManager, ModEditor, Vector2> drawNew, int otherCount)
+        Action<MetaFileManager, T, ModEditor, Vector2> draw, Action<MetaFileManager, ModEditor, Vector2> drawNew,
+        ModMetaEditor.OtherOptionData otherOptionData)
     {
         const ImGuiTableFlags flags = ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.BordersInnerV;
 
         var oldPos = ImGui.GetCursorPosY();
         var header = ImGui.CollapsingHeader($"{items.Count} {label}");
         var newPos = ImGui.GetCursorPos();
-        if (otherCount > 0)
+        if (otherOptionData.TotalCount > 0)
         {
-            var text = $"{otherCount} Edits in other Options";
+            var text = $"{otherOptionData.TotalCount} Edits in other Options";
             var size = ImGui.CalcTextSize(text).X;
             ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - size, oldPos + ImGui.GetStyle().FramePadding.Y));
             ImGuiUtil.TextColored(ColorId.RedundantAssignment.Value() | 0xFF000000, text);
+            if (ImGui.IsItemHovered())
+            {
+                using var tt = ImUtf8.Tooltip();
+                foreach (var name in otherOptionData)
+                    ImUtf8.Text(name);
+            }
+
             ImGui.SetCursorPos(newPos);
         }
 
@@ -145,7 +154,7 @@ public partial class ModEditWindow
             ImGuiUtil.HoverTooltip(ModelSetIdTooltip);
 
             ImGui.TableNextColumn();
-            if (Combos.EqpEquipSlot("##eqpSlot", 100, _new.Slot, out var slot))
+            if (Combos.EqpEquipSlot("##eqpSlot", _new.Slot, out var slot))
                 _new = new EqpManipulation(ExpandedEqpFile.GetDefault(metaFileManager, setId), slot, _new.SetId);
 
             ImGuiUtil.HoverTooltip(EquipSlotTooltip);
@@ -315,7 +324,7 @@ public partial class ModEditWindow
 
     private static class ImcRow
     {
-        private static ImcManipulation _new = new(EquipSlot.Head, 1, 1, new ImcEntry());
+        private static ImcIdentifier _newIdentifier = ImcIdentifier.Default;
 
         private static float IdWidth
             => 80 * UiHelpers.Scale;
@@ -323,146 +332,60 @@ public partial class ModEditWindow
         private static float SmallIdWidth
             => 45 * UiHelpers.Scale;
 
-        /// <summary> Convert throwing to null-return if the file does not exist. </summary>
-        private static ImcEntry? GetDefault(MetaFileManager metaFileManager, ImcManipulation imc)
-        {
-            try
-            {
-                return ImcFile.GetDefault(metaFileManager, imc.GamePath(), imc.EquipSlot, imc.Variant, out _);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
             CopyToClipboardButton("Copy all current IMC manipulations to clipboard.", iconSize,
                 editor.MetaEditor.Imc.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
-            var defaultEntry = GetDefault(metaFileManager, _new);
-            var canAdd = defaultEntry != null && editor.MetaEditor.CanAdd(_new);
-            var tt = canAdd ? "Stage this edit." : defaultEntry == null ? "This IMC file does not exist." : "This entry is already edited.";
-            defaultEntry ??= new ImcEntry();
+            var (defaultEntry, fileExists, _) = metaFileManager.ImcChecker.GetDefaultEntry(_newIdentifier, true);
+            var manip  = (MetaManipulation)new ImcManipulation(_newIdentifier, defaultEntry);
+            var canAdd = fileExists && editor.MetaEditor.CanAdd(manip);
+            var tt     = canAdd ? "Stage this edit." : !fileExists ? "This IMC file does not exist." : "This entry is already edited.";
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
-                editor.MetaEditor.Add(_new.Copy(defaultEntry.Value));
+                editor.MetaEditor.Add(manip);
 
             // Identifier
             ImGui.TableNextColumn();
-            if (Combos.ImcType("##imcType", _new.ObjectType, out var type))
-            {
-                var equipSlot = type switch
-                {
-                    ObjectType.Equipment => _new.EquipSlot.IsEquipment() ? _new.EquipSlot : EquipSlot.Head,
-                    ObjectType.DemiHuman => _new.EquipSlot.IsEquipment() ? _new.EquipSlot : EquipSlot.Head,
-                    ObjectType.Accessory => _new.EquipSlot.IsAccessory() ? _new.EquipSlot : EquipSlot.Ears,
-                    _                    => EquipSlot.Unknown,
-                };
-                _new = new ImcManipulation(type, _new.BodySlot, _new.PrimaryId, _new.SecondaryId == 0 ? (ushort)1 : _new.SecondaryId,
-                    _new.Variant.Id, equipSlot, _new.Entry);
-            }
-
-            ImGuiUtil.HoverTooltip(ObjectTypeTooltip);
+            var change = ImcManipulationDrawer.DrawObjectType(ref _newIdentifier);
 
             ImGui.TableNextColumn();
-            if (IdInput("##imcId", IdWidth, _new.PrimaryId.Id, out var setId, 0, ushort.MaxValue, _new.PrimaryId <= 1))
-                _new = new ImcManipulation(_new.ObjectType, _new.BodySlot, setId, _new.SecondaryId, _new.Variant.Id, _new.EquipSlot, _new.Entry)
-                    .Copy(GetDefault(metaFileManager, _new)
-                     ?? new ImcEntry());
-
-            ImGuiUtil.HoverTooltip(PrimaryIdTooltip);
-
+            change |= ImcManipulationDrawer.DrawPrimaryId(ref _newIdentifier);
             using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
                 new Vector2(3 * UiHelpers.Scale, ImGui.GetStyle().ItemSpacing.Y));
 
             ImGui.TableNextColumn();
             // Equipment and accessories are slightly different imcs than other types.
-            if (_new.ObjectType is ObjectType.Equipment)
-            {
-                if (Combos.EqpEquipSlot("##imcSlot", 100, _new.EquipSlot, out var slot))
-                    _new = new ImcManipulation(_new.ObjectType, _new.BodySlot, _new.PrimaryId, _new.SecondaryId, _new.Variant.Id, slot,
-                            _new.Entry)
-                        .Copy(GetDefault(metaFileManager, _new)
-                         ?? new ImcEntry());
-
-                ImGuiUtil.HoverTooltip(EquipSlotTooltip);
-            }
-            else if (_new.ObjectType is ObjectType.Accessory)
-            {
-                if (Combos.AccessorySlot("##imcSlot", _new.EquipSlot, out var slot))
-                    _new = new ImcManipulation(_new.ObjectType, _new.BodySlot, _new.PrimaryId, _new.SecondaryId, _new.Variant.Id, slot,
-                            _new.Entry)
-                        .Copy(GetDefault(metaFileManager, _new)
-                         ?? new ImcEntry());
-
-                ImGuiUtil.HoverTooltip(EquipSlotTooltip);
-            }
+            if (_newIdentifier.ObjectType is ObjectType.Equipment or ObjectType.Accessory)
+                change |= ImcManipulationDrawer.DrawSlot(ref _newIdentifier);
             else
-            {
-                if (IdInput("##imcId2", 100 * UiHelpers.Scale, _new.SecondaryId.Id, out var setId2, 0, ushort.MaxValue, false))
-                    _new = new ImcManipulation(_new.ObjectType, _new.BodySlot, _new.PrimaryId, setId2, _new.Variant.Id, _new.EquipSlot,
-                            _new.Entry)
-                        .Copy(GetDefault(metaFileManager, _new)
-                         ?? new ImcEntry());
-
-                ImGuiUtil.HoverTooltip(SecondaryIdTooltip);
-            }
+                change |= ImcManipulationDrawer.DrawSecondaryId(ref _newIdentifier);
 
             ImGui.TableNextColumn();
-            if (IdInput("##imcVariant", SmallIdWidth, _new.Variant.Id, out var variant, 0, byte.MaxValue, false))
-                _new = new ImcManipulation(_new.ObjectType, _new.BodySlot, _new.PrimaryId, _new.SecondaryId, variant, _new.EquipSlot,
-                    _new.Entry).Copy(GetDefault(metaFileManager, _new)
-                 ?? new ImcEntry());
-
-            ImGuiUtil.HoverTooltip(VariantIdTooltip);
+            change |= ImcManipulationDrawer.DrawVariant(ref _newIdentifier);
 
             ImGui.TableNextColumn();
-            if (_new.ObjectType is ObjectType.DemiHuman)
-            {
-                if (Combos.EqpEquipSlot("##imcSlot", 70, _new.EquipSlot, out var slot))
-                    _new = new ImcManipulation(_new.ObjectType, _new.BodySlot, _new.PrimaryId, _new.SecondaryId, _new.Variant.Id, slot,
-                            _new.Entry)
-                        .Copy(GetDefault(metaFileManager, _new)
-                         ?? new ImcEntry());
-
-                ImGuiUtil.HoverTooltip(EquipSlotTooltip);
-            }
+            if (_newIdentifier.ObjectType is ObjectType.DemiHuman)
+                change |= ImcManipulationDrawer.DrawSlot(ref _newIdentifier, 70);
             else
-            {
                 ImGui.Dummy(new Vector2(70 * UiHelpers.Scale, 0));
-            }
 
-
+            if (change)
+                defaultEntry = metaFileManager.ImcChecker.GetDefaultEntry(_newIdentifier, true).Entry;
             // Values
             using var disabled = ImRaii.Disabled();
             ImGui.TableNextColumn();
-            IntDragInput("##imcMaterialId", "Material ID", SmallIdWidth, defaultEntry.Value.MaterialId, defaultEntry.Value.MaterialId, out _,
-                1,                          byte.MaxValue, 0f);
+            ImcManipulationDrawer.DrawMaterialId(defaultEntry, ref defaultEntry, false);
             ImGui.SameLine();
-            IntDragInput("##imcMaterialAnimId",         "Material Animation ID", SmallIdWidth, defaultEntry.Value.MaterialAnimationId,
-                defaultEntry.Value.MaterialAnimationId, out _,                   0,            byte.MaxValue, 0.01f);
+            ImcManipulationDrawer.DrawMaterialAnimationId(defaultEntry, ref defaultEntry, false);
             ImGui.TableNextColumn();
-            IntDragInput("##imcDecalId", "Decal ID", SmallIdWidth, defaultEntry.Value.DecalId, defaultEntry.Value.DecalId, out _, 0,
-                byte.MaxValue,           0f);
+            ImcManipulationDrawer.DrawDecalId(defaultEntry, ref defaultEntry, false);
             ImGui.SameLine();
-            IntDragInput("##imcVfxId", "VFX ID", SmallIdWidth, defaultEntry.Value.VfxId, defaultEntry.Value.VfxId, out _, 0, byte.MaxValue,
-                0f);
+            ImcManipulationDrawer.DrawVfxId(defaultEntry, ref defaultEntry, false);
             ImGui.SameLine();
-            IntDragInput("##imcSoundId", "Sound ID", SmallIdWidth, defaultEntry.Value.SoundId, defaultEntry.Value.SoundId, out _, 0, 0b111111,
-                0f);
+            ImcManipulationDrawer.DrawSoundId(defaultEntry, ref defaultEntry, false);
             ImGui.TableNextColumn();
-            for (var i = 0; i < 10; ++i)
-            {
-                using var id   = ImRaii.PushId(i);
-                var       flag = 1 << i;
-                Checkmark("##attribute",                            $"{(char)('A' + i)}", (defaultEntry.Value.AttributeMask & flag) != 0,
-                    (defaultEntry.Value.AttributeMask & flag) != 0, out _);
-                ImGui.SameLine();
-            }
-
-            ImGui.NewLine();
+            ImcManipulationDrawer.DrawAttributes(defaultEntry, ref defaultEntry);
         }
 
         public static void Draw(MetaFileManager metaFileManager, ImcManipulation meta, ModEditor editor, Vector2 iconSize)
@@ -477,7 +400,7 @@ public partial class ModEditWindow
             ImGui.TableNextColumn();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().FramePadding.X);
             ImGui.TextUnformatted(meta.PrimaryId.ToString());
-            ImGuiUtil.HoverTooltip(PrimaryIDTooltip);
+            ImGuiUtil.HoverTooltip(PrimaryIdTooltipShort);
 
             ImGui.TableNextColumn();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().FramePadding.X);
@@ -509,47 +432,22 @@ public partial class ModEditWindow
             using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
                 new Vector2(3 * UiHelpers.Scale, ImGui.GetStyle().ItemSpacing.Y));
             ImGui.TableNextColumn();
-            var defaultEntry = GetDefault(metaFileManager, meta) ?? new ImcEntry();
-            if (IntDragInput("##imcMaterialId", $"Material ID\nDefault Value: {defaultEntry.MaterialId}", SmallIdWidth, meta.Entry.MaterialId,
-                    defaultEntry.MaterialId,    out var materialId,                                       1,            byte.MaxValue, 0.01f))
-                editor.MetaEditor.Change(meta.Copy(meta.Entry with { MaterialId = (byte)materialId }));
-
+            var defaultEntry = metaFileManager.ImcChecker.GetDefaultEntry(meta.Identifier, true).Entry;
+            var newEntry     = meta.Entry;
+            var changes      = ImcManipulationDrawer.DrawMaterialId(defaultEntry, ref newEntry, true);
             ImGui.SameLine();
-            if (IntDragInput("##imcMaterialAnimId", $"Material Animation ID\nDefault Value: {defaultEntry.MaterialAnimationId}", SmallIdWidth,
-                    meta.Entry.MaterialAnimationId, defaultEntry.MaterialAnimationId, out var materialAnimId, 0, byte.MaxValue, 0.01f))
-                editor.MetaEditor.Change(meta.Copy(meta.Entry with { MaterialAnimationId = (byte)materialAnimId }));
-
+            changes |= ImcManipulationDrawer.DrawMaterialAnimationId(defaultEntry, ref newEntry, true);
             ImGui.TableNextColumn();
-            if (IntDragInput("##imcDecalId", $"Decal ID\nDefault Value: {defaultEntry.DecalId}", SmallIdWidth, meta.Entry.DecalId,
-                    defaultEntry.DecalId,    out var decalId,                                    0,            byte.MaxValue, 0.01f))
-                editor.MetaEditor.Change(meta.Copy(meta.Entry with { DecalId = (byte)decalId }));
-
+            changes |= ImcManipulationDrawer.DrawDecalId(defaultEntry, ref newEntry, true);
             ImGui.SameLine();
-            if (IntDragInput("##imcVfxId", $"VFX ID\nDefault Value: {defaultEntry.VfxId}", SmallIdWidth,  meta.Entry.VfxId, defaultEntry.VfxId,
-                    out var vfxId,         0,                                              byte.MaxValue, 0.01f))
-                editor.MetaEditor.Change(meta.Copy(meta.Entry with { VfxId = (byte)vfxId }));
-
+            changes |= ImcManipulationDrawer.DrawVfxId(defaultEntry, ref newEntry, true);
             ImGui.SameLine();
-            if (IntDragInput("##imcSoundId", $"Sound ID\nDefault Value: {defaultEntry.SoundId}", SmallIdWidth, meta.Entry.SoundId,
-                    defaultEntry.SoundId,    out var soundId,                                    0,            0b111111, 0.01f))
-                editor.MetaEditor.Change(meta.Copy(meta.Entry with { SoundId = (byte)soundId }));
-
+            changes |= ImcManipulationDrawer.DrawSoundId(defaultEntry, ref newEntry, true);
             ImGui.TableNextColumn();
-            for (var i = 0; i < 10; ++i)
-            {
-                using var id   = ImRaii.PushId(i);
-                var       flag = 1 << i;
-                if (Checkmark("##attribute",                      $"{(char)('A' + i)}", (meta.Entry.AttributeMask & flag) != 0,
-                        (defaultEntry.AttributeMask & flag) != 0, out var val))
-                {
-                    var attributes = val ? meta.Entry.AttributeMask | flag : meta.Entry.AttributeMask & ~flag;
-                    editor.MetaEditor.Change(meta.Copy(meta.Entry with { AttributeMask = (ushort)attributes }));
-                }
+            changes |= ImcManipulationDrawer.DrawAttributes(defaultEntry, ref newEntry);
 
-                ImGui.SameLine();
-            }
-
-            ImGui.NewLine();
+            if (changes)
+                editor.MetaEditor.Change(meta.Copy(newEntry));
         }
     }
 
@@ -812,6 +710,69 @@ public partial class ModEditWindow
                 editor.MetaEditor.Change(meta.Copy(value));
 
             ImGuiUtil.HoverTooltip($"Default Value: {def:0.###}");
+        }
+    }
+
+    private static class GlobalEqpRow
+    {
+        private static GlobalEqpManipulation _new = new()
+        {
+            Type      = GlobalEqpType.DoNotHideEarrings,
+            Condition = 1,
+        };
+
+        public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
+        {
+            ImGui.TableNextColumn();
+            CopyToClipboardButton("Copy all current global EQP manipulations to clipboard.", iconSize,
+                editor.MetaEditor.GlobalEqp.Select(m => (MetaManipulation)m));
+            ImGui.TableNextColumn();
+            var canAdd = editor.MetaEditor.CanAdd(_new);
+            var tt     = canAdd ? "Stage this edit." : "This entry is already manipulated.";
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
+                editor.MetaEditor.Add(_new);
+
+            // Identifier
+            ImGui.TableNextColumn();
+            ImGui.SetNextItemWidth(250 * ImUtf8.GlobalScale);
+            using (var combo = ImUtf8.Combo("##geqpType"u8, _new.Type.ToName()))
+            {
+                if (combo)
+                    foreach (var type in Enum.GetValues<GlobalEqpType>())
+                    {
+                        if (ImUtf8.Selectable(type.ToName(), type == _new.Type))
+                            _new = new GlobalEqpManipulation
+                            {
+                                Type      = type,
+                                Condition = type.HasCondition() ? _new.Type.HasCondition() ? _new.Condition : 1 : 0,
+                            };
+                        ImUtf8.HoverTooltip(type.ToDescription());
+                    }
+            }
+
+            ImUtf8.HoverTooltip(_new.Type.ToDescription());
+
+            ImGui.TableNextColumn();
+            if (!_new.Type.HasCondition())
+                return;
+
+            if (IdInput("##geqpCond", 100 * ImUtf8.GlobalScale, _new.Condition.Id, out var newId, 1, ushort.MaxValue, _new.Condition.Id <= 1))
+                _new = _new with { Condition = newId };
+        }
+
+        public static void Draw(MetaFileManager metaFileManager, GlobalEqpManipulation meta, ModEditor editor, Vector2 iconSize)
+        {
+            DrawMetaButtons(meta, editor, iconSize);
+            ImGui.TableNextColumn();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().FramePadding.X);
+            ImUtf8.Text(meta.Type.ToName());
+            ImUtf8.HoverTooltip(meta.Type.ToDescription());
+            ImGui.TableNextColumn();
+            if (meta.Type.HasCondition())
+            {
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetStyle().FramePadding.X);
+                ImUtf8.Text($"{meta.Condition.Id}");
+            }
         }
     }
 

@@ -9,6 +9,8 @@ using Penumbra.Collections;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.Interop.PathResolving;
+using Penumbra.Interop.Services;
 using Penumbra.String;
 using Penumbra.String.Classes;
 using Penumbra.UI;
@@ -54,6 +56,7 @@ internal unsafe partial record ResolveContext(
         return GetOrCreateNode(ResourceType.Shpk, (nint)resourceHandle->ShaderPackage, &resourceHandle->ResourceHandle, path);
     }
 
+    [SkipLocalsInit]
     private ResourceNode? CreateNodeFromTex(TextureResourceHandle* resourceHandle, ByteString gamePath, bool dx11)
     {
         if (resourceHandle == null)
@@ -108,12 +111,18 @@ internal unsafe partial record ResolveContext(
         if (resourceHandle == null)
             throw new ArgumentNullException(nameof(resourceHandle));
 
-        var fullPath = Utf8GamePath.FromByteString(GetResourceHandlePath(resourceHandle), out var p) ? new FullPath(p) : FullPath.Empty;
+        var fileName       = resourceHandle->FileName.AsSpan();
+        var additionalData = ByteString.Empty;
+        if (PathDataHandler.Split(fileName, out fileName, out var data))
+            additionalData = ByteString.FromSpanUnsafe(data, false).Clone();
+
+        var fullPath = Utf8GamePath.FromSpan(fileName, out var p) ? new FullPath(p.Clone()) : FullPath.Empty;
 
         var node = new ResourceNode(type, objectAddress, (nint)resourceHandle, GetResourceHandleLength(resourceHandle), this)
         {
-            GamePath = gamePath,
-            FullPath = fullPath,
+            GamePath       = gamePath,
+            FullPath       = fullPath,
+            AdditionalData = additionalData,
         };
         if (autoAdd)
             Global.Nodes.Add((gamePath, (nint)resourceHandle), node);
@@ -141,6 +150,14 @@ internal unsafe partial record ResolveContext(
             return null;
 
         return GetOrCreateNode(ResourceType.Imc, 0, imc, path);
+    }
+
+    public ResourceNode? CreateNodeFromPbd(ResourceHandle* pbd)
+    {
+        if (pbd == null)
+            return null;
+
+        return GetOrCreateNode(ResourceType.Pbd, 0, pbd, PreBoneDeformerReplacer.PreBoneDeformerPath);
     }
 
     public ResourceNode? CreateNodeFromTex(TextureResourceHandle* tex, string gamePath)
@@ -352,27 +369,6 @@ internal unsafe partial record ResolveContext(
     {
         var i = index.GetOffset(array.Length);
         return i >= 0 && i < array.Length ? array[i] : null;
-    }
-
-    internal static ByteString GetResourceHandlePath(ResourceHandle* handle, bool stripPrefix = true)
-    {
-        if (handle == null)
-            return ByteString.Empty;
-
-        var name = handle->FileName.AsByteString();
-        if (name.IsEmpty)
-            return ByteString.Empty;
-
-        if (stripPrefix && name[0] == (byte)'|')
-        {
-            var pos = name.IndexOf((byte)'|', 1);
-            if (pos < 0)
-                return ByteString.Empty;
-
-            name = name.Substring(pos + 1);
-        }
-
-        return name;
     }
 
     private static ulong GetResourceHandleLength(ResourceHandle* handle)

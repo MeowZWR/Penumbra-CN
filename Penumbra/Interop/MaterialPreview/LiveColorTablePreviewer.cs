@@ -1,6 +1,6 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 using Penumbra.Interop.SafeHandles;
 
 namespace Penumbra.Interop.MaterialPreview;
@@ -8,7 +8,7 @@ namespace Penumbra.Interop.MaterialPreview;
 public sealed unsafe class LiveColorTablePreviewer : LiveMaterialPreviewerBase
 {
     public const int TextureWidth  = 4;
-    public const int TextureHeight = MtrlFile.ColorTable.NumRows;
+    public const int TextureHeight = GameData.Files.MaterialStructs.LegacyColorTable.NumUsedRows;
     public const int TextureLength = TextureWidth * TextureHeight * 4;
 
     private readonly IFramework _framework;
@@ -16,11 +16,11 @@ public sealed unsafe class LiveColorTablePreviewer : LiveMaterialPreviewerBase
     private readonly Texture**         _colorTableTexture;
     private readonly SafeTextureHandle _originalColorTableTexture;
 
-    private          bool   _updatePending;
+    private bool _updatePending;
 
     public Half[] ColorTable { get; }
 
-    public LiveColorTablePreviewer(IObjectTable objects, IFramework framework, MaterialInfo materialInfo)
+    public LiveColorTablePreviewer(ObjectManager objects, IFramework framework, MaterialInfo materialInfo)
         : base(objects, materialInfo)
     {
         _framework = framework;
@@ -39,7 +39,7 @@ public sealed unsafe class LiveColorTablePreviewer : LiveMaterialPreviewerBase
         if (_originalColorTableTexture == null)
             throw new InvalidOperationException("Material doesn't have a color table");
 
-        ColorTable    = new Half[TextureLength];
+        ColorTable     = new Half[TextureLength];
         _updatePending = true;
 
         framework.Update += OnFrameworkUpdate;
@@ -62,6 +62,7 @@ public sealed unsafe class LiveColorTablePreviewer : LiveMaterialPreviewerBase
         _updatePending = true;
     }
 
+    [SkipLocalsInit]
     private void OnFrameworkUpdate(IFramework _)
     {
         if (!_updatePending)

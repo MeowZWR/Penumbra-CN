@@ -1,5 +1,6 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
@@ -41,15 +42,19 @@ public class SettingsTab : ITab
     private readonly DalamudConfigService        _dalamudConfig;
     private readonly DalamudPluginInterface      _pluginInterface;
     private readonly IDataManager                _gameData;
+    private readonly PredefinedTagManager        _predefinedTagManager;
+    private readonly CrashHandlerService         _crashService;
 
     private int _minimumX = int.MaxValue;
     private int _minimumY = int.MaxValue;
+
+    private readonly TagButtons _sharedTags = new();
 
     public SettingsTab(DalamudPluginInterface pluginInterface, Configuration config, FontReloader fontReloader, TutorialService tutorial,
         Penumbra penumbra, FileDialogService fileDialog, ModManager modManager, ModFileSystemSelector selector,
         CharacterUtility characterUtility, ResidentResourceManager residentResources, ModExportManager modExportManager, HttpApi httpApi,
         DalamudSubstitutionProvider dalamudSubstitutionProvider, FileCompactor compactor, DalamudConfigService dalamudConfig,
-        IDataManager gameData)
+        IDataManager gameData, PredefinedTagManager predefinedTagConfig, CrashHandlerService crashService)
     {
         _pluginInterface             = pluginInterface;
         _config                      = config;
@@ -69,6 +74,8 @@ public class SettingsTab : ITab
         _gameData                    = gameData;
         if (_compactor.CanCompact)
             _compactor.Enabled = _config.UseFileSystemCompression;
+        _predefinedTagManager = predefinedTagConfig;
+        _crashService         = crashService;
     }
 
     public void DrawHeader()
@@ -95,6 +102,7 @@ public class SettingsTab : ITab
 
         DrawGeneralSettings();
         DrawColorSettings();
+        DrawPredefinedTagsSection();
         DrawAdvancedSettings();
         DrawSupportButtons();
     }
@@ -221,29 +229,38 @@ public class SettingsTab : ITab
         if (_newModDirectory.IsNullOrEmpty())
             _newModDirectory = _config.ModDirectory;
 
-        using var group = ImRaii.Group();
-        ImGui.SetNextItemWidth(UiHelpers.InputTextMinusButton3);
-        var       save = ImGui.InputText("##rootDirectory", ref _newModDirectory, RootDirectoryMaxLength, ImGuiInputTextFlags.EnterReturnsTrue);
-        var       selected = ImGui.IsItemActive();
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(UiHelpers.ScaleX3, 0));
-        ImGui.SameLine();
-        DrawDirectoryPickerButton();
-        style.Pop();
-        ImGui.SameLine();
+        bool save, selected;
+        using (ImRaii.Group())
+        {
+            ImGui.SetNextItemWidth(UiHelpers.InputTextMinusButton3);
+            using (ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale, !_modManager.Valid))
+            {
+                using var color = ImRaii.PushColor(ImGuiCol.Border, Colors.RegexWarningBorder)
+                    .Push(ImGuiCol.TextDisabled, Colors.RegexWarningBorder, !_modManager.Valid);
+                save = ImGui.InputTextWithHint("##rootDirectory", "Enter Root Directory here (MANDATORY)...", ref _newModDirectory,
+                    RootDirectoryMaxLength, ImGuiInputTextFlags.EnterReturnsTrue);
+            }
 
-        const string tt = "This is where Penumbra will store your extracted mod files.\n"
-          + "TTMP files are not copied, just extracted.\n"
-          + "This directory needs to be accessible and you need write access here.\n"
-          + "It is recommended that this directory is placed on a fast hard drive, preferably an SSD.\n"
-          + "It should also be placed near the root of a logical drive - the shorter the total path to this folder, the better.\n"
-          + "Definitely do not place it in your Dalamud directory or any sub-directory thereof.";
-        ImGuiComponents.HelpMarker(tt);
-        _tutorial.OpenTutorial(BasicTutorialSteps.GeneralTooltips);
-        ImGui.SameLine();
-        ImGui.TextUnformatted("Root Directory");
-        ImGuiUtil.HoverTooltip(tt);
+            selected = ImGui.IsItemActive();
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(UiHelpers.ScaleX3, 0));
+            ImGui.SameLine();
+            DrawDirectoryPickerButton();
+            style.Pop();
+            ImGui.SameLine();
 
-        group.Dispose();
+            const string tt = "This is where Penumbra will store your extracted mod files.\n"
+              + "TTMP files are not copied, just extracted.\n"
+              + "This directory needs to be accessible and you need write access here.\n"
+              + "It is recommended that this directory is placed on a fast hard drive, preferably an SSD.\n"
+              + "It should also be placed near the root of a logical drive - the shorter the total path to this folder, the better.\n"
+              + "Definitely do not place it in your Dalamud directory or any sub-directory thereof.";
+            ImGuiComponents.HelpMarker(tt);
+            _tutorial.OpenTutorial(BasicTutorialSteps.GeneralTooltips);
+            ImGui.SameLine();
+            ImGui.TextUnformatted("Root Directory");
+            ImGuiUtil.HoverTooltip(tt);
+        }
+
         _tutorial.OpenTutorial(BasicTutorialSteps.ModDirectory);
         ImGui.SameLine();
         var pos = ImGui.GetCursorPosX();
@@ -374,7 +391,7 @@ public class SettingsTab : ITab
             "Hide the Penumbra main window when you manually hide the in-game user interface.", _config.HideUiWhenUiHidden,
             v =>
             {
-                _config.HideUiWhenUiHidden           = v;
+                _config.HideUiWhenUiHidden                   = v;
                 _pluginInterface.UiBuilder.DisableUserUiHide = !v;
             });
         Checkbox("Hide Config Window when in Cutscenes",
@@ -410,6 +427,14 @@ public class SettingsTab : ITab
                     _config.Ephemeral.ChangedItemFilter = ChangedItemDrawer.AllFlags;
                     _config.Ephemeral.Save();
                 }
+            });
+        Checkbox("Omit Machinist Offhands in Changed Items",
+            "Omits all Aetherotransformers (machinist offhands) in the changed items tabs because any change on them changes all of them at the moment.\n\n"
+          + "Changing this triggers a rediscovery of your mods so all changed items can be updated.",
+            _config.HideMachinistOffhandFromChangedItems, v =>
+            {
+                _config.HideMachinistOffhandFromChangedItems = v;
+                _modManager.DiscoverMods();
             });
         Checkbox("Hide Priority Numbers in Mod Selector",
             "Hides the bracketed non-zero priority numbers displayed in the mod selector when there is enough space for them.",
@@ -516,12 +541,42 @@ public class SettingsTab : ITab
             "Instead of keeping the mod-selector in the Installed Mods tab a fixed width, this will let it scale with the total size of the Penumbra window.");
     }
 
+    private void DrawRenameSettings()
+    {
+        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+        using (var combo = ImRaii.Combo("##renameSettings", _config.ShowRename.GetData().Name))
+        {
+            if (combo)
+                foreach (var value in Enum.GetValues<RenameField>())
+                {
+                    var (name, desc) = value.GetData();
+                    if (ImGui.Selectable(name, _config.ShowRename == value))
+                    {
+                        _config.ShowRename = value;
+                        _selector.SetRenameSearchPath(value);
+                        _config.Save();
+                    }
+
+                    ImGuiUtil.HoverTooltip(desc);
+                }
+        }
+
+        ImGui.SameLine();
+        const string tt =
+            "Select which of the two renaming input fields are visible when opening the right-click context menu of a mod in the mod selector.";
+        ImGuiComponents.HelpMarker(tt);
+        ImGui.SameLine();
+        ImGui.TextUnformatted("Rename Fields in Mod Context Menu");
+        ImGuiUtil.HoverTooltip(tt);
+    }
+
     /// <summary> Draw all settings pertaining to the mod selector. </summary>
     private void DrawModSelectorSettings()
     {
         DrawFolderSortType();
         DrawAbsoluteSizeSelector();
         DrawRelativeSizeSelector();
+        DrawRenameSettings();
         Checkbox("Open Folders by Default", "Whether to start with all folders collapsed or expanded in the mod selector.",
             _config.OpenFoldersByDefault,   v =>
             {
@@ -671,7 +726,7 @@ public class SettingsTab : ITab
         foreach (var color in Enum.GetValues<ColorId>())
         {
             var (defaultColor, name, description) = color.Data();
-            var currentColor = _config.Colors.TryGetValue(color, out var current) ? current : defaultColor;
+            var currentColor = _config.Colors.GetValueOrDefault(color, defaultColor);
             if (Widget.ColorPicker(name, description, currentColor, c => _config.Colors[color] = c, defaultColor))
                 _config.Save();
         }
@@ -689,6 +744,7 @@ public class SettingsTab : ITab
         if (!header)
             return;
 
+        DrawCrashHandler();
         DrawMinimumDimensionConfig();
         Checkbox("Auto Deduplicate on Import",
             "Automatically deduplicate mod files on import. This will make mod file sizes smaller, but deletes (binary identical) files.",
@@ -704,6 +760,20 @@ public class SettingsTab : ITab
         DrawReloadResourceButton();
         DrawReloadFontsButton();
         ImGui.NewLine();
+    }
+
+    private void DrawCrashHandler()
+    {
+        Checkbox("Enable Penumbra Crash Logging (Experimental)",
+            "Enables Penumbra to launch a secondary process that records some game activity which may or may not help diagnosing Penumbra-related game crashes.",
+            _config.UseCrashHandler ?? false,
+            v =>
+            {
+                if (v)
+                    _crashService.Enable();
+                else
+                    _crashService.Disable();
+            });
     }
 
     private void DrawCompressionBox()
@@ -857,7 +927,7 @@ public class SettingsTab : ITab
         if (!_dalamudConfig.GetDalamudConfig(DalamudConfigService.WaitingForPluginsOption, out bool value))
         {
             using var disabled = ImRaii.Disabled();
-            Checkbox("Wait for Plugins on Startup (Disabled, can not access Dalamud Configuration)", string.Empty, false, v => { });
+            Checkbox("Wait for Plugins on Startup (Disabled, can not access Dalamud Configuration)", string.Empty, false, _ => { });
         }
         else
         {
@@ -901,5 +971,18 @@ public class SettingsTab : ITab
         ImGui.SetCursorPos(new Vector2(xPos, 4 * ImGui.GetFrameHeightWithSpacing()));
         if (ImGui.Button("Show Changelogs", new Vector2(width, 0)))
             _penumbra.ForceChangelogOpen();
+    }
+
+    private void DrawPredefinedTagsSection()
+    {
+        if (!ImGui.CollapsingHeader("Tags"))
+            return;
+
+        var tagIdx = _sharedTags.Draw("Predefined Tags: ",
+            "Predefined tags that can be added or removed from mods with a single click.", _predefinedTagManager,
+            out var editedTag);
+
+        if (tagIdx >= 0)
+            _predefinedTagManager.ChangeSharedTag(tagIdx, editedTag);
     }
 }

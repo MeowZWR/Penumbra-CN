@@ -17,20 +17,20 @@ public sealed class CollectionSelector : ItemSelector<ModCollection>, IDisposabl
     private readonly CollectionStorage   _storage;
     private readonly ActiveCollections   _active;
     private readonly TutorialService     _tutorial;
+    private readonly IncognitoService    _incognito;
 
     private ModCollection? _dragging;
 
-    public bool IncognitoMode;
-
     public CollectionSelector(Configuration config, CommunicatorService communicator, CollectionStorage storage, ActiveCollections active,
-        TutorialService tutorial)
-        : base(new List<ModCollection>(), Flags.Delete | Flags.Add | Flags.Duplicate | Flags.Filter)
+        TutorialService tutorial, IncognitoService incognito)
+        : base([], Flags.Delete | Flags.Add | Flags.Duplicate | Flags.Filter)
     {
         _config       = config;
         _communicator = communicator;
         _storage      = storage;
         _active       = active;
         _tutorial     = tutorial;
+        _incognito    = incognito;
 
         _communicator.CollectionChange.Subscribe(OnCollectionChange, CollectionChange.Priority.CollectionSelector);
         // Set items.
@@ -109,7 +109,7 @@ public sealed class CollectionSelector : ItemSelector<ModCollection>, IDisposabl
     }
 
     private string Name(ModCollection collection)
-        => IncognitoMode ? collection.AnonymizedName : collection.Name;
+        => _incognito.IncognitoMode || collection.Name.Length == 0 ? collection.AnonymizedName : collection.Name;
 
     private void OnCollectionChange(CollectionType type, ModCollection? old, ModCollection? @new, string _3)
     {

@@ -1,5 +1,6 @@
 using Lumina.Data.Parsing;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using SharpGLTF.Materials;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
@@ -48,12 +49,12 @@ public class MaterialExporter
     private static MaterialBuilder BuildCharacter(Material material, string name)
     {
         // Build the textures from the color table.
-        var table = material.Mtrl.Table;
+        var table = new LegacyColorTable(material.Mtrl.Table);
 
         var normal = material.Textures[TextureUsage.SamplerNormal];
 
         var operation = new ProcessCharacterNormalOperation(normal, table);
-        ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, normal.Bounds(), in operation);
+        ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, normal.Bounds, in operation);
 
         // Check if full textures are provided, and merge in if available.
         var baseColor = operation.BaseColor;
@@ -102,7 +103,7 @@ public class MaterialExporter
 
     // TODO: It feels a little silly to request the entire normal here when extracting the normal only needs some of the components.
     //       As a future refactor, it would be neat to accept a single-channel field here, and then do composition of other stuff later.
-    private readonly struct ProcessCharacterNormalOperation(Image<Rgba32> normal, MtrlFile.ColorTable table) : IRowOperation
+    private readonly struct ProcessCharacterNormalOperation(Image<Rgba32> normal, LegacyColorTable table) : IRowOperation
     {
         public Image<Rgba32> Normal    { get; } = normal.Clone();
         public Image<Rgba32> BaseColor { get; } = new(normal.Width, normal.Height);
@@ -144,8 +145,7 @@ public class MaterialExporter
 
                 // Specular (table)
                 var lerpedSpecularColor = Vector3.Lerp(prevRow.Specular, nextRow.Specular, tableRow.Weight);
-                // float.Lerp is .NET8 ;-; #TODO
-                var lerpedSpecularFactor = prevRow.SpecularStrength * (1.0f - tableRow.Weight) + nextRow.SpecularStrength * tableRow.Weight;
+                var lerpedSpecularFactor = float.Lerp(prevRow.SpecularStrength, nextRow.SpecularStrength, tableRow.Weight);
                 specularSpan[x].FromVector4(new Vector4(lerpedSpecularColor, lerpedSpecularFactor));
 
                 // Emissive (table)
@@ -199,7 +199,7 @@ public class MaterialExporter
             small.Mutate(context => context.Resize(large.Width, large.Height));
 
             var operation = new MultiplyOperation<TPixel1, TPixel2>(target, multiplier);
-            ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, target.Bounds(), in operation);
+            ParallelRowIterator.IterateRows(ImageSharpConfiguration.Default, target.Bounds, in operation);
         }
     }
 

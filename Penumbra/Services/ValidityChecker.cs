@@ -1,5 +1,6 @@
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using OtterGui.Classes;
 using OtterGui.Services;
 
@@ -21,6 +22,15 @@ public class ValidityChecker : IService
     public readonly string Version;
     public readonly string CommitHash;
 
+    public unsafe string GameVersion
+    {
+        get
+        {
+            var framework = Framework.Instance();
+            return framework == null ? string.Empty : framework->GameVersion[0];
+        }
+    }
+
     public ValidityChecker(DalamudPluginInterface pi)
     {
         DevPenumbraExists      = CheckDevPluginPenumbra(pi);
@@ -35,23 +45,24 @@ public class ValidityChecker : IService
     public void LogExceptions()
     {
         if (ImcExceptions.Count > 0)
-            Penumbra.Messager.NotificationMessage($"{ImcExceptions} IMC Exceptions thrown during Penumbra load. Please repair your game files.", NotificationType.Warning);
+            Penumbra.Messager.NotificationMessage($"{ImcExceptions} IMC Exceptions thrown during Penumbra load. Please repair your game files.",
+                NotificationType.Warning);
     }
 
     // Because remnants of penumbra in devPlugins cause issues, we check for them to warn users to remove them.
     private static bool CheckDevPluginPenumbra(DalamudPluginInterface pi)
     {
 #if !DEBUG
-        var path = Path.Combine( pi.DalamudAssetDirectory.Parent?.FullName ?? "INVALIDPATH", "devPlugins", "Penumbra" );
-        var dir = new DirectoryInfo( path );
+        var path = Path.Combine(pi.DalamudAssetDirectory.Parent?.FullName ?? "INVALIDPATH", "devPlugins", "Penumbra");
+        var dir  = new DirectoryInfo(path);
 
         try
         {
-            return dir.Exists && dir.EnumerateFiles( "*.dll", SearchOption.AllDirectories ).Any();
+            return dir.Exists && dir.EnumerateFiles("*.dll", SearchOption.AllDirectories).Any();
         }
-        catch( Exception e )
+        catch (Exception e)
         {
-            Penumbra.Log.Error( $"Could not check for dev plugin Penumbra:\n{e}" );
+            Penumbra.Log.Error($"Could not check for dev plugin Penumbra:\n{e}");
             return true;
         }
 #else
@@ -64,11 +75,9 @@ public class ValidityChecker : IService
     {
 #if !DEBUG
         var checkedDirectory = pi.AssemblyLocation.Directory?.Parent?.Parent?.Name;
-        var ret = checkedDirectory?.Equals( "installedPlugins", StringComparison.OrdinalIgnoreCase ) ?? false;
-        if( !ret )
-        {
-            Penumbra.Log.Error( $"Penumbra is not correctly installed. Application loaded from \"{pi.AssemblyLocation.Directory!.FullName}\"." );
-        }
+        var ret              = checkedDirectory?.Equals("installedPlugins", StringComparison.OrdinalIgnoreCase) ?? false;
+        if (!ret)
+            Penumbra.Log.Error($"Penumbra is not correctly installed. Application loaded from \"{pi.AssemblyLocation.Directory!.FullName}\".");
 
         return !ret;
 #else
@@ -82,10 +91,10 @@ public class ValidityChecker : IService
 #if !DEBUG
         return pi.SourceRepository?.Trim().ToLowerInvariant() switch
         {
-            null                => false,
-            RepositoryLower     => true,
-            SeaOfStarsLower     => true,
-            _                   => false,
+            null            => false,
+            RepositoryLower => true,
+            SeaOfStarsLower => true,
+            _               => false,
         };
 #else
         return true;
