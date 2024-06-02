@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -23,9 +23,9 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
 
         using (ImUtf8.Group())
         {
-            ImUtf8.TextFrameAligned("Material ID"u8);
-            ImUtf8.TextFrameAligned("VFX ID"u8);
-            ImUtf8.TextFrameAligned("Decal ID"u8);
+            ImUtf8.TextFrameAligned("材质 ID"u8);
+            ImUtf8.TextFrameAligned("视效 ID"u8);
+            ImUtf8.TextFrameAligned("贴花 ID"u8);
         }
 
         ImGui.SameLine();
@@ -39,9 +39,9 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         ImGui.SameLine(0, editor.PriorityWidth);
         using (ImUtf8.Group())
         {
-            ImUtf8.TextFrameAligned("Material Animation ID"u8);
-            ImUtf8.TextFrameAligned("Sound ID"u8);
-            ImUtf8.TextFrameAligned("Can Be Disabled"u8);
+            ImUtf8.TextFrameAligned("材质动画 ID"u8);
+            ImUtf8.TextFrameAligned("声音 ID"u8);
+            ImUtf8.TextFrameAligned("可被禁用"u8);
         }
 
         ImGui.SameLine();
@@ -67,7 +67,7 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
 
         using (ImUtf8.Group())
         {
-            ImUtf8.TextFrameAligned("Default Attributes"u8);
+            ImUtf8.TextFrameAligned("默认属性"u8);
             foreach (var option in group.OptionData.Where(o => !o.IsDisableSubMod))
                 ImUtf8.TextFrameAligned(option.Name);
         }
@@ -114,10 +114,10 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         var name      = editor.DrawNewOptionBase(group, group.Options.Count);
         var validName = name.Length > 0;
         var tt = dis
-            ? "No Free Attribute Slots for New Options..."u8
+            ? "新选项没有空闲属性插槽..."u8
             : validName
-                ? "Add a new option to this group."u8
-                : "Please enter a name for the new option."u8;
+                ? "向该组添加一个新选项。"u8
+                : "请为新选项输入一个名称。"u8;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, default, !validName || dis))
         {
             editor.ModManager.OptionEditor.ImcEditor.AddOption(group, cache, name);

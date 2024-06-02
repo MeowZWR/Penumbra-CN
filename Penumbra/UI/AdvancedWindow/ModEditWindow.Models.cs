@@ -382,7 +382,7 @@ public partial class ModEditWindow
             var tt             = "删除此材料。\n以该材质为目标的任何网格都将更新为使用材质 #1.";
             var modifierActive = _config.DeleteModModifier.IsActive();
             if (!modifierActive)
-                tt += $"\按住{_config.DeleteModModifier}进行删除操作。";
+                tt += $"\n按住{_config.DeleteModModifier}进行删除操作。";
 
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize, tt, !modifierActive, true))
             {
@@ -445,7 +445,7 @@ public partial class ModEditWindow
         // Vertex elements
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("Vertex Elements");
+        ImGui.TextUnformatted("顶点元素");
 
         ImGui.TableNextColumn();
         DrawVertexElementDetails(file.VertexDeclarations[meshIndex].VertexElements);
@@ -467,7 +467,7 @@ public partial class ModEditWindow
 
     private static void DrawVertexElementDetails(MdlStructs.VertexElement[] vertexElements)
     {
-        using var node = ImRaii.TreeNode($"Click to expand");
+        using var node = ImRaii.TreeNode($"点击展开");
         if (!node)
             return;
         

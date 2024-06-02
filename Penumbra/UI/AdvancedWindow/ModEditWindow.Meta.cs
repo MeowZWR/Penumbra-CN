@@ -724,11 +724,11 @@ public partial class ModEditWindow
         public static void DrawNew(MetaFileManager metaFileManager, ModEditor editor, Vector2 iconSize)
         {
             ImGui.TableNextColumn();
-            CopyToClipboardButton("Copy all current global EQP manipulations to clipboard.", iconSize,
+            CopyToClipboardButton("复制所有全局EQP操作到剪贴板。", iconSize,
                 editor.MetaEditor.GlobalEqp.Select(m => (MetaManipulation)m));
             ImGui.TableNextColumn();
             var canAdd = editor.MetaEditor.CanAdd(_new);
-            var tt     = canAdd ? "Stage this edit." : "This entry is already manipulated.";
+            var tt     = canAdd ? "进行此项编辑。" : "这个条目已经被操作过了。";
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, tt, !canAdd, true))
                 editor.MetaEditor.Add(_new);
 

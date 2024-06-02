@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -39,7 +39,7 @@ public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiM
     {
         var g = group;
         var e = editor.ModManager.OptionEditor.MultiEditor;
-        if (ImUtf8.Button("Convert to Single Group"u8, editor.AvailableWidth))
+        if (ImUtf8.Button("转换为单选项组"u8, editor.AvailableWidth))
             editor.ActionQueue.Enqueue(() => e.ChangeToSingle(g));
     }
 

@@ -564,10 +564,10 @@ public class SettingsTab : ITab
 
         ImGui.SameLine();
         const string tt =
-            "Select which of the two renaming input fields are visible when opening the right-click context menu of a mod in the mod selector.";
+            "选择在模组选择器中打开模组右键上下文菜单时可见的两个重命名输入字段中的哪一个。";
         ImGuiComponents.HelpMarker(tt);
         ImGui.SameLine();
-        ImGui.TextUnformatted("Rename Fields in Mod Context Menu");
+        ImGui.TextUnformatted("模组上下文菜单中的重命名字段");
         ImGuiUtil.HoverTooltip(tt);
     }
 

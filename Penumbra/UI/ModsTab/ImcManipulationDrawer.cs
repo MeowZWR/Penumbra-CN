@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -13,7 +13,7 @@ public static class ImcManipulationDrawer
     public static bool DrawObjectType(ref ImcIdentifier identifier, float width = 110)
     {
         var ret = Combos.ImcType("##imcType", identifier.ObjectType, out var type, width);
-        ImUtf8.HoverTooltip("Object Type"u8);
+        ImUtf8.HoverTooltip("对象类型"u8);
 
         if (ret)
         {
@@ -39,8 +39,8 @@ public static class ImcManipulationDrawer
     {
         var ret = IdInput("##imcPrimaryId"u8, unscaledWidth, identifier.PrimaryId.Id, out var newId, 0, ushort.MaxValue,
             identifier.PrimaryId.Id <= 1);
-        ImUtf8.HoverTooltip("Primary ID - You can usually find this as the 'x####' part of an item path.\n"u8
-          + "This should generally not be left <= 1 unless you explicitly want that."u8);
+        ImUtf8.HoverTooltip("主要ID - 通常可以在物品路径的'x####'部分找到。也可以在更改项目中查看。\n"u8
+          + "除非你明确希望如此，否则一般不应将其保持为小于等于1。"u8);
         if (ret)
             identifier = identifier with { PrimaryId = newId };
         return ret;
@@ -49,7 +49,7 @@ public static class ImcManipulationDrawer
     public static bool DrawSecondaryId(ref ImcIdentifier identifier, float unscaledWidth = 100)
     {
         var ret = IdInput("##imcSecondaryId"u8, unscaledWidth, identifier.SecondaryId.Id, out var newId, 0, ushort.MaxValue, false);
-        ImUtf8.HoverTooltip("Secondary ID"u8);
+        ImUtf8.HoverTooltip("次要ID"u8);
         if (ret)
             identifier = identifier with { SecondaryId = newId };
         return ret;
@@ -58,7 +58,7 @@ public static class ImcManipulationDrawer
     public static bool DrawVariant(ref ImcIdentifier identifier, float unscaledWidth = 45)
     {
         var ret = IdInput("##imcVariant"u8, unscaledWidth, identifier.Variant.Id, out var newId, 0, byte.MaxValue, false);
-        ImUtf8.HoverTooltip("Variant ID"u8);
+        ImUtf8.HoverTooltip("变体ID"u8);
         if (ret)
             identifier = identifier with { Variant = (byte)newId };
         return ret;
@@ -80,7 +80,7 @@ public static class ImcManipulationDrawer
             default: return false;
         }
 
-        ImUtf8.HoverTooltip("Equip Slot"u8);
+        ImUtf8.HoverTooltip("装备槽"u8);
         if (ret)
             identifier = identifier with { EquipSlot = slot };
         return ret;
@@ -88,7 +88,7 @@ public static class ImcManipulationDrawer
 
     public static bool DrawMaterialId(ImcEntry defaultEntry, ref ImcEntry entry, bool addDefault, float unscaledWidth = 45)
     {
-        if (!DragInput("##materialId"u8, "Material ID"u8, unscaledWidth * ImUtf8.GlobalScale, entry.MaterialId, defaultEntry.MaterialId,
+        if (!DragInput("##materialId"u8, "材质 ID"u8, unscaledWidth * ImUtf8.GlobalScale, entry.MaterialId, defaultEntry.MaterialId,
                 out var newValue,        (byte)1,         byte.MaxValue,                      0.01f,            addDefault))
             return false;
 
@@ -98,7 +98,7 @@ public static class ImcManipulationDrawer
 
     public static bool DrawMaterialAnimationId(ImcEntry defaultEntry, ref ImcEntry entry, bool addDefault, float unscaledWidth = 45)
     {
-        if (!DragInput("##mAnimId"u8,             "Material Animation ID"u8, unscaledWidth * ImUtf8.GlobalScale, entry.MaterialAnimationId,
+        if (!DragInput("##mAnimId"u8,             "材质动画 ID"u8, unscaledWidth * ImUtf8.GlobalScale, entry.MaterialAnimationId,
                 defaultEntry.MaterialAnimationId, out var newValue,          (byte)0, byte.MaxValue, 0.01f, addDefault))
             return false;
 
@@ -108,7 +108,7 @@ public static class ImcManipulationDrawer
 
     public static bool DrawDecalId(ImcEntry defaultEntry, ref ImcEntry entry, bool addDefault, float unscaledWidth = 45)
     {
-        if (!DragInput("##decalId"u8, "Decal ID"u8,  unscaledWidth * ImUtf8.GlobalScale, entry.DecalId, defaultEntry.DecalId, out var newValue,
+        if (!DragInput("##decalId"u8, "贴花 ID"u8,  unscaledWidth * ImUtf8.GlobalScale, entry.DecalId, defaultEntry.DecalId, out var newValue,
                 (byte)0,              byte.MaxValue, 0.01f,                              addDefault))
             return false;
 
@@ -118,7 +118,7 @@ public static class ImcManipulationDrawer
 
     public static bool DrawVfxId(ImcEntry defaultEntry, ref ImcEntry entry, bool addDefault, float unscaledWidth = 45)
     {
-        if (!DragInput("##vfxId"u8, "VFX ID"u8, unscaledWidth * ImUtf8.GlobalScale, entry.VfxId, defaultEntry.VfxId, out var newValue, (byte)0,
+        if (!DragInput("##vfxId"u8, "视效 ID"u8, unscaledWidth * ImUtf8.GlobalScale, entry.VfxId, defaultEntry.VfxId, out var newValue, (byte)0,
                 byte.MaxValue,      0.01f,      addDefault))
             return false;
 
@@ -128,7 +128,7 @@ public static class ImcManipulationDrawer
 
     public static bool DrawSoundId(ImcEntry defaultEntry, ref ImcEntry entry, bool addDefault, float unscaledWidth = 45)
     {
-        if (!DragInput("##soundId"u8, "Sound ID"u8,  unscaledWidth * ImUtf8.GlobalScale, entry.SoundId, defaultEntry.SoundId, out var newValue,
+        if (!DragInput("##soundId"u8, "声音 ID"u8,  unscaledWidth * ImUtf8.GlobalScale, entry.SoundId, defaultEntry.SoundId, out var newValue,
                 (byte)0,              byte.MaxValue, 0.01f,                              addDefault))
             return false;
 
@@ -194,7 +194,7 @@ public static class ImcManipulationDrawer
             newValue = newValue <= minValue ? minValue : newValue >= maxValue ? maxValue : newValue;
 
         if (addDefault)
-            ImUtf8.HoverTooltip($"{tooltip}\nDefault Value: {defaultValue}");
+            ImUtf8.HoverTooltip($"{tooltip}\n默认值{defaultValue}");
         else
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, tooltip);
 

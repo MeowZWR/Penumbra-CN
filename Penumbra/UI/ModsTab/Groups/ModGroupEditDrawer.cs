@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using ImGuiNET;
 using OtterGui;
@@ -73,7 +73,7 @@ public sealed class ModGroupEditDrawer(
     private void DrawGroup(IModGroup group, int idx)
     {
         using var id    = ImUtf8.PushId(idx);
-        using var frame = ImRaii.FramedGroup($"Group #{idx + 1}");
+        using var frame = ImRaii.FramedGroup($"组 #{idx + 1}");
         DrawGroupNameRow(group, idx);
         group.EditDrawer(this).Draw();
     }
@@ -115,8 +115,8 @@ public sealed class ModGroupEditDrawer(
         }
 
         var tt = _isGroupNameValid
-            ? "Change the Group name."u8
-            : "Current name can not be used for this group."u8;
+            ? "修改组名称"u8
+            : "当前名称不能用于此组。"u8;
         ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, tt);
     }
 
@@ -126,10 +126,10 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.DeleteModGroup(group));
 
         if (_deleteEnabled)
-            ImUtf8.HoverTooltip("Delete this option group."u8);
+            ImUtf8.HoverTooltip("删除此选项组。"u8);
         else
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled,
-                $"Delete this option group.\nHold {config.DeleteModModifier} while clicking to delete.");
+                $"删除此选项组。\n按住{config.DeleteModModifier}并点击。");
     }
 
     private void DrawGroupPriority(IModGroup group)
@@ -152,13 +152,13 @@ public sealed class ModGroupEditDrawer(
             _currentGroupPriority = null;
         }
 
-        ImGuiUtil.HoverTooltip("Group Priority");
+        ImGuiUtil.HoverTooltip("组优先级");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawGroupDescription(IModGroup group)
     {
-        if (ImUtf8.IconButton(FontAwesomeIcon.Edit, "Edit group description."u8))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Edit, "编辑选项组描述"u8))
             descriptionPopup.Open(group);
     }
 
@@ -169,9 +169,9 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.MoveModGroup(group, idx - 1));
 
         if (isFirst)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Can not move this group further upwards."u8);
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "到顶了。"u8);
         else
-            ImUtf8.HoverTooltip($"Move this group up to group {idx}.");
+            ImUtf8.HoverTooltip($"移动此组到组 #{idx}之上。");
 
 
         ImUtf8.SameLineInner();
@@ -180,9 +180,9 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.MoveModGroup(group, idx + 1));
 
         if (isLast)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Can not move this group further downwards."u8);
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "到底了。"u8);
         else
-            ImUtf8.HoverTooltip($"Move this group down to group {idx + 2}.");
+            ImUtf8.HoverTooltip($"移动此组到组 #{idx + 2}之下。");
     }
 
     private void DrawGroupOpenFile(IModGroup group, int idx)
@@ -196,13 +196,13 @@ public sealed class ModGroupEditDrawer(
             }
             catch (Exception e)
             {
-                Penumbra.Messager.NotificationMessage(e, "Could not open editor.", NotificationType.Error);
+                Penumbra.Messager.NotificationMessage(e, "无法打开编辑器。", NotificationType.Error);
             }
 
         if (fileExists)
-            ImUtf8.HoverTooltip($"Open the {group.Name} json file in the text editor of your choice.");
+            ImUtf8.HoverTooltip($"在您选择的文本编辑器中打开 {group.Name} 的 JSON 文件。");
         else
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"The {group.Name} json file does not exist.");
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"{group.Name} 的 JSON 文件不存在。");
     }
 
 
@@ -210,7 +210,7 @@ public sealed class ModGroupEditDrawer(
     internal void DrawOptionPosition(IModGroup group, IModOption option, int optionIdx)
     {
         ImGui.AlignTextToFramePadding();
-        ImUtf8.Selectable($"Option #{optionIdx + 1}", false, size: OptionIdxSelectable);
+        ImUtf8.Selectable($"选项 #{optionIdx + 1}", false, size: OptionIdxSelectable);
         Target(group, optionIdx);
         Source(option);
     }
@@ -221,7 +221,7 @@ public sealed class ModGroupEditDrawer(
         var isDefaultOption = group.DefaultSettings.AsIndex == optionIdx;
         if (ImUtf8.RadioButton("##default"u8, isDefaultOption))
             ModManager.OptionEditor.ChangeModGroupDefaultOption(group, Setting.Single(optionIdx));
-        ImUtf8.HoverTooltip($"Set {option.Name} as the default choice for this group.");
+        ImUtf8.HoverTooltip($"将 {option.Name} 设置为此组的默认选项。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -230,13 +230,13 @@ public sealed class ModGroupEditDrawer(
         var isDefaultOption = group.DefaultSettings.HasFlag(optionIdx);
         if (ImUtf8.Checkbox("##default"u8, ref isDefaultOption))
             ModManager.OptionEditor.ChangeModGroupDefaultOption(group, group.DefaultSettings.SetBit(optionIdx, isDefaultOption));
-        ImUtf8.HoverTooltip($"{(isDefaultOption ? "Disable"u8 : "Enable"u8)} {option.Name} per default in this group.");
+        ImUtf8.HoverTooltip($"{(isDefaultOption ? "在此组中默认禁用"u8 : "在此组中默认启用"u8)} {option.Name}。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DrawOptionDescription(IModOption option)
     {
-        if (ImUtf8.IconButton(FontAwesomeIcon.Edit, "Edit option description."u8))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Edit, "编辑选项描述。"u8))
             descriptionPopup.Open(option);
     }
 
@@ -247,7 +247,7 @@ public sealed class ModGroupEditDrawer(
         ImGui.SetNextItemWidth(PriorityWidth);
         if (ImUtf8.InputScalarOnDeactivated("##Priority"u8, ref priority))
             ModManager.OptionEditor.MultiEditor.ChangeOptionPriority(option, new ModPriority(priority));
-        ImUtf8.HoverTooltip("Option priority inside the mod."u8);
+        ImUtf8.HoverTooltip("选项在模组内的优先级。"u8);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -266,16 +266,16 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.DeleteOption(option));
 
         if (_deleteEnabled)
-            ImUtf8.HoverTooltip("Delete this option."u8);
+            ImUtf8.HoverTooltip("删除此选项"u8);
         else
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled,
-                $"Delete this option.\nHold {config.DeleteModModifier} while clicking to delete.");
+                $"删除此选项\n按住{config.DeleteModModifier}并点击。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal string DrawNewOptionBase(IModGroup group, int count)
     {
-        ImUtf8.Selectable($"Option #{count + 1}", false, size: OptionIdxSelectable);
+        ImUtf8.Selectable($"选项 #{count + 1}", false, size: OptionIdxSelectable);
         Target(group, count);
 
         ImUtf8.SameLineInner();
@@ -286,7 +286,7 @@ public sealed class ModGroupEditDrawer(
         var newName = _newOptionGroup == group
             ? NewOptionName ?? string.Empty
             : string.Empty;
-        if (ImUtf8.InputText("##newOption"u8, ref newName, "Add new option..."u8))
+        if (ImUtf8.InputText("##newOption"u8, ref newName, "添加新选项..."u8))
         {
             NewOptionName   = newName;
             _newOptionGroup = group;
@@ -312,7 +312,7 @@ public sealed class ModGroupEditDrawer(
             _draggingAcross = across;
         }
 
-        ImUtf8.Text($"Dragging option {option.Name} from group {option.Group.Name}...");
+        ImUtf8.Text($"从组 {option.Group.Name} 中拖拽选项 {option.Name}...");
     }
 
     private void Target(IModGroup group, int optionIdx)
@@ -359,7 +359,7 @@ public sealed class ModGroupEditDrawer(
         AvailableWidth      = new Vector2(totalWidth + 3 * _spacing + 2 * _buttonSize.X + PriorityWidth, 0);
         _groupNameWidth     = totalWidth - 3 * (_buttonSize.X + _spacing);
         _spacing            = ImGui.GetStyle().ItemInnerSpacing.X;
-        OptionIdxSelectable = ImUtf8.CalcTextSize("Option #88."u8);
+        OptionIdxSelectable = ImUtf8.CalcTextSize("选项 #88."u8);
         _optionNameWidth    = totalWidth - OptionIdxSelectable.X - _buttonSize.X - 2 * _spacing;
         _deleteEnabled      = config.DeleteModModifier.IsActive();
     }

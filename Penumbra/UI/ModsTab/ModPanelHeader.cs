@@ -23,7 +23,7 @@ public class ModPanelHeader : IDisposable
     public ModPanelHeader(DalamudPluginInterface pi, CommunicatorService communicator)
     {
         _communicator = communicator;
-        _nameFont     = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
+        _nameFont     = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
         _communicator.ModDataChanged.Subscribe(OnModDataChange, ModDataChanged.Priority.ModPanelHeader);
     }
 

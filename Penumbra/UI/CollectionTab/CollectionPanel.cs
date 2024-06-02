@@ -55,7 +55,7 @@ public sealed class CollectionPanel : IDisposable
         _incognito              = incognito;
         _individualAssignmentUi = new IndividualAssignmentUi(communicator, actors, manager);
         _inheritanceUi          = new InheritanceUi(manager, incognito);
-        _nameFont               = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
+        _nameFont               = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
     }
 
     public void Dispose()
@@ -227,9 +227,9 @@ public sealed class CollectionPanel : IDisposable
         ImGui.Dummy(Vector2.Zero);
         ImGui.BeginGroup();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("Name");
+        ImGui.TextUnformatted("名称");
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("Identifier");
+        ImGui.TextUnformatted("标识符");
         ImGui.EndGroup();
         ImGui.SameLine();
         ImGui.BeginGroup();

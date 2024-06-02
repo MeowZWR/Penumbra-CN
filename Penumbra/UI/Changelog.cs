@@ -61,7 +61,7 @@ public class PenumbraChangelog
             .RegisterEntry("更新至 .NET 8 和 XIV 6.58，利用了一些新的框架功能来提高性能和稳定性。")
             .RegisterHighlight(
                 "新增了一个实验性的崩溃处理程序，当游戏崩溃时，它应该会写入一个 Penumbra.log 文件，其中包含特定于 Penumbra 的信息。")
-            .RegisterEntry("默认情况下已禁用。可以在高级设置中启用此功能。)
+            .RegisterEntry("默认情况下已禁用。可以在高级设置中启用此功能。", 1)
             .RegisterHighlight("合集现在具有关联的 GUID 作为标识符，而不是它们的名称，因此现在可以重命名它们。")
             .RegisterEntry("迁移这些合集可能会引入问题，请在遇到任何问题时尽快告诉我。", 1)
             .RegisterEntry("在迁移之前应创建永久性（非滚动性）备份，以防出现任何问题。",                 1)

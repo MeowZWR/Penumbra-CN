@@ -302,7 +302,7 @@ public partial class ModEditWindow
         {
             var failedFiles = _editor.FileEditor.Apply(_editor.Mod!, _editor.Option!);
             if (failedFiles > 0)
-                Penumbra.Log.Information($"应用 {failedFiles} 文件重定向到  {_editor.Option!.FullName}失败。");
+                Penumbra.Log.Information($"应用{failedFiles}文件重定向到{_editor.Option!.GetFullName()}失败。");
         }
 
 
