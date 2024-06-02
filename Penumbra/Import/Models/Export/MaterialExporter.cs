@@ -1,5 +1,6 @@
 using Lumina.Data.Parsing;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using SharpGLTF.Materials;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
@@ -48,7 +49,7 @@ public class MaterialExporter
     private static MaterialBuilder BuildCharacter(Material material, string name)
     {
         // Build the textures from the color table.
-        var table = material.Mtrl.Table;
+        var table = new LegacyColorTable(material.Mtrl.Table);
 
         var normal = material.Textures[TextureUsage.SamplerNormal];
 
@@ -102,7 +103,7 @@ public class MaterialExporter
 
     // TODO: It feels a little silly to request the entire normal here when extracting the normal only needs some of the components.
     //       As a future refactor, it would be neat to accept a single-channel field here, and then do composition of other stuff later.
-    private readonly struct ProcessCharacterNormalOperation(Image<Rgba32> normal, MtrlFile.ColorTable table) : IRowOperation
+    private readonly struct ProcessCharacterNormalOperation(Image<Rgba32> normal, LegacyColorTable table) : IRowOperation
     {
         public Image<Rgba32> Normal    { get; } = normal.Clone();
         public Image<Rgba32> BaseColor { get; } = new(normal.Width, normal.Height);

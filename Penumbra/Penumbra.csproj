@@ -1,4 +1,4 @@
-<Project  Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net8.0-windows</TargetFramework>
         <LangVersion>preview</LangVersion>
@@ -8,7 +8,7 @@
         <Product>Penumbra</Product>
         <Copyright>Copyright © 2022</Copyright>
         <FileVersion>9.0.0.1</FileVersion>
-        <AssemblyVersion>1.0.2.6</AssemblyVersion>
+        <AssemblyVersion>1.1.0.2</AssemblyVersion>
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
@@ -22,6 +22,12 @@
         <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
         <DefineConstants>PROFILING;</DefineConstants>
     </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="Mods\Subclasses\**" />
+      <EmbeddedResource Remove="Mods\Subclasses\**" />
+      <None Remove="Mods\Subclasses\**" />
+    </ItemGroup>
 
     <ItemGroup>
         <Content Include="tsmLogo.png">
@@ -69,7 +75,7 @@
 
     <ItemGroup>
         <PackageReference Include="EmbedIO" Version="3.4.3" />
-        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.3" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
         <PackageReference Include="SharpCompress" Version="0.33.0" />
         <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0030" />
         <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0030" />

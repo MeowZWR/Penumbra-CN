@@ -1,3 +1,4 @@
+using System.Text.Unicode;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using OtterGui.Classes;
@@ -56,7 +57,7 @@ public sealed unsafe class ResolvePathHooksBase : IDisposable
         _resolveSklbPathHook  = Create<PerSlotResolveDelegate>($"{name}.{nameof(ResolveSklb)}",  hooks, vTable[72], type, ResolveSklb, ResolveSklbHuman);
         _resolveSkpPathHook   = Create<PerSlotResolveDelegate>($"{name}.{nameof(ResolveSkp)}",   hooks, vTable[74], type, ResolveSkp, ResolveSkpHuman);
         _resolveTmbPathHook   = Create<TmbResolveDelegate>(    $"{name}.{nameof(ResolveTmb)}",   hooks, vTable[77], ResolveTmb);
-        _resolveVfxPathHook   = Create<VfxResolveDelegate>(    $"{name}.{nameof(ResolveVfx)}",   hooks, vTable[84], ResolveVfx);
+        _resolveVfxPathHook   = Create<VfxResolveDelegate>(    $"{name}.{nameof(ResolveVfx)}",   hooks, vTable[84], type, ResolveVfx, ResolveVfxHuman);
         // @formatter:on
         Enable();
     }
@@ -177,6 +178,32 @@ public sealed unsafe class ResolvePathHooksBase : IDisposable
     {
         using var est = GetEstChanges(drawObject, out var data);
         return ResolvePath(data, _resolveSkpPathHook.Original(drawObject, pathBuffer, pathBufferSize, partialSkeletonIndex));
+    }
+
+    private nint ResolveVfxHuman(nint drawObject, nint pathBuffer, nint pathBufferSize, uint slotIndex, nint unkOutParam)
+    {
+        if (slotIndex <= 4)
+            return ResolveVfx(drawObject, pathBuffer, pathBufferSize, slotIndex, unkOutParam);
+
+        var changedEquipData = ((Human*)drawObject)->ChangedEquipData;
+        // Enable vfxs for accessories
+        if (changedEquipData == null)
+            return ResolveVfx(drawObject, pathBuffer, pathBufferSize, slotIndex, unkOutParam);
+
+        var slot    = (ushort*)(changedEquipData + 12 * (nint)slotIndex);
+        var model   = slot[0];
+        var variant = slot[1];
+        var vfxId   = slot[4];
+
+        if (model == 0 || variant == 0 || vfxId == 0)
+            return ResolveVfx(drawObject, pathBuffer, pathBufferSize, slotIndex, unkOutParam);
+
+        if (!Utf8.TryWrite(new Span<byte>((void*)pathBuffer, (int)pathBufferSize), $"chara/accessory/a{model:D4}/vfx/eff/va{vfxId:D4}.avfx\0",
+                out _))
+            return ResolveVfx(drawObject, pathBuffer, pathBufferSize, slotIndex, unkOutParam);
+
+        *(ulong*)unkOutParam = 4;
+        return ResolvePath(drawObject, pathBuffer);
     }
 
     private DisposableContainer GetEstChanges(nint drawObject, out ResolveData data)

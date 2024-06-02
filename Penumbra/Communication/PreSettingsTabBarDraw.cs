@@ -1,4 +1,6 @@
 using OtterGui.Classes;
+using Penumbra.Api.Api;
+using Penumbra.Api.IpcSubscribers;
 
 namespace Penumbra.Communication;
 
@@ -14,7 +16,7 @@ public sealed class PreSettingsTabBarDraw() : EventWrapper<string, float, float,
 {
     public enum Priority
     {
-        /// <seealso cref="Api.PenumbraApi.PreSettingsTabBarDraw"/>
+        /// <seealso cref="Api.IpcSubscribers.PreSettingsTabBarDraw"/>
         Default = 0,
     }
 }

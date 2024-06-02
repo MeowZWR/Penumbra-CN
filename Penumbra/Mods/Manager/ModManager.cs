@@ -1,5 +1,6 @@
 using Penumbra.Communication;
 using Penumbra.Mods.Editor;
+using Penumbra.Mods.Manager.OptionEditor;
 using Penumbra.Services;
 
 namespace Penumbra.Mods.Manager;
@@ -31,14 +32,14 @@ public sealed class ModManager : ModStorage, IDisposable
     private readonly Configuration       _config;
     private readonly CommunicatorService _communicator;
 
-    public readonly ModCreator      Creator;
-    public readonly ModDataEditor   DataEditor;
-    public readonly ModOptionEditor OptionEditor;
+    public readonly ModCreator     Creator;
+    public readonly ModDataEditor  DataEditor;
+    public readonly ModGroupEditor OptionEditor;
 
     public DirectoryInfo BasePath { get; private set; } = null!;
     public bool          Valid    { get; private set; }
 
-    public ModManager(Configuration config, CommunicatorService communicator, ModDataEditor dataEditor, ModOptionEditor optionEditor,
+    public ModManager(Configuration config, CommunicatorService communicator, ModDataEditor dataEditor, ModGroupEditor optionEditor,
         ModCreator creator)
     {
         _config       = config;
@@ -311,22 +312,31 @@ public sealed class ModManager : ModStorage, IDisposable
     /// </summary>
     private void ScanMods()
     {
-        var options = new ParallelOptions()
+        try
         {
-            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
-        };
-        var queue = new ConcurrentQueue<Mod>();
-        Parallel.ForEach(BasePath.EnumerateDirectories(), options, dir =>
-        {
-            var mod = Creator.LoadMod(dir, false);
-            if (mod != null)
-                queue.Enqueue(mod);
-        });
+            var options = new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
+            };
+            var queue = new ConcurrentQueue<Mod>();
+            Parallel.ForEach(BasePath.EnumerateDirectories(), options, dir =>
+            {
+                var mod = Creator.LoadMod(dir, false);
+                if (mod != null)
+                    queue.Enqueue(mod);
+            });
 
-        foreach (var mod in queue)
+            foreach (var mod in queue)
+            {
+                mod.Index = Count;
+                Mods.Add(mod);
+            }
+        }
+        catch (Exception ex)
         {
-            mod.Index = Count;
-            Mods.Add(mod);
+            Valid = false;
+            _communicator.ModDirectoryChanged.Invoke(BasePath.FullName, false);
+            Penumbra.Log.Error($"Could not scan for mods:\n{ex}");
         }
     }
 }

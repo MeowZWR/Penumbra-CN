@@ -2,8 +2,9 @@ using Dalamud.Interface.Internal.Notifications;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Tasks;
+using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager;
-using Penumbra.Mods.Subclasses;
+using Penumbra.Mods.SubMods;
 using Penumbra.String.Classes;
 
 namespace Penumbra.Mods.Editor;
@@ -167,29 +168,12 @@ public class ModNormalizer(ModManager _modManager, Configuration _config)
             // Normalize all other options.
             foreach (var (group, groupIdx) in Mod.Groups.WithIndex())
             {
-                _redirections[groupIdx + 1].EnsureCapacity(group.Count);
-                for (var i = _redirections[groupIdx + 1].Count; i < group.Count; ++i)
-                    _redirections[groupIdx + 1].Add([]);
-
                 var groupDir = ModCreator.CreateModFolder(directory, group.Name, _config.ReplaceNonAsciiOnImport, true);
-                foreach (var option in group.OfType<SubMod>())
-                {
-                    var optionDir = ModCreator.CreateModFolder(groupDir, option.Name, _config.ReplaceNonAsciiOnImport, true);
-
-                    newDict = _redirections[groupIdx + 1][option.OptionIdx];
-                    newDict.Clear();
-                    newDict.EnsureCapacity(option.FileData.Count);
-                    foreach (var (gamePath, fullPath) in option.FileData)
-                    {
-                        var relPath      = new Utf8RelPath(gamePath).ToString();
-                        var newFullPath  = Path.Combine(optionDir.FullName, relPath);
-                        var redirectPath = new FullPath(Path.Combine(Mod.ModPath.FullName, groupDir.Name, optionDir.Name, relPath));
-                        Directory.CreateDirectory(Path.GetDirectoryName(newFullPath)!);
-                        File.Copy(fullPath.FullName, newFullPath, true);
-                        newDict.Add(gamePath, redirectPath);
-                        ++Step;
-                    }
-                }
+                _redirections[groupIdx + 1].EnsureCapacity(group.DataContainers.Count);
+                for (var i = _redirections[groupIdx + 1].Count; i < group.DataContainers.Count; ++i)
+                    _redirections[groupIdx + 1].Add([]);
+                foreach (var (data, dataIdx) in group.DataContainers.WithIndex())
+                    HandleSubMod(groupDir, data, _redirections[groupIdx + 1][dataIdx]);
             }
 
             return true;
@@ -200,6 +184,25 @@ public class ModNormalizer(ModManager _modManager, Configuration _config)
         }
 
         return false;
+
+        void HandleSubMod(DirectoryInfo groupDir, IModDataContainer option, Dictionary<Utf8GamePath, FullPath> newDict)
+        {
+            var name      = option.GetName();
+            var optionDir = ModCreator.CreateModFolder(groupDir, name, _config.ReplaceNonAsciiOnImport, true);
+
+            newDict.Clear();
+            newDict.EnsureCapacity(option.Files.Count);
+            foreach (var (gamePath, fullPath) in option.Files)
+            {
+                var relPath      = new Utf8RelPath(gamePath).ToString();
+                var newFullPath  = Path.Combine(optionDir.FullName, relPath);
+                var redirectPath = new FullPath(Path.Combine(Mod.ModPath.FullName, groupDir.Name, optionDir.Name, relPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(newFullPath)!);
+                File.Copy(fullPath.FullName, newFullPath, true);
+                newDict.Add(gamePath, redirectPath);
+                ++Step;
+            }
+        }
     }
 
     private bool MoveOldFiles()
@@ -274,9 +277,9 @@ public class ModNormalizer(ModManager _modManager, Configuration _config)
 
     private void ApplyRedirections()
     {
-        foreach (var option in Mod.AllSubMods)
-            _modManager.OptionEditor.OptionSetFiles(Mod, option.GroupIdx, option.OptionIdx,
-                _redirections[option.GroupIdx + 1][option.OptionIdx]);
+        foreach (var (group, groupIdx) in Mod.Groups.WithIndex())
+            foreach (var (container, containerIdx) in group.DataContainers.WithIndex())
+                _modManager.OptionEditor.SetFiles(container, _redirections[groupIdx + 1][containerIdx]);
 
         ++Step;
     }

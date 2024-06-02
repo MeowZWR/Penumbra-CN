@@ -1,9 +1,11 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using OtterGui;
 using Penumbra.Api.Enums;
 using Penumbra.Import.Structs;
 using Penumbra.Mods;
-using Penumbra.Mods.Subclasses;
+using Penumbra.Mods.Groups;
+using Penumbra.Mods.Settings;
+using Penumbra.Mods.SubMods;
 using Penumbra.Util;
 using ZipArchive = SharpCompress.Archives.Zip.ZipArchive;
 
@@ -152,8 +154,8 @@ public partial class TexToolsImporter
         }
 
         // Iterate through all pages
-        var options       = new List<ISubMod>();
-        var groupPriority = 0;
+        var options       = new List<MultiSubMod>();
+        var groupPriority = ModPriority.Default;
         var groupNames    = new HashSet<string>();
         foreach (var page in modList.ModPackPages)
         {
@@ -174,7 +176,7 @@ public partial class TexToolsImporter
                      ?? new DirectoryInfo(Path.Combine(_currentModDirectory.FullName,
                             numGroups == 1 ? $"Group {groupPriority + 1}" : $"Group {groupPriority + 1}, Part {groupId + 1}"));
 
-                    uint? defaultSettings = group.SelectionType == GroupType.Multi ? 0u : null;
+                    Setting? defaultSettings = group.SelectionType == GroupType.Multi ? Setting.Zero : null;
                     for (var i = 0; i + optionIdx < allOptions.Count && i < maxOptions; ++i)
                     {
                         var option = allOptions[i + optionIdx];
@@ -183,11 +185,11 @@ public partial class TexToolsImporter
                         var optionFolder = ModCreator.NewSubFolderName(groupFolder, option.Name, _config.ReplaceNonAsciiOnImport)
                          ?? new DirectoryInfo(Path.Combine(groupFolder.FullName, $"Option {i + optionIdx + 1}"));
                         ExtractSimpleModList(optionFolder, option.ModsJsons);
-                        options.Add(_modManager.Creator.CreateSubMod(_currentModDirectory, optionFolder, option));
+                        options.Add(_modManager.Creator.CreateSubMod(_currentModDirectory, optionFolder, option, new ModPriority(i)));
                         if (option.IsChecked)
                             defaultSettings = group.SelectionType == GroupType.Multi
-                                ? defaultSettings!.Value | (1u << i)
-                                : (uint)i;
+                                ? defaultSettings!.Value | Setting.Multi(i)
+                                : Setting.Single(i);
 
                         ++_currentOptionIdx;
                     }
@@ -203,15 +205,15 @@ public partial class TexToolsImporter
                         {
                             var option = group.OptionList[idx];
                             _currentOptionName = option.Name;
-                            options.Insert(idx, ModCreator.CreateEmptySubMod(option.Name));
+                            options.Insert(idx, MultiSubMod.WithoutGroup(option.Name, option.Description, ModPriority.Default));
                             if (option.IsChecked)
-                                defaultSettings = (uint) idx;
+                                defaultSettings = Setting.Single(idx);
                         }
                     }
 
-                    _modManager.Creator.CreateOptionGroup(_currentModDirectory, group.SelectionType, name, groupPriority, groupPriority,
-                        defaultSettings ?? 0, group.Description, options);
-                    ++groupPriority;
+                    _modManager.Creator.CreateOptionGroup(_currentModDirectory, group.SelectionType, name, groupPriority, groupPriority.Value,
+                        defaultSettings ?? Setting.Zero, group.Description, options);
+                    groupPriority += 1;
                 }
             }
         }

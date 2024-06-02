@@ -1,5 +1,7 @@
+using OtterGui.Classes;
+using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager;
-using Penumbra.Mods.Subclasses;
+using Penumbra.Mods.SubMods;
 using Penumbra.Services;
 using Penumbra.String.Classes;
 
@@ -28,7 +30,7 @@ public class DuplicateManager(ModManager modManager, SaveService saveService, Co
         Worker                   = Task.Run(() => CheckDuplicates(filesTmp, _cancellationTokenSource.Token), _cancellationTokenSource.Token);
     }
 
-    public void DeleteDuplicates(ModFileCollection files, Mod mod, ISubMod option, bool useModManager)
+    public void DeleteDuplicates(ModFileCollection files, Mod mod, IModDataContainer option, bool useModManager)
     {
         if (!Worker.IsCompleted || _duplicates.Count == 0)
             return;
@@ -58,7 +60,7 @@ public class DuplicateManager(ModManager modManager, SaveService saveService, Co
 
     private void HandleDuplicate(Mod mod, FullPath duplicate, FullPath remaining, bool useModManager)
     {
-        ModEditor.ApplyToAllOptions(mod, HandleSubMod);
+        ModEditor.ApplyToAllContainers(mod, HandleSubMod);
 
         try
         {
@@ -71,7 +73,7 @@ public class DuplicateManager(ModManager modManager, SaveService saveService, Co
 
         return;
 
-        void HandleSubMod(ISubMod subMod, int groupIdx, int optionIdx)
+        void HandleSubMod(IModDataContainer subMod)
         {
             var changes = false;
             var dict = subMod.Files.ToDictionary(kvp => kvp.Key,
@@ -81,13 +83,12 @@ public class DuplicateManager(ModManager modManager, SaveService saveService, Co
 
             if (useModManager)
             {
-                modManager.OptionEditor.OptionSetFiles(mod, groupIdx, optionIdx, dict);
+                modManager.OptionEditor.SetFiles(subMod, dict, SaveType.ImmediateSync);
             }
             else
             {
-                var sub = (SubMod)subMod;
-                sub.FileData = dict;
-                saveService.ImmediateSaveSync(new ModSaveGroup(mod, groupIdx, config.ReplaceNonAsciiOnImport));
+                subMod.Files = dict;
+                saveService.ImmediateSaveSync(new ModSaveGroup(mod.ModPath, subMod, config.ReplaceNonAsciiOnImport));
             }
         }
     }
@@ -216,18 +217,21 @@ public class DuplicateManager(ModManager modManager, SaveService saveService, Co
     }
 
     /// <summary> Deduplicate a mod simply by its directory without any confirmation or waiting time. </summary>
-    internal void DeduplicateMod(DirectoryInfo modDirectory)
+    internal void DeduplicateMod(DirectoryInfo modDirectory, bool useModManager = false)
     {
         try
         {
-            var mod = new Mod(modDirectory);
-            modManager.Creator.ReloadMod(mod, true, out _);
+            if (!useModManager || !modManager.TryGetMod(modDirectory.Name, string.Empty, out var mod))
+            {
+                mod = new Mod(modDirectory);
+                modManager.Creator.ReloadMod(mod, true, out _);
+            }
 
             Clear();
             var files = new ModFileCollection();
             files.UpdateAll(mod, mod.Default);
-            CheckDuplicates(files.Available.OrderByDescending(f => f.FileSize).ToArray(), CancellationToken.None);
-            DeleteDuplicates(files, mod, mod.Default, false);
+            CheckDuplicates([.. files.Available.OrderByDescending(f => f.FileSize)], CancellationToken.None);
+            DeleteDuplicates(files, mod, mod.Default, useModManager);
         }
         catch (Exception e)
         {

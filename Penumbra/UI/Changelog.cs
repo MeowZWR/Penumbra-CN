@@ -47,34 +47,78 @@ public class PenumbraChangelog
         Add8_2_0(Changelog);
         Add8_3_0(Changelog);
         Add1_0_0_0(Changelog);
-        Add1_0_2_0(Changelog);
+        AddDummy(Changelog);
+        AddDummy(Changelog);
+        Add1_1_0_0(Changelog);
     }
 
     #region Changelogs
 
-    private static void Add1_0_2_0(Changelog log)
-        => log.NextVersion("Version 1.0.2.0")
-            .RegisterEntry("Updated to .net8 and XIV 6.58, using some new framework facilities to improve performance and stability.")
+    private static void Add1_1_0_0(Changelog log)
+        => log.NextVersion("版本 1.1.0.0")
+            .RegisterImportant(
+                "此更新再次带来了大量非常重要的后端更改（合集和组），因此可能会引入新问题。")
+            .RegisterEntry("更新至 .NET 8 和 XIV 6.58，利用了一些新的框架功能来提高性能和稳定性。")
             .RegisterHighlight(
-                "Added an experimental crash handler that is supposed to write a Penumbra.log file when the game crashes, containing Penumbra-specific information.")
-            .RegisterEntry("Various improvements to model import/export by ackwell (throughout all patches).")
+                "新增了一个实验性的崩溃处理程序，当游戏崩溃时，它应该会写入一个 Penumbra.log 文件，其中包含特定于 Penumbra 的信息。")
+            .RegisterEntry("默认情况下已禁用。可以在高级设置中启用此功能。)
+            .RegisterHighlight("合集现在具有关联的 GUID 作为标识符，而不是它们的名称，因此现在可以重命名它们。")
+            .RegisterEntry("迁移这些合集可能会引入问题，请在遇到任何问题时尽快告诉我。", 1)
+            .RegisterEntry("在迁移之前应创建永久性（非滚动性）备份，以防出现任何问题。",                 1)
             .RegisterHighlight(
-                "Added predefined tags that can be setup in the Settings tab and can be more easily applied or removed from mods. (by DZD)")
+                "添加了可以在设置选项卡中设置并可以更轻松地应用或移除的预定义标签。（由 DZD 提供）")
+            .RegisterHighlight(
+                "彻底重做了内部选项和组处理的方式，并引入了第一个新的组类型，变体IMC 组。")
             .RegisterEntry(
-                "The first empty option in a single-select option group imported from a TTMP will now keep its location instead of being moved to the first option.")
-            .RegisterEntry("Further empty options are still removed.", 1)
-            .RegisterEntry("Made it more obvious if a user has not set their root directory yet.")
-            .RegisterEntry("Added the characterglass.shpk shader file to special shader treatment to fix issues when replacing it. (By Ny)")
-            .RegisterEntry("Fixed some issues with the file sizes of compressed files.")
-            .RegisterEntry("Fixed an issue where reloading a mod did not ensure settings for that mod being correct afterwards.")
-            .RegisterEntry("Added an option to automatically redraw the player character when saving files. (1.0.0.8)")
-            .RegisterEntry("Fixed issue with manipulating mods not triggering some events.  (1.0.0.7)")
-            .RegisterEntry("Fixed issue with temporary mods not triggering some events.  (1.0.0.6)")
-            .RegisterEntry("Fixed issue when renaming mods while the advanced edit window is open. (1.0.0.6)")
-            .RegisterEntry("Fixed issue with empty option groups. (1.0.0.5)")
-            .RegisterEntry("Fixed issues with cutscene character identification. (1.0.0.4)")
-            .RegisterEntry("Added locale environment information to support info. (1.0.0.4)")
-            .RegisterEntry("Fixed an issue with copied mod settings in IPC missing unused settings. (1.0.0.3)");
+                "模组创建者可以在他们的模组中添加一个 变体IMC 组，用于控制单个 变体IMC 操作，从而为其提供独立属性的选项。",
+                1)
+            .RegisterEntry(
+                "这使得组合选项变得更容易：无需定义 'A'、'B' 和 'AB'，您只需定义 'A' 和 'B'，并跳过它们的组合。",
+                1)
+            .RegisterHighlight("新增了一种新类型的元数据操作，'全局装备参数设置 EQP 操作'。")
+            .RegisterEntry(
+                "全局 EQP 操作允许配饰不被其他装备隐藏，例如，每当角色佩戴特定的手镯时，无论是身体还是手部物品都不会隐藏手镯。",
+                1)
+            .RegisterEntry(
+                "如果将类似夹克或披肩的物品放在配饰上，可以防止其被隐藏。",
+                1)
+            .RegisterEntry(
+                "从 TTMP 导入的单选选项组中的第一个空选项现在会保持其位置，而不是被移动到第一个选项。")
+            .RegisterEntry("其他空选项仍然会被移除。", 1)
+            .RegisterHighlight(
+                "在模组选择器上下文菜单中新增了一个字段，可以直接重命名模组，而不是在文件系统中移动它们。")
+            .RegisterEntry("您可以在设置中选择要显示的重命名字段（无、任一或两者）。", 1)
+            .RegisterEntry("将 characterglass.shpk 着色文件添加到特殊着色处理以解决替换时的问题。（由 Ny 提供）")
+            .RegisterEntry("如果用户尚未设置根目录，则更明显地显示该信息。")
+            .RegisterEntry(
+                "现在，只要未聚焦，您可以通过简单的右键单击将当前剪贴板文本粘贴到模组选择器筛选器中。")
+            .RegisterHighlight(
+                "新增了选项，如果通过 变体IMC 编辑添加配饰，则可以显示配饰的 VFX，这是游戏本身不具备的功能。（由 Ocealot 提供）")
+            .RegisterEntry("新增对从DT基准测试读取和写入新材料和模型文件格式的支持。")
+            .RegisterEntry(
+                "新增了在更改项目标签中隐藏机工副手的选项（因为对其进行任何更改都会同时更改所有这些项目），默认情况下开启。")
+            .RegisterEntry("移除了在 Penumbra 中新创建组的自动生成描述。")
+            .RegisterEntry(
+                "对高级编辑窗口进行了一些改进，例如添加了更好且性能更佳的非结构化数据的十六进制查看器。")
+            .RegisterEntry("由 ackwell 进行的模型导入/导出的各种改进（在所有补丁中）。")
+            .RegisterEntry("在高级编辑窗口中，悬停在其他选项中的元数据操作上现在会显示这些选项的列表。")
+            .RegisterEntry("彻底重构了 API 和 IPC 结构。")
+            .RegisterImportant("这意味着一些与 Penumbra 交互的插件在更新之前可能无法正常工作。", 1)
+            .RegisterEntry("解决了当绘制添加项过大时，UI IPC 可能会导致所有设置移位的问题。")
+            .RegisterEntry("修复了重新加载模组后不能确保该模组的设置后续正确的问题。")
+            .RegisterEntry("修复了一些压缩文件大小的问题。")
+            .RegisterEntry("修复了合并和去重模组时的问题。")
+            .RegisterEntry("修复了扫描没有文件夹访问权限的模组时崩溃的问题。")
+            .RegisterEntry(
+                "使插件符合 Dalamud 要求，通过添加 punchline 和另一个按钮来从安装程序中打开菜单。")
+            .RegisterEntry("添加了一个选项，在保存文件时自动重新绘制玩家角色。（1.0.0.8）")
+            .RegisterEntry("修复了操作模组不触发某些事件的问题。（1.0.0.7）")
+            .RegisterEntry("修复了临时模组不触发某些事件的问题。（1.0.0.6）")
+            .RegisterEntry("修复了在高级编辑窗口打开时重命名模组的问题。（1.0.0.6）")
+            .RegisterEntry("修复了空选项组的问题。（1.0.0.5）")
+            .RegisterEntry("修复了剧情人物识别的问题。（1.0.0.4）")
+            .RegisterEntry("添加了本地环境信息以更好的提交支持信息。（1.0.0.4）")
+            .RegisterEntry("修复了在 IPC 中复制的模组设置缺少未使用设置的问题。（1.0.0.3）");
 
     private static void Add1_0_0_0(Changelog log)
         => log.NextVersion("Version 1.0.0.0")
@@ -717,6 +761,9 @@ public class PenumbraChangelog
             .RegisterEntry("Added some additional functionality for Mare Synchronos.");
 
     #endregion
+
+    private static void AddDummy(Changelog log)
+        => log.NextVersion(string.Empty);
 
     private (int, ChangeLogDisplayType) ConfigData()
         => (_config.Ephemeral.LastSeenVersion, _config.ChangeLogDisplayType);

@@ -49,7 +49,7 @@ public partial class ModEditWindow
 
         /// <inheritdoc/>
         public bool Valid
-            => Mdl.Valid;
+            => Mdl.Valid && Mdl.Materials.All(ValidateMaterial);
 
         /// <inheritdoc/>
         public byte[] Write()
@@ -85,7 +85,7 @@ public partial class ModEditWindow
             {
                 // TODO: Is it worth trying to order results based on option priorities for cases where more than one match is found?
                 // NOTE: We're using case-insensitive comparisons, as option group paths in mods are stored in lower case, but the mod editor uses paths directly from the file system, which may be mixed case.
-                return mod.AllSubMods
+                return mod.AllDataContainers
                     .SelectMany(m => m.Files.Concat(m.FileSwaps))
                     .Where(kv => kv.Value.FullName.Equals(path, StringComparison.OrdinalIgnoreCase))
                     .Select(kv => kv.Key)
@@ -103,7 +103,7 @@ public partial class ModEditWindow
                 return [];
 
             // Filter then prepend the current option to ensure it's chosen first.
-            return mod.AllSubMods
+            return mod.AllDataContainers
                 .Where(subMod => subMod != option)
                 .Prepend(option)
                 .SelectMany(subMod => subMod.Manipulations)
@@ -283,6 +283,20 @@ public partial class ModEditWindow
             return resolvedPath.IsRooted
                 ? File.ReadAllBytes(resolvedPath.FullName)
                 : _edit._gameData.GetFile(resolvedPath.InternalName.ToString())?.Data;
+        }
+
+        /// <summary> Validate the specified material. </summary>
+        /// <remarks>
+        /// While materials can be relative (`/mt_...`) or absolute (`bg/...`),
+        /// they invariably must contain at least one directory seperator.
+        /// Missing this can lead to a crash.
+        /// 
+        /// They must also be at least one character (though this is enforced
+        /// by containing a `/`), and end with `.mtrl`.
+        /// </remarks>
+        public bool ValidateMaterial(string material)
+        {
+            return material.Contains('/') && material.EndsWith(".mtrl");
         }
 
         /// <summary> Remove the material given by the index. </summary>

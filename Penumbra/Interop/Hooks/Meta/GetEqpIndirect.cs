@@ -1,5 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using OtterGui.Services;
+using Penumbra.Collections;
 using Penumbra.GameData;
 using Penumbra.Interop.PathResolving;
 
@@ -28,8 +29,8 @@ public sealed unsafe class GetEqpIndirect : FastHook<GetEqpIndirect.Delegate>
             return;
 
         Penumbra.Log.Excessive($"[Get EQP Indirect] Invoked on {(nint)drawObject:X}.");
-        var       collection = _collectionResolver.IdentifyCollection(drawObject, true);
-        using var eqp        = _metaState.ResolveEqpData(collection.ModCollection);
+        _metaState.EqpCollection = _collectionResolver.IdentifyCollection(drawObject, true);
         Task.Result.Original(drawObject);
+        _metaState.EqpCollection = ResolveData.Invalid;
     }
 }

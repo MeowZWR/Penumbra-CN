@@ -2,11 +2,13 @@ using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.GameFonts;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.Collections;
 using Penumbra.Collections.Manager;
@@ -28,17 +30,20 @@ public sealed class CollectionPanel : IDisposable
     private readonly IndividualAssignmentUi _individualAssignmentUi;
     private readonly InheritanceUi          _inheritanceUi;
     private readonly ModStorage             _mods;
-
-    private readonly IFontHandle _nameFont;
+    private readonly FilenameService        _fileNames;
+    private readonly IncognitoService       _incognito;
+    private readonly IFontHandle            _nameFont;
 
     private static readonly IReadOnlyDictionary<CollectionType, (string Name, uint Border)> Buttons      = CreateButtons();
     private static readonly IReadOnlyList<(CollectionType, bool, bool, string, uint)>       AdvancedTree = CreateTree();
-    private readonly        List<(CollectionType Type, ActorIdentifier Identifier)>         _inUseCache  = new();
+    private readonly        List<(CollectionType Type, ActorIdentifier Identifier)>         _inUseCache  = [];
+    private                 string?                                                         _newName;
 
     private int _draggedIndividualAssignment = -1;
 
     public CollectionPanel(DalamudPluginInterface pi, CommunicatorService communicator, CollectionManager manager,
-        CollectionSelector selector, ActorManager actors, ITargetManager targets, ModStorage mods)
+        CollectionSelector selector, ActorManager actors, ITargetManager targets, ModStorage mods, FilenameService fileNames,
+        IncognitoService incognito)
     {
         _collections            = manager.Storage;
         _active                 = manager.Active;
@@ -46,9 +51,11 @@ public sealed class CollectionPanel : IDisposable
         _actors                 = actors;
         _targets                = targets;
         _mods                   = mods;
+        _fileNames              = fileNames;
+        _incognito              = incognito;
         _individualAssignmentUi = new IndividualAssignmentUi(communicator, actors, manager);
-        _inheritanceUi          = new InheritanceUi(manager, _selector);
-        _nameFont               = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
+        _inheritanceUi          = new InheritanceUi(manager, incognito);
+        _nameFont               = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
     }
 
     public void Dispose()
@@ -90,6 +97,18 @@ public sealed class CollectionPanel : IDisposable
 
         var first = true;
 
+        Button(CollectionType.NonPlayerChild);
+        Button(CollectionType.NonPlayerElderly);
+        foreach (var race in Enum.GetValues<SubRace>().Skip(1))
+        {
+            Button(CollectionTypeExtensions.FromParts(race, Gender.Male,   false));
+            Button(CollectionTypeExtensions.FromParts(race, Gender.Female, false));
+            Button(CollectionTypeExtensions.FromParts(race, Gender.Male,   true));
+            Button(CollectionTypeExtensions.FromParts(race, Gender.Female, true));
+        }
+
+        return;
+
         void Button(CollectionType type)
         {
             var (name, border) = Buttons[type];
@@ -108,16 +127,6 @@ public sealed class CollectionPanel : IDisposable
             ImGui.SameLine();
             if (ImGui.GetContentRegionAvail().X < buttonWidth.X + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X)
                 ImGui.NewLine();
-        }
-
-        Button(CollectionType.NonPlayerChild);
-        Button(CollectionType.NonPlayerElderly);
-        foreach (var race in Enum.GetValues<SubRace>().Skip(1))
-        {
-            Button(CollectionTypeExtensions.FromParts(race, Gender.Male,   false));
-            Button(CollectionTypeExtensions.FromParts(race, Gender.Female, false));
-            Button(CollectionTypeExtensions.FromParts(race, Gender.Male,   true));
-            Button(CollectionTypeExtensions.FromParts(race, Gender.Female, true));
         }
     }
 
@@ -206,10 +215,63 @@ public sealed class CollectionPanel : IDisposable
         var collection = _active.Current;
         DrawCollectionName(collection);
         DrawStatistics(collection);
+        DrawCollectionData(collection);
         _inheritanceUi.Draw();
         ImGui.Separator();
         DrawInactiveSettingsList(collection);
         DrawSettingsList(collection);
+    }
+
+    private void DrawCollectionData(ModCollection collection)
+    {
+        ImGui.Dummy(Vector2.Zero);
+        ImGui.BeginGroup();
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Name");
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Identifier");
+        ImGui.EndGroup();
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        using var style      = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
+        var       name       = _newName ?? collection.Name;
+        var       identifier = collection.Identifier;
+        var       width      = ImGui.GetContentRegionAvail().X;
+        var       fileName   = _fileNames.CollectionFile(collection);
+        ImGui.SetNextItemWidth(width);
+        if (ImGui.InputText("##name", ref name, 128))
+            _newName = name;
+        if (ImGui.IsItemDeactivatedAfterEdit() && _newName != null)
+        {
+            collection.Name = _newName;
+            _newName        = null;
+        }
+        else if (ImGui.IsItemDeactivated())
+            _newName = null;
+        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        {
+            if (ImGui.Button(collection.Identifier, new Vector2(width, 0)))
+                try
+                {
+                    Process.Start(new ProcessStartInfo(fileName) { UseShellExecute = true });
+                }
+                catch (Exception ex)
+                {
+                    Penumbra.Messager.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}",
+                        NotificationType.Warning);
+                }
+        }
+
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            ImGui.SetClipboardText(identifier);
+
+        ImGuiUtil.HoverTooltip(
+            $"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.\n\nRight-Click to copy identifier to clipboard.");
+
+        ImGui.EndGroup();
+        ImGui.Dummy(Vector2.Zero);
+        ImGui.Separator();
+        ImGui.Dummy(Vector2.Zero);
     }
 
     private void DrawContext(bool open, ModCollection? collection, CollectionType type, ActorIdentifier identifier, string text, char suffix)
@@ -228,7 +290,7 @@ public sealed class CollectionPanel : IDisposable
                 _active.SetCollection(ModCollection.Empty, type, _active.Individuals.GetGroup(identifier));
         }
 
-        if (collection != null)
+        if (collection != null && type.CanBeRemoved())
         {
             using var color = ImRaii.PushColor(ImGuiCol.Text, Colors.RegexWarningBorder);
             if (ImGui.MenuItem("移除这个分配"))
@@ -356,7 +418,7 @@ public sealed class CollectionPanel : IDisposable
 
     /// <summary> Respect incognito mode for names of identifiers. </summary>
     private string Name(ActorIdentifier id, string? name)
-        => _selector.IncognitoMode && id.Type is IdentifierType.Player or IdentifierType.Owned
+        => _incognito.IncognitoMode && id.Type is IdentifierType.Player or IdentifierType.Owned
             ? id.Incognito(name)
             : name ?? id.ToString();
 
@@ -364,7 +426,7 @@ public sealed class CollectionPanel : IDisposable
     private string Name(ModCollection? collection)
         => collection == null                 ? "未分配" :
             collection == ModCollection.Empty ? "不使用模组" :
-            _selector.IncognitoMode           ? collection.AnonymizedName : collection.Name;
+            _incognito.IncognitoMode          ? collection.AnonymizedName : collection.Name;
 
     private void DrawIndividualButton(string intro, Vector2 width, string tooltip, char suffix, params ActorIdentifier[] identifiers)
     {

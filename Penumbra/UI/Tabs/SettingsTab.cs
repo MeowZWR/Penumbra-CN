@@ -249,16 +249,16 @@ public class SettingsTab : ITab
             style.Pop();
             ImGui.SameLine();
 
-	        const string tt = "这是Penumbra即将存储提取到的模组文件的地方。\n"
-	          + "TTMP文件将被解压到这里。\n"
-	          + "此目录需要你有读写权限。\n"
-	          + "建议将此目录放置于读写速度快的硬盘上，最好是固态硬盘。\n"
-	          + "它还应该放在逻辑驱动器的根目录附近，总之此文件夹的总路径越短越好。\n"
-	          + "绝对不要将此目录放在卫月目录或其子目录中。";
+            const string tt = "这是Penumbra即将存储提取到的模组文件的地方。\n"
+              + "TTMP文件不会被复制，而是被解压到这里。\n"
+              + "此目录需要你有读写权限。\n"
+              + "建议将此目录放置于读写速度快的硬盘上，最好是固态硬盘。\n"
+              + "它还应该放在逻辑驱动器的根目录附近，总之此文件夹的总路径越短越好。\n"
+              + "绝对不要将此目录放在卫月目录或其子目录中。";
             ImGuiComponents.HelpMarker(tt);
             _tutorial.OpenTutorial(BasicTutorialSteps.GeneralTooltips);
             ImGui.SameLine();
-        	ImGui.TextUnformatted( "根目录" );
+            ImGui.TextUnformatted("根目录");
             ImGuiUtil.HoverTooltip(tt);
         }
 
@@ -429,6 +429,14 @@ public class SettingsTab : ITab
                     _config.Ephemeral.Save();
                 }
             });
+        Checkbox("在更改项目中忽略机工副手",
+            "在更改项目标签中忽略所有以太转换器（机工副手），因为对它们的任何更改都会同时更改所有这些项目。\n\n"
+          + "更改此选项会重新扫描您的模组，以便更新所有已更改的项目。",
+            _config.HideMachinistOffhandFromChangedItems, v =>
+            {
+                _config.HideMachinistOffhandFromChangedItems = v;
+                _modManager.DiscoverMods();
+            });
         Checkbox("隐藏模组选择器优先级数字标识",
             "如果模组选择器里的模组优先级不是0，而且有足够的空间显示，则在模组名称后添加优先级数字标识。勾选此选项后隐藏这个标识。",
             _config.HidePrioritiesInSelector, v => _config.HidePrioritiesInSelector = v);
@@ -534,13 +542,43 @@ public class SettingsTab : ITab
             "这将使模组选择器的宽度与主窗口宽度成比例，而不是保持固定宽度。" );
     }
 
+    private void DrawRenameSettings()
+    {
+        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+        using (var combo = ImRaii.Combo("##renameSettings", _config.ShowRename.GetData().Name))
+        {
+            if (combo)
+                foreach (var value in Enum.GetValues<RenameField>())
+                {
+                    var (name, desc) = value.GetData();
+                    if (ImGui.Selectable(name, _config.ShowRename == value))
+                    {
+                        _config.ShowRename = value;
+                        _selector.SetRenameSearchPath(value);
+                        _config.Save();
+                    }
+
+                    ImGuiUtil.HoverTooltip(desc);
+                }
+        }
+
+        ImGui.SameLine();
+        const string tt =
+            "Select which of the two renaming input fields are visible when opening the right-click context menu of a mod in the mod selector.";
+        ImGuiComponents.HelpMarker(tt);
+        ImGui.SameLine();
+        ImGui.TextUnformatted("Rename Fields in Mod Context Menu");
+        ImGuiUtil.HoverTooltip(tt);
+    }
+
     /// <summary> Draw all settings pertaining to the mod selector. </summary>
     private void DrawModSelectorSettings()
     {
         DrawFolderSortType();
         DrawAbsoluteSizeSelector();
         DrawRelativeSizeSelector();
-        Checkbox( "默认展开折叠组", "打开模组选择器时，默认展开全部折叠组，否则最小化全部折叠组。",
+        DrawRenameSettings();
+        Checkbox("默认展开折叠组", "打开模组选择器时，默认展开全部折叠组，否则最小化全部折叠组。",
             _config.OpenFoldersByDefault,   v =>
             {
                 _config.OpenFoldersByDefault = v;
@@ -689,7 +727,7 @@ public class SettingsTab : ITab
         foreach (var color in Enum.GetValues<ColorId>())
         {
             var (defaultColor, name, description) = color.Data();
-            var currentColor = _config.Colors.TryGetValue(color, out var current) ? current : defaultColor;
+            var currentColor = _config.Colors.GetValueOrDefault(color, defaultColor);
             if (Widget.ColorPicker(name, description, currentColor, c => _config.Colors[color] = c, defaultColor))
                 _config.Save();
         }
@@ -727,7 +765,7 @@ public class SettingsTab : ITab
 
     private void DrawCrashHandler()
     {
-        Checkbox("启用Penumbra崩溃记录（实验性）",
+        Checkbox("启用Penumbra崩溃记录（实验性功能）",
             "使Penumbra能够启动一个二级进程，记录一些游戏活动，这可能对诊断与Penumbra相关的游戏崩溃有帮助，也可能没帮助。",
             _config.UseCrashHandler ?? false,
             v =>
@@ -890,7 +928,7 @@ public class SettingsTab : ITab
         if (!_dalamudConfig.GetDalamudConfig(DalamudConfigService.WaitingForPluginsOption, out bool value))
         {
             using var disabled = ImRaii.Disabled();
-            Checkbox( "在游戏加载之前等待插件加载 (已禁用，无法访问Dalamud设置。）", string.Empty, false, v => { });
+            Checkbox("在游戏加载之前等待插件加载 (已禁用，无法访问Dalamud设置。）", string.Empty, false, _ => { });
         }
         else
         {
@@ -945,7 +983,7 @@ public class SettingsTab : ITab
             return;
 
         var tagIdx = _sharedTags.Draw("预定义标签：",
-            "预定义标签，可以通过单个点击从模组中添加或删除。", _predefinedTagManager,
+            "可以通过鼠标单击来添加或移除的预定义标签。", _predefinedTagManager,
             out var editedTag);
 
         if (tagIdx >= 0)

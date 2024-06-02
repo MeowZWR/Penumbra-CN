@@ -204,8 +204,9 @@ public class FileEditor<T>(
 
     private void SaveButton()
     {
+        var canSave = _changed && _currentFile is { Valid: true };
         if (ImGuiUtil.DrawDisabledButton("保存到文件", Vector2.Zero,
-                $"保存选中的{fileType}文件，应用所有修改。此操作不可恢复。", !_changed))
+                $"保存选中的{fileType}文件，应用所有修改。此操作不可恢复。", !canSave))
         {
             compactor.WriteAllBytes(_currentPath!.File.FullName, _currentFile!.Write());
             if (owner.Mod != null)
@@ -305,7 +306,7 @@ public class FileEditor<T>(
                     UiHelpers.Text(gamePath.Path);
                     ImGui.TableNextColumn();
                     using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.ItemId.Value());
-                    ImGui.TextUnformatted(option.FullName);
+                    ImGui.TextUnformatted(option.GetFullName());
                 }
             }
 

@@ -8,6 +8,7 @@ using Penumbra.String.Classes;
 using Penumbra.Collections.Cache;
 using Penumbra.Interop.Services;
 using Penumbra.Mods.Editor;
+using Penumbra.GameData.Structs;
 
 namespace Penumbra.Collections;
 
@@ -77,7 +78,7 @@ public partial class ModCollection
         else
         {
             _cache.Meta.SetFiles();
-            Penumbra.Log.Debug($"Set CharacterUtility resources for collection {Name}.");
+            Penumbra.Log.Debug($"Set CharacterUtility resources for collection {Identifier}.");
         }
     }
 
@@ -114,4 +115,7 @@ public partial class ModCollection
     public MetaList.MetaReverter TemporarilySetEstFile(CharacterUtility utility, EstManipulation.EstType type)
         => _cache?.Meta.TemporarilySetEstFile(type)
          ?? utility.TemporarilyResetResource((MetaIndex)type);
+
+    public unsafe EqpEntry ApplyGlobalEqp(EqpEntry baseEntry, CharacterArmor* armor)
+        => _cache?.Meta.ApplyGlobalEqp(baseEntry, armor) ?? baseEntry;
 }

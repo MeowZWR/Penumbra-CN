@@ -79,7 +79,7 @@ public class ValidityChecker : IService
         var checkedDirectory = pi.AssemblyLocation.Directory?.Parent?.Parent?.Name;
         var ret              = checkedDirectory?.Equals("installedPlugins", StringComparison.OrdinalIgnoreCase) ?? false;
         if (!ret)
-            Penumbra.Log.Error($"未正确安装。 程序加载自 \"{pi.AssemblyLocation.Directory!.FullName}\".");
+            Penumbra.Log.Error($"Penumbra未正确安装。 程序加载自 \"{pi.AssemblyLocation.Directory!.FullName}\".");
 
         return !ret;
 #else
@@ -93,13 +93,13 @@ public class ValidityChecker : IService
 #if !DEBUG
         return pi.SourceRepository?.Trim().ToLowerInvariant() switch
         {
-            null                => false,
-            RepositoryLower     => true,
+            null                		=> false,
+            RepositoryLower     		=> true,
             MeowrsRepositoryLower       => true,
             OtterCnRepositoryLower      => true,
             OtterCnRepositoryLowerPen   => true,
             SeaOfStarsLower             => true,
-            _                   => false,
+            _               			=> false,
         };
 #else
         return true;

@@ -89,7 +89,7 @@ public class CollectionSelectHeader
         var collection = _resolver.PlayerCollection();
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => (collection, "无", "基础合集已被配置为不使用模组。", true),
+            CollectionState.Empty => (collection, "无", "加载的玩家角色已被配置为不使用模组。", true),
             CollectionState.Selected => (collection, collection.Name,
                 "配置为用于当前玩家角色的合集已被选择为当前操作合集。", true),
             CollectionState.Available => (collection, collection.Name,

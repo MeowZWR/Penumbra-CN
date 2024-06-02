@@ -11,6 +11,7 @@ using Penumbra.Mods;
 using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
+using Penumbra.UI.ModsTab;
 using Penumbra.UI.ResourceWatcher;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
@@ -40,17 +41,19 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool  HideUiWhenUiHidden             { get; set; } = false;
     public bool  UseDalamudUiTextureRedirection { get; set; } = true;
 
-    public bool UseCharacterCollectionInMainWindow { get; set; } = true;
-    public bool UseCharacterCollectionsInCards     { get; set; } = true;
-    public bool UseCharacterCollectionInInspect    { get; set; } = true;
-    public bool UseCharacterCollectionInTryOn      { get; set; } = true;
-    public bool UseOwnerNameForCharacterCollection { get; set; } = true;
-    public bool UseNoModsInInspect                 { get; set; } = false;
-    public bool HideChangedItemFilters             { get; set; } = false;
-    public bool ReplaceNonAsciiOnImport            { get; set; } = false;
-    public bool HidePrioritiesInSelector           { get; set; } = false;
-    public bool HideRedrawBar                      { get; set; } = false;
-    public int  OptionGroupCollapsibleMin          { get; set; } = 5;
+    public bool        UseCharacterCollectionInMainWindow   { get; set; } = true;
+    public bool        UseCharacterCollectionsInCards       { get; set; } = true;
+    public bool        UseCharacterCollectionInInspect      { get; set; } = true;
+    public bool        UseCharacterCollectionInTryOn        { get; set; } = true;
+    public bool        UseOwnerNameForCharacterCollection   { get; set; } = true;
+    public bool        UseNoModsInInspect                   { get; set; } = false;
+    public bool        HideChangedItemFilters               { get; set; } = false;
+    public bool        ReplaceNonAsciiOnImport              { get; set; } = false;
+    public bool        HidePrioritiesInSelector             { get; set; } = false;
+    public bool        HideRedrawBar                        { get; set; } = false;
+    public bool        HideMachinistOffhandFromChangedItems { get; set; } = true;
+    public RenameField ShowRename                           { get; set; } = RenameField.BothDataPrio;
+    public int         OptionGroupCollapsibleMin            { get; set; } = 5;
 
     public Vector2 MinimumSize = new(Constants.MinimumSizeX, Constants.MinimumSizeY);
 
@@ -134,7 +137,7 @@ public class Configuration : IPluginConfiguration, ISavable
     /// <summary> Contains some default values or boundaries for config values. </summary>
     public static class Constants
     {
-        public const int   CurrentVersion      = 8;
+        public const int   CurrentVersion      = 9;
         public const float MaxAbsoluteSize     = 600;
         public const int   DefaultAbsoluteSize = 250;
         public const float MinAbsoluteSize     = 50;

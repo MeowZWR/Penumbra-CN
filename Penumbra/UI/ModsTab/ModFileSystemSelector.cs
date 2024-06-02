@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface;
+using Dalamud.Interface;
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
@@ -14,7 +14,7 @@ using Penumbra.Collections.Manager;
 using Penumbra.Communication;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
-using Penumbra.Mods.Subclasses;
+using Penumbra.Mods.Settings;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
 using MessageService = Penumbra.Services.MessageService;
@@ -66,7 +66,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         SubscribeRightClickMain(() => ClearQuickMove(1, _config.QuickMoveFolder2, () => {_config.QuickMoveFolder2 = string.Empty; _config.Save();}), 120);
         SubscribeRightClickMain(() => ClearQuickMove(2, _config.QuickMoveFolder3, () => {_config.QuickMoveFolder3 = string.Empty; _config.Save();}), 130);
         UnsubscribeRightClickLeaf(RenameLeaf);
-        SubscribeRightClickLeaf(RenameLeafMod, 1000);
+        SetRenameSearchPath(_config.ShowRename);
         AddButton(AddNewModButton,    0);
         AddButton(AddImportModButton, 1);
         AddButton(AddHelpButton,      2);
@@ -90,6 +90,37 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         _communicator.ModDiscoveryStarted.Subscribe(StoreCurrentSelection, ModDiscoveryStarted.Priority.ModFileSystemSelector);
         _communicator.ModDiscoveryFinished.Subscribe(RestoreLastSelection, ModDiscoveryFinished.Priority.ModFileSystemSelector);
         OnCollectionChange(CollectionType.Current, null, _collectionManager.Active.Current, "");
+    }
+
+    public void SetRenameSearchPath(RenameField value)
+    {
+        switch (value)
+        {
+            case RenameField.RenameSearchPath:
+                SubscribeRightClickLeaf(RenameLeafMod, 1000);
+                UnsubscribeRightClickLeaf(RenameMod);
+                break;
+            case RenameField.RenameData:
+                UnsubscribeRightClickLeaf(RenameLeafMod);
+                SubscribeRightClickLeaf(RenameMod, 1000);
+                break;
+            case RenameField.BothSearchPathPrio:
+                UnsubscribeRightClickLeaf(RenameLeafMod);
+                UnsubscribeRightClickLeaf(RenameMod);
+                SubscribeRightClickLeaf(RenameLeafMod, 1001);
+                SubscribeRightClickLeaf(RenameMod,     1000);
+                break;
+            case RenameField.BothDataPrio:
+                UnsubscribeRightClickLeaf(RenameLeafMod);
+                UnsubscribeRightClickLeaf(RenameMod);
+                SubscribeRightClickLeaf(RenameLeafMod, 1000);
+                SubscribeRightClickLeaf(RenameMod,     1001);
+                break;
+            default:
+                UnsubscribeRightClickLeaf(RenameLeafMod);
+                UnsubscribeRightClickLeaf(RenameMod);
+                break;
+        }
     }
 
     private static readonly string[] ValidModExtensions =
@@ -191,15 +222,15 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             }
         }
 
-        if (state.Priority != 0 && !_config.HidePrioritiesInSelector)
+        if (!state.Priority.IsDefault && !_config.HidePrioritiesInSelector)
         {
             var line           = ImGui.GetItemRectMin().Y;
             var itemPos        = ImGui.GetItemRectMax().X;
             var maxWidth       = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
             var priorityString = $"[{state.Priority}]";
-            var Size           = ImGui.CalcTextSize(priorityString).X;
+            var size           = ImGui.CalcTextSize(priorityString).X;
             var remainingSpace = maxWidth - itemPos;
-            var offset         = remainingSpace - Size;
+            var offset         = remainingSpace - size;
             if (ImGui.GetScrollMaxY() == 0)
                 offset -= ImGui.GetStyle().ItemInnerSpacing.X;
 
@@ -300,6 +331,22 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     {
         ImGui.Separator();
         RenameLeaf(leaf);
+    }
+
+    private void RenameMod(ModFileSystem.Leaf leaf)
+    {
+        ImGui.Separator();
+        var currentName = leaf.Value.Name.Text;
+        if (ImGui.IsWindowAppearing())
+            ImGui.SetKeyboardFocusHere(0);
+        ImGui.TextUnformatted("重命名模组：");
+        if (ImGui.InputText("##RenameMod", ref currentName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            _modManager.DataEditor.ChangeModName(leaf.Value, currentName);
+            ImGui.CloseCurrentPopup();
+        }
+
+        ImGuiUtil.HoverTooltip("在此输入新名称以重命名已更改的模组。");
     }
 
     private void DeleteModButton(Vector2 size)
@@ -427,7 +474,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     #region Automatic cache update functions.
 
-    private void OnSettingChange(ModCollection collection, ModSettingChange type, Mod? mod, int oldValue, int groupIdx, bool inherited)
+    private void OnSettingChange(ModCollection collection, ModSettingChange type, Mod? mod, Setting oldValue, int groupIdx, bool inherited)
     {
         if (collection != _collectionManager.Active.Current)
             return;
@@ -517,8 +564,8 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ModState
     {
-        public ColorId Color;
-        public int     Priority;
+        public ColorId     Color;
+        public ModPriority Priority;
     }
 
     private const StringComparison                  IgnoreCase   = StringComparison.OrdinalIgnoreCase;
@@ -744,7 +791,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         state = new ModState
         {
             Color    = ColorId.EnabledMod,
-            Priority = settings?.Priority ?? 0,
+            Priority = settings?.Priority ?? ModPriority.Default,
         };
         if (ApplyStringFilters(leaf, mod))
             return true;
@@ -808,7 +855,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             SetFilterDirty();
         }
 
-        ImGuiUtil.HoverTooltip("按激活的状态筛选模组。\n右键点击清理筛选。");
+        ImGuiUtil.HoverTooltip("按激活状态筛选模组。\n右键点击以清除所有筛选。");
         ImGui.SetCursorPos(pos);
         return (remainingWidth, rightClick);
     }

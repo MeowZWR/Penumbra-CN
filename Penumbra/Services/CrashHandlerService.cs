@@ -7,6 +7,7 @@ using Penumbra.Communication;
 using Penumbra.CrashHandler;
 using Penumbra.CrashHandler.Buffers;
 using Penumbra.GameData.Actors;
+using Penumbra.Interop.PathResolving;
 using Penumbra.Interop.ResourceLoading;
 using Penumbra.Interop.Structs;
 using Penumbra.String;
@@ -213,7 +214,7 @@ public sealed class CrashHandlerService : IDisposable, IService
             }
             catch (Exception ex)
             {
-                Penumbra.Log.Debug($"Could not delete {dir}:\n{ex}");
+                Penumbra.Log.Verbose($"Could not delete {dir}. This is generally not an error:\n{ex}");
             }
         }
     }
@@ -239,7 +240,7 @@ public sealed class CrashHandlerService : IDisposable, IService
             var name = GetActorName(character);
             lock (_eventWriter)
             {
-                _eventWriter?.AnimationFuncInvoked.WriteLine(character, name.Span, collection.Name, type);
+                _eventWriter?.AnimationFuncInvoked.WriteLine(character, name.Span, collection.Id, type);
             }
         }
         catch (Exception ex)
@@ -248,7 +249,7 @@ public sealed class CrashHandlerService : IDisposable, IService
         }
     }
 
-    private void OnCreatingCharacterBase(nint address, string collection, nint _1, nint _2, nint _3)
+    private void OnCreatingCharacterBase(nint address, Guid collection, nint _1, nint _2, nint _3)
     {
         if (_eventWriter == null)
             return;
@@ -286,14 +287,13 @@ public sealed class CrashHandlerService : IDisposable, IService
 
         try
         {
-            var dashIdx = manipulatedPath.Value.InternalName[0] == (byte)'|' ? manipulatedPath.Value.InternalName.IndexOf((byte)'|', 1) : -1;
-            if (dashIdx >= 0 && !Utf8GamePath.IsRooted(manipulatedPath.Value.InternalName.Substring(dashIdx + 1)))
+            if (PathDataHandler.Split(manipulatedPath.Value.FullName, out var actualPath, out _) && Path.IsPathRooted(actualPath))
                 return;
 
             var name = GetActorName(resolveData.AssociatedGameObject);
             lock (_eventWriter)
             {
-                _eventWriter!.FileLoaded.WriteLine(resolveData.AssociatedGameObject, name.Span, resolveData.ModCollection.Name,
+                _eventWriter!.FileLoaded.WriteLine(resolveData.AssociatedGameObject, name.Span, resolveData.ModCollection.Id,
                     manipulatedPath.Value.InternalName.Span, originalPath.Path.Span);
             }
         }
