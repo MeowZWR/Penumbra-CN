@@ -1,10 +1,9 @@
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Classes;
 using Penumbra.Api.Enums;
-using Penumbra.GameData;
 using Penumbra.GameData.Data;
 using Penumbra.Meta.Manipulations;
 using Penumbra.Mods.Settings;
@@ -27,7 +26,9 @@ public sealed class MultiModGroup(Mod mod) : IModGroup, ITexToolsGroup
     public          Mod               Mod             { get; }      = mod;
     public          string            Name            { get; set; } = "Group";
     public          string            Description     { get; set; } = string.Empty;
+    public          string            Image           { get; set; } = string.Empty;
     public          ModPriority       Priority        { get; set; }
+    public          int               Page            { get; set; }
     public          Setting           DefaultSettings { get; set; }
     public readonly List<MultiSubMod> OptionData = [];
 
@@ -66,14 +67,8 @@ public sealed class MultiModGroup(Mod mod) : IModGroup, ITexToolsGroup
 
     public static MultiModGroup? Load(Mod mod, JObject json)
     {
-        var ret = new MultiModGroup(mod)
-        {
-            Name            = json[nameof(Name)]?.ToObject<string>() ?? string.Empty,
-            Description     = json[nameof(Description)]?.ToObject<string>() ?? string.Empty,
-            Priority        = json[nameof(Priority)]?.ToObject<ModPriority>() ?? ModPriority.Default,
-            DefaultSettings = json[nameof(DefaultSettings)]?.ToObject<Setting>() ?? Setting.Zero,
-        };
-        if (ret.Name.Length == 0)
+        var ret = new MultiModGroup(mod);
+        if (!ModSaveGroup.ReadJsonBase(json, ret))
             return null;
 
         var options = json["Options"];
@@ -104,6 +99,8 @@ public sealed class MultiModGroup(Mod mod) : IModGroup, ITexToolsGroup
             Name            = Name,
             Description     = Description,
             Priority        = Priority,
+            Image           = Image,
+            Page            = Page,
             DefaultSettings = DefaultSettings.TurnMulti(OptionData.Count),
         };
         single.OptionData.AddRange(OptionData.Select(o => o.ConvertToSingle(single)));
@@ -116,7 +113,7 @@ public sealed class MultiModGroup(Mod mod) : IModGroup, ITexToolsGroup
     public IModGroupEditDrawer EditDrawer(ModGroupEditDrawer editDrawer)
         => new MultiModGroupEditDrawer(editDrawer, this);
 
-    public void AddData(Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, HashSet<MetaManipulation> manipulations)
+    public void AddData(Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, MetaDictionary manipulations)
     {
         foreach (var (option, index) in OptionData.WithIndex().OrderByDescending(o => o.Value.Priority))
         {
@@ -125,7 +122,7 @@ public sealed class MultiModGroup(Mod mod) : IModGroup, ITexToolsGroup
         }
     }
 
-    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, object?> changedItems)
+    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, IIdentifiedObjectData?> changedItems)
     {
         foreach (var container in DataContainers)
             identifier.AddChangedItems(container, changedItems);

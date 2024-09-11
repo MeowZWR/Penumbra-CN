@@ -1,10 +1,11 @@
 using Dalamud.Plugin.Services;
 using OtterGui.Classes;
+using OtterGui.Services;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
 using Penumbra.Collections.Manager;
 using Penumbra.Communication;
-using Penumbra.Interop.ResourceLoading;
+using Penumbra.Interop.Hooks.ResourceLoading;
 using Penumbra.Meta;
 using Penumbra.Mods;
 using Penumbra.Mods.Groups;
@@ -17,7 +18,7 @@ using Penumbra.String.Classes;
 
 namespace Penumbra.Collections.Cache;
 
-public class CollectionCacheManager : IDisposable
+public class CollectionCacheManager : IDisposable, IService
 {
     private readonly  FrameworkManager    _framework;
     private readonly  CommunicatorService _communicator;
@@ -83,6 +84,12 @@ public class CollectionCacheManager : IDisposable
         _communicator.ModSettingChanged.Unsubscribe(OnModSettingChange);
         _communicator.CollectionInheritanceChanged.Unsubscribe(OnCollectionInheritanceChange);
         MetaFileManager.CharacterUtility.LoadingFinished -= IncrementCounters;
+
+        foreach (var collection in _storage)
+        {
+            collection._cache?.Dispose();
+            collection._cache = null;
+        }
     }
 
     public void AddChange(CollectionCache.ChangeData data)
@@ -179,8 +186,6 @@ public class CollectionCacheManager : IDisposable
 
             foreach (var mod in _modStorage)
                 cache.AddModSync(mod, false);
-
-            cache.AddMetaFiles(true);
 
             collection.IncrementCounter();
 

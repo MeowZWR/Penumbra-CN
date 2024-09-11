@@ -10,7 +10,7 @@ namespace Penumbra.Interop.ResourceTree;
 internal static class ResourceTreeApiHelper
 {
     public static Dictionary<ushort, Dictionary<string, HashSet<string>>> GetResourcePathDictionaries(
-        IEnumerable<(Character, ResourceTree)> resourceTrees)
+        IEnumerable<(ICharacter, ResourceTree)> resourceTrees)
     {
         var pathDictionaries = new Dictionary<ushort, Dictionary<string, HashSet<string>>>(4);
 
@@ -47,7 +47,7 @@ internal static class ResourceTreeApiHelper
         }
     }
 
-    public static Dictionary<ushort, GameResourceDict> GetResourcesOfType(IEnumerable<(Character, ResourceTree)> resourceTrees,
+    public static Dictionary<ushort, GameResourceDict> GetResourcesOfType(IEnumerable<(ICharacter, ResourceTree)> resourceTrees,
         ResourceType type)
     {
         var resDictionaries = new Dictionary<ushort, GameResourceDict>(4);
@@ -67,14 +67,14 @@ internal static class ResourceTreeApiHelper
                     continue;
 
                 var fullPath = node.FullPath.ToPath();
-                resDictionary.Add(node.ResourceHandle, (fullPath, node.Name ?? string.Empty, (uint)ChangedItemDrawer.ToApiIcon(node.Icon)));
+                resDictionary.Add(node.ResourceHandle, (fullPath, node.Name ?? string.Empty, (uint)node.IconFlag.ToApiIcon()));
             }
         }
 
         return resDictionaries;
     }
 
-    public static Dictionary<ushort, JObject> EncapsulateResourceTrees(IEnumerable<(Character, ResourceTree)> resourceTrees)
+    public static Dictionary<ushort, JObject> EncapsulateResourceTrees(IEnumerable<(ICharacter, ResourceTree)> resourceTrees)
     {
         var resDictionary = new Dictionary<ushort, JObject>(4);
         foreach (var (gameObject, resourceTree) in resourceTrees)
@@ -106,7 +106,7 @@ internal static class ResourceTreeApiHelper
             var ret = new JObject
             {
                 [nameof(ResourceNodeDto.Type)]           = new JValue(node.Type),
-                [nameof(ResourceNodeDto.Icon)]           = new JValue(ChangedItemDrawer.ToApiIcon(node.Icon)),
+                [nameof(ResourceNodeDto.Icon)]           = new JValue(node.IconFlag.ToApiIcon()),
                 [nameof(ResourceNodeDto.Name)]           = node.Name,
                 [nameof(ResourceNodeDto.GamePath)]       = node.GamePath.Equals(Utf8GamePath.Empty) ? null : node.GamePath.ToString(),
                 [nameof(ResourceNodeDto.ActualPath)]     = node.FullPath.ToString(),

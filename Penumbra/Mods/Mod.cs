@@ -1,5 +1,6 @@
 using OtterGui;
 using OtterGui.Classes;
+using Penumbra.GameData.Data;
 using Penumbra.Meta.Manipulations;
 using Penumbra.Mods.Editor;
 using Penumbra.Mods.Groups;
@@ -51,6 +52,7 @@ public sealed class Mod : IMod
     public string                Description { get; internal set; } = string.Empty;
     public string                Version     { get; internal set; } = string.Empty;
     public string                Website     { get; internal set; } = string.Empty;
+    public string                Image       { get; internal set; } = string.Empty;
     public IReadOnlyList<string> ModTags     { get; internal set; } = [];
 
 
@@ -71,8 +73,8 @@ public sealed class Mod : IMod
             return AppliedModData.Empty;
 
         var dictRedirections = new Dictionary<Utf8GamePath, FullPath>(TotalFileCount);
-        var setManips        = new HashSet<MetaManipulation>(TotalManipulations);
-        foreach (var (group, groupIndex) in Groups.WithIndex().OrderByDescending(g => g.Value.Priority))
+        var setManips        = new MetaDictionary();
+        foreach (var (group, groupIndex) in Groups.WithIndex().Reverse().OrderByDescending(g => g.Value.Priority))
         {
             var config = settings.Settings[groupIndex];
             group.AddData(config, dictRedirections, setManips);
@@ -99,7 +101,7 @@ public sealed class Mod : IMod
     }
 
     // Cache
-    public readonly SortedList<string, object?> ChangedItems = new();
+    public readonly SortedList<string, IIdentifiedObjectData?> ChangedItems = new();
 
     public string LowerChangedItemsString { get; internal set; } = string.Empty;
     public string AllTagsLower            { get; internal set; } = string.Empty;

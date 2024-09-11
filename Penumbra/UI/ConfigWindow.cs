@@ -4,6 +4,8 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Custom;
 using OtterGui.Raii;
+using OtterGui.Services;
+using OtterGui.Text;
 using Penumbra.Api.Enums;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
@@ -12,9 +14,9 @@ using Penumbra.Util;
 
 namespace Penumbra.UI;
 
-public sealed class ConfigWindow : Window
+public sealed class ConfigWindow : Window, IUiService
 {
-    private readonly DalamudPluginInterface _pluginInterface;
+    private readonly IDalamudPluginInterface _pluginInterface;
     private readonly Configuration          _config;
     private readonly PerformanceTracker     _tracker;
     private readonly ValidityChecker        _validityChecker;
@@ -22,7 +24,7 @@ public sealed class ConfigWindow : Window
     private          ConfigTabBar           _configTabs = null!;
     private          string?                _lastException;
 
-    public ConfigWindow(PerformanceTracker tracker, DalamudPluginInterface pi, Configuration config, ValidityChecker checker,
+    public ConfigWindow(PerformanceTracker tracker, IDalamudPluginInterface pi, Configuration config, ValidityChecker checker,
         TutorialService tutorial)
         : base(GetLabel(checker))
     {
@@ -144,7 +146,7 @@ public sealed class ConfigWindow : Window
         using var color = ImRaii.PushColor(ImGuiCol.Text, Colors.RegexWarningBorder);
         ImGui.NewLine();
         ImGui.NewLine();
-        ImGuiUtil.TextWrapped(text);
+        ImUtf8.TextWrapped(text);
         color.Pop();
 
         ImGui.NewLine();

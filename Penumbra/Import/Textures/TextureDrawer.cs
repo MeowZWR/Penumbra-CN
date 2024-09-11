@@ -18,9 +18,7 @@ public static class TextureDrawer
     {
         if (texture.TextureWrap != null)
         {
-            size = size.X < texture.TextureWrap.Width
-                ? size with { Y = texture.TextureWrap.Height * size.X / texture.TextureWrap.Width }
-                : new Vector2(texture.TextureWrap.Width, texture.TextureWrap.Height);
+            size = texture.TextureWrap.Size.Contain(size);
 
             ImGui.Image(texture.TextureWrap.ImGuiHandle, size);
             DrawData(texture);
@@ -68,7 +66,7 @@ public static class TextureDrawer
                     current.Load(textures, paths[0]);
             }
 
-            fileDialog.OpenFilePicker("Open Image...", "Textures{.png,.dds,.tex}", UpdatePath, 1, startPath, false);
+            fileDialog.OpenFilePicker("Open Image...", "Textures{.png,.dds,.tex,.tga}", UpdatePath, 1, startPath, false);
         }
 
         ImGui.SameLine();
@@ -105,7 +103,7 @@ public static class TextureDrawer
                 ImGuiUtil.DrawTableColumn("Format");
                 ImGuiUtil.DrawTableColumn(t.Header.Format.ToString());
                 ImGuiUtil.DrawTableColumn("Mip Levels");
-                ImGuiUtil.DrawTableColumn(t.Header.MipLevelsCount.ToString());
+                ImGuiUtil.DrawTableColumn(t.Header.MipCount.ToString());
                 ImGuiUtil.DrawTableColumn("Data Size");
                 ImGuiUtil.DrawTableColumn($"{Functions.HumanReadableSize(t.ImageData.Length)} ({t.ImageData.Length} Bytes)");
                 break;

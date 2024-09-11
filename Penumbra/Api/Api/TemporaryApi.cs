@@ -1,10 +1,8 @@
-using OtterGui;
 using OtterGui.Services;
 using Penumbra.Api.Enums;
 using Penumbra.Collections.Manager;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
-using Penumbra.Meta.Manipulations;
 using Penumbra.Mods.Settings;
 using Penumbra.String.Classes;
 
@@ -62,7 +60,7 @@ public class TemporaryApi(
         if (!ConvertPaths(paths, out var p))
             return ApiHelpers.Return(PenumbraApiEc.InvalidGamePath, args);
 
-        if (!ConvertManips(manipString, out var m))
+        if (!MetaApi.ConvertManips(manipString, out var m))
             return ApiHelpers.Return(PenumbraApiEc.InvalidManipulation, args);
 
         var ret = tempMods.Register(tag, null, p, m, new ModPriority(priority)) switch
@@ -88,7 +86,7 @@ public class TemporaryApi(
         if (!ConvertPaths(paths, out var p))
             return ApiHelpers.Return(PenumbraApiEc.InvalidGamePath, args);
 
-        if (!ConvertManips(manipString, out var m))
+        if (!MetaApi.ConvertManips(manipString, out var m))
             return ApiHelpers.Return(PenumbraApiEc.InvalidManipulation, args);
 
         var ret = tempMods.Register(tag, collection, p, m, new ModPriority(priority)) switch
@@ -137,7 +135,7 @@ public class TemporaryApi(
         paths = new Dictionary<Utf8GamePath, FullPath>(redirections.Count);
         foreach (var (gString, fString) in redirections)
         {
-            if (!Utf8GamePath.FromString(gString, out var path, false))
+            if (!Utf8GamePath.FromString(gString, out var path))
             {
                 paths = null;
                 return false;
@@ -149,40 +147,6 @@ public class TemporaryApi(
                 paths = null;
                 return false;
             }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Convert manipulations from a transmitted base64 string to actual manipulations.
-    /// The empty string is treated as an empty set.
-    /// Only returns true if all conversions are successful and distinct. 
-    /// </summary>
-    private static bool ConvertManips(string manipString,
-        [NotNullWhen(true)] out HashSet<MetaManipulation>? manips)
-    {
-        if (manipString.Length == 0)
-        {
-            manips = [];
-            return true;
-        }
-
-        if (Functions.FromCompressedBase64<MetaManipulation[]>(manipString, out var manipArray) != MetaManipulation.CurrentVersion)
-        {
-            manips = null;
-            return false;
-        }
-
-        manips = new HashSet<MetaManipulation>(manipArray!.Length);
-        foreach (var manip in manipArray.Where(m => m.Validate()))
-        {
-            if (manips.Add(manip))
-                continue;
-
-            Penumbra.Log.Warning($"Manipulation {manip} {manip.EntryToString()} is invalid and was skipped.");
-            manips = null;
-            return false;
         }
 
         return true;

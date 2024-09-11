@@ -7,8 +7,8 @@ using Penumbra.Communication;
 using Penumbra.CrashHandler;
 using Penumbra.CrashHandler.Buffers;
 using Penumbra.GameData.Actors;
+using Penumbra.Interop.Hooks.ResourceLoading;
 using Penumbra.Interop.PathResolving;
-using Penumbra.Interop.ResourceLoading;
 using Penumbra.Interop.Structs;
 using Penumbra.String;
 using Penumbra.String.Classes;
@@ -287,7 +287,7 @@ public sealed class CrashHandlerService : IDisposable, IService
 
         try
         {
-            if (PathDataHandler.Split(manipulatedPath.Value.FullName, out var actualPath, out _) && Path.IsPathRooted(actualPath))
+            if (PathDataHandler.Split(manipulatedPath.Value.FullName, out var actualPath, out _) && !Path.IsPathRooted(actualPath))
                 return;
 
             var name = GetActorName(resolveData.AssociatedGameObject);

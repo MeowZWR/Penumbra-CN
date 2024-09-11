@@ -1,32 +1,26 @@
-using Dalamud.Interface;
-using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using Lumina.Data.Files;
 using OtterGui.Log;
+using OtterGui.Services;
 using OtterGui.Tasks;
 using OtterTex;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.PixelFormats;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Penumbra.Import.Textures;
 
-public sealed class TextureManager : SingleTaskQueue, IDisposable
+public sealed class TextureManager(IDataManager gameData, Logger logger, ITextureProvider textureProvider)
+    : SingleTaskQueue, IDisposable, IService
 {
-    private readonly Logger       _logger;
-    private readonly UiBuilder    _uiBuilder;
-    private readonly IDataManager _gameData;
+    private readonly Logger _logger = logger;
 
-    private readonly ConcurrentDictionary<IAction, (Task, CancellationTokenSource)> _tasks    = new();
+    private readonly ConcurrentDictionary<IAction, (Task, CancellationTokenSource)> _tasks = new();
     private          bool                                                           _disposed;
-
-    public TextureManager(UiBuilder uiBuilder, IDataManager gameData, Logger logger)
-    {
-        _uiBuilder = uiBuilder;
-        _gameData  = gameData;
-        _logger    = logger;
-    }
 
     public IReadOnlyDictionary<IAction, (Task, CancellationTokenSource)> Tasks
         => _tasks;
@@ -40,10 +34,17 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
     }
 
     public Task SavePng(string input, string output)
-        => Enqueue(new SavePngAction(this, input, output));
+        => Enqueue(new SaveImageSharpAction(this, input, output, TextureType.Png));
 
     public Task SavePng(BaseImage image, string path, byte[]? rgba = null, int width = 0, int height = 0)
-        => Enqueue(new SavePngAction(this, image, path, rgba, width, height));
+        => Enqueue(new SaveImageSharpAction(this, image, path, TextureType.Png, rgba, width, height));
+
+    public Task SaveTga(string input, string output)
+        => Enqueue(new SaveImageSharpAction(this, input, output, TextureType.Targa));
+
+    public Task SaveTga(BaseImage image, string path, byte[]? rgba = null, int width = 0, int height = 0)
+        => Enqueue(new SaveImageSharpAction(this, image, path, TextureType.Targa, rgba, width, height));
+
 
     public Task SaveAs(CombinedTexture.TextureSaveType type, bool mipMaps, bool asTex, string input, string output)
         => Enqueue(new SaveAsAction(this, type, mipMaps, asTex, input, output));
@@ -64,7 +65,8 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
             {
                 var token = new CancellationTokenSource();
                 var task  = Enqueue(a, token.Token);
-                task.ContinueWith(_ => _tasks.TryRemove(a, out var unused), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+                task.ContinueWith(_ => _tasks.TryRemove(a, out var unused), CancellationToken.None, TaskContinuationOptions.None,
+                    TaskScheduler.Default);
                 return (task, token);
             }).Item1;
         }
@@ -72,44 +74,65 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
         return t;
     }
 
-    private class SavePngAction : IAction
+    private class SaveImageSharpAction : IAction
     {
         private readonly TextureManager _textures;
         private readonly string         _outputPath;
         private readonly ImageInputData _input;
+        private readonly TextureType    _type;
 
-        public SavePngAction(TextureManager textures, string input, string output)
+        public SaveImageSharpAction(TextureManager textures, string input, string output, TextureType type)
         {
             _textures   = textures;
             _input      = new ImageInputData(input);
             _outputPath = output;
+            _type       = type;
+            if (_type.ReduceToBehaviour() is not TextureType.Png)
+                throw new ArgumentOutOfRangeException(nameof(type), type, $"Can not save as {type} with ImageSharp.");
         }
 
-        public SavePngAction(TextureManager textures, BaseImage image, string path, byte[]? rgba = null, int width = 0, int height = 0)
+        public SaveImageSharpAction(TextureManager textures, BaseImage image, string path, TextureType type, byte[]? rgba = null, int width = 0,
+            int height = 0)
         {
             _textures   = textures;
             _input      = new ImageInputData(image, rgba, width, height);
             _outputPath = path;
+            _type       = type;
+            if (_type.ReduceToBehaviour() is not TextureType.Png)
+                throw new ArgumentOutOfRangeException(nameof(type), type, $"Can not save as {type} with ImageSharp.");
         }
 
         public void Execute(CancellationToken cancel)
         {
-            _textures._logger.Information($"[{nameof(TextureManager)}] Saving {_input} as .png to {_outputPath}...");
+            _textures._logger.Information($"[{nameof(TextureManager)}] Saving {_input} as {_type} to {_outputPath}...");
             var (image, rgba, width, height) = _input.GetData(_textures);
             cancel.ThrowIfCancellationRequested();
-            Image<Rgba32>? png = null;
+            Image<Rgba32>? data = null;
             if (image.Type is TextureType.Unknown)
             {
                 if (rgba != null && width > 0 && height > 0)
-                    png = ConvertToPng(rgba, width, height).AsPng!;
+                    data = ConvertToPng(rgba, width, height).AsPng!;
             }
             else
             {
-                png = ConvertToPng(image, cancel, rgba).AsPng!;
+                data = ConvertToPng(image, cancel, rgba).AsPng!;
             }
 
             cancel.ThrowIfCancellationRequested();
-            png?.SaveAsync(_outputPath, new PngEncoder() { CompressionLevel = PngCompressionLevel.NoCompression }, cancel).Wait(cancel);
+            switch (_type)
+            {
+                case TextureType.Png:
+                    data?.SaveAsync(_outputPath, new PngEncoder() { CompressionLevel = PngCompressionLevel.NoCompression }, cancel)
+                        .Wait(cancel);
+                    return;
+                case TextureType.Targa:
+                    data?.SaveAsync(_outputPath, new TgaEncoder()
+                    {
+                        Compression  = TgaCompression.None,
+                        BitsPerPixel = TgaBitsPerPixel.Pixel32,
+                    }, cancel).Wait(cancel);
+                    return;
+            }
         }
 
         public override string ToString()
@@ -117,7 +140,7 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
 
         public bool Equals(IAction? other)
         {
-            if (other is not SavePngAction rhs)
+            if (other is not SaveImageSharpAction rhs)
                 return false;
 
             return string.Equals(_outputPath, rhs._outputPath, StringComparison.OrdinalIgnoreCase) && _input.Equals(rhs._input);
@@ -171,11 +194,12 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
                     return;
             }
 
+            var imageTypeBehaviour = image.Type.ReduceToBehaviour();
             var dds = _type switch
             {
-                CombinedTexture.TextureSaveType.AsIs when image.Type is TextureType.Png => ConvertToRgbaDds(image, _mipMaps, cancel, rgba,
-                    width, height),
-                CombinedTexture.TextureSaveType.AsIs when image.Type is TextureType.Dds => AddMipMaps(image.AsDds!, _mipMaps),
+                CombinedTexture.TextureSaveType.AsIs when imageTypeBehaviour is TextureType.Png => ConvertToRgbaDds(image, _mipMaps, cancel,
+                    rgba, width, height),
+                CombinedTexture.TextureSaveType.AsIs when imageTypeBehaviour is TextureType.Dds => AddMipMaps(image.AsDds!, _mipMaps),
                 CombinedTexture.TextureSaveType.Bitmap => ConvertToRgbaDds(image, _mipMaps, cancel, rgba, width, height),
                 CombinedTexture.TextureSaveType.BC3 => ConvertToCompressedDds(image, _mipMaps, false, cancel, rgba, width, height),
                 CombinedTexture.TextureSaveType.BC7 => ConvertToCompressedDds(image, _mipMaps, true, cancel, rgba, width, height),
@@ -217,14 +241,16 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
 
     /// <summary> Load a texture wrap for a given image. </summary>
     public IDalamudTextureWrap LoadTextureWrap(byte[] rgba, int width, int height)
-        => _uiBuilder.LoadImageRaw(rgba, width, height, 4);
+        => textureProvider.CreateFromRaw(RawImageSpecification.Rgba32(width, height), rgba, "Penumbra.Texture");
 
     /// <summary> Load any supported file from game data or drive depending on extension and if the path is rooted. </summary>
     public (BaseImage, TextureType) Load(string path)
         => Path.GetExtension(path).ToLowerInvariant() switch
         {
             ".dds" => (LoadDds(path), TextureType.Dds),
-            ".png" => (LoadPng(path), TextureType.Png),
+            ".png" => (LoadImageSharp(path), TextureType.Png),
+            ".tga" => (LoadImageSharp(path), TextureType.Targa),
+            ".bmp" => (LoadImageSharp(path), TextureType.Bitmap),
             ".tex" => (LoadTex(path), TextureType.Tex),
             _      => throw new Exception($"Extension {Path.GetExtension(path)} unknown."),
         };
@@ -240,17 +266,17 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
     public BaseImage LoadDds(string path)
         => ScratchImage.LoadDDS(path);
 
-    /// <summary> Load a .png file from drive using ImageSharp. </summary>
-    public BaseImage LoadPng(string path)
+    /// <summary> Load a supported file type from drive using ImageSharp. </summary>
+    public BaseImage LoadImageSharp(string path)
     {
         using var stream = File.OpenRead(path);
         return Image.Load<Rgba32>(stream);
     }
 
-    /// <summary> Convert an existing image to .png. Does not create a deep copy of an existing .png and just returns the existing one. </summary>
+    /// <summary> Convert an existing image to ImageSharp. Does not create a deep copy of an existing ImageSharp file and just returns the existing one. </summary>
     public static BaseImage ConvertToPng(BaseImage input, CancellationToken cancel, byte[]? rgba = null, int width = 0, int height = 0)
     {
-        switch (input.Type)
+        switch (input.Type.ReduceToBehaviour())
         {
             case TextureType.Png: return input;
             case TextureType.Dds:
@@ -267,7 +293,7 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
     public static BaseImage ConvertToRgbaDds(BaseImage input, bool mipMaps, CancellationToken cancel, byte[]? rgba = null, int width = 0,
         int height = 0)
     {
-        switch (input.Type)
+        switch (input.Type.ReduceToBehaviour())
         {
             case TextureType.Png:
             {
@@ -297,7 +323,7 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
     public static BaseImage ConvertToCompressedDds(BaseImage input, bool mipMaps, bool bc7, CancellationToken cancel, byte[]? rgba = null,
         int width = 0, int height = 0)
     {
-        switch (input.Type)
+        switch (input.Type.ReduceToBehaviour())
         {
             case TextureType.Png:
             {
@@ -326,7 +352,7 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
     }
 
     public bool GameFileExists(string path)
-        => _gameData.FileExists(path);
+        => gameData.FileExists(path);
 
     /// <summary> Add up to 13 mip maps to the input if mip maps is true, otherwise return input. </summary>
     public static ScratchImage AddMipMaps(ScratchImage input, bool mipMaps)
@@ -382,7 +408,7 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
         if (Path.IsPathRooted(path))
             return File.OpenRead(path);
 
-        var file = _gameData.GetFile(path);
+        var file = gameData.GetFile(path);
         return file != null ? new MemoryStream(file.Data) : throw new Exception($"Unable to obtain \"{path}\" from game files.");
     }
 
@@ -476,6 +502,7 @@ public sealed class TextureManager : SingleTaskQueue, IDisposable
                     TextureType.Dds     => $"Custom {_width} x {_height} {_image.Format} Image",
                     TextureType.Tex     => $"Custom {_width} x {_height} {_image.Format} Image",
                     TextureType.Png     => $"Custom {_width} x {_height} .png Image",
+                    TextureType.Targa   => $"Custom {_width} x {_height} .tga Image",
                     TextureType.Bitmap  => $"Custom {_width} x {_height} RGBA Image",
                     _                   => "Unknown Image",
                 };

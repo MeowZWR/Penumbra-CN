@@ -6,14 +6,15 @@ using FFXIVClientStructs.STD;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Services;
 using OtterGui.Widgets;
-using Penumbra.Interop.ResourceLoading;
+using Penumbra.Interop.Hooks.ResourceLoading;
 using Penumbra.String.Classes;
 
 namespace Penumbra.UI.Tabs;
 
 public class ResourceTab(Configuration config, ResourceManagerService resourceManager, ISigScanner sigScanner)
-    : ITab
+    : ITab, IUiService
 {
     public ReadOnlySpan<byte> Label
         => "Resource Manager"u8;
@@ -80,7 +81,7 @@ public class ResourceTab(Configuration config, ResourceManagerService resourceMa
                 return;
 
             var address = $"0x{(ulong)r:X}";
-            ImGuiUtil.TextNextColumn($"0x{hash:X8}");
+            ImGuiUtil.DrawTableColumn($"0x{hash:X8}");
             ImGui.TableNextColumn();
             ImGuiUtil.CopyOnClickSelectable(address);
 
@@ -100,7 +101,7 @@ public class ResourceTab(Configuration config, ResourceManagerService resourceMa
 
             ImGuiUtil.HoverTooltip("Click to copy byte-wise file data to clipboard, if any.");
 
-            ImGuiUtil.TextNextColumn(r->RefCount.ToString());
+            ImGuiUtil.DrawTableColumn(r->RefCount.ToString());
         });
     }
 
@@ -120,7 +121,7 @@ public class ResourceTab(Configuration config, ResourceManagerService resourceMa
     }
 
     /// <summary> Obtain a label for an extension node. </summary>
-    private static string GetNodeLabel(uint label, uint type, ulong count)
+    private static string GetNodeLabel(uint label, uint type, int count)
     {
         var (lowest, mid1, mid2, highest) = Functions.SplitBytes(type);
         return highest == 0

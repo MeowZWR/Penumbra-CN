@@ -1,6 +1,6 @@
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -9,7 +9,7 @@ using Penumbra.String;
 
 namespace Penumbra.Interop.PathResolving;
 
-public sealed class CutsceneService : IService, IDisposable
+public sealed class CutsceneService : IRequiredService, IDisposable
 {
     public const int CutsceneStartIdx = (int)ScreenActor.CutsceneStart;
     public const int CutsceneEndIdx   = (int)ScreenActor.CutsceneEnd;
@@ -20,7 +20,7 @@ public sealed class CutsceneService : IService, IDisposable
     private readonly CharacterDestructor _characterDestructor;
     private readonly short[]             _copiedCharacters = Enumerable.Repeat((short)-1, CutsceneSlots).ToArray();
 
-    public IEnumerable<KeyValuePair<int, Dalamud.Game.ClientState.Objects.Types.GameObject>> Actors
+    public IEnumerable<KeyValuePair<int, IGameObject>> Actors
         => Enumerable.Range(CutsceneStartIdx, CutsceneSlots)
             .Where(i => _objects[i].Valid)
             .Select(i => KeyValuePair.Create(i, this[i] ?? _objects.GetDalamudObject(i)!));
@@ -43,7 +43,7 @@ public sealed class CutsceneService : IService, IDisposable
     /// Does not check for valid input index.
     /// Returns null if no connected actor is set or the actor does not exist anymore.
     /// </summary>
-    private Dalamud.Game.ClientState.Objects.Types.GameObject? this[int idx]
+    private IGameObject? this[int idx]
     {
         get
         {

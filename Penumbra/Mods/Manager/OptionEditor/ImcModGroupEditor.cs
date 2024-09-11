@@ -14,7 +14,8 @@ public sealed class ImcModGroupEditor(CommunicatorService communicator, SaveServ
     : ModOptionEditor<ImcModGroup, ImcSubMod>(communicator, saveService, config), IService
 {
     /// <summary> Add a new, empty imc group with the given manipulation data. </summary>
-    public ImcModGroup? AddModGroup(Mod mod, string newName, ImcIdentifier identifier, ImcEntry defaultEntry, SaveType saveType = SaveType.ImmediateSync)
+    public ImcModGroup? AddModGroup(Mod mod, string newName, ImcIdentifier identifier, ImcEntry defaultEntry,
+        SaveType saveType = SaveType.ImmediateSync)
     {
         if (!ModGroupEditor.VerifyFileName(mod, null, newName, true))
             return null;
@@ -76,6 +77,16 @@ public sealed class ImcModGroupEditor(CommunicatorService communicator, SaveServ
 
         SaveService.Save(saveType, new ModSaveGroup(option.Group, Config.ReplaceNonAsciiOnImport));
         Communicator.ModOptionChanged.Invoke(ModOptionChangeType.OptionMetaChanged, option.Mod, option.Group, option, null, -1);
+    }
+
+    public void ChangeAllVariants(ImcModGroup group, bool allVariants, SaveType saveType = SaveType.Queue)
+    {
+        if (group.AllVariants == allVariants)
+            return;
+
+        group.AllVariants = allVariants;
+        SaveService.Save(saveType, new ModSaveGroup(group, Config.ReplaceNonAsciiOnImport));
+        Communicator.ModOptionChanged.Invoke(ModOptionChangeType.OptionMetaChanged, group.Mod, group, null, null, -1);
     }
 
     public void ChangeCanBeDisabled(ImcModGroup group, bool canBeDisabled, SaveType saveType = SaveType.Queue)

@@ -1,4 +1,3 @@
-using Lumina.Data.Parsing;
 using OtterGui;
 using Penumbra.GameData;
 using Penumbra.GameData.Files;
@@ -95,7 +94,7 @@ public partial class ModEditWindow
             task.ContinueWith(t => { GamePaths = FinalizeIo(t); }, TaskScheduler.Default);
         }
 
-        private EstManipulation[] GetCurrentEstManipulations()
+        private KeyValuePair<EstIdentifier, EstEntry>[] GetCurrentEstManipulations()
         {
             var mod    = _edit._editor.Mod;
             var option = _edit._editor.Option;
@@ -106,9 +105,7 @@ public partial class ModEditWindow
             return mod.AllDataContainers
                 .Where(subMod => subMod != option)
                 .Prepend(option)
-                .SelectMany(subMod => subMod.Manipulations)
-                .Where(manipulation => manipulation.ManipulationType is MetaManipulation.Type.Est)
-                .Select(manipulation => manipulation.Est)
+                .SelectMany(subMod => subMod.Manipulations.Est)
                 .ToArray();
         }
 
@@ -274,7 +271,7 @@ public partial class ModEditWindow
         private byte[]? ReadFile(string path)
         {
             // TODO: if cross-collection lookups are turned off, this conversion can be skipped
-            if (!Utf8GamePath.FromString(path, out var utf8Path, true))
+            if (!Utf8GamePath.FromString(path, out var utf8Path))
                 throw new Exception($"Resolved path {path} could not be converted to a game path.");
 
             var resolvedPath = _edit._activeCollections.Current.ResolvePath(utf8Path) ?? new FullPath(utf8Path);

@@ -15,15 +15,17 @@ public class ModsApi : IPenumbraApiMods, IApiService, IDisposable
     private readonly ModImportManager    _modImportManager;
     private readonly Configuration       _config;
     private readonly ModFileSystem       _modFileSystem;
+    private readonly MigrationManager    _migrationManager;
 
     public ModsApi(ModManager modManager, ModImportManager modImportManager, Configuration config, ModFileSystem modFileSystem,
-        CommunicatorService communicator)
+        CommunicatorService communicator, MigrationManager migrationManager)
     {
         _modManager       = modManager;
         _modImportManager = modImportManager;
         _config           = config;
         _modFileSystem    = modFileSystem;
         _communicator     = communicator;
+        _migrationManager = migrationManager;
         _communicator.ModPathChanged.Subscribe(OnModPathChanged, ModPathChanged.Priority.ApiMods);
     }
 
@@ -75,13 +77,22 @@ public class ModsApi : IPenumbraApiMods, IApiService, IDisposable
         if (!dir.Exists)
             return ApiHelpers.Return(PenumbraApiEc.FileMissing, args);
 
-        if (_modManager.BasePath.FullName != dir.Parent?.FullName)
+        if (dir.Parent == null
+         || Path.TrimEndingDirectorySeparator(Path.GetFullPath(_modManager.BasePath.FullName))
+         != Path.TrimEndingDirectorySeparator(Path.GetFullPath(dir.Parent.FullName)))
             return ApiHelpers.Return(PenumbraApiEc.InvalidArgument, args);
 
-        _modManager.AddMod(dir);
+        _modManager.AddMod(dir, true);
+        if (_config.MigrateImportedModelsToV6)
+        {
+            _migrationManager.MigrateMdlDirectory(dir.FullName, false);
+            _migrationManager.Await();
+        }
+
         if (_config.UseFileSystemCompression)
             new FileCompactor(Penumbra.Log).StartMassCompact(dir.EnumerateFiles("*.*", SearchOption.AllDirectories),
-                CompressionAlgorithm.Xpress8K);
+                CompressionAlgorithm.Xpress8K, false);
+
         return ApiHelpers.Return(PenumbraApiEc.Success, args);
     }
 
@@ -132,6 +143,6 @@ public class ModsApi : IPenumbraApiMods, IApiService, IDisposable
 
     public Dictionary<string, object?> GetChangedItems(string modDirectory, string modName)
         => _modManager.TryGetMod(modDirectory, modName, out var mod)
-            ? mod.ChangedItems.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+            ? mod.ChangedItems.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToInternalObject())
             : [];
 }

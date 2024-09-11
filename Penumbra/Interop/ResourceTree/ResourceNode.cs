@@ -1,7 +1,7 @@
 using Penumbra.Api.Enums;
 using Penumbra.String;
 using Penumbra.String.Classes;
-using ChangedItemIcon = Penumbra.UI.ChangedItemDrawer.ChangedItemIcon;
+using Penumbra.UI;
 
 namespace Penumbra.Interop.ResourceTree;
 
@@ -9,13 +9,15 @@ public class ResourceNode : ICloneable
 {
     public          string?            Name;
     public          string?            FallbackName;
-    public          ChangedItemIcon    Icon;
+    public          ChangedItemIconFlag    IconFlag;
     public readonly ResourceType       Type;
     public readonly nint               ObjectAddress;
     public readonly nint               ResourceHandle;
     public          Utf8GamePath[]     PossibleGamePaths;
     public          FullPath           FullPath;
-    public          ByteString         AdditionalData;
+    public          string?            ModName;
+    public          string?            ModRelativePath;
+    public          CiByteString       AdditionalData;
     public readonly ulong              Length;
     public readonly List<ResourceNode> Children;
     internal        ResolveContext?    ResolveContext;
@@ -26,9 +28,9 @@ public class ResourceNode : ICloneable
         set
         {
             if (value.IsEmpty)
-                PossibleGamePaths = Array.Empty<Utf8GamePath>();
+                PossibleGamePaths = [];
             else
-                PossibleGamePaths = new[] { value };
+                PossibleGamePaths = [value];
         }
     }
 
@@ -40,8 +42,8 @@ public class ResourceNode : ICloneable
         Type              = type;
         ObjectAddress     = objectAddress;
         ResourceHandle    = resourceHandle;
-        PossibleGamePaths = Array.Empty<Utf8GamePath>();
-        AdditionalData    = ByteString.Empty;
+        PossibleGamePaths = [];
+        AdditionalData    = CiByteString.Empty;
         Length            = length;
         Children          = new List<ResourceNode>();
         ResolveContext    = resolveContext;
@@ -51,12 +53,14 @@ public class ResourceNode : ICloneable
     {
         Name              = other.Name;
         FallbackName      = other.FallbackName;
-        Icon              = other.Icon;
+        IconFlag              = other.IconFlag;
         Type              = other.Type;
         ObjectAddress     = other.ObjectAddress;
         ResourceHandle    = other.ResourceHandle;
         PossibleGamePaths = other.PossibleGamePaths;
         FullPath          = other.FullPath;
+        ModName           = other.ModName;
+        ModRelativePath   = other.ModRelativePath;
         AdditionalData    = other.AdditionalData;
         Length            = other.Length;
         Children          = other.Children;
@@ -79,7 +83,7 @@ public class ResourceNode : ICloneable
     public void SetUiData(UiData uiData)
     {
         Name = uiData.Name;
-        Icon = uiData.Icon;
+        IconFlag = uiData.IconFlag;
     }
 
     public void PrependName(string prefix)
@@ -88,9 +92,9 @@ public class ResourceNode : ICloneable
             Name = prefix + Name;
     }
 
-    public readonly record struct UiData(string? Name, ChangedItemIcon Icon)
+    public readonly record struct UiData(string? Name, ChangedItemIconFlag IconFlag)
     {
-        public readonly UiData PrependName(string prefix)
-            => Name == null ? this : new UiData(prefix + Name, Icon);
+        public UiData PrependName(string prefix)
+            => Name == null ? this : new UiData(prefix + Name, IconFlag);
     }
 }

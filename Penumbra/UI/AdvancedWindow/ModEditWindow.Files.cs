@@ -1,8 +1,10 @@
+using System.Linq;
 using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Text;
 using Penumbra.Mods.Editor;
 using Penumbra.Mods.SubMods;
 using Penumbra.String.Classes;
@@ -144,22 +146,20 @@ public partial class ModEditWindow
 
     private static string DrawFileTooltip(FileRegistry registry, ColorId color)
     {
-        (string, int) GetMulti()
-        {
-            var groups = registry.SubModUsage.GroupBy(s => s.Item1).ToArray();
-            return (string.Join("\n", groups.Select(g => g.Key.GetName())), groups.Length);
-        }
-
         var (text, groupCount) = color switch
         {
-            ColorId.ConflictingMod => (string.Empty, 0),
-            ColorId.NewMod         => (registry.SubModUsage[0].Item1.GetName(), 1),
+            ColorId.ConflictingMod => (null, 0),
+            ColorId.NewMod         => ([registry.SubModUsage[0].Item1.GetName()], 1),
             ColorId.InheritedMod   => GetMulti(),
-            _                      => (string.Empty, 0),
+            _                      => (null, 0),
         };
 
-        if (text.Length > 0 && ImGui.IsItemHovered())
-            ImGui.SetTooltip(text);
+        if (text != null && ImGui.IsItemHovered())
+        {
+            using var tt = ImUtf8.Tooltip();
+            using var c  = ImRaii.DefaultColors();
+            ImUtf8.Text(string.Join('\n', text));
+        }
 
 
         return (groupCount, registry.SubModUsage.Count) switch
@@ -169,6 +169,12 @@ public partial class ModEditWindow
             (1, > 1) => $"(used {registry.SubModUsage.Count} times in 1 group)",
             _        => $"(used {registry.SubModUsage.Count} times over {groupCount} groups)",
         };
+
+        (IEnumerable<string>, int) GetMulti()
+        {
+            var groups = registry.SubModUsage.GroupBy(s => s.Item1).ToArray();
+            return (groups.Select(g => g.Key.GetName()), groups.Length);
+        }
     }
 
     private void DrawSelectable(FileRegistry registry)
@@ -209,7 +215,7 @@ public partial class ModEditWindow
 
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            if (Utf8GamePath.FromString(_gamePathEdit, out var path, false))
+            if (Utf8GamePath.FromString(_gamePathEdit, out var path))
                 _editor.FileEditor.SetGamePath(_editor.Option!, _fileIdx, _pathIdx, path);
 
             _fileIdx = -1;
@@ -217,7 +223,7 @@ public partial class ModEditWindow
         }
         else if (_fileIdx == i
               && _pathIdx == j
-              && (!Utf8GamePath.FromString(_gamePathEdit, out var path, false)
+              && (!Utf8GamePath.FromString(_gamePathEdit, out var path)
                   || !path.IsEmpty && !path.Equals(gamePath) && !_editor.FileEditor.CanAddGamePath(path)))
         {
             ImGui.SameLine();
@@ -241,7 +247,7 @@ public partial class ModEditWindow
 
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            if (Utf8GamePath.FromString(_gamePathEdit, out var path, false) && !path.IsEmpty)
+            if (Utf8GamePath.FromString(_gamePathEdit, out var path) && !path.IsEmpty)
                 _editor.FileEditor.SetGamePath(_editor.Option!, _fileIdx, _pathIdx, path);
 
             _fileIdx = -1;
@@ -249,7 +255,7 @@ public partial class ModEditWindow
         }
         else if (_fileIdx == i
               && _pathIdx == -1
-              && (!Utf8GamePath.FromString(_gamePathEdit, out var path, false)
+              && (!Utf8GamePath.FromString(_gamePathEdit, out var path)
                   || !path.IsEmpty && !_editor.FileEditor.CanAddGamePath(path)))
         {
             ImGui.SameLine();

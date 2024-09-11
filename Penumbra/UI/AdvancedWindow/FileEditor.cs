@@ -1,11 +1,12 @@
 using Dalamud.Interface;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Compression;
 using OtterGui.Raii;
+using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.GameData.Files;
 using Penumbra.Mods.Editor;
@@ -98,7 +99,7 @@ public class FileEditor<T>(
         _inInput = ImGui.IsItemActive();
         if (ImGui.IsItemDeactivatedAfterEdit() && _defaultPath.Length > 0)
         {
-            _isDefaultPathUtf8Valid = Utf8GamePath.FromString(_defaultPath, out _defaultPathUtf8, true);
+            _isDefaultPathUtf8Valid = Utf8GamePath.FromString(_defaultPath, out _defaultPathUtf8);
             _quickImport            = null;
             fileDialog.Reset();
             try
@@ -207,12 +208,15 @@ public class FileEditor<T>(
         var canSave = _changed && _currentFile is { Valid: true };
         if (ImGuiUtil.DrawDisabledButton("Save to File", Vector2.Zero,
                 $"Save the selected {fileType} file with all changes applied. This is not revertible.", !canSave))
-        {
-            compactor.WriteAllBytes(_currentPath!.File.FullName, _currentFile!.Write());
-            if (owner.Mod != null)
-                communicator.ModFileChanged.Invoke(owner.Mod, _currentPath);
-            _changed = false;
-        }
+            SaveFile();
+    }
+
+    public void SaveFile()
+    {
+        compactor.WriteAllBytes(_currentPath!.File.FullName, _currentFile!.Write());
+        if (owner.Mod != null)
+            communicator.ModFileChanged.Invoke(owner.Mod, _currentPath);
+        _changed = false;
     }
 
     private void ResetButton()
@@ -303,7 +307,7 @@ public class FileEditor<T>(
                 foreach (var (option, gamePath) in file.SubModUsage)
                 {
                     ImGui.TableNextColumn();
-                    UiHelpers.Text(gamePath.Path);
+                    ImUtf8.Text(gamePath.Path.Span);
                     ImGui.TableNextColumn();
                     using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.ItemId.Value());
                     ImGui.TextUnformatted(option.GetFullName());

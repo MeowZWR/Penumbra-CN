@@ -1,11 +1,13 @@
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using OtterGui.Classes;
+using OtterGui.Services;
 using Penumbra.Import;
 using Penumbra.Mods.Editor;
+using Penumbra.Services;
 
 namespace Penumbra.Mods.Manager;
 
-public class ModImportManager(ModManager modManager, Configuration config, ModEditor modEditor) : IDisposable
+public class ModImportManager(ModManager modManager, Configuration config, ModEditor modEditor, MigrationManager migrationManager) : IDisposable, IService
 {
     private readonly ConcurrentQueue<string[]> _modsToUnpack = new();
 
@@ -32,7 +34,8 @@ public class ModImportManager(ModManager modManager, Configuration config, ModEd
             if (File.Exists(s))
                 return true;
 
-            Penumbra.Messager.NotificationMessage($"Failed to import queued mod at {s}, the file does not exist.", NotificationType.Warning, false);
+            Penumbra.Messager.NotificationMessage($"Failed to import queued mod at {s}, the file does not exist.", NotificationType.Warning,
+                false);
             return false;
         }).Select(s => new FileInfo(s)).ToArray();
 
@@ -40,7 +43,7 @@ public class ModImportManager(ModManager modManager, Configuration config, ModEd
         if (files.Length == 0)
             return;
 
-        _import = new TexToolsImporter(files.Length, files, AddNewMod, config, modEditor, modManager, modEditor.Compactor);
+        _import = new TexToolsImporter(files.Length, files, AddNewMod, config, modEditor, modManager, modEditor.Compactor, migrationManager);
     }
 
     public bool Importing
@@ -76,7 +79,7 @@ public class ModImportManager(ModManager modManager, Configuration config, ModEd
             return false;
         }
 
-        modManager.AddMod(directory);
+        modManager.AddMod(directory, true);
         mod = modManager.LastOrDefault();
         return mod != null && mod.ModPath == directory;
     }

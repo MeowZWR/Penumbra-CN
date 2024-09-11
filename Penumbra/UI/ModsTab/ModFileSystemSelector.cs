@@ -1,6 +1,6 @@
 using Dalamud.Interface;
 using Dalamud.Interface.DragDrop;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using ImGuiNET;
 using OtterGui;
@@ -8,6 +8,9 @@ using OtterGui.Classes;
 using OtterGui.Filesystem;
 using OtterGui.FileSystem.Selector;
 using OtterGui.Raii;
+using OtterGui.Services;
+using OtterGui.Text;
+using OtterGui.Text.Widget;
 using Penumbra.Api.Enums;
 using Penumbra.Collections;
 using Penumbra.Collections.Manager;
@@ -21,23 +24,22 @@ using MessageService = Penumbra.Services.MessageService;
 
 namespace Penumbra.UI.ModsTab;
 
-public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSystemSelector.ModState>
+public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSystemSelector.ModState>, IUiService
 {
-    private readonly CommunicatorService _communicator;
-    private readonly MessageService      _messager;
-    private readonly Configuration       _config;
-    private readonly FileDialogService   _fileDialog;
-    private readonly ModManager          _modManager;
-    private readonly CollectionManager   _collectionManager;
-    private readonly TutorialService     _tutorial;
-    private readonly ModImportManager    _modImportManager;
-    private readonly IDragDropManager    _dragDrop;
-    public           ModSettings         SelectedSettings          { get; private set; } = ModSettings.Empty;
-    public           ModCollection       SelectedSettingCollection { get; private set; } = ModCollection.Empty;
+    private readonly CommunicatorService     _communicator;
+    private readonly Configuration           _config;
+    private readonly FileDialogService       _fileDialog;
+    private readonly ModManager              _modManager;
+    private readonly CollectionManager       _collectionManager;
+    private readonly TutorialService         _tutorial;
+    private readonly ModImportManager        _modImportManager;
+    private readonly IDragDropManager        _dragDrop;
+    private readonly ModSearchStringSplitter _filter = new();
+    private readonly ModSelection            _selection;
 
     public ModFileSystemSelector(IKeyState keyState, CommunicatorService communicator, ModFileSystem fileSystem, ModManager modManager,
         CollectionManager collectionManager, Configuration config, TutorialService tutorial, FileDialogService fileDialog,
-        MessageService messager, ModImportManager modImportManager, IDragDropManager dragDrop)
+        MessageService messager, ModImportManager modImportManager, IDragDropManager dragDrop, ModSelection selection)
         : base(fileSystem, keyState, Penumbra.Log, HandleException, allowMultipleSelection: true)
     {
         _communicator      = communicator;
@@ -46,9 +48,9 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         _config            = config;
         _tutorial          = tutorial;
         _fileDialog        = fileDialog;
-        _messager          = messager;
         _modImportManager  = modImportManager;
         _dragDrop          = dragDrop;
+        _selection         = selection;
 
         // @formatter:off
         SubscribeRightClickFolder(EnableDescendants, 10);
@@ -74,22 +76,16 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         // @formatter:on
         SetFilterTooltip();
 
-        SelectionChanged += OnSelectionChange;
-        if (_config.Ephemeral.LastModPath.Length > 0)
-        {
-            var mod = _modManager.FirstOrDefault(m
-                => string.Equals(m.Identifier, _config.Ephemeral.LastModPath, StringComparison.OrdinalIgnoreCase));
-            if (mod != null)
-                SelectByValue(mod);
-        }
-
+        if (_selection.Mod != null)
+            SelectByValue(_selection.Mod);
         _communicator.CollectionChange.Subscribe(OnCollectionChange, CollectionChange.Priority.ModFileSystemSelector);
         _communicator.ModSettingChanged.Subscribe(OnSettingChange, ModSettingChanged.Priority.ModFileSystemSelector);
         _communicator.CollectionInheritanceChanged.Subscribe(OnInheritanceChange, CollectionInheritanceChanged.Priority.ModFileSystemSelector);
         _communicator.ModDataChanged.Subscribe(OnModDataChange, ModDataChanged.Priority.ModFileSystemSelector);
         _communicator.ModDiscoveryStarted.Subscribe(StoreCurrentSelection, ModDiscoveryStarted.Priority.ModFileSystemSelector);
         _communicator.ModDiscoveryFinished.Subscribe(RestoreLastSelection, ModDiscoveryFinished.Priority.ModFileSystemSelector);
-        OnCollectionChange(CollectionType.Current, null, _collectionManager.Active.Current, "");
+        SetFilterDirty();
+        SelectionChanged += OnSelectionChanged;
     }
 
     public void SetRenameSearchPath(RenameField value)
@@ -186,16 +182,13 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             var newDir = _modManager.Creator.CreateEmptyMod(_modManager.BasePath, _newModName);
             if (newDir != null)
             {
-                _modManager.AddMod(newDir);
+                _modManager.AddMod(newDir, false);
                 _newModName = string.Empty;
             }
         }
 
         while (_modImportManager.AddUnpackedMod(out var mod))
-        {
-            MoveModToDefaultDirectory(mod);
             SelectByValue(mod);
-        }
     }
 
     protected override void DrawLeafName(FileSystem<Mod>.Leaf leaf, in ModState state, bool selected)
@@ -375,34 +368,6 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             _collectionManager.Editor.SetMultipleModStates(_collectionManager.Active.Current, mods, enabled);
     }
 
-    /// <summary>
-    /// If a default import folder is setup, try to move the given mod in there.
-    /// If the folder does not exist, create it if possible.
-    /// </summary>
-    /// <param name="mod"></param>
-    private void MoveModToDefaultDirectory(Mod mod)
-    {
-        if (_config.DefaultImportFolder.Length == 0)
-            return;
-
-        try
-        {
-            var leaf = FileSystem.Root.GetChildren(ISortMode<Mod>.Lexicographical)
-                .FirstOrDefault(f => f is FileSystem<Mod>.Leaf l && l.Value == mod);
-            if (leaf == null)
-                throw new Exception("Mod was not found at root.");
-
-            var folder = FileSystem.FindOrCreateAllFolders(_config.DefaultImportFolder);
-            FileSystem.Move(leaf, folder);
-        }
-        catch (Exception e)
-        {
-            _messager.NotificationMessage(e,
-                $"Could not move newly imported mod {mod.Name} to default import folder {_config.DefaultImportFolder}.",
-                NotificationType.Warning);
-        }
-    }
-
     private void DrawHelpPopup()
     {
         ImGuiUtil.HelpPopup("ExtendedHelp", new Vector2(1000 * UiHelpers.Scale, 38.5f * ImGui.GetTextLineHeightWithSpacing()), () =>
@@ -476,65 +441,33 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void OnSettingChange(ModCollection collection, ModSettingChange type, Mod? mod, Setting oldValue, int groupIdx, bool inherited)
     {
-        if (collection != _collectionManager.Active.Current)
-            return;
-
-        SetFilterDirty();
-        if (mod == Selected)
-            OnSelectionChange(Selected, Selected, default);
+        if (collection == _collectionManager.Active.Current)
+            SetFilterDirty();
     }
 
     private void OnModDataChange(ModDataChangeType type, Mod mod, string? oldName)
     {
-        switch (type)
-        {
-            case ModDataChangeType.Name:
-            case ModDataChangeType.Author:
-            case ModDataChangeType.ModTags:
-            case ModDataChangeType.LocalTags:
-            case ModDataChangeType.Favorite:
-                SetFilterDirty();
-                break;
-        }
+        const ModDataChangeType relevantFlags =
+            ModDataChangeType.Name
+          | ModDataChangeType.Author
+          | ModDataChangeType.ModTags
+          | ModDataChangeType.LocalTags
+          | ModDataChangeType.Favorite
+          | ModDataChangeType.ImportDate;
+        if ((type & relevantFlags) != 0)
+            SetFilterDirty();
     }
 
     private void OnInheritanceChange(ModCollection collection, bool _)
     {
-        if (collection != _collectionManager.Active.Current)
-            return;
-
-        SetFilterDirty();
-        OnSelectionChange(Selected, Selected, default);
+        if (collection == _collectionManager.Active.Current)
+            SetFilterDirty();
     }
 
     private void OnCollectionChange(CollectionType collectionType, ModCollection? oldCollection, ModCollection? newCollection, string _)
     {
-        if (collectionType is not CollectionType.Current || oldCollection == newCollection)
-            return;
-
-        SetFilterDirty();
-        OnSelectionChange(Selected, Selected, default);
-    }
-
-    private void OnSelectionChange(Mod? _1, Mod? newSelection, in ModState _2)
-    {
-        if (newSelection == null)
-        {
-            SelectedSettings          = ModSettings.Empty;
-            SelectedSettingCollection = ModCollection.Empty;
-        }
-        else
-        {
-            (var settings, SelectedSettingCollection) = _collectionManager.Active.Current[newSelection.Index];
-            SelectedSettings                          = settings ?? ModSettings.Empty;
-        }
-
-        var name = newSelection?.Identifier ?? string.Empty;
-        if (name != _config.Ephemeral.LastModPath)
-        {
-            _config.Ephemeral.LastModPath = name;
-            _config.Ephemeral.Save();
-        }
+        if (collectionType is CollectionType.Current && oldCollection != newCollection)
+            SetFilterDirty();
     }
 
     // Keep selections across rediscoveries if possible.
@@ -557,6 +490,9 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         _lastSelectedDirectory = string.Empty;
     }
 
+    private void OnSelectionChanged(Mod? oldSelection, Mod? newSelection, in ModState state)
+        => _selection.SelectMod(newSelection);
+
     #endregion
 
     #region Filters
@@ -568,62 +504,35 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         public ModPriority Priority;
     }
 
-    private const StringComparison                  IgnoreCase   = StringComparison.OrdinalIgnoreCase;
-    private       LowerString                       _modFilter   = LowerString.Empty;
-    private       int                               _filterType  = -1;
-    private       ModFilter                         _stateFilter = ModFilterExtensions.UnfilteredStateMods;
-    private       ChangedItemDrawer.ChangedItemIcon _slotFilter  = 0;
+    private ModFilter _stateFilter = ModFilterExtensions.UnfilteredStateMods;
 
     private void SetFilterTooltip()
     {
-        FilterTooltip = "Filter mods for those where their full paths or names contain the given substring.\n"
+        FilterTooltip = "Filter mods for those where their full paths or names contain the given strings, split by spaces.\n"
           + "Enter c:[string] to filter for mods changing specific items.\n"
           + "Enter t:[string] to filter for mods set to specific tags.\n"
           + "Enter n:[string] to filter only for mod names and no paths.\n"
           + "Enter a:[string] to filter for mods by specific authors.\n"
-          + $"Enter s:[string] to filter for mods by the categories of the items they change (1-{ChangedItemDrawer.NumCategories + 1} or partial category name).\n"
-          + "Use None as a placeholder value that only matches empty lists or names.";
+          + $"Enter s:[string] to filter for mods by the categories of the items they change (1-{ChangedItemFlagExtensions.NumCategories + 1} or partial category name).\n\n"
+          + "Use None as a placeholder value that only matches empty lists or names.\n"
+          + "Regularly, a mod has to match all supplied criteria separately.\n"
+          + "Put a - in front of a search token to search only for mods not matching the criterion.\n"
+          + "Put a ? in front of a search token to search for mods matching at least one of the '?'-criteria.\n"
+          + "Wrap spaces in \"[string with space]\" to match this exact combination of words.\n\n"
+          + "Example: 't:Tag1 t:\"Tag 2\" -t:Tag3 -a:None s:Body -c:Hempen ?c:Camise ?n:Top' will match any mod that\n"
+          + "    - contains the tags 'tag1' and 'tag 2'\n"
+          + "    - does not contain the tag 'tag3'\n"
+          + "    - has any author set (negating None means Any)\n"
+          + "    - changes an item of the 'Body' category\n"
+          + "    - and either contains a changed item with 'camise' in it's name, or has 'top' in the mod's name.";
     }
 
     /// <summary> Appropriately identify and set the string filter and its type. </summary>
     protected override bool ChangeFilter(string filterValue)
     {
-        (_modFilter, _filterType) = filterValue.Length switch
-        {
-            0 => (LowerString.Empty, -1),
-            > 1 when filterValue[1] == ':' =>
-                filterValue[0] switch
-                {
-                    'n' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 1),
-                    'N' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 1),
-                    'a' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 2),
-                    'A' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 2),
-                    'c' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 3),
-                    'C' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 3),
-                    't' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 4),
-                    'T' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 4),
-                    's' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 5),
-                    'S' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 5),
-                    _   => (new LowerString(filterValue), 0),
-                },
-            _ => (new LowerString(filterValue), 0),
-        };
-
+        _filter.Parse(filterValue);
         return true;
     }
-
-    private const int EmptyOffset = 128;
-
-    private (LowerString, int) ParseFilter(string value, int id)
-    {
-        value = value[2..];
-        var lower = new LowerString(value);
-        if (id == 5 && !ChangedItemDrawer.TryParsePartial(lower.Lower, out _slotFilter))
-            _slotFilter = 0;
-
-        return (lower, lower.Lower is "none" ? id + EmptyOffset : id);
-    }
-
 
     /// <summary>
     /// Check the state filter for a specific pair of has/has-not flags.
@@ -631,15 +540,13 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     /// Returns true if it should be filtered and false if not. 
     /// </summary>
     private bool CheckFlags(int count, ModFilter hasNoFlag, ModFilter hasFlag)
-    {
-        return count switch
+        => count switch
         {
             0 when _stateFilter.HasFlag(hasNoFlag) => false,
             0                                      => true,
             _ when _stateFilter.HasFlag(hasFlag)   => false,
             _                                      => true,
         };
-    }
 
     /// <summary>
     /// The overwritten filter method also computes the state.
@@ -653,7 +560,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         {
             state = default;
             return ModFilterExtensions.UnfilteredStateMods != _stateFilter
-             || FilterValue.Length > 0 && !f.FullName().Contains(FilterValue, IgnoreCase);
+             || !_filter.IsVisible(f);
         }
 
         return ApplyFiltersAndState((ModFileSystem.Leaf)path, out state);
@@ -661,23 +568,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     /// <summary> Apply the string filters. </summary>
     private bool ApplyStringFilters(ModFileSystem.Leaf leaf, Mod mod)
-    {
-        return _filterType switch
-        {
-            -1              => false,
-            0               => !(leaf.FullName().Contains(_modFilter.Lower, IgnoreCase) || mod.Name.Contains(_modFilter)),
-            1               => !mod.Name.Contains(_modFilter),
-            2               => !mod.Author.Contains(_modFilter),
-            3               => !mod.LowerChangedItemsString.Contains(_modFilter.Lower),
-            4               => !mod.AllTagsLower.Contains(_modFilter.Lower),
-            5               => mod.ChangedItems.All(p => (ChangedItemDrawer.GetCategoryIcon(p.Key, p.Value) & _slotFilter) == 0),
-            2 + EmptyOffset => !mod.Author.IsEmpty,
-            3 + EmptyOffset => mod.LowerChangedItemsString.Length > 0,
-            4 + EmptyOffset => mod.AllTagsLower.Length > 0,
-            5 + EmptyOffset => mod.ChangedItems.Count == 0,
-            _               => false, // Should never happen
-        };
-    }
+        => !_filter.IsVisible(leaf);
 
     /// <summary> Only get the text color for a mod if no filters are set. </summary>
     private ColorId GetTextColor(Mod mod, ModSettings? settings, ModCollection collection)
@@ -813,8 +704,6 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
             ImGui.GetStyle().ItemSpacing with { Y = 3 * UiHelpers.Scale });
-        var flags = (int)_stateFilter;
-
 
         if (ImGui.Checkbox("Everything", ref everything))
         {
@@ -823,12 +712,19 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         }
 
         ImGui.Dummy(new Vector2(0, 5 * UiHelpers.Scale));
-        foreach (ModFilter flag in Enum.GetValues(typeof(ModFilter)))
+        foreach (var (onFlag, offFlag, name) in ModFilterExtensions.TriStatePairs)
         {
-            if (ImGui.CheckboxFlags(flag.ToName(), ref flags, (int)flag))
-            {
-                _stateFilter = (ModFilter)flags;
+            if (TriStateCheckbox.Instance.Draw(name, ref _stateFilter, onFlag, offFlag))
                 SetFilterDirty();
+        }
+
+        foreach (var group in ModFilterExtensions.Groups)
+        {
+            ImGui.Separator();
+            foreach (var (flag, name) in group)
+            {
+                if (ImUtf8.Checkbox(name, ref _stateFilter, flag))
+                    SetFilterDirty();
             }
         }
 

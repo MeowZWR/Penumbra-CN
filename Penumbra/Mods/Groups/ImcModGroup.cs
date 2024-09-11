@@ -1,4 +1,4 @@
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -6,6 +6,7 @@ using OtterGui.Classes;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Structs;
+using Penumbra.Meta;
 using Penumbra.Meta.Manipulations;
 using Penumbra.Mods.Settings;
 using Penumbra.Mods.SubMods;
@@ -19,6 +20,7 @@ public class ImcModGroup(Mod mod) : IModGroup
     public Mod    Mod         { get; }      = mod;
     public string Name        { get; set; } = "Option";
     public string Description { get; set; } = string.Empty;
+    public string Image       { get; set; } = string.Empty;
 
     public GroupType Type
         => GroupType.Imc;
@@ -27,10 +29,13 @@ public class ImcModGroup(Mod mod) : IModGroup
         => GroupDrawBehaviour.MultiSelection;
 
     public ModPriority Priority        { get; set; } = ModPriority.Default;
+    public int         Page            { get; set; }
     public Setting     DefaultSettings { get; set; } = Setting.Zero;
 
     public ImcIdentifier Identifier;
     public ImcEntry      DefaultEntry;
+    public bool          AllVariants;
+
 
     public FullPath? FindBestMatch(Utf8GamePath gamePath)
         => null;
@@ -39,7 +44,7 @@ public class ImcModGroup(Mod mod) : IModGroup
 
     public bool CanBeDisabled
     {
-        get => OptionData.Any(m => m.IsDisableSubMod);
+        get => _canBeDisabled;
         set
         {
             _canBeDisabled = value;
@@ -92,22 +97,33 @@ public class ImcModGroup(Mod mod) : IModGroup
     public IModGroupEditDrawer EditDrawer(ModGroupEditDrawer editDrawer)
         => new ImcModGroupEditDrawer(editDrawer, this);
 
-    public ImcManipulation GetManip(ushort mask)
-        => new(Identifier.ObjectType, Identifier.BodySlot, Identifier.PrimaryId, Identifier.SecondaryId.Id, Identifier.Variant.Id,
-            Identifier.EquipSlot, DefaultEntry with { AttributeMask = mask });
+    public ImcEntry GetEntry(ushort mask)
+        => DefaultEntry with { AttributeMask = mask };
 
-    public void AddData(Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, HashSet<MetaManipulation> manipulations)
+    public void AddData(Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, MetaDictionary manipulations)
     {
         if (IsDisabled(setting))
             return;
 
-        var mask = GetCurrentMask(setting);
-        var imc  = GetManip(mask);
-        manipulations.Add(imc);
+        var mask  = GetCurrentMask(setting);
+        var entry = GetEntry(mask);
+        if (AllVariants)
+        {
+            var count = ImcChecker.GetVariantCount(Identifier);
+            if (count == 0)
+                manipulations.TryAdd(Identifier, entry);
+            else
+                for (var i = 0; i <= count; ++i)
+                    manipulations.TryAdd(Identifier with { Variant = (Variant)i }, entry);
+        }
+        else
+        {
+            manipulations.TryAdd(Identifier, entry);
+        }
     }
 
-    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, object?> changedItems)
-        => Identifier.AddChangedItems(identifier, changedItems);
+    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, IIdentifiedObjectData?> changedItems)
+        => Identifier.AddChangedItems(identifier, changedItems, AllVariants);
 
     public Setting FixSetting(Setting setting)
         => new(setting.Value & ((1ul << OptionData.Count) - 1));
@@ -120,6 +136,8 @@ public class ImcModGroup(Mod mod) : IModGroup
         jObj.WriteTo(jWriter);
         jWriter.WritePropertyName(nameof(DefaultEntry));
         serializer.Serialize(jWriter, DefaultEntry);
+        jWriter.WritePropertyName(nameof(AllVariants));
+        jWriter.WriteValue(AllVariants);
         jWriter.WritePropertyName("Options");
         jWriter.WriteStartArray();
         foreach (var option in OptionData)
@@ -152,12 +170,10 @@ public class ImcModGroup(Mod mod) : IModGroup
         var identifier = ImcIdentifier.FromJson(json[nameof(Identifier)] as JObject);
         var ret = new ImcModGroup(mod)
         {
-            Name         = json[nameof(Name)]?.ToObject<string>() ?? string.Empty,
-            Description  = json[nameof(Description)]?.ToObject<string>() ?? string.Empty,
-            Priority     = json[nameof(Priority)]?.ToObject<ModPriority>() ?? ModPriority.Default,
             DefaultEntry = json[nameof(DefaultEntry)]?.ToObject<ImcEntry>() ?? new ImcEntry(),
+            AllVariants  = json[nameof(AllVariants)]?.ToObject<bool>() ?? false,
         };
-        if (ret.Name.Length == 0)
+        if (!ModSaveGroup.ReadJsonBase(json, ret))
             return null;
 
         if (!identifier.HasValue || ret.DefaultEntry.MaterialId == 0)
@@ -167,7 +183,7 @@ public class ImcModGroup(Mod mod) : IModGroup
             return null;
         }
 
-        var rollingMask = ret.DefaultEntry.AttributeMask;
+        var rollingMask = 0ul;
         if (options != null)
             foreach (var child in options.Children())
             {
@@ -196,7 +212,6 @@ public class ImcModGroup(Mod mod) : IModGroup
             }
 
         ret.Identifier      = identifier.Value;
-        ret.DefaultSettings = json[nameof(DefaultSettings)]?.ToObject<Setting>() ?? Setting.Zero;
         ret.DefaultSettings = ret.FixSetting(ret.DefaultSettings);
         return ret;
     }
@@ -210,7 +225,7 @@ public class ImcModGroup(Mod mod) : IModGroup
         if (idx >= 0)
             return setting.HasFlag(idx);
 
-        Penumbra.Log.Warning($"A IMC Group should be able to be disabled, but does not contain a disable option.");
+        Penumbra.Log.Warning("A IMC Group should be able to be disabled, but does not contain a disable option.");
         return false;
     }
 
@@ -223,7 +238,7 @@ public class ImcModGroup(Mod mod) : IModGroup
                 continue;
 
             var option = OptionData[i];
-            mask |= option.AttributeMask;
+            mask ^= option.AttributeMask;
         }
 
         return mask;

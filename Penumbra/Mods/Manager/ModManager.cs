@@ -1,3 +1,4 @@
+using OtterGui.Services;
 using Penumbra.Communication;
 using Penumbra.Mods.Editor;
 using Penumbra.Mods.Manager.OptionEditor;
@@ -27,7 +28,7 @@ public enum ModPathChangeType
     StartingReload,
 }
 
-public sealed class ModManager : ModStorage, IDisposable
+public sealed class ModManager : ModStorage, IDisposable, IService
 {
     private readonly Configuration       _config;
     private readonly CommunicatorService _communicator;
@@ -47,15 +48,15 @@ public sealed class ModManager : ModStorage, IDisposable
         DataEditor    = dataEditor;
         OptionEditor  = optionEditor;
         Creator       = creator;
-        SetBaseDirectory(config.ModDirectory, true);
+        SetBaseDirectory(config.ModDirectory, true, out _);
         _communicator.ModPathChanged.Subscribe(OnModPathChange, ModPathChanged.Priority.ModManager);
         DiscoverMods();
     }
 
     /// <summary> Change the mod base directory and discover available mods. </summary>
-    public void DiscoverMods(string newDir)
+    public void DiscoverMods(string newDir, out string resultNewDir)
     {
-        SetBaseDirectory(newDir, false);
+        SetBaseDirectory(newDir, false, out resultNewDir);
         DiscoverMods();
     }
 
@@ -80,13 +81,13 @@ public sealed class ModManager : ModStorage, IDisposable
     }
 
     /// <summary> Load a new mod and add it to the manager if successful. </summary>
-    public void AddMod(DirectoryInfo modFolder)
+    public void AddMod(DirectoryInfo modFolder, bool deleteDefaultMeta)
     {
         if (this.Any(m => m.ModPath.Name == modFolder.Name))
             return;
 
         Creator.SplitMultiGroups(modFolder);
-        var mod = Creator.LoadMod(modFolder, true);
+        var mod = Creator.LoadMod(modFolder, true, deleteDefaultMeta);
         if (mod == null)
             return;
 
@@ -114,12 +115,21 @@ public sealed class ModManager : ModStorage, IDisposable
                 Penumbra.Log.Error($"Could not delete the mod {mod.ModPath.Name}:\n{e}");
             }
 
+        RemoveMod(mod);
+    }
+
+    /// <summary>
+    /// Remove a loaded mod. The event is invoked before the mod is removed from the list.
+    /// Does not delete the mod from the filesystem.
+    /// Updates indices of later mods.
+    /// </summary>
+    public void RemoveMod(Mod mod)
+    {
         _communicator.ModPathChanged.Invoke(ModPathChangeType.Deleted, mod, mod.ModPath, null);
         foreach (var remainingMod in Mods.Skip(mod.Index + 1))
             --remainingMod.Index;
         Mods.RemoveAt(mod.Index);
-
-        Penumbra.Log.Debug($"Deleted mod {mod.Name}.");
+        Penumbra.Log.Debug($"Removed loaded mod {mod.Name} from list.");
     }
 
     /// <summary>
@@ -131,13 +141,12 @@ public sealed class ModManager : ModStorage, IDisposable
         var oldName = mod.Name;
 
         _communicator.ModPathChanged.Invoke(ModPathChangeType.StartingReload, mod, mod.ModPath, mod.ModPath);
-        if (!Creator.ReloadMod(mod, true, out var metaChange))
+        if (!Creator.ReloadMod(mod, true, false, out var metaChange))
         {
             Penumbra.Log.Warning(mod.Name.Length == 0
-                ? $"Reloading mod {oldName} has failed, new name is empty. Deleting instead."
-                : $"Reloading mod {oldName} failed, {mod.ModPath.FullName} does not exist anymore or it ha. Deleting instead.");
-
-            DeleteMod(mod);
+                ? $"Reloading mod {oldName} has failed, new name is empty. Removing from loaded mods instead."
+                : $"Reloading mod {oldName} failed, {mod.ModPath.FullName} does not exist anymore or it has invalid data. Removing from loaded mods instead.");
+            RemoveMod(mod);
             return;
         }
 
@@ -197,7 +206,7 @@ public sealed class ModManager : ModStorage, IDisposable
 
         dir.Refresh();
         mod.ModPath = dir;
-        if (!Creator.ReloadMod(mod, false, out var metaChange))
+        if (!Creator.ReloadMod(mod, false, false, out var metaChange))
         {
             Penumbra.Log.Error($"Error reloading moved mod {mod.Name}.");
             return;
@@ -261,12 +270,13 @@ public sealed class ModManager : ModStorage, IDisposable
 
     /// <summary>
     /// Set the mod base directory.
-    /// If its not the first time, check if it is the same directory as before.
+    /// If it's not the first time, check if it is the same directory as before.
     /// Also checks if the directory is available and tries to create it if it is not.
     /// </summary>
-    private void SetBaseDirectory(string newPath, bool firstTime)
+    private void SetBaseDirectory(string newPath, bool firstTime, out string resultNewDir)
     {
-        if (!firstTime && string.Equals(newPath, _config.ModDirectory, StringComparison.OrdinalIgnoreCase))
+        resultNewDir = newPath;
+        if (!firstTime && string.Equals(newPath, _config.ModDirectory, StringComparison.Ordinal))
             return;
 
         if (newPath.Length == 0)
@@ -278,7 +288,7 @@ public sealed class ModManager : ModStorage, IDisposable
         }
         else
         {
-            var newDir = new DirectoryInfo(newPath);
+            var newDir = new DirectoryInfo(Path.TrimEndingDirectorySeparator(newPath));
             if (!newDir.Exists)
                 try
                 {
@@ -290,8 +300,9 @@ public sealed class ModManager : ModStorage, IDisposable
                     Penumbra.Log.Error($"Could not create specified mod directory {newDir.FullName}:\n{e}");
                 }
 
-            BasePath = newDir;
-            Valid    = Directory.Exists(newDir.FullName);
+            BasePath     = newDir;
+            Valid        = Directory.Exists(newDir.FullName);
+            resultNewDir = BasePath.FullName;
             if (!firstTime && _config.ModDirectory != BasePath.FullName)
                 TriggerModDirectoryChange(BasePath.FullName, Valid);
         }
@@ -321,7 +332,7 @@ public sealed class ModManager : ModStorage, IDisposable
             var queue = new ConcurrentQueue<Mod>();
             Parallel.ForEach(BasePath.EnumerateDirectories(), options, dir =>
             {
-                var mod = Creator.LoadMod(dir, false);
+                var mod = Creator.LoadMod(dir, false, false);
                 if (mod != null)
                     queue.Enqueue(mod);
             });
@@ -338,5 +349,23 @@ public sealed class ModManager : ModStorage, IDisposable
             _communicator.ModDirectoryChanged.Invoke(BasePath.FullName, false);
             Penumbra.Log.Error($"Could not scan for mods:\n{ex}");
         }
+    }
+
+    public bool TryIdentifyPath(string path, [NotNullWhen(true)] out Mod? mod, [NotNullWhen(true)] out string? relativePath)
+    {
+        var relPath = Path.GetRelativePath(BasePath.FullName, path);
+        if (relPath != "." && (relPath.StartsWith('.') || Path.IsPathRooted(relPath)))
+        {
+            mod          = null;
+            relativePath = null;
+            return false;
+        }
+
+        var modDirectorySeparator = relPath.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]);
+
+        var modDirectory = modDirectorySeparator < 0 ? relPath : relPath[..modDirectorySeparator];
+        relativePath = modDirectorySeparator < 0 ? string.Empty : relPath[(modDirectorySeparator + 1)..];
+
+        return TryGetMod(modDirectory, "\0", out mod);
     }
 }

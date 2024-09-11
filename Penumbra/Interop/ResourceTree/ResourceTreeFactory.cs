@@ -1,11 +1,15 @@
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using OtterGui.Services;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.Interop.PathResolving;
+using Penumbra.Meta;
+using Penumbra.Mods.Manager;
 using Penumbra.String.Classes;
 
 namespace Penumbra.Interop.ResourceTree;
@@ -13,22 +17,24 @@ namespace Penumbra.Interop.ResourceTree;
 public class ResourceTreeFactory(
     IDataManager gameData,
     ObjectManager objects,
+    MetaFileManager metaFileManager,
     CollectionResolver resolver,
-    ObjectIdentification identifier,
+    ObjectIdentification objectIdentifier,
     Configuration config,
     ActorManager actors,
-    PathState pathState)
+    PathState pathState,
+    ModManager modManager) : IService
 {
     private TreeBuildCache CreateTreeBuildCache()
         => new(objects, gameData, actors);
 
-    public IEnumerable<Dalamud.Game.ClientState.Objects.Types.Character> GetLocalPlayerRelatedCharacters()
+    public IEnumerable<ICharacter> GetLocalPlayerRelatedCharacters()
     {
         var cache = CreateTreeBuildCache();
         return cache.GetLocalPlayerRelatedCharacters();
     }
 
-    public IEnumerable<(Dalamud.Game.ClientState.Objects.Types.Character Character, ResourceTree ResourceTree)> FromObjectTable(
+    public IEnumerable<(ICharacter Character, ResourceTree ResourceTree)> FromObjectTable(
         Flags flags)
     {
         var cache      = CreateTreeBuildCache();
@@ -42,8 +48,8 @@ public class ResourceTreeFactory(
         }
     }
 
-    public IEnumerable<(Dalamud.Game.ClientState.Objects.Types.Character Character, ResourceTree ResourceTree)> FromCharacters(
-        IEnumerable<Dalamud.Game.ClientState.Objects.Types.Character> characters, Flags flags)
+    public IEnumerable<(ICharacter Character, ResourceTree ResourceTree)> FromCharacters(
+        IEnumerable<ICharacter> characters, Flags flags)
     {
         var cache = CreateTreeBuildCache();
         foreach (var character in characters)
@@ -54,10 +60,10 @@ public class ResourceTreeFactory(
         }
     }
 
-    public ResourceTree? FromCharacter(Dalamud.Game.ClientState.Objects.Types.Character character, Flags flags)
+    public ResourceTree? FromCharacter(ICharacter character, Flags flags)
         => FromCharacter(character, CreateTreeBuildCache(), flags);
 
-    private unsafe ResourceTree? FromCharacter(Dalamud.Game.ClientState.Objects.Types.Character character, TreeBuildCache cache, Flags flags)
+    private unsafe ResourceTree? FromCharacter(ICharacter character, TreeBuildCache cache, Flags flags)
     {
         if (!character.IsValid())
             return null;
@@ -73,10 +79,10 @@ public class ResourceTreeFactory(
 
         var localPlayerRelated = cache.IsLocalPlayerRelated(character);
         var (name, anonymizedName, related) = GetCharacterName(character);
-        var networked = character.ObjectId != Dalamud.Game.ClientState.Objects.Types.GameObject.InvalidGameObjectId;
+        var networked = character.EntityId != 0xE0000000;
         var tree = new ResourceTree(name, anonymizedName, character.ObjectIndex, (nint)gameObjStruct, (nint)drawObjStruct, localPlayerRelated, related,
             networked, collectionResolveData.ModCollection.Name, collectionResolveData.ModCollection.AnonymizedName);
-        var globalContext = new GlobalResolveContext(identifier, collectionResolveData.ModCollection,
+        var globalContext = new GlobalResolveContext(metaFileManager, objectIdentifier, collectionResolveData.ModCollection,
             cache, (flags & Flags.WithUiData) != 0);
         using (var _ = pathState.EnterInternalResolve())
         {
@@ -89,7 +95,10 @@ public class ResourceTreeFactory(
         // This is currently unneeded as we can resolve all paths by querying the draw object:
         // ResolveGamePaths(tree, collectionResolveData.ModCollection);
         if (globalContext.WithUiData)
+        {
             ResolveUiData(tree);
+            ResolveModData(tree);
+        }
         FilterFullPaths(tree, (flags & Flags.RedactExternalPaths) != 0 ? config.ModDirectory : null);
         Cleanup(tree);
 
@@ -119,8 +128,28 @@ public class ResourceTreeFactory(
         });
     }
 
+    private void ResolveModData(ResourceTree tree)
+    {
+        foreach (var node in tree.FlatNodes)
+        {
+            if (node.FullPath.IsRooted && modManager.TryIdentifyPath(node.FullPath.FullName, out var mod, out var relativePath))
+            {
+                node.ModName         = mod.Name;
+                node.ModRelativePath = relativePath;
+            }
+        }
+    }
+
     private static void FilterFullPaths(ResourceTree tree, string? onlyWithinPath)
     {
+        foreach (var node in tree.FlatNodes)
+        {
+            if (!ShallKeepPath(node.FullPath, onlyWithinPath))
+                node.FullPath = FullPath.Empty;
+        }
+
+        return;
+
         static bool ShallKeepPath(FullPath fullPath, string? onlyWithinPath)
         {
             if (!fullPath.IsRooted)
@@ -135,12 +164,6 @@ public class ResourceTreeFactory(
 
             return fullPath.Exists;
         }
-
-        foreach (var node in tree.FlatNodes)
-        {
-            if (!ShallKeepPath(node.FullPath, onlyWithinPath))
-                node.FullPath = FullPath.Empty;
-        }
     }
 
     private static void Cleanup(ResourceTree tree)
@@ -154,14 +177,14 @@ public class ResourceTreeFactory(
         }
     }
 
-    private unsafe (string Name, string AnonymizedName, bool PlayerRelated) GetCharacterName(Dalamud.Game.ClientState.Objects.Types.Character character)
+    private unsafe (string Name, string AnonymizedName, bool PlayerRelated) GetCharacterName(ICharacter character)
     {
         var identifier = actors.FromObject((GameObject*)character.Address, out var owner, true, false, false);
         var identifierStr = identifier.ToString();
         return (identifierStr, identifier.Incognito(identifierStr), IsPlayerRelated(identifier, owner));
     }
 
-    private unsafe bool IsPlayerRelated(Dalamud.Game.ClientState.Objects.Types.Character? character)
+    private unsafe bool IsPlayerRelated(ICharacter? character)
     {
         if (character == null)
             return false;
@@ -174,7 +197,7 @@ public class ResourceTreeFactory(
         => identifier.Type switch
         {
             IdentifierType.Player => true,
-            IdentifierType.Owned  => IsPlayerRelated(objects.Objects.CreateObjectReference(owner) as Dalamud.Game.ClientState.Objects.Types.Character),
+            IdentifierType.Owned  => IsPlayerRelated(objects.Objects.CreateObjectReference(owner) as ICharacter),
             _                     => false,
         };
 

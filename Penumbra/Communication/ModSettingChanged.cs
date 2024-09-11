@@ -1,5 +1,4 @@
 using OtterGui.Classes;
-using Penumbra.Api;
 using Penumbra.Api.Api;
 using Penumbra.Api.Enums;
 using Penumbra.Collections;
@@ -24,7 +23,7 @@ public sealed class ModSettingChanged()
 {
     public enum Priority
     {
-        /// <seealso cref="PenumbraApi.OnModSettingChange"/>
+        /// <seealso cref="ModSettingsApi.OnModSettingChange"/>
         Api = int.MinValue,
 
         /// <seealso cref="Collections.Cache.CollectionCacheManager.OnModSettingChange"/>
@@ -35,5 +34,8 @@ public sealed class ModSettingChanged()
 
         /// <seealso cref="UI.ModsTab.ModFileSystemSelector.OnSettingChange"/>
         ModFileSystemSelector = 0,
+
+        /// <seealso cref="Mods.ModSelection.OnSettingChange"/>
+        ModSelection = 10,
     }
 }

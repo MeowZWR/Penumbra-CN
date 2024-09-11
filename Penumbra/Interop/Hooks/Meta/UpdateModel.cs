@@ -15,7 +15,7 @@ public sealed unsafe class UpdateModel : FastHook<UpdateModel.Delegate>
     {
         _collectionResolver = collectionResolver;
         _metaState          = metaState;
-        Task                = hooks.CreateHook<Delegate>("Update Model", Sigs.UpdateModel, Detour, true);
+        Task                = hooks.CreateHook<Delegate>("Update Model", Sigs.UpdateModel, Detour, !HookOverrides.Instance.Meta.UpdateModel);
     }
 
     public delegate void Delegate(DrawObject* drawObject);
@@ -29,10 +29,11 @@ public sealed unsafe class UpdateModel : FastHook<UpdateModel.Delegate>
             return;
 
         Penumbra.Log.Excessive($"[Update Model] Invoked on {(nint)drawObject:X}.");
-        var       collection = _collectionResolver.IdentifyCollection(drawObject, true);
-        using var eqdp = _metaState.ResolveEqdpData(collection.ModCollection, MetaState.GetDrawObjectGenderRace((nint)drawObject), true, true);
-        _metaState.EqpCollection = collection;
+        var collection = _collectionResolver.IdentifyCollection(drawObject, true);
+        _metaState.EqpCollection.Push(collection);
+        _metaState.EqdpCollection.Push(collection);
         Task.Result.Original(drawObject);
-        _metaState.EqpCollection = ResolveData.Invalid;
+        _metaState.EqpCollection.Pop();
+        _metaState.EqdpCollection.Pop();
     }
 }

@@ -7,15 +7,15 @@ using Dalamud.Plugin.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Services;
+using OtterGui.Text;
 using Penumbra.Api.Enums;
 using Penumbra.Collections.Manager;
 using Penumbra.Communication;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
-using Penumbra.GameData.Interop;
 using Penumbra.Import.Models;
 using Penumbra.Import.Textures;
-using Penumbra.Interop.Hooks.Objects;
 using Penumbra.Interop.ResourceTree;
 using Penumbra.Meta;
 using Penumbra.Mods;
@@ -25,62 +25,95 @@ using Penumbra.Mods.SubMods;
 using Penumbra.Services;
 using Penumbra.String;
 using Penumbra.String.Classes;
+using Penumbra.UI.AdvancedWindow.Materials;
+using Penumbra.UI.AdvancedWindow.Meta;
 using Penumbra.UI.Classes;
 using Penumbra.Util;
 using MdlMaterialEditor = Penumbra.Mods.Editor.MdlMaterialEditor;
 
 namespace Penumbra.UI.AdvancedWindow;
 
-public partial class ModEditWindow : Window, IDisposable
+public partial class ModEditWindow : Window, IDisposable, IUiService
 {
     private const string WindowBaseLabel = "###SubModEdit";
 
-    private readonly PerformanceTracker      _performance;
-    private readonly ModEditor               _editor;
-    private readonly Configuration           _config;
-    private readonly ItemSwapTab             _itemSwapTab;
-    private readonly MetaFileManager         _metaFileManager;
-    private readonly ActiveCollections       _activeCollections;
-    private readonly StainService            _stainService;
-    private readonly ModMergeTab             _modMergeTab;
-    private readonly CommunicatorService     _communicator;
-    private readonly IDragDropManager        _dragDropManager;
-    private readonly IDataManager            _gameData;
-    private readonly IFramework              _framework;
-    private readonly ObjectManager           _objects;
-    private readonly CharacterBaseDestructor _characterBaseDestructor;
+    private readonly PerformanceTracker  _performance;
+    private readonly ModEditor           _editor;
+    private readonly Configuration       _config;
+    private readonly ItemSwapTab         _itemSwapTab;
+    private readonly MetaFileManager     _metaFileManager;
+    private readonly ActiveCollections   _activeCollections;
+    private readonly ModMergeTab         _modMergeTab;
+    private readonly CommunicatorService _communicator;
+    private readonly IDragDropManager    _dragDropManager;
+    private readonly IDataManager        _gameData;
+    private readonly IFramework          _framework;
 
     private Vector2 _iconSize = Vector2.Zero;
     private bool    _allowReduplicate;
 
-    public Mod? Mod { get; private set; }
+    public Mod?   Mod { get; private set; }
+
+
+    public bool IsLoading
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _editor.IsLoading || _loadingMod is { IsCompleted: false };
+            }
+        }
+    }
+
+    private readonly object _lock = new();
+    private          Task?  _loadingMod;
+
+
+    private void AppendTask(Action run)
+    {
+        lock (_lock)
+        {
+            if (_loadingMod == null || _loadingMod.IsCompleted)
+                _loadingMod = Task.Run(run);
+            else
+                _loadingMod = _loadingMod.ContinueWith(_ => run());
+        }
+    }
 
     public void ChangeMod(Mod mod)
     {
         if (mod == Mod)
             return;
 
-        _editor.LoadMod(mod, -1, 0);
-        Mod = mod;
-
-        SizeConstraints = new WindowSizeConstraints
+        WindowName = $"{mod.Name} (LOADING){WindowBaseLabel}";
+        AppendTask(() =>
         {
-            MinimumSize = new Vector2(1240, 600),
-            MaximumSize = 4000 * Vector2.One,
-        };
-        _selectedFiles.Clear();
-        _modelTab.Reset();
-        _materialTab.Reset();
-        _shaderPackageTab.Reset();
-        _itemSwapTab.UpdateMod(mod, _activeCollections.Current[mod.Index].Settings);
-        UpdateModels();
-        _forceTextureStartPath = true;
+            _editor.LoadMod(mod, -1, 0).Wait();
+            Mod = mod;
+
+            SizeConstraints = new WindowSizeConstraints
+            {
+                MinimumSize = new Vector2(1240, 600),
+                MaximumSize = 4000 * Vector2.One,
+            };
+            _selectedFiles.Clear();
+            _modelTab.Reset();
+            _materialTab.Reset();
+            _shaderPackageTab.Reset();
+            _itemSwapTab.UpdateMod(mod, _activeCollections.Current[mod.Index].Settings);
+            UpdateModels();
+            _forceTextureStartPath = true;
+        });
     }
 
     public void ChangeOption(IModDataContainer? subMod)
     {
-        var (groupIdx, dataIdx) = subMod?.GetDataIndices() ?? (-1, 0);
-        _editor.LoadOption(groupIdx, dataIdx);
+        AppendTask(() =>
+        {
+            var (groupIdx, dataIdx) = subMod?.GetDataIndices() ?? (-1, 0);
+            _editor.LoadOption(groupIdx, dataIdx).Wait();
+        });
     }
 
     public void UpdateModels()
@@ -94,6 +127,9 @@ public partial class ModEditWindow : Window, IDisposable
 
     public override void PreDraw()
     {
+        if (IsLoading)
+            return;
+
         using var performance = _performance.Measure(PerformanceType.UiAdvancedWindow);
 
         var sb = new StringBuilder(256);
@@ -128,7 +164,7 @@ public partial class ModEditWindow : Window, IDisposable
             sb.Append($"   |   {unused} Unused Files");
 
         if (_editor.Files.Missing.Count > 0)
-            sb.Append($"   |   {_editor.Files.Available.Count} Missing Files");
+            sb.Append($"   |   {_editor.Files.Missing.Count} Missing Files");
 
         if (redirections > 0)
             sb.Append($"   |   {redirections} Redirections");
@@ -146,13 +182,16 @@ public partial class ModEditWindow : Window, IDisposable
 
     public override void OnClose()
     {
-        _left.Dispose();
-        _right.Dispose();
-        _materialTab.Reset();
-        _modelTab.Reset();
-        _shaderPackageTab.Reset();
         _config.Ephemeral.AdvancedEditingOpen = false;
         _config.Ephemeral.Save();
+        AppendTask(() =>
+        {
+            _left.Dispose();
+            _right.Dispose();
+            _materialTab.Reset();
+            _modelTab.Reset();
+            _shaderPackageTab.Reset();
+        });
     }
 
     public override void Draw()
@@ -165,6 +204,17 @@ public partial class ModEditWindow : Window, IDisposable
             _config.Ephemeral.Save();
         }
 
+        if (IsLoading)
+        {
+            var radius    = 100 * ImUtf8.GlobalScale;
+            var thickness = (int) (20 * ImUtf8.GlobalScale);
+            var offsetX   = ImGui.GetContentRegionAvail().X / 2 - radius;
+            var offsetY   = ImGui.GetContentRegionAvail().Y / 2 - radius;
+            ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(offsetX, offsetY));
+            ImUtf8.Spinner("##spinner"u8, radius, thickness, ImGui.GetColorU32(ImGuiCol.Text));
+            return;
+        }
+
         using var tabBar = ImRaii.TabBar("##tabs");
         if (!tabBar)
             return;
@@ -175,7 +225,6 @@ public partial class ModEditWindow : Window, IDisposable
         DrawSwapTab();
         _modMergeTab.Draw();
         DrawDuplicatesTab();
-        DrawMaterialReassignmentTab();
         DrawQuickImportTab();
         _modelTab.Draw();
         _materialTab.Draw();
@@ -188,6 +237,7 @@ public partial class ModEditWindow : Window, IDisposable
         }
 
         DrawMissingFilesTab();
+        DrawMaterialReassignmentTab();
     }
 
     /// <summary> A row of three buttonSizes and a help marker that can be used for material suffix changing. </summary>
@@ -407,14 +457,14 @@ public partial class ModEditWindow : Window, IDisposable
         if (ImGuiUtil.DrawDisabledButton(defaultOption, width, "Switch to the default option for the mod.\nThis resets unsaved changes.",
                 _editor.Option is DefaultSubMod))
         {
-            _editor.LoadOption(-1, 0);
+            _editor.LoadOption(-1, 0).Wait();
             ret = true;
         }
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Refresh Data", width, "Refresh data for the current option.\nThis resets unsaved changes.", false))
         {
-            _editor.LoadMod(_editor.Mod!, _editor.GroupIdx, _editor.DataIdx);
+            _editor.LoadMod(_editor.Mod!, _editor.GroupIdx, _editor.DataIdx).Wait();
             ret = true;
         }
 
@@ -432,7 +482,7 @@ public partial class ModEditWindow : Window, IDisposable
             if (ImGui.Selectable(option.GetFullName(), option == _editor.Option))
             {
                 var (groupIdx, dataIdx) = option.GetDataIndices();
-                _editor.LoadOption(groupIdx, dataIdx);
+                _editor.LoadOption(groupIdx, dataIdx).Wait();
                 ret = true;
             }
         }
@@ -537,7 +587,7 @@ public partial class ModEditWindow : Window, IDisposable
     /// If none exists, goes through all options in the currently selected mod (if any) in order of priority and resolves in them. 
     /// If no redirection is found in either of those options, returns the original path.
     /// </remarks>
-    private FullPath FindBestMatch(Utf8GamePath path)
+    internal FullPath FindBestMatch(Utf8GamePath path)
     {
         var currentFile = _activeCollections.Current.ResolvePath(path);
         if (currentFile != null)
@@ -558,7 +608,7 @@ public partial class ModEditWindow : Window, IDisposable
         return new FullPath(path);
     }
 
-    private HashSet<Utf8GamePath> FindPathsStartingWith(ByteString prefix)
+    internal HashSet<Utf8GamePath> FindPathsStartingWith(CiByteString prefix)
     {
         var ret = new HashSet<Utf8GamePath>();
 
@@ -583,45 +633,46 @@ public partial class ModEditWindow : Window, IDisposable
 
     public ModEditWindow(PerformanceTracker performance, FileDialogService fileDialog, ItemSwapTab itemSwapTab, IDataManager gameData,
         Configuration config, ModEditor editor, ResourceTreeFactory resourceTreeFactory, MetaFileManager metaFileManager,
-        StainService stainService, ActiveCollections activeCollections, ModMergeTab modMergeTab,
+        ActiveCollections activeCollections, ModMergeTab modMergeTab,
         CommunicatorService communicator, TextureManager textures, ModelManager models, IDragDropManager dragDropManager,
-        ResourceTreeViewerFactory resourceTreeViewerFactory, ObjectManager objects, IFramework framework,
-        CharacterBaseDestructor characterBaseDestructor)
+        ResourceTreeViewerFactory resourceTreeViewerFactory, IFramework framework,
+        MetaDrawers metaDrawers, MigrationManager migrationManager,
+        MtrlTabFactory mtrlTabFactory, ModSelection selection)
         : base(WindowBaseLabel)
     {
-        _performance             = performance;
-        _itemSwapTab             = itemSwapTab;
-        _gameData                = gameData;
-        _config                  = config;
-        _editor                  = editor;
-        _metaFileManager         = metaFileManager;
-        _stainService            = stainService;
-        _activeCollections       = activeCollections;
-        _modMergeTab             = modMergeTab;
-        _communicator            = communicator;
-        _dragDropManager         = dragDropManager;
-        _textures                = textures;
-        _models                  = models;
-        _fileDialog              = fileDialog;
-        _objects                 = objects;
-        _framework               = framework;
-        _characterBaseDestructor = characterBaseDestructor;
+        _performance       = performance;
+        _itemSwapTab       = itemSwapTab;
+        _gameData          = gameData;
+        _config            = config;
+        _editor            = editor;
+        _metaFileManager   = metaFileManager;
+        _activeCollections = activeCollections;
+        _modMergeTab       = modMergeTab;
+        _communicator      = communicator;
+        _dragDropManager   = dragDropManager;
+        _textures          = textures;
+        _models            = models;
+        _fileDialog        = fileDialog;
+        _framework         = framework;
+        _metaDrawers       = metaDrawers;
         _materialTab = new FileEditor<MtrlTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "Materials", ".mtrl",
             () => PopulateIsOnPlayer(_editor.Files.Mtrl, ResourceType.Mtrl), DrawMaterialPanel, () => Mod?.ModPath.FullName ?? string.Empty,
-            (bytes, path, writable) => new MtrlTab(this, new MtrlFile(bytes), path, writable));
+            (bytes, path, writable) => mtrlTabFactory.Create(this, new MtrlFile(bytes), path, writable));
         _modelTab = new FileEditor<MdlTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "Models", ".mdl",
             () => PopulateIsOnPlayer(_editor.Files.Mdl, ResourceType.Mdl), DrawModelPanel, () => Mod?.ModPath.FullName ?? string.Empty,
             (bytes, path, _) => new MdlTab(this, bytes, path));
         _shaderPackageTab = new FileEditor<ShpkTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "Shaders", ".shpk",
             () => PopulateIsOnPlayer(_editor.Files.Shpk, ResourceType.Shpk), DrawShaderPackagePanel,
             () => Mod?.ModPath.FullName ?? string.Empty,
-            (bytes, _, _) => new ShpkTab(_fileDialog, bytes));
+            (bytes, path, _) => new ShpkTab(_fileDialog, bytes, path));
         _center              = new CombinedTexture(_left, _right);
         _textureSelectCombo  = new TextureDrawer.PathSelectCombo(textures, editor, () => GetPlayerResourcesOfType(ResourceType.Tex));
         _resourceTreeFactory = resourceTreeFactory;
         _quickImportViewer   = resourceTreeViewerFactory.Create(2, OnQuickImportRefresh, DrawQuickImportActions);
         _communicator.ModPathChanged.Subscribe(OnModPathChange, ModPathChanged.Priority.ModEditWindow);
         IsOpen = _config is { OpenWindowAtStart: true, Ephemeral.AdvancedEditingOpen: true };
+        if (IsOpen && selection.Mod != null)
+            ChangeMod(selection.Mod);
     }
 
     public void Dispose()

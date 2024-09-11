@@ -3,10 +3,13 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
+using OtterGui.Text.Widget;
+using OtterGuiInternal.Utility;
 using Penumbra.GameData.Structs;
 using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager.OptionEditor;
 using Penumbra.Mods.SubMods;
+using Penumbra.UI.AdvancedWindow.Meta;
 
 namespace Penumbra.UI.ModsTab.Groups;
 
@@ -19,7 +22,13 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         var entry        = group.DefaultEntry;
         var changes      = false;
 
-        ImUtf8.TextFramed(identifier.ToString(), 0, editor.AvailableWidth, borderColor: ImGui.GetColorU32(ImGuiCol.Border));
+        var width = editor.AvailableWidth.X - ImUtf8.ItemInnerSpacing.X - ImUtf8.CalcTextSize("All Variants"u8).X;
+        ImUtf8.TextFramed(identifier.ToString(), 0, new Vector2(width, 0), borderColor: ImGui.GetColorU32(ImGuiCol.Border));
+        ImUtf8.SameLineInner();
+        var allVariants = group.AllVariants;
+        if (ImUtf8.Checkbox("All Variants"u8, ref allVariants))
+            editor.ModManager.OptionEditor.ImcEditor.ChangeAllVariants(group, allVariants);
+        ImUtf8.HoverTooltip("Make this group overwrite all corresponding variants for this identifier, not just the one specified."u8);
 
         using (ImUtf8.Group())
         {
@@ -31,9 +40,9 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         ImGui.SameLine();
         using (ImUtf8.Group())
         {
-            changes |= ImcManipulationDrawer.DrawMaterialId(defaultEntry, ref entry, true);
-            changes |= ImcManipulationDrawer.DrawVfxId(defaultEntry, ref entry, true);
-            changes |= ImcManipulationDrawer.DrawDecalId(defaultEntry, ref entry, true);
+            changes |= ImcMetaDrawer.DrawMaterialId(defaultEntry, ref entry, true);
+            changes |= ImcMetaDrawer.DrawVfxId(defaultEntry, ref entry, true);
+            changes |= ImcMetaDrawer.DrawDecalId(defaultEntry, ref entry, true);
         }
 
         ImGui.SameLine(0, editor.PriorityWidth);
@@ -48,8 +57,8 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
 
         using (ImUtf8.Group())
         {
-            changes |= ImcManipulationDrawer.DrawMaterialAnimationId(defaultEntry, ref entry, true);
-            changes |= ImcManipulationDrawer.DrawSoundId(defaultEntry, ref entry, true);
+            changes |= ImcMetaDrawer.DrawMaterialAnimationId(defaultEntry, ref entry, true);
+            changes |= ImcMetaDrawer.DrawSoundId(defaultEntry, ref entry, true);
             var canBeDisabled = group.CanBeDisabled;
             if (ImUtf8.Checkbox("##disabled"u8, ref canBeDisabled))
                 editor.ModManager.OptionEditor.ImcEditor.ChangeCanBeDisabled(group, canBeDisabled);
@@ -79,7 +88,8 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
             foreach (var (option, idx) in group.OptionData.WithIndex().Where(o => !o.Value.IsDisableSubMod))
             {
                 using var id = ImUtf8.PushId(idx);
-                DrawAttributes(editor.ModManager.OptionEditor.ImcEditor, attributeCache, option.AttributeMask, option);
+                DrawAttributes(editor.ModManager.OptionEditor.ImcEditor, attributeCache, option.AttributeMask, option,
+                    group.DefaultEntry.AttributeMask);
             }
         }
     }
@@ -125,15 +135,18 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         }
     }
 
-    private static void DrawAttributes(ImcModGroupEditor editor, in ImcAttributeCache cache, ushort mask, object data)
+    private static void DrawAttributes(ImcModGroupEditor editor, in ImcAttributeCache cache, ushort mask, object data,
+        ushort? defaultMask = null)
     {
         for (var i = 0; i < ImcEntry.NumAttributes; ++i)
         {
-            using var id    = ImRaii.PushId(i);
-            var       value = (mask & (1 << i)) != 0;
-            using (ImRaii.Disabled(!cache.CanChange(i)))
+            using var id        = ImRaii.PushId(i);
+            var       flag      = 1 << i;
+            var       value     = (mask & flag) != 0;
+            var       inDefault = defaultMask.HasValue && (defaultMask & flag) != 0;
+            using (ImRaii.Disabled(defaultMask != null && !cache.CanChange(i)))
             {
-                if (ImUtf8.Checkbox(TerminatedByteString.Empty, ref value))
+                if (inDefault ? NegativeCheckbox.Instance.Draw(""u8, ref value) : ImUtf8.Checkbox(""u8, ref value))
                 {
                     if (data is ImcModGroup g)
                         editor.ChangeDefaultAttribute(g, cache, i, value);
@@ -142,9 +155,26 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
                 }
             }
 
-            ImUtf8.HoverTooltip("ABCDEFGHIJ"u8.Slice(i, 1));
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "ABCDEFGHIJ"u8.Slice(i, 1));
             if (i != 9)
                 ImUtf8.SameLineInner();
         }
+    }
+
+    private sealed class NegativeCheckbox : MultiStateCheckbox<bool>
+    {
+        public static readonly NegativeCheckbox Instance = new();
+
+        protected override void RenderSymbol(bool value, Vector2 position, float size)
+        {
+            if (value)
+                SymbolHelpers.RenderCross(ImGui.GetWindowDrawList(), position, ImGui.GetColorU32(ImGuiCol.CheckMark), size);
+        }
+
+        protected override bool NextValue(bool value)
+            => !value;
+
+        protected override bool PreviousValue(bool value)
+            => !value;
     }
 }

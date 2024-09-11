@@ -1,11 +1,12 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using OtterGui.Services;
+using Penumbra.GameData;
 using Penumbra.GameData.Structs;
 using Penumbra.Interop.PathResolving;
 
 namespace Penumbra.Interop.Hooks.Meta;
 
-public unsafe class EqpHook : FastHook<EqpHook.Delegate>
+public unsafe class EqpHook : FastHook<EqpHook.Delegate>, IDisposable
 {
     public delegate void Delegate(CharacterUtility* utility, EqpEntry* flags, CharacterArmor* armor);
 
@@ -14,16 +15,18 @@ public unsafe class EqpHook : FastHook<EqpHook.Delegate>
     public EqpHook(HookManager hooks, MetaState metaState)
     {
         _metaState = metaState;
-        Task       = hooks.CreateHook<Delegate>("GetEqpFlags", "E8 ?? ?? ?? ?? 0F B6 44 24 ?? C0 E8", Detour, true);
+        Task = hooks.CreateHook<Delegate>("GetEqpFlags", Sigs.GetEqpEntry, Detour,
+            metaState.Config.EnableMods && !HookOverrides.Instance.Meta.EqpHook);
+        if (!HookOverrides.Instance.Meta.EqpHook)
+            _metaState.Config.ModsEnabled += Toggle;
     }
 
     private void Detour(CharacterUtility* utility, EqpEntry* flags, CharacterArmor* armor)
     {
-        if (_metaState.EqpCollection.Valid)
+        if (_metaState.EqpCollection.TryPeek(out var collection) && collection is { Valid: true, ModCollection.MetaCache: { } cache })
         {
-            using var eqp = _metaState.ResolveEqpData(_metaState.EqpCollection.ModCollection);
-            Task.Result.Original(utility, flags, armor);
-            *flags = _metaState.EqpCollection.ModCollection.ApplyGlobalEqp(*flags, armor);
+            *flags = cache.Eqp.GetValues(armor);
+            *flags = cache.GlobalEqp.Apply(*flags, armor);
         }
         else
         {
@@ -32,4 +35,7 @@ public unsafe class EqpHook : FastHook<EqpHook.Delegate>
 
         Penumbra.Log.Excessive($"[GetEqpFlags] Invoked on 0x{(nint)utility:X} with 0x{(ulong)armor:X}, returned 0x{(ulong)*flags:X16}.");
     }
+
+    public void Dispose()
+        => _metaState.Config.ModsEnabled -= Toggle;
 }

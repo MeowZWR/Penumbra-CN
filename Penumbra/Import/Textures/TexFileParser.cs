@@ -79,8 +79,8 @@ public static class TexFileParser
         w.Write(header.Width);
         w.Write(header.Height);
         w.Write(header.Depth);
-        w.Write(header.MipLevelsCount);
-        w.Write((byte)0); // TODO Lumina Update
+        w.Write((byte)(header.MipCount | (header.MipUnknownFlag ? 0x80 : 0)));
+        w.Write(header.ArraySize);
         unsafe
         {
             w.Write(header.LodOffset[0]);
@@ -96,11 +96,11 @@ public static class TexFileParser
         var meta = scratch.Meta;
         var ret = new TexFile.TexHeader()
         {
-            Height         = (ushort)meta.Height,
-            Width          = (ushort)meta.Width,
-            Depth          = (ushort)Math.Max(meta.Depth, 1),
-            MipLevelsCount = (byte)Math.Min(meta.MipLevels, 13),
-            Format         = meta.Format.ToTexFormat(),
+            Height   = (ushort)meta.Height,
+            Width    = (ushort)meta.Width,
+            Depth    = (ushort)Math.Max(meta.Depth, 1),
+            MipCount = (byte)Math.Min(meta.MipLevels, 13),
+            Format   = meta.Format.ToTexFormat(),
             Type = meta.Dimension switch
             {
                 _ when meta.IsCubeMap => TexFile.Attribute.TextureTypeCube,
@@ -143,7 +143,7 @@ public static class TexFileParser
             Height     = header.Height,
             Width      = header.Width,
             Depth      = Math.Max(header.Depth, (ushort)1),
-            MipLevels  = header.MipLevelsCount,
+            MipLevels  = header.MipCount,
             ArraySize  = 1,
             Format     = header.Format.ToDXGI(),
             Dimension  = header.Type.ToDimension(),
@@ -177,7 +177,9 @@ public static class TexFileParser
             DXGIFormat.BC1UNorm             => TexFile.TextureFormat.BC1,
             DXGIFormat.BC2UNorm             => TexFile.TextureFormat.BC2,
             DXGIFormat.BC3UNorm             => TexFile.TextureFormat.BC3,
+            DXGIFormat.BC4UNorm             => (TexFile.TextureFormat)0x6120, // TODO: upstream to Lumina
             DXGIFormat.BC5UNorm             => TexFile.TextureFormat.BC5,
+            DXGIFormat.BC6HSF16             => (TexFile.TextureFormat)0x6330, // TODO: upstream to Lumina
             DXGIFormat.BC7UNorm             => TexFile.TextureFormat.BC7,
             DXGIFormat.R16G16B16A16Typeless => TexFile.TextureFormat.D16,
             DXGIFormat.R24G8Typeless        => TexFile.TextureFormat.D24S8,
@@ -202,7 +204,9 @@ public static class TexFileParser
             TexFile.TextureFormat.BC1           => DXGIFormat.BC1UNorm,
             TexFile.TextureFormat.BC2           => DXGIFormat.BC2UNorm,
             TexFile.TextureFormat.BC3           => DXGIFormat.BC3UNorm,
+            (TexFile.TextureFormat)0x6120       => DXGIFormat.BC4UNorm, // TODO: upstream to Lumina
             TexFile.TextureFormat.BC5           => DXGIFormat.BC5UNorm,
+            (TexFile.TextureFormat)0x6330       => DXGIFormat.BC6HSF16, // TODO: upstream to Lumina
             TexFile.TextureFormat.BC7           => DXGIFormat.BC7UNorm,
             TexFile.TextureFormat.D16           => DXGIFormat.R16G16B16A16Typeless,
             TexFile.TextureFormat.D24S8         => DXGIFormat.R24G8Typeless,

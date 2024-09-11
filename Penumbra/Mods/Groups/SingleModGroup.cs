@@ -24,7 +24,9 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
     public Mod         Mod             { get; }      = mod;
     public string      Name            { get; set; } = "Option";
     public string      Description     { get; set; } = string.Empty;
+    public string      Image           { get; set; } = string.Empty;
     public ModPriority Priority        { get; set; }
+    public int         Page            { get; set; }
     public Setting     DefaultSettings { get; set; }
 
     public readonly List<SingleSubMod> OptionData = [];
@@ -61,14 +63,8 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
     public static SingleModGroup? Load(Mod mod, JObject json)
     {
         var options = json["Options"];
-        var ret = new SingleModGroup(mod)
-        {
-            Name            = json[nameof(Name)]?.ToObject<string>() ?? string.Empty,
-            Description     = json[nameof(Description)]?.ToObject<string>() ?? string.Empty,
-            Priority        = json[nameof(Priority)]?.ToObject<ModPriority>() ?? ModPriority.Default,
-            DefaultSettings = json[nameof(DefaultSettings)]?.ToObject<Setting>() ?? Setting.Zero,
-        };
-        if (ret.Name.Length == 0)
+        var ret     = new SingleModGroup(mod);
+        if (!ModSaveGroup.ReadJsonBase(json, ret))
             return null;
 
         if (options != null)
@@ -89,6 +85,8 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
             Name            = Name,
             Description     = Description,
             Priority        = Priority,
+            Image           = Image,
+            Page            = Page,
             DefaultSettings = Setting.Multi((int)DefaultSettings.Value),
         };
         multi.OptionData.AddRange(OptionData.Select((o, i) => o.ConvertToMulti(multi, new ModPriority(i))));
@@ -101,7 +99,7 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
     public IModGroupEditDrawer EditDrawer(ModGroupEditDrawer editDrawer)
         => new SingleModGroupEditDrawer(editDrawer, this);
 
-    public void AddData(Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, HashSet<MetaManipulation> manipulations)
+    public void AddData(Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, MetaDictionary manipulations)
     {
         if (OptionData.Count == 0)
             return;
@@ -109,7 +107,7 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
         OptionData[setting.AsIndex].AddDataTo(redirections, manipulations);
     }
 
-    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, object?> changedItems)
+    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, IIdentifiedObjectData?> changedItems)
     {
         foreach (var container in DataContainers)
             identifier.AddChangedItems(container, changedItems);

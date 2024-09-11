@@ -5,7 +5,8 @@ using OtterGui.Raii;
 using Penumbra.UI.Classes;
 using Dalamud.Interface;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game.Housing;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using OtterGui.Services;
 using OtterGui.Widgets;
 using Penumbra.Api.Enums;
 using Penumbra.Interop.Services;
@@ -30,7 +31,7 @@ public class ModsTab(
     CollectionSelectHeader collectionHeader,
     ITargetManager targets,
     ObjectManager objects)
-    : ITab
+    : ITab, IUiService
 {
     private readonly ActiveCollections _activeCollections = collectionManager.Active;
 
@@ -81,8 +82,7 @@ public class ModsTab(
               + $"{selector.SortMode.Name} Sort Mode\n"
               + $"{selector.SelectedLeaf?.Name ?? "NULL"} Selected Leaf\n"
               + $"{selector.Selected?.Name ?? "NULL"} Selected Mod\n"
-              + $"{string.Join(", ", _activeCollections.Current.DirectlyInheritsFrom.Select(c => c.AnonymizedName))} Inheritances\n"
-              + $"{selector.SelectedSettingCollection.AnonymizedName} Collection\n");
+              + $"{string.Join(", ", _activeCollections.Current.DirectlyInheritsFrom.Select(c => c.AnonymizedName))} Inheritances\n");
         }
     }
 
