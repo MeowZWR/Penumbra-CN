@@ -34,32 +34,32 @@ public static class GlobalEqpExtensions
     public static ReadOnlySpan<byte> ToName(this GlobalEqpType type)
         => type switch
         {
-            GlobalEqpType.DoNotHideEarrings     => "Always Show Earrings"u8,
-            GlobalEqpType.DoNotHideNecklace     => "Always Show Necklaces"u8,
-            GlobalEqpType.DoNotHideBracelets    => "Always Show Bracelets"u8,
-            GlobalEqpType.DoNotHideRingR        => "Always Show Rings (Right Finger)"u8,
-            GlobalEqpType.DoNotHideRingL        => "Always Show Rings (Left Finger)"u8,
-            GlobalEqpType.DoNotHideHrothgarHats => "Always Show Hats for Hrothgar"u8,
-            GlobalEqpType.DoNotHideVieraHats    => "Always Show Hats for Viera"u8,
+            GlobalEqpType.DoNotHideEarrings     => "始终显示耳环"u8,
+            GlobalEqpType.DoNotHideNecklace     => "始终显示项链"u8,
+            GlobalEqpType.DoNotHideBracelets    => "始终显示手镯"u8,
+            GlobalEqpType.DoNotHideRingR        => "始终显示戒指 (右指)"u8,
+            GlobalEqpType.DoNotHideRingL        => "始终显示戒指 (左指)"u8,
+            GlobalEqpType.DoNotHideHrothgarHats => "始终为硌狮族显示帽子"u8,
+            GlobalEqpType.DoNotHideVieraHats    => "始终为维埃拉族显示帽子"u8,
             _                                   => "\0"u8,
         };
 
     public static ReadOnlySpan<byte> ToDescription(this GlobalEqpType type)
         => type switch
         {
-            GlobalEqpType.DoNotHideEarrings => "Prevents the game from hiding earrings through other models when a specific earring is worn."u8,
+            GlobalEqpType.DoNotHideEarrings => "防止游戏在佩戴特定耳环时被其他模型隐藏耳环。"u8,
             GlobalEqpType.DoNotHideNecklace =>
-                "Prevents the game from hiding necklaces through other models when a specific necklace is worn."u8,
+                "防止游戏在佩戴特定项链时被其他模型隐藏项链。"u8,
             GlobalEqpType.DoNotHideBracelets =>
-                "Prevents the game from hiding bracelets through other models when a specific bracelet is worn."u8,
+                "防止游戏在佩戴特定项链时被其他模型隐藏手镯。"u8,
             GlobalEqpType.DoNotHideRingR =>
-                "Prevents the game from hiding rings worn on the right finger through other models when a specific ring is worn on the right finger."u8,
+                "防止游戏在佩戴右手指上的特定戒指时被其他模型隐藏右手指上的戒指。"u8,
             GlobalEqpType.DoNotHideRingL =>
-                "Prevents the game from hiding rings worn on the left finger through other models when a specific ring is worn on the left finger."u8,
+                "防止游戏在佩戴左手指上的特定戒指时被其他模型隐藏左手指上的戒指。"u8,
             GlobalEqpType.DoNotHideHrothgarHats =>
-                "Prevents the game from hiding any hats for Hrothgar that are normally flagged to not display on them."u8,
+                "防止游戏隐藏为硌狮族准备的帽子，这些帽子通常被标记为不在他们身上显示。"u8,
             GlobalEqpType.DoNotHideVieraHats =>
-                "Prevents the game from hiding any hats for Viera that are normally flagged to not display on them."u8,
+                "防止游戏隐藏为维埃拉族准备的帽子，这些帽子通常被标记为不在他们身上显示。"u8,
             _ => "\0"u8,
         };
 }

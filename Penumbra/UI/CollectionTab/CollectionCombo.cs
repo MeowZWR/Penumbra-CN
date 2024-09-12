@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -41,6 +41,6 @@ public sealed class CollectionCombo(CollectionManager manager, Func<IReadOnlyLis
         ImGuiComboFlags flags)
     {
         base.DrawCombo(label, preview, tooltip, currentSelected, previewWidth, itemHeight, flags);
-        ImUtf8.HoverTooltip("Control and mouse wheel to scroll."u8);
+        ImUtf8.HoverTooltip("按住Ctrl键并滚动鼠标滚轮可以切换合集。"u8);
     }
 }

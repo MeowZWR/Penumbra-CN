@@ -26,7 +26,7 @@ public class ModPanelSettingsTab(
     private int? _currentPriority;
 
     public ReadOnlySpan<byte> Label
-        => "Settings"u8;
+        => "模组设置"u8;
 
     public void DrawHeader()
         => tutorial.OpenTutorial(BasicTutorialSteps.ModOptions);
@@ -66,18 +66,18 @@ public class ModPanelSettingsTab(
 
         using var color = ImRaii.PushColor(ImGuiCol.Button, Colors.PressEnterWarningBg);
         var       width = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-        if (ImGui.Button($"These settings are inherited from {selection.Collection.Name}.", width))
+        if (ImGui.Button($"此模组设置继承自合集：{selection.Collection.Name}", width))
             collectionManager.Editor.SetModInheritance(collectionManager.Active.Current, selection.Mod!, false);
 
-        ImGuiUtil.HoverTooltip("You can click this button to copy the current settings to the current selection.\n"
-          + "You can also just change any setting, which will copy the settings with the single setting changed to the current selection.");
+        ImGuiUtil.HoverTooltip("你可以点击这个按钮将当前设置独立到此合集。\n"
+          + "你也可以在下面随意修改设置，修改后此模组的设置也会独立到此合集。");
     }
 
     /// <summary> Draw a checkbox for the enabled status of the mod. </summary>
     private void DrawEnabledInput()
     {
         var enabled = selection.Settings.Enabled;
-        if (!ImGui.Checkbox("Enabled", ref enabled))
+        if (!ImGui.Checkbox("启用", ref enabled))
             return;
 
         modManager.SetKnown(selection.Mod!);
@@ -106,8 +106,8 @@ public class ModPanelSettingsTab(
             _currentPriority = null;
         }
 
-        ImGuiUtil.LabeledHelpMarker("Priority", "Mods with a higher number here take precedence before Mods with a lower number.\n"
-          + "That means, if Mod A should overwrite changes from Mod B, Mod A should have a higher priority number than Mod B.");
+        ImGuiUtil.LabeledHelpMarker("优先级", "优先级更高的模组文件将优先使用。\n"
+          + "如果要用模组A覆盖模组B，则模组A的优先级应高于模组B。");
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public class ModPanelSettingsTab(
     /// </summary>
     private void DrawRemoveSettings()
     {
-        const string text = "Inherit Settings";
+        const string text = "继承设置";
         if (_inherited || selection.Settings == ModSettings.Empty)
             return;
 
@@ -125,7 +125,7 @@ public class ModPanelSettingsTab(
         if (ImGui.Button(text))
             collectionManager.Editor.SetModInheritance(collectionManager.Active.Current, selection.Mod!, true);
 
-        ImGuiUtil.HoverTooltip("Remove current settings from this collection so that it can inherit them.\n"
-          + "If no inherited collection has settings for this mod, it will be disabled.");
+        ImGuiUtil.HoverTooltip("在此合集中移除当前模组的设置，以便它可以从其他合集继承设置。\n"
+          + "在继承的合集中如果没有设置这个模组，此模组将被禁用。");
     }
 }

@@ -34,25 +34,25 @@ public partial class CombinedTexture
 
     private static readonly IReadOnlyList<string> CombineOpLabels = new[]
     {
-        "Overlay over Input",
-        "Input over Overlay",
-        "Replace Input",
-        "Copy Channels",
+        "覆盖层在输入之上",
+        "输入在覆盖层之上",
+        "替换输入",
+        "复制通道",
     };
 
     private static readonly IReadOnlyList<string> CombineOpTooltips = new[]
     {
-        "Standard composition.\nApply the overlay over the input.",
-        "Standard composition, reversed.\nApply the input over the overlay ; can be used to fix some wrong imports.",
-        "Completely replace the input with the overlay.\nCan be used to select the destination file as input and the source file as overlay.",
-        "Replace some input channels with those from the overlay.\nUseful for Multi maps.",
+        "标准合成。\n将覆盖层应用于输入。",
+        "标准合成，反向。\n将输入层应用于覆盖层；可用于修正某些错误的导入。",
+        "完全用覆盖层替换输入。\n可用于将目标文件选择为输入，将源文件选择为覆盖。",
+        "用覆盖层的一些通道替换输入的通道。\n对于多通道地图非常有用。",
     };
 
     private static readonly IReadOnlyList<string> ResizeOpLabels = new string[]
     {
-        "No Resizing",
-        "Adjust Overlay to Input",
-        "Adjust Input to Overlay",
+        "不调整大小",
+        "调整覆盖到输入",
+        "调整输入到覆盖",
     };
 
     private static ResizeOp GetActualResizeOp(ResizeOp resizeOp, CombineOp combineOp)

@@ -11,7 +11,7 @@ namespace Penumbra.UI.ModsTab;
 public class ModPanelChangedItemsTab(ModFileSystemSelector selector, ChangedItemDrawer drawer) : ITab, IUiService
 {
     public ReadOnlySpan<byte> Label
-        => "Changed Items"u8;
+        => "更改项目"u8;
 
     public bool IsVisible
         => selector.Selected!.ChangedItems.Count > 0;

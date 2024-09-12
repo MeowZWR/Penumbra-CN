@@ -115,7 +115,7 @@ public class Penumbra : IDalamudPlugin
         _communicatorService.ChangedItemHover.Subscribe(it =>
         {
             if (it is IdentifiedItem { Item.Id.IsItem: true })
-                ImGui.TextUnformatted("Left Click to create an item link in chat.");
+                ImGui.TextUnformatted("左键单击在聊天框创建一个物品链接。");
         }, ChangedItemHover.Priority.Link);
 
         _communicatorService.ChangedItemClick.Subscribe((button, it) =>

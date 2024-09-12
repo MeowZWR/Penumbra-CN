@@ -39,7 +39,7 @@ public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiM
     {
         var g = group;
         var e = editor.ModManager.OptionEditor.MultiEditor;
-        if (ImUtf8.Button("Convert to Single Group"u8, editor.AvailableWidth))
+        if (ImUtf8.Button("转换为单选项组"u8, editor.AvailableWidth))
             editor.ActionQueue.Enqueue(() => e.ChangeToSingle(g));
     }
 
@@ -53,8 +53,8 @@ public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiM
 
         var validName = name.Length > 0;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, validName
-                ? "Add a new option to this group."u8
-                : "Please enter a name for the new option."u8, default, !validName))
+                ? "向此组添加一个新选项"u8
+                : "请输入新选项的名称"u8, default, !validName))
         {
             editor.ModManager.OptionEditor.MultiEditor.AddOption(group, name);
             editor.NewOptionName = null;

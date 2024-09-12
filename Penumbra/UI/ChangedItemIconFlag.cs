@@ -1,4 +1,4 @@
-using Penumbra.Api.Enums;
+﻿using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 
 namespace Penumbra.UI;
@@ -63,15 +63,15 @@ public static class ChangedItemFlagExtensions
             ChangedItemIconFlag.Ears          => EquipSlot.Ears.ToName(),
             ChangedItemIconFlag.Neck          => EquipSlot.Neck.ToName(),
             ChangedItemIconFlag.Wrists        => EquipSlot.Wrists.ToName(),
-            ChangedItemIconFlag.Finger        => "Ring",
-            ChangedItemIconFlag.Monster       => "Monster",
-            ChangedItemIconFlag.Demihuman     => "Demi-Human",
-            ChangedItemIconFlag.Customization => "Customization",
-            ChangedItemIconFlag.Action        => "Action",
-            ChangedItemIconFlag.Emote         => "Emote",
-            ChangedItemIconFlag.Mainhand      => "Weapon (Mainhand)",
-            ChangedItemIconFlag.Offhand       => "Weapon (Offhand)",
-            _                                 => "Other",
+            ChangedItemIconFlag.Finger        => "戒指",
+            ChangedItemIconFlag.Monster       => "怪物",
+            ChangedItemIconFlag.Demihuman     => "蛮族",
+            ChangedItemIconFlag.Customization => "外貌",
+            ChangedItemIconFlag.Action        => "技能",
+            ChangedItemIconFlag.Emote         => "情感动作",
+            ChangedItemIconFlag.Mainhand      => "武器（主手）",
+            ChangedItemIconFlag.Offhand       => "武器（副手）",
+            _                                 => "其他",
         };
 
     public static ChangedItemIcon ToApiIcon(this ChangedItemIconFlag iconFlag)

@@ -65,7 +65,7 @@ public partial class TexToolsImporter
 
         try
         {
-            Penumbra.Log.Warning($"Unknown TTMPVersion <{modList.TtmpVersion}> given, trying to export as simple mod pack.");
+            Penumbra.Log.Warning($"<{modList.TtmpVersion}>给出的TTMP版本未知，请尝试导出为一个简单模组包。");
             return ImportSimpleV2ModPack(extractedModPack, modList);
         }
         catch (Exception e1)
@@ -94,7 +94,7 @@ public partial class TexToolsImporter
 
         _currentModDirectory = ModCreator.CreateModFolder(_baseDirectory, _currentModName, _config.ReplaceNonAsciiOnImport, true);
         _modManager.DataEditor.CreateMeta(_currentModDirectory, _currentModName, modList.Author, string.IsNullOrEmpty(modList.Description)
-            ? "Mod imported from TexTools mod pack"
+            ? "导入的模组来自TexTools的模组包"
             : modList.Description, modList.Version, modList.Url);
 
         // Open the mod data file from the mod pack as a SqPackStream

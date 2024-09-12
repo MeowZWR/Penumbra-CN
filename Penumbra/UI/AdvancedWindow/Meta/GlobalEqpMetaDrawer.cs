@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui.Services;
 using OtterGui.Text;
@@ -12,7 +12,7 @@ public sealed class GlobalEqpMetaDrawer(ModMetaEditor editor, MetaFileManager me
     : MetaDrawer<GlobalEqpManipulation, byte>(editor, metaFiles), IService
 {
     public override ReadOnlySpan<byte> Label
-        => "Global Equipment Parameter Edits (Global EQP)###GEQP"u8;
+        => "全局装备参数编辑(Global EQP)###GEQP"u8;
 
     public override int NumColumns
         => 4;
@@ -29,11 +29,11 @@ public sealed class GlobalEqpMetaDrawer(ModMetaEditor editor, MetaFileManager me
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("Copy all current global EQP manipulations to clipboard."u8, MetaDictionary.SerializeTo([], Editor.GlobalEqp));
+        CopyToClipboardButton("复制当前所有全局EQP操作到剪贴板。"u8, MetaDictionary.SerializeTo([], Editor.GlobalEqp));
 
         ImGui.TableNextColumn();
         var canAdd = !Editor.Contains(Identifier);
-        var tt     = canAdd ? "Stage this edit."u8 : "This entry is already edited."u8;
+        var tt     = canAdd ? "编辑此项。"u8 : "此项已被编辑。"u8;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, disabled: !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier);
 
@@ -71,13 +71,13 @@ public sealed class GlobalEqpMetaDrawer(ModMetaEditor editor, MetaFileManager me
     {
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.Type.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("Global EQP Type"u8);
+        ImUtf8.HoverTooltip("全局EQP类型"u8);
 
         ImGui.TableNextColumn();
         if (identifier.Type.HasCondition())
         {
             ImUtf8.TextFramed($"{identifier.Condition.Id}", FrameColor);
-            ImUtf8.HoverTooltip("Conditional Model ID"u8);
+            ImUtf8.HoverTooltip("条件模型ID"u8);
         }
     }
 
@@ -112,6 +112,6 @@ public sealed class GlobalEqpMetaDrawer(ModMetaEditor editor, MetaFileManager me
         if (IdInput("##geqpCond"u8, unscaledWidth, identifier.Condition.Id, out var newId, 1, ushort.MaxValue,
                 identifier.Condition.Id <= 1))
             identifier = identifier with { Condition = newId };
-        ImUtf8.HoverTooltip("The Model ID for the item that should not be hidden."u8);
+        ImUtf8.HoverTooltip("不应被隐藏的物品的模型ID。"u8);
     }
 }

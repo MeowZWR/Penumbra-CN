@@ -25,7 +25,7 @@ public partial class ModEditWindow
         if (_editor.Files.Mdl.Count == 0)
             return;
 
-        using var tab = ImUtf8.TabItem("Material Reassignment"u8);
+        using var tab = ImUtf8.TabItem("材质指定"u8);
         if (!tab)
             return;
 
@@ -45,11 +45,11 @@ public partial class ModEditWindow
         {
             using var id = ImRaii.PushId(idx);
             ImGui.TableNextColumn();
-            if (ImUtf8.IconButton(FontAwesomeIcon.Save, "Save the changed mdl file.\nUse at own risk!"u8, disabled: !info.Changed))
+            if (ImUtf8.IconButton(FontAwesomeIcon.Save, "保存修改过的mdl文件。\n请注意此操作有风险！"u8, disabled: !info.Changed))
                 info.Save(_editor.Compactor);
 
             ImGui.TableNextColumn();
-            if (ImUtf8.IconButton(FontAwesomeIcon.Recycle, "Restore current changes to default."u8, disabled: !info.Changed))
+            if (ImUtf8.IconButton(FontAwesomeIcon.Recycle, "还原当前修改到默认状态。"u8, disabled: !info.Changed))
                 info.Restore();
 
             ImGui.TableNextColumn();

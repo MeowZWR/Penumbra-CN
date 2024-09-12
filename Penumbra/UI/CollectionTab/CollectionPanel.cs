@@ -36,7 +36,7 @@ public sealed class CollectionPanel(
     private readonly ActiveCollections _active = manager.Active;
     private readonly IndividualAssignmentUi _individualAssignmentUi = new(communicator, actors, manager);
     private readonly InheritanceUi _inheritanceUi = new(manager, incognito);
-    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
+    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
 
     private static readonly IReadOnlyDictionary<CollectionType, (string Name, uint Border)> Buttons      = CreateButtons();
     private static readonly IReadOnlyList<(CollectionType, bool, bool, string, uint)>       AdvancedTree = CreateTree();
@@ -54,11 +54,11 @@ public sealed class CollectionPanel(
     /// <summary> Draw the panel containing beginners information and simple assignments. </summary>
     public void DrawSimple()
     {
-        ImGuiUtil.TextWrapped("A collection is a set of mod configurations. You can have as many collections as you desire.\n"
-          + "The collection you are currently editing in the mod tab can be selected here and is highlighted.\n");
+        ImGuiUtil.TextWrapped( "合集是已安装的模组的一组设置，包括它们的启用状态、优先级和模组内的设置。你可以创建任意数量的合集。\n"
+          + "在左侧选中并突出显示的合集就是你当前在模组选卡中编辑的设置会生效的合集。\n");
         ImGuiUtil.TextWrapped(
-            "There are functions you can assign these collections to, so different mod configurations apply for different things.\n"
-          + "You can assign an existing collection to such a function by clicking the function or dragging the collection over.");
+            "你可以将这些合集分配给一些对象，这样可以使不同的对象使用不同的模组设置。\n"
+          + "通过点击下面的对象按钮，可以将现有的合集分配给该对象。");
         ImGui.Separator();
 
         var buttonWidth = new Vector2(200 * ImGuiHelpers.GlobalScale, 2 * ImGui.GetTextLineHeightWithSpacing());
@@ -72,8 +72,8 @@ public sealed class CollectionPanel(
         DrawSimpleCollectionButton(CollectionType.MaleNonPlayerCharacter,   buttonWidth);
         DrawSimpleCollectionButton(CollectionType.FemaleNonPlayerCharacter, buttonWidth);
 
-        ImGuiUtil.DrawColoredText(("Individual ", ColorId.NewMod.Value()),
-            ("Assignments take precedence before anything else and only apply to one specific character or monster.", 0));
+        ImGuiUtil.DrawColoredText(("独立", ColorId.NewMod.Value()),
+            ("分配优先级高于其他任何分配，并且只能应用于特定的角色和NPC。", 0));
         ImGui.Dummy(Vector2.UnitX);
 
         var specialWidth = buttonWidth with { X = 275 * ImGuiHelpers.GlobalScale };
@@ -140,29 +140,29 @@ public sealed class CollectionPanel(
         _individualAssignmentUi.DrawNewNpcCollection(width.X);
         ImGui.SameLine();
         ImGuiComponents.HelpMarker(
-            "Battle- and Event NPCs may apply to more than one ID if they share the same name. This is language dependent. If you change your clients language, verify that your collections are still correctly assigned.");
+            "NPC如果在战斗以及事件中拥有相同名称将会同时生效，这取决于你的语言设置。如果你更改了客户端语言，请检查你的合集是否正确分配。" );
         ImGui.Dummy(Vector2.One);
         ImGui.Separator();
         style.Push(ImGuiStyleVar.FrameBorderSize, 1 * ImGuiHelpers.GlobalScale);
 
         DrawNewPlayer(width);
         ImGui.SameLine();
-        ImGuiUtil.TextWrapped("Also check General Settings for UI characters and inheritance through ownership.");
+        ImGuiUtil.TextWrapped("同时核验常规设置中与玩家相关的用户界面选项以及继承关系。");
         ImGui.Separator();
 
         DrawNewRetainer(width);
         ImGui.SameLine();
-        ImGuiUtil.TextWrapped("Bell Retainers apply to Mannequins, but not to outdoor retainers, since those only carry their owners name.");
+        ImGuiUtil.TextWrapped( "分配给传唤铃雇员后，带有雇员名称的人体模特也会生效。但庭院设置的雇员不会，因为他们只带有主人的名字。" );
         ImGui.Separator();
 
         DrawNewNpc(width);
         ImGui.SameLine();
-        ImGuiUtil.TextWrapped("Some NPCs are available as Battle - and Event NPCs and need to be setup for both if desired.");
+        ImGuiUtil.TextWrapped( "部分NPC也会出现在战斗中以及事件中，如果想要两种场合都生效需要手动分别设置。" );
         ImGui.Separator();
 
         DrawNewOwned(width);
         ImGui.SameLine();
-        ImGuiUtil.TextWrapped("Owned NPCs take precedence before unowned NPCs of the same type.");
+        ImGuiUtil.TextWrapped("属于玩家的NPC优先级高于不属于玩家的同类型NPC。");
         ImGui.Separator();
 
         DrawIndividualCollections(width with { X = 200 * ImGuiHelpers.GlobalScale });
@@ -214,9 +214,9 @@ public sealed class CollectionPanel(
         ImGui.Dummy(Vector2.Zero);
         ImGui.BeginGroup();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("Name");
+        ImGui.TextUnformatted("名称");
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("Identifier");
+        ImGui.TextUnformatted("标识符");
         ImGui.EndGroup();
         ImGui.SameLine();
         ImGui.BeginGroup();
@@ -278,20 +278,20 @@ public sealed class CollectionPanel(
 
         using (var color = ImRaii.PushColor(ImGuiCol.Text, Colors.DiscordColor))
         {
-            if (ImGui.MenuItem("Use no mods."))
+            if (ImGui.MenuItem("不使用模组"))
                 _active.SetCollection(ModCollection.Empty, type, _active.Individuals.GetGroup(identifier));
         }
 
         if (collection != null && type.CanBeRemoved())
         {
             using var color = ImRaii.PushColor(ImGuiCol.Text, Colors.RegexWarningBorder);
-            if (ImGui.MenuItem("Remove this assignment."))
+            if (ImGui.MenuItem("移除此分配"))
                 _active.SetCollection(null, type, _active.Individuals.GetGroup(identifier));
         }
 
         foreach (var coll in _collections.OrderBy(c => c.Name))
         {
-            if (coll != collection && ImGui.MenuItem($"Use {coll.Name}."))
+            if (coll != collection && ImGui.MenuItem($"使用合集：{coll.Name}"))
                 _active.SetCollection(coll, type, _active.Individuals.GetGroup(identifier));
         }
     }
@@ -345,7 +345,7 @@ public sealed class CollectionPanel(
             return;
 
         ImGui.SetDragDropPayload("DragIndividual", nint.Zero, 0);
-        ImGui.TextUnformatted($"Re-ordering {text}...");
+        ImGui.TextUnformatted($"重新排序 {text}...");
         _draggedIndividualAssignment = _active.Individuals.Index(id);
     }
 
@@ -374,30 +374,30 @@ public sealed class CollectionPanel(
             switch (type)
             {
                 case CollectionType.Default:
-                    ImGui.TextUnformatted("Overruled by any other Assignment.");
+                    ImGui.TextUnformatted("优先级低于所有其他分配。");
                     break;
                 case CollectionType.Yourself:
-                    ImGuiUtil.DrawColoredText(("Overruled by ", 0), ("Individual ", ColorId.NewMod.Value()), ("Assignments.", 0));
+                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("独立", ColorId.NewMod.Value()), ("分配。", 0));
                     break;
                 case CollectionType.MalePlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("Overruled by ", 0), ("Male Racial Player", Colors.DiscordColor), (", ", 0),
-                        ("Your Character", ColorId.HandledConflictMod.Value()), (", or ", 0),
-                        ("Individual ", ColorId.NewMod.Value()), ("Assignments.", 0));
+                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("男性种族玩家", Colors.DiscordColor), ("、", 0),
+                        ("你的角色", ColorId.HandledConflictMod.Value()), ("或", 0),
+                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
                     break;
                 case CollectionType.FemalePlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("Overruled by ", 0), ("Female Racial Player", Colors.ReniColorActive), (", ", 0),
-                        ("Your Character", ColorId.HandledConflictMod.Value()), (", or ", 0),
-                        ("Individual ", ColorId.NewMod.Value()), ("Assignments.", 0));
+                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("女性种族玩家", Colors.ReniColorActive), ("、", 0),
+                        ("你的角色", ColorId.HandledConflictMod.Value()), ("或", 0),
+                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
                     break;
                 case CollectionType.MaleNonPlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("Overruled by ", 0), ("Male Racial NPC", Colors.DiscordColor), (", ", 0),
-                        ("Children", ColorId.FolderLine.Value()), (", ", 0), ("Elderly", Colors.MetaInfoText), (", or ", 0),
-                        ("Individual ", ColorId.NewMod.Value()), ("Assignments.", 0));
+                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("男性种族NPC", Colors.DiscordColor), ("、", 0),
+                        ("儿童", ColorId.FolderLine.Value()), ("、", 0), ("老年人", Colors.MetaInfoText), ("或", 0),
+                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
                     break;
                 case CollectionType.FemaleNonPlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("Overruled by ", 0), ("Female Racial NPC", Colors.ReniColorActive), (", ", 0),
-                        ("Children", ColorId.FolderLine.Value()), (", ", 0), ("Elderly", Colors.MetaInfoText), (", or ", 0),
-                        ("Individual ", ColorId.NewMod.Value()), ("Assignments.", 0));
+                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("女性种族NPC", Colors.ReniColorActive), ("、", 0),
+                        ("儿童", ColorId.FolderLine.Value()), ("、", 0), ("老年人", Colors.MetaInfoText), ("或", 0),
+                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
                     break;
             }
         }
@@ -416,8 +416,8 @@ public sealed class CollectionPanel(
 
     /// <summary> Respect incognito mode for names of collections. </summary>
     private string Name(ModCollection? collection)
-        => collection == null                 ? "Unassigned" :
-            collection == ModCollection.Empty ? "Use No Mods" :
+        => collection == null                 ? "未分配" :
+            collection == ModCollection.Empty ? "不使用模组" :
             incognito.IncognitoMode           ? collection.AnonymizedName : collection.Name;
 
     private void DrawIndividualButton(string intro, Vector2 width, string tooltip, char suffix, params ActorIdentifier[] identifiers)
@@ -429,34 +429,34 @@ public sealed class CollectionPanel(
         else
         {
             if (tooltip.Length == 0 && identifiers.Length > 0)
-                tooltip = $"The current target {identifiers[0].PlayerName} is not valid for an assignment.";
-            DrawButton($"{intro} (Unavailable)", CollectionType.Individual, width, 0, ActorIdentifier.Invalid, suffix);
+                tooltip = $"当前目标 {identifiers[0].PlayerName} 分配无效。";
+            DrawButton($"{intro} (不可用)", CollectionType.Individual, width, 0, ActorIdentifier.Invalid, suffix);
         }
 
         ImGuiUtil.HoverTooltip(tooltip);
     }
 
     private void DrawCurrentCharacter(Vector2 width)
-        => DrawIndividualButton("Current Character", width, string.Empty, 'c', actors.GetCurrentPlayer());
+        => DrawIndividualButton("当前玩家", width, string.Empty, 'c', actors.GetCurrentPlayer());
 
     private void DrawCurrentTarget(Vector2 width)
-        => DrawIndividualButton("Current Target", width, string.Empty, 't',
+        => DrawIndividualButton("当前目标", width, string.Empty, 't',
             actors.FromObject(targets.Target, false, true, true));
 
     private void DrawNewPlayer(Vector2 width)
-        => DrawIndividualButton("New Player", width, _individualAssignmentUi.PlayerTooltip, 'p',
+        => DrawIndividualButton("添加玩家分配", width, _individualAssignmentUi.PlayerTooltip, 'p',
             _individualAssignmentUi.PlayerIdentifiers.FirstOrDefault());
 
     private void DrawNewRetainer(Vector2 width)
-        => DrawIndividualButton("New Bell Retainer", width, _individualAssignmentUi.RetainerTooltip, 'r',
+        => DrawIndividualButton("添加传唤铃雇员分配", width, _individualAssignmentUi.RetainerTooltip, 'r',
             _individualAssignmentUi.RetainerIdentifiers.FirstOrDefault());
 
     private void DrawNewNpc(Vector2 width)
-        => DrawIndividualButton("New NPC", width, _individualAssignmentUi.NpcTooltip, 'n',
+        => DrawIndividualButton("添加NPC分配", width, _individualAssignmentUi.NpcTooltip, 'n',
             _individualAssignmentUi.NpcIdentifiers.FirstOrDefault());
 
     private void DrawNewOwned(Vector2 width)
-        => DrawIndividualButton("New Owned NPC", width, _individualAssignmentUi.OwnedTooltip, 'o',
+        => DrawIndividualButton("添加玩家所属NPC分配", width, _individualAssignmentUi.OwnedTooltip, 'o',
             _individualAssignmentUi.OwnedIdentifiers.FirstOrDefault());
 
     private void DrawIndividualCollections(Vector2 width)
@@ -501,7 +501,7 @@ public sealed class CollectionPanel(
         {
             ImGui.Dummy(Vector2.One);
             using var f = _nameFont.Push();
-            ImGuiUtil.DrawTextButton("Collection is not used.", new Vector2(ImGui.GetContentRegionAvail().X, buttonHeight),
+            ImGuiUtil.DrawTextButton("合集没有使用。", new Vector2(ImGui.GetContentRegionAvail().X, buttonHeight),
                 Colors.PressEnterWarningBg);
             ImGui.Dummy(Vector2.One);
             ImGui.Separator();
@@ -535,7 +535,7 @@ public sealed class CollectionPanel(
 
         using (var _ = ImRaii.PushStyle(ImGuiStyleVar.FramePadding, Vector2.Zero))
         {
-            ImGuiUtil.DrawTextButton("In Use By", ImGui.GetContentRegionAvail() with { Y = 0 }, 0);
+            ImGuiUtil.DrawTextButton("下列对象分配了此合集", ImGui.GetContentRegionAvail() with { Y = 0 }, 0);
         }
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 1 * ImGuiHelpers.GlobalScale)
@@ -564,7 +564,7 @@ public sealed class CollectionPanel(
 
         using (var _ = ImRaii.PushStyle(ImGuiStyleVar.FramePadding, Vector2.Zero))
         {
-            ImGuiUtil.DrawTextButton("Inherited by", ImGui.GetContentRegionAvail() with { Y = 0 }, 0);
+            ImGuiUtil.DrawTextButton("下列合集继承了此合集", ImGui.GetContentRegionAvail() with { Y = 0 }, 0);
         }
 
         using var f     = _nameFont.Push();
@@ -597,10 +597,10 @@ public sealed class CollectionPanel(
             return;
 
         ImGui.TableSetupScrollFreeze(0, 1);
-        ImGui.TableSetupColumn("Mod Name",       ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("Inherited From", ImGuiTableColumnFlags.WidthFixed, 5f * ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("State",          ImGuiTableColumnFlags.WidthFixed, 1.75f * ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("Priority",       ImGuiTableColumnFlags.WidthFixed, 2.5f * ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("模组名称",       ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("继承自", ImGuiTableColumnFlags.WidthFixed, 5f * ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("状态",          ImGuiTableColumnFlags.WidthFixed, 1.75f * ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("优先级",       ImGuiTableColumnFlags.WidthFixed, 2.5f * ImGui.GetFrameHeight());
         ImGui.TableHeadersRow();
         foreach (var (mod, (settings, parent)) in mods.Select(m => (m, collection[m.Index]))
                      .Where(t => t.Item2.Settings != null)
@@ -630,8 +630,8 @@ public sealed class CollectionPanel(
 
         ImGui.Dummy(Vector2.One);
         var text = collection.UnusedSettings.Count > 1
-            ? $"Clear all {collection.UnusedSettings.Count} unused settings from deleted mods."
-            : "Clear the currently unused setting from a deleted mods.";
+            ? $"清理所有 {collection.UnusedSettings.Count} 个已删除的模组的设置。"
+            : "清除当前未使用的已删除的模组设置。";
         if (ImGui.Button(text, new Vector2(ImGui.GetContentRegionAvail().X, 0)))
             _collections.CleanUnavailableSettings(collection);
 
@@ -645,9 +645,9 @@ public sealed class CollectionPanel(
 
         ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableSetupColumn(string.Empty,            ImGuiTableColumnFlags.WidthFixed, UiHelpers.IconButtonSize.X);
-        ImGui.TableSetupColumn("Unused Mod Identifier", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("State",                 ImGuiTableColumnFlags.WidthFixed, 1.75f * ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("Priority",              ImGuiTableColumnFlags.WidthFixed, 2.5f * ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("未使用的模组标识符", ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("状态",                 ImGuiTableColumnFlags.WidthFixed, 1.75f * ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("优先级",              ImGuiTableColumnFlags.WidthFixed, 2.5f * ImGui.GetFrameHeight());
         ImGui.TableHeadersRow();
         string? delete = null;
         foreach (var (name, settings) in collection.UnusedSettings.OrderBy(n => n.Key))
@@ -655,7 +655,7 @@ public sealed class CollectionPanel(
             using var id = ImRaii.PushId(name);
             ImGui.TableNextColumn();
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize,
-                    "Delete this unused setting.", false, true))
+                    "删除这条已未使用的设置。", false, true))
                 delete = name;
             ImGui.TableNextColumn();
             ImGuiUtil.CopyOnClickSelectable(name);
@@ -708,10 +708,10 @@ public sealed class CollectionPanel(
             ret[CollectionTypeExtensions.FromParts(race, Gender.Female, true)]  = ($"♀ {race.ToShortName()} (NPC)", color);
         }
 
-        ret[CollectionType.MalePlayerCharacter]      = ("♂ Player", 0);
-        ret[CollectionType.FemalePlayerCharacter]    = ("♀ Player", 0);
-        ret[CollectionType.MaleNonPlayerCharacter]   = ("♂ NPC", 0);
-        ret[CollectionType.FemaleNonPlayerCharacter] = ("♀ NPC", 0);
+        ret[CollectionType.MalePlayerCharacter]      = ("♂ 男性玩家", 0);
+        ret[CollectionType.FemalePlayerCharacter]    = ("♀ 女性玩家", 0);
+        ret[CollectionType.MaleNonPlayerCharacter]   = ("♂ 男性NPC", 0);
+        ret[CollectionType.FemaleNonPlayerCharacter] = ("♀ 女性NPC", 0);
         return ret;
     }
 

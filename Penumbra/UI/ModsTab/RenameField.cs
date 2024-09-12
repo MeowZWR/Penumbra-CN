@@ -14,13 +14,13 @@ public static class RenameFieldExtensions
     public static (string Name, string Desc) GetData(this RenameField value)
         => value switch
         {
-            RenameField.None             => ("None", "Show no rename fields in the context menu for mods."),
-            RenameField.RenameSearchPath => ("Search Path", "Show only the search path / move field in the context menu for mods."),
-            RenameField.RenameData       => ("Mod Name", "Show only the mod name field in the context menu for mods."),
-            RenameField.BothSearchPathPrio => ("Both (Focus Search Path)",
-                "Show both rename fields in the context menu for mods, but put the keyboard cursor on the search path field."),
-            RenameField.BothDataPrio => ("Both (Focus Mod Name)",
-                "Show both rename fields in the context menu for mods, but put the keyboard cursor on the mod name field"),
+            RenameField.None             => ("无", "在模组的上下文菜单中不显示重命名字段。"),
+            RenameField.RenameSearchPath => ("搜索路径", "在模组的上下文菜单中仅显示搜索路径 / 移动字段。"),
+            RenameField.RenameData       => ("模组名称", "在模组的上下文菜单中仅显示模组名称字段。"),
+            RenameField.BothSearchPathPrio => ("两者（焦点在搜索路径）",
+                "在模组的上下文菜单中显示两个重命名字段，但将键盘光标放在搜索路径字段上。"),
+            RenameField.BothDataPrio => ("两者（焦点在设计名称）",
+                "在模组的上下文菜单中显示两个重命名字段，但将键盘光标放在设计名称字段上。"),
             _ => (string.Empty, string.Empty),
         };
 }

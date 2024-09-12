@@ -19,7 +19,7 @@ public class ModPanelDescriptionTab(
     private readonly TagButtons _modTags   = new();
 
     public ReadOnlySpan<byte> Label
-        => "Description"u8;
+        => "模组描述"u8;
 
     public void DrawContent()
     {
@@ -33,9 +33,9 @@ public class ModPanelDescriptionTab(
         var (predefinedTagsEnabled, predefinedTagButtonOffset) = predefinedTagsConfig.Count > 0
             ? (true, ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X + (ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ScrollbarSize : 0))
             : (false, 0);
-        var tagIdx = _localTags.Draw("Local Tags: ",
-            "Custom tags you can set personally that will not be exported to the mod data but only set for you.\n"
-          + "If the mod already contains a local tag in its own tags, the local tag will be ignored.", selector.Selected!.LocalTags,
+        var tagIdx = _localTags.Draw("本地标签：",
+            "个人设置的自定义标签，不会导出到模组。\n"
+          + "如果模组已经有与本地标签相同的标签，此本地标签会被忽略。", selector.Selected!.LocalTags,
             out var editedTag, rightEndOffset: predefinedTagButtonOffset);
         tutorial.OpenTutorial(BasicTutorialSteps.Tags);
         if (tagIdx >= 0)
@@ -46,7 +46,7 @@ public class ModPanelDescriptionTab(
                 selector.Selected!);
 
         if (selector.Selected!.ModTags.Count > 0)
-            _modTags.Draw("Mod Tags: ", "Tags assigned by the mod creator and saved with the mod data. To edit these, look at Edit Mod.",
+            _modTags.Draw("模组标签：", "由模组作者创建的标签，随模组数据保存，通过编辑选项卡来修改。",
                 selector.Selected!.ModTags, out _, false,
                 ImGui.CalcTextSize("Local ").X - ImGui.CalcTextSize("Mod ").X);
 

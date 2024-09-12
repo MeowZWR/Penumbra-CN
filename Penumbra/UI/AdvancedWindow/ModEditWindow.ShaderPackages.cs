@@ -101,7 +101,7 @@ public partial class ModEditWindow
 
     private static void DrawShaderImportButton(ShpkTab tab, string objectName, Shader[] shaders, int idx)
     {
-        if (!ImUtf8.Button("Replace Shader Program Blob"u8))
+        if (!ImUtf8.Button("替换着色器程序二进制数据"u8))
             return;
 
         tab.FileDialog.OpenFilePicker($"Replace {objectName} #{idx} Program Blob...", "Shader Program Blobs{.o,.cso,.dxbc,.dxil}",

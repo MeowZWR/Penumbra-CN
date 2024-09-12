@@ -44,7 +44,7 @@ public class AddGroupDrawer : IUiService
     private void DrawBasicGroups(Mod mod, float width, Vector2 buttonWidth)
     {
         ImGui.SetNextItemWidth(width);
-        if (ImUtf8.InputText("##name"u8, ref _groupName, "Enter New Name..."u8))
+        if (ImUtf8.InputText("##name"u8, ref _groupName, "输入新名称..."u8))
             _groupNameValid = ModGroupEditor.VerifyFileName(mod, null, _groupName, false);
 
         DrawSingleGroupButton(mod, buttonWidth);
@@ -54,9 +54,9 @@ public class AddGroupDrawer : IUiService
 
     private void DrawSingleGroupButton(Mod mod, Vector2 width)
     {
-        if (!ImUtf8.ButtonEx("Add Single Group"u8, _groupNameValid
-                    ? "Add a new single selection option group to this mod."u8
-                    : "Can not add a new group of this name."u8,
+        if (!ImUtf8.ButtonEx("添加单选项组"u8, _groupNameValid
+                    ? "向此模组添加一个新的单选项组。"u8
+                    : "无法以此名称添加组。"u8,
                 width, !_groupNameValid))
             return;
 
@@ -67,9 +67,9 @@ public class AddGroupDrawer : IUiService
 
     private void DrawMultiGroupButton(Mod mod, Vector2 width)
     {
-        if (!ImUtf8.ButtonEx("Add Multi Group"u8, _groupNameValid
-                    ? "Add a new multi selection option group to this mod."u8
-                    : "Can not add a new group of this name."u8,
+        if (!ImUtf8.ButtonEx("添加多选项组"u8, _groupNameValid
+                    ? "向此模组添加一个新的多选项组。"u8
+                    : "无法以此名称添加组。"u8,
                 width, !_groupNameValid))
             return;
 
@@ -118,11 +118,11 @@ public class AddGroupDrawer : IUiService
 
     private void DrawImcButton(Mod mod, Vector2 width)
     {
-        if (ImUtf8.ButtonEx("Add IMC Group"u8, !_groupNameValid
-                    ? "Can not add a new group of this name."u8
+        if (ImUtf8.ButtonEx("添加IMC（变体）组"u8, !_groupNameValid
+                    ? "无法以此名称添加组。"u8
                     : _entryInvalid
-                        ? "The associated IMC entry is invalid."u8
-                        : "Add a new multi selection option group to this mod."u8,
+                        ? "相关的 IMC 条目无效。"u8
+                        : "向此模组添加一个新的多选组选项。"u8,
                 width, !_groupNameValid || _entryInvalid))
         {
             _modManager.OptionEditor.ImcEditor.AddModGroup(mod, _groupName, _imcIdentifier, _defaultEntry);
@@ -134,8 +134,8 @@ public class AddGroupDrawer : IUiService
         {
             ImUtf8.SameLineInner();
             var text = _imcFileExists
-                ? "IMC Entry Does Not Exist"u8
-                : "IMC File Does Not Exist"u8;
+                ? "IMC 条目不存在"u8
+                : "IMC 文件不存在"u8;
             ImUtf8.TextFramed(text, Colors.PressEnterWarningBg, width);
         }
     }

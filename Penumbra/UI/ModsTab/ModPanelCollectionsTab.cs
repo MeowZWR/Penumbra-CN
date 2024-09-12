@@ -24,20 +24,20 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModFileSystemSele
     private readonly List<(ModCollection, ModCollection, uint, ModState)> _cache = [];
 
     public ReadOnlySpan<byte> Label
-        => "Collections"u8;
+        => "模组合集"u8;
 
     public void DrawContent()
     {
         var (direct, inherited) = CountUsage(selector.Selected!);
         ImGui.NewLine();
         if (direct == 1)
-            ImUtf8.Text("This Mod is directly configured in 1 collection."u8);
+            ImUtf8.Text("此模组已在 1 个合集中直接配置。"u8);
         else if (direct == 0)
-            ImUtf8.Text("This mod is entirely unused."u8, Colors.RegexWarningBorder);
+            ImUtf8.Text("此模组未在任何合集中使用。"u8, Colors.RegexWarningBorder);
         else
-            ImUtf8.Text($"This Mod is directly configured in {direct} collections.");
+            ImUtf8.Text($"此模组已在 {direct} 个合集中直接配置。");
         if (inherited > 0)
-            ImUtf8.Text($"It is also implicitly used in {inherited} {(inherited == 1 ? "collection" : "collections")} through inheritance.");
+            ImUtf8.Text($"也通过继承关系在 {inherited} {(inherited == 1 ? "个合集" : "个合集")}中被使用。");
 
         ImGui.NewLine();
         ImGui.Separator();
@@ -48,9 +48,9 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModFileSystemSele
 
         var size           = ImUtf8.CalcTextSize(ToText(ModState.Unconfigured)).X + 20 * ImGuiHelpers.GlobalScale;
         var collectionSize = 200 * ImGuiHelpers.GlobalScale;
-        ImGui.TableSetupColumn("Collection",     ImGuiTableColumnFlags.WidthFixed, collectionSize);
-        ImGui.TableSetupColumn("State",          ImGuiTableColumnFlags.WidthFixed, size);
-        ImGui.TableSetupColumn("Inherited From", ImGuiTableColumnFlags.WidthFixed, collectionSize);
+        ImGui.TableSetupColumn("合集",     ImGuiTableColumnFlags.WidthFixed, collectionSize);
+        ImGui.TableSetupColumn("状态",          ImGuiTableColumnFlags.WidthFixed, size);
+        ImGui.TableSetupColumn("继承自", ImGuiTableColumnFlags.WidthFixed, collectionSize);
 
         ImGui.TableHeadersRow();
         foreach (var ((collection, parent, color, state), idx) in _cache.WithIndex())
@@ -69,7 +69,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModFileSystemSele
                     ImGui.Separator();
                     using (ImRaii.Disabled(state is ModState.Enabled && parent == collection))
                     {
-                        if (ImUtf8.MenuItem("Enable"u8))
+                        if (ImUtf8.MenuItem("启用"u8))
                         {
                             if (parent != collection)
                                 manager.Editor.SetModInheritance(collection, selector.Selected!, false);
@@ -79,7 +79,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModFileSystemSele
 
                     using (ImRaii.Disabled(state is ModState.Disabled && parent == collection))
                     {
-                        if (ImUtf8.MenuItem("Disable"u8))
+                        if (ImUtf8.MenuItem("禁用"u8))
                         {
                             if (parent != collection)
                                 manager.Editor.SetModInheritance(collection, selector.Selected!, false);
@@ -89,7 +89,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModFileSystemSele
 
                     using (ImRaii.Disabled(parent != collection))
                     {
-                        if (ImUtf8.MenuItem("Inherit"u8))
+                        if (ImUtf8.MenuItem("继承"u8))
                             manager.Editor.SetModInheritance(collection, selector.Selected!, true);
                     }
                 }
@@ -102,10 +102,10 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModFileSystemSele
     private static ReadOnlySpan<byte> ToText(ModState state)
         => state switch
         {
-            ModState.Unconfigured => "Unconfigured"u8,
-            ModState.Enabled      => "Enabled"u8,
-            ModState.Disabled     => "Disabled"u8,
-            _                     => "Unknown"u8,
+            ModState.Unconfigured => "未配置"u8,
+            ModState.Enabled      => "已启用"u8,
+            ModState.Disabled     => "已禁用"u8,
+            _                     => "未知"u8,
         };
 
     private (int Direct, int Inherited) CountUsage(Mod mod)

@@ -16,21 +16,21 @@ public partial class ModEditWindow
 
     private void DrawMetaTab()
     {
-        using var tab = ImUtf8.TabItem("Meta Manipulations"u8);
+        using var tab = ImUtf8.TabItem("元数据操作"u8);
         if (!tab)
             return;
 
         DrawOptionSelectHeader();
 
         var setsEqual = !_editor.MetaEditor.Changes;
-        var tt        = setsEqual ? "No changes staged."u8 : "Apply the currently staged changes to the option."u8;
+        var tt        = setsEqual ? "没有进行任何更改。"u8 : "应用当前暂存的更改。"u8;
         ImGui.NewLine();
-        if (ImUtf8.ButtonEx("Apply Changes"u8, tt, Vector2.Zero, setsEqual))
+        if (ImUtf8.ButtonEx("应用更改"u8, tt, Vector2.Zero, setsEqual))
             _editor.MetaEditor.Apply(_editor.Option!);
 
         ImGui.SameLine();
-        tt = setsEqual ? "No changes staged."u8 : "Revert all currently staged changes."u8;
-        if (ImUtf8.ButtonEx("Revert Changes"u8, tt, Vector2.Zero, setsEqual))
+        tt = setsEqual ? "没有进行任何更改。"u8 : "撤销当前进行的所有更改。"u8;
+        if (ImUtf8.ButtonEx("撤销更改"u8, tt, Vector2.Zero, setsEqual))
             _editor.MetaEditor.Load(_editor.Mod!, _editor.Option!);
 
         ImGui.SameLine();
@@ -38,12 +38,12 @@ public partial class ModEditWindow
         ImGui.SameLine();
         SetFromClipboardButton();
         ImGui.SameLine();
-        CopyToClipboardButton("Copy all current manipulations to clipboard.", _iconSize, _editor.MetaEditor);
+        CopyToClipboardButton("将当前的所有操作复制到剪贴板。", _iconSize, _editor.MetaEditor);
         ImGui.SameLine();
-        if (ImUtf8.Button("Write as TexTools Files"u8))
+        if (ImUtf8.Button("写入为TexTools文件"u8))
             _metaFileManager.WriteAllTexToolsMeta(Mod!);
         ImGui.SameLine();
-        if (ImUtf8.ButtonEx("Remove All Default-Values", "Delete any entries from all lists that set the value to its default value."u8))
+        if (ImUtf8.ButtonEx("移除所有默认值", "删除列表中所有被设置为默认值的条目。"u8))
             _editor.MetaEditor.DeleteDefaultValues();
 
         using var child = ImRaii.Child("##meta", -Vector2.One, true);
@@ -117,7 +117,7 @@ public partial class ModEditWindow
 
     private void AddFromClipboardButton()
     {
-        if (ImGui.Button("Add from Clipboard"))
+        if (ImGui.Button("添加剪贴板中的设置"))
         {
             var clipboard = ImGuiUtil.GetClipboardText();
 
@@ -130,12 +130,12 @@ public partial class ModEditWindow
         }
 
         ImGuiUtil.HoverTooltip(
-            "Try to add meta manipulations currently stored in the clipboard to the current manipulations.\nOverwrites already existing manipulations.");
+            "尝试将存储在剪贴板中的元数据操作添加到当前设置。\n会覆盖已存在的操作，不会移除此模组中做过的其他操作。");
     }
 
     private void SetFromClipboardButton()
     {
-        if (ImGui.Button("Set from Clipboard"))
+        if (ImGui.Button("应用剪贴板中的设置"))
         {
             var clipboard = ImGuiUtil.GetClipboardText();
             var version   = Functions.FromCompressedBase64<MetaDictionary>(clipboard, out var manips);
@@ -147,6 +147,6 @@ public partial class ModEditWindow
         }
 
         ImGuiUtil.HoverTooltip(
-            "Try to set the current meta manipulations to the set currently stored in the clipboard.\nRemoves all other manipulations.");
+            "尝试将剪贴板中存储的元数据操作应用到当前的设置中。\n会移除此模组中做过的其他元数据操作。");
     }
 }

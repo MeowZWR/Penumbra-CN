@@ -8,9 +8,11 @@ namespace Penumbra.Services;
 
 public class ValidityChecker : IService
 {
-    public const string Repository      = "https://raw.githubusercontent.com/xivdev/Penumbra/master/repo.json";
-    public const string SeaOfStars      = "https://raw.githubusercontent.com/Ottermandias/SeaOfStars/main/repo.json";
-    public const string RepositoryLower = "https://raw.githubusercontent.com/xivdev/penumbra/master/repo.json";
+    public const string Repository          = "https://raw.githubusercontent.com/MeowZWR/DalamudPlugin/main/repo.json";
+    public const string RepositoryLower = "https://raw.githubusercontent.com/meowzwr/dalamudplugin/main/repo.json";
+	public const string MeowrsRepositoryLower = "https://meowrs.com/https://raw.githubusercontent.com/meowzwr/dalamudplugin/main/meowrs.json";
+    public const string OtterCnRepositoryLower = "https://dalamud_cn_3rd.otters.cloud/plugins/all";
+    public const string OtterCnRepositoryLowerPen = "https://dalamud_cn_3rd.otters.cloud/plugins/penumbra";
     public const string SeaOfStarsLower = "https://raw.githubusercontent.com/ottermandias/seaofstars/main/repo.json";
 
     public readonly bool DevPenumbraExists;
@@ -77,7 +79,7 @@ public class ValidityChecker : IService
         var checkedDirectory = pi.AssemblyLocation.Directory?.Parent?.Parent?.Name;
         var ret              = checkedDirectory?.Equals("installedPlugins", StringComparison.OrdinalIgnoreCase) ?? false;
         if (!ret)
-            Penumbra.Log.Error($"Penumbra is not correctly installed. Application loaded from \"{pi.AssemblyLocation.Directory!.FullName}\".");
+            Penumbra.Log.Error($"Penumbra未正确安装。 程序加载自 \"{pi.AssemblyLocation.Directory!.FullName}\".");
 
         return !ret;
 #else
@@ -91,10 +93,13 @@ public class ValidityChecker : IService
 #if !DEBUG
         return pi.SourceRepository?.Trim().ToLowerInvariant() switch
         {
-            null            => false,
-            RepositoryLower => true,
-            SeaOfStarsLower => true,
-            _               => false,
+            null                		=> false,
+            RepositoryLower     		=> true,
+            MeowrsRepositoryLower       => true,
+            OtterCnRepositoryLower      => true,
+            OtterCnRepositoryLowerPen   => true,
+            SeaOfStarsLower             => true,
+            _               			=> false,
         };
 #else
         return true;

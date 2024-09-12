@@ -71,7 +71,7 @@ public class IndividualAssignmentUi : IDisposable
             return;
 
         ImGui.SetNextItemWidth(width);
-        if (ImGui.InputTextWithHint("##NewCharacter", "Character Name...", ref _newCharacterName, 32))
+        if (ImGui.InputTextWithHint("##NewCharacter", "玩家名称...", ref _newCharacterName, 32))
             UpdateIdentifiersInternal();
     }
 
@@ -96,12 +96,12 @@ public class IndividualAssignmentUi : IDisposable
     private ActorIdentifier[] _npcIdentifiers      = [];
     private ActorIdentifier[] _ownedIdentifiers    = [];
 
-    private const string NewPlayerTooltipEmpty     = "Please enter a valid player name and choose an available world or 'Any World'.";
-    private const string NewRetainerTooltipEmpty   = "Please enter a valid retainer name.";
-    private const string NewPlayerTooltipInvalid   = "The entered name is not a valid name for a player character.";
-    private const string NewRetainerTooltipInvalid = "The entered name is not a valid name for a retainer.";
-    private const string AlreadyAssigned           = "The Individual you specified has already been assigned a collection.";
-    private const string NewNpcTooltipEmpty        = "Please select a valid NPC from the drop down menu first.";
+    private const string NewPlayerTooltipEmpty     = "请输入有效的玩家名称并选择可用的服务器或任意服务器。";
+    private const string NewRetainerTooltipEmpty   = "请输入有效的雇员名称。";
+    private const string NewPlayerTooltipInvalid   = "输入的名称不是有效的玩家名称。";
+    private const string NewRetainerTooltipInvalid = "输入的名称不是有效的雇员名称。";
+    private const string AlreadyAssigned           = "指定的独立角色已分配了一个合集。";
+    private const string NewNpcTooltipEmpty        = "请先在下拉菜单内选择正确的NPC。";
 
     private static readonly IReadOnlyList<ObjectKind> ObjectKinds = new[]
     {

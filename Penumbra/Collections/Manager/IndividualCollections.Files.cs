@@ -105,10 +105,10 @@ public partial class IndividualCollections
 
     private bool ReadJObjectInternalV2(JArray? obj, CollectionStorage storage)
     {
-        Penumbra.Log.Debug("[Collections] Reading individual assignments...");
+        Penumbra.Log.Debug("[Collections] 读取独立分配...");
         if (obj == null)
         {
-            Penumbra.Log.Debug($"[Collections] Finished reading {Count} individual assignments...");
+            Penumbra.Log.Debug($"[Collections] 完成读取 {Count} 个独立分配...");
             return true;
         }
 
@@ -122,7 +122,7 @@ public partial class IndividualCollections
                 if (group.Length == 0 || group.Any(i => !i.IsValid))
                 {
                     changes = true;
-                    Penumbra.Messager.NotificationMessage("Could not load an unknown individual collection, removed assignment.",
+                    Penumbra.Messager.NotificationMessage("无法加载未知的独立合集，已移除分配。",
                         NotificationType.Error);
                     continue;
                 }
@@ -132,7 +132,7 @@ public partial class IndividualCollections
                 {
                     changes = true;
                     Penumbra.Messager.NotificationMessage(
-                        $"Could not load the collection {collectionId} as individual collection for {identifier}, removed assignment.",
+                        $"无法加载合集 {collectionId} 作为 {identifier} 的独立合集，已移除分配。",
                         NotificationType.Warning);
                     continue;
                 }
@@ -140,7 +140,7 @@ public partial class IndividualCollections
                 if (!Add(group, collection))
                 {
                     changes = true;
-                    Penumbra.Messager.NotificationMessage($"Could not add an individual collection for {identifier}, removed assignment.",
+                    Penumbra.Messager.NotificationMessage($"无法为 {identifier} 添加独立合集，已移除分配。",
                         NotificationType.Warning);
                 }
             }
@@ -151,7 +151,7 @@ public partial class IndividualCollections
             }
         }
 
-        Penumbra.Log.Debug($"Finished reading {Count} individual assignments...");
+        Penumbra.Log.Debug($"完成读取 {Count} 个独立分配...");
 
         return changes;
     }

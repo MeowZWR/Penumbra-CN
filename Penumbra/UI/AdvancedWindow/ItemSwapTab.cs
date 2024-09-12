@@ -48,15 +48,15 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         _selectors = new Dictionary<SwapType, (ItemSelector Source, ItemSelector Target, string TextFrom, string TextTo)>
         {
             // @formatter:off
-            [SwapType.Hat]      = (new ItemSelector(itemService, selector, FullEquipType.Head),   new ItemSelector(itemService, null, FullEquipType.Head),   "Take this Hat",        "and put it on this one" ),
-            [SwapType.Top]      = (new ItemSelector(itemService, selector, FullEquipType.Body),   new ItemSelector(itemService, null, FullEquipType.Body),   "Take this Top",        "and put it on this one" ),
-            [SwapType.Gloves]   = (new ItemSelector(itemService, selector, FullEquipType.Hands),  new ItemSelector(itemService, null, FullEquipType.Hands),  "Take these Gloves",    "and put them on these"  ),
-            [SwapType.Pants]    = (new ItemSelector(itemService, selector, FullEquipType.Legs),   new ItemSelector(itemService, null, FullEquipType.Legs),   "Take these Pants",     "and put them on these"  ),
-            [SwapType.Shoes]    = (new ItemSelector(itemService, selector, FullEquipType.Feet),   new ItemSelector(itemService, null, FullEquipType.Feet),   "Take these Shoes",     "and put them on these"  ),
-            [SwapType.Earrings] = (new ItemSelector(itemService, selector, FullEquipType.Ears),   new ItemSelector(itemService, null, FullEquipType.Ears),   "Take these Earrings",  "and put them on these"  ),
-            [SwapType.Necklace] = (new ItemSelector(itemService, selector, FullEquipType.Neck),   new ItemSelector(itemService, null, FullEquipType.Neck),   "Take this Necklace",   "and put it on this one" ),
-            [SwapType.Bracelet] = (new ItemSelector(itemService, selector, FullEquipType.Wrists), new ItemSelector(itemService, null, FullEquipType.Wrists), "Take these Bracelets", "and put them on these"  ),
-            [SwapType.Ring]     = (new ItemSelector(itemService, selector, FullEquipType.Finger), new ItemSelector(itemService, null, FullEquipType.Finger), "Take this Ring",       "and put it on this one" ),
+            [SwapType.头部装备]      = (new ItemSelector(itemService, selector, FullEquipType.Head),   new ItemSelector(itemService, null, FullEquipType.Head),   "头部装备（源）",        "头部装备（目标）" ),
+            [SwapType.身体装备]      = (new ItemSelector(itemService, selector, FullEquipType.Body),   new ItemSelector(itemService, null, FullEquipType.Body),   "身体装备（源）",        "身体装备（目标）" ),
+            [SwapType.手部装备]   = (new ItemSelector(itemService, selector, FullEquipType.Hands),  new ItemSelector(itemService, null, FullEquipType.Hands),  "手部装备（源）",    "手部装备（目标）"  ),
+            [SwapType.腿部装备]    = (new ItemSelector(itemService, selector, FullEquipType.Legs),   new ItemSelector(itemService, null, FullEquipType.Legs),   "腿部装备（源）",     "腿部装备（目标）"  ),
+            [SwapType.脚部装备]    = (new ItemSelector(itemService, selector, FullEquipType.Feet),   new ItemSelector(itemService, null, FullEquipType.Feet),   "脚部装备（源）",     "脚部装备（目标）"  ),
+            [SwapType.耳部装备] = (new ItemSelector(itemService, selector, FullEquipType.Ears),   new ItemSelector(itemService, null, FullEquipType.Ears),   "耳部装备（源）",  "耳部装备（目标）"  ),
+            [SwapType.颈部装备] = (new ItemSelector(itemService, selector, FullEquipType.Neck),   new ItemSelector(itemService, null, FullEquipType.Neck),   "颈部装备（源）",   "颈部装备（目标）" ),
+            [SwapType.腕部装备] = (new ItemSelector(itemService, selector, FullEquipType.Wrists), new ItemSelector(itemService, null, FullEquipType.Wrists), "手腕装备（源）", "手腕装备（目标）"  ),
+            [SwapType.手指装备]     = (new ItemSelector(itemService, selector, FullEquipType.Finger), new ItemSelector(itemService, null, FullEquipType.Finger), "手指装备（源）",       "手指装备（目标）" ),
             // @formatter:on
         };
 
@@ -114,20 +114,20 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
 
     private enum SwapType
     {
-        Hat,
-        Top,
-        Gloves,
-        Pants,
-        Shoes,
-        Earrings,
-        Necklace,
-        Bracelet,
-        Ring,
+        头部装备,
+        身体装备,
+        手部装备,
+        腿部装备,
+        脚部装备,
+        耳部装备,
+        颈部装备,
+        腕部装备,
+        手指装备,
         BetweenSlots,
-        Hair,
+        发型,
         Face,
-        Ears,
-        Tail,
+        耳朵,
+        尾巴,
         Weapon,
     }
 
@@ -158,7 +158,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     private ModSettings? _modSettings;
     private bool         _dirty;
 
-    private SwapType   _lastTab       = SwapType.Hair;
+    private SwapType   _lastTab       = SwapType.发型;
     private Gender     _currentGender = Gender.Male;
     private ModelRace  _currentRace   = ModelRace.Midlander;
     private int        _targetId;
@@ -168,7 +168,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     private EquipSlot  _slotTo   = EquipSlot.Ears;
 
     private string     _newModName    = string.Empty;
-    private string     _newGroupName  = "Swaps";
+    private string     _newGroupName  = "转换";
     private string     _newOptionName = string.Empty;
     private IModGroup? _selectedGroup;
     private bool       _subModValid;
@@ -191,15 +191,15 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         {
             switch (_lastTab)
             {
-                case SwapType.Hat:
-                case SwapType.Top:
-                case SwapType.Gloves:
-                case SwapType.Pants:
-                case SwapType.Shoes:
-                case SwapType.Earrings:
-                case SwapType.Necklace:
-                case SwapType.Bracelet:
-                case SwapType.Ring:
+                case SwapType.头部装备:
+                case SwapType.身体装备:
+                case SwapType.手部装备:
+                case SwapType.腿部装备:
+                case SwapType.脚部装备:
+                case SwapType.耳部装备:
+                case SwapType.颈部装备:
+                case SwapType.腕部装备:
+                case SwapType.手指装备:
                     var values = _selectors[_lastTab];
                     if (values.Source.CurrentSelection.Item.Type != FullEquipType.Unknown
                      && values.Target.CurrentSelection.Item.Type != FullEquipType.Unknown)
@@ -214,7 +214,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
                         _affectedItems = _swapData.LoadTypeSwap(_slotTo, selectorTo.CurrentSelection.Item, _slotFrom, selectorFrom.CurrentSelection.Item,
                             _useCurrentCollection ? _collectionManager.Active.Current : null);
                     break;
-                case SwapType.Hair when _targetId > 0 && _sourceId > 0:
+                case SwapType.发型 when _targetId > 0 && _sourceId > 0:
                     _swapData.LoadCustomization(_metaFileManager, BodySlot.Hair, Names.CombinedRace(_currentGender, _currentRace),
                         (PrimaryId)_sourceId,
                         (PrimaryId)_targetId,
@@ -226,13 +226,13 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
                         (PrimaryId)_targetId,
                         _useCurrentCollection ? _collectionManager.Active.Current : null);
                     break;
-                case SwapType.Ears when _targetId > 0 && _sourceId > 0:
+                case SwapType.耳朵 when _targetId > 0 && _sourceId > 0:
                     _swapData.LoadCustomization(_metaFileManager, BodySlot.Ear, Names.CombinedRace(_currentGender, ModelRace.Viera),
                         (PrimaryId)_sourceId,
                         (PrimaryId)_targetId,
                         _useCurrentCollection ? _collectionManager.Active.Current : null);
                     break;
-                case SwapType.Tail when _targetId > 0 && _sourceId > 0:
+                case SwapType.尾巴 when _targetId > 0 && _sourceId > 0:
                     _swapData.LoadCustomization(_metaFileManager, BodySlot.Tail, Names.CombinedRace(_currentGender, _currentRace),
                         (PrimaryId)_sourceId,
                         (PrimaryId)_targetId,
@@ -243,7 +243,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         }
         catch (Exception e)
         {
-            Penumbra.Log.Error($"Could not get Customization Data container for {_lastTab}:\n{e}");
+            Penumbra.Log.Error( $"无法获取自定义数据给{_lastTab}:\n{e}" );
             _loadException = e;
             _affectedItems = null;
             _swapData.Clear();
@@ -325,12 +325,12 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
                 // #TODO ModOption <> DataContainer
                 if (!_swapData.WriteMod(_modManager, _mod, (IModDataContainer)option,
                         _useFileSwaps ? ItemSwapContainer.WriteType.UseSwaps : ItemSwapContainer.WriteType.NoSwaps, optionFolderName))
-                    throw new Exception("Failure writing files for mod swap.");
+                    throw new Exception("模组转换文件写入失败。");
             }
         }
         catch (Exception e)
         {
-            Penumbra.Messager.NotificationMessage(e, "Could not create new Swap Option.", NotificationType.Error, false);
+            Penumbra.Messager.NotificationMessage(e, "无法新建转换选项。", NotificationType.Error, false);
             try
             {
                 if (createdOption != null)
@@ -359,63 +359,63 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         var newModAvailable = _loadException == null && _swapData.Loaded;
 
         ImGui.SetNextItemWidth(width);
-        if (ImGui.InputTextWithHint("##newModName", "New Mod Name...", ref _newModName, 64))
+        if (ImGui.InputTextWithHint("##newModName", "新模组名（建议使用英文）...", ref _newModName, 64))
         { }
 
         ImGui.SameLine();
         var tt = !newModAvailable
-            ? "No swap is currently loaded."
+            ? "你还没有设置一个转换。"
             : _newModName.Length == 0
-                ? "Please enter a name for your mod."
-                : "Create a new mod of the given name containing only the swap.";
-        if (ImGuiUtil.DrawDisabledButton("Create New Mod", new Vector2(width / 2, 0), tt, !newModAvailable || _newModName.Length == 0))
+                ? "请先为模组命名。"
+                : "按给定的名称创建一个仅包含道具转换的新模组。";
+        if( ImGuiUtil.DrawDisabledButton( "创建新模组", new Vector2( width / 2, 0 ), tt, !newModAvailable || _newModName.Length == 0 ) )
             CreateMod();
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 20 * UiHelpers.Scale);
-        ImGui.Checkbox("Use File Swaps", ref _useFileSwaps);
-        ImGuiUtil.HoverTooltip("Instead of writing every single non-default file to the newly created mod or option,\n"
-          + "even those available from game files, use File Swaps to default game files where possible.");
+        ImGui.Checkbox( "使用'文件替换'功能", ref _useFileSwaps );
+        ImGuiUtil.HoverTooltip( "如果道具转换时引用到了游戏文件，则尽可能的使用选项卡'文件替换'的功能，\n"
+          + "而不是将每个单独的非默认文件都取出来写入新建的模组或选项目录。" );
 
         ImGui.SetNextItemWidth((width - ImGui.GetStyle().ItemSpacing.X) / 2);
-        if (ImGui.InputTextWithHint("##groupName", "Group Name...", ref _newGroupName, 32))
+        if( ImGui.InputTextWithHint( "##groupName", "组名称...", ref _newGroupName, 32 ) )
             UpdateOption();
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth((width - ImGui.GetStyle().ItemSpacing.X) / 2);
-        if (ImGui.InputTextWithHint("##optionName", "New Option Name...", ref _newOptionName, 32))
+        if( ImGui.InputTextWithHint( "##optionName", "新选项名称...", ref _newOptionName, 32 ) )
             UpdateOption();
 
         ImGui.SameLine();
         tt = !_subModValid
-            ? "An option with that name already exists in that group, or no name is specified."
+            ? "该组已存在相同名称的选项，或未指定名称。"
             : !newModAvailable
-                ? "Create a new option inside this mod containing only the swap."
-                : "Create a new option (and possibly Multi-Group) inside the currently selected mod containing the swap.";
-        if (ImGuiUtil.DrawDisabledButton("Create New Option", new Vector2(width / 2, 0), tt, !newModAvailable || !_subModValid))
+                ? "在当前模组中创建一个新选项，仅包含转换。"
+                : "为道具转换在当前模组中创建一个新选项（也可能是多选项组）";
+        if( ImGuiUtil.DrawDisabledButton( "创建新选项", new Vector2( width / 2, 0 ), tt, !newModAvailable || !_subModValid ) )
             CreateOption();
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 20 * UiHelpers.Scale);
-        _dirty |= ImGui.Checkbox("Use Entire Collection", ref _useCurrentCollection);
+        _dirty |= ImGui.Checkbox( "使用整个合集", ref _useCurrentCollection );
         ImGuiUtil.HoverTooltip(
-            "Use all applied mods from the Selected Collection with their current settings and respecting the enabled state of mods and inheritance,\n"
-          + "instead of using only the selected mod with its current settings in the Selected collection or the default settings, ignoring the enabled state and inheritance.");
+            "使用所选合集中所有模组的当前设置及其启用状态和继承关系"
+          + "而不是忽略掉启用状态和继承关系，仅使用所选模组在所选择合集的默认设置。");
     }
 
     private void DrawSwapBar()
     {
         using var bar = ImRaii.TabBar("##swapBar", ImGuiTabBarFlags.None);
 
-        DrawEquipmentSwap(SwapType.Hat);
-        DrawEquipmentSwap(SwapType.Top);
-        DrawEquipmentSwap(SwapType.Gloves);
-        DrawEquipmentSwap(SwapType.Pants);
-        DrawEquipmentSwap(SwapType.Shoes);
-        DrawEquipmentSwap(SwapType.Earrings);
-        DrawEquipmentSwap(SwapType.Necklace);
-        DrawEquipmentSwap(SwapType.Bracelet);
-        DrawEquipmentSwap(SwapType.Ring);
+        DrawEquipmentSwap(SwapType.头部装备);
+        DrawEquipmentSwap(SwapType.身体装备);
+        DrawEquipmentSwap(SwapType.手部装备);
+        DrawEquipmentSwap(SwapType.腿部装备);
+        DrawEquipmentSwap(SwapType.脚部装备);
+        DrawEquipmentSwap(SwapType.耳部装备);
+        DrawEquipmentSwap(SwapType.颈部装备);
+        DrawEquipmentSwap(SwapType.腕部装备);
+        DrawEquipmentSwap(SwapType.手指装备);
         DrawAccessorySwap();
         DrawHairSwap();
         //DrawFaceSwap();
@@ -426,7 +426,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
 
     private ImRaii.IEndObject DrawTab(SwapType newTab)
     {
-        var tab = ImRaii.TabItem(newTab is SwapType.BetweenSlots ? "Between Slots" : newTab.ToString());
+        var tab = ImRaii.TabItem(newTab is SwapType.BetweenSlots ? "跨类型转换" : newTab.ToString());
         if (tab)
         {
             _dirty   |= _lastTab != newTab;
@@ -450,16 +450,16 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         var (article1, article2, selector) = GetAccessorySelector(_slotFrom, true);
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted($"Take {article1}");
+        ImGui.TextUnformatted( $"转换{article1}" );
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(100 * UiHelpers.Scale);
-        using (var combo = ImRaii.Combo("##fromType", _slotFrom is EquipSlot.Head ? "Hat" : _slotFrom.ToName()))
+        using( var combo = ImRaii.Combo( "##fromType", _slotFrom is EquipSlot.Head ? "头部装备" : _slotFrom.ToName() ) )
         {
             if (combo)
                 foreach (var slot in EquipSlotExtensions.AccessorySlots.Prepend(EquipSlot.Head))
                 {
-                    if (!ImGui.Selectable(slot is EquipSlot.Head ? "Hat" : slot.ToName(), slot == _slotFrom) || slot == _slotFrom)
+                    if (!ImGui.Selectable(slot is EquipSlot.Head ? "头部装备" : slot.ToName(), slot == _slotFrom) || slot == _slotFrom)
                         continue;
 
                     _dirty    = true;
@@ -476,7 +476,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         (article1, _, selector) = GetAccessorySelector(_slotTo, false);
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted($"and put {article2} on {article1}");
+        ImGui.TextUnformatted($"转换{article2}" );
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(100 * UiHelpers.Scale);
@@ -501,7 +501,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
             return;
 
         ImGui.SameLine();
-        ImGuiUtil.DrawTextButton($"which will also affect {_affectedItems.Length - 1} other Items.", Vector2.Zero,
+        ImGuiUtil.DrawTextButton($"将同时在另外{_affectedItems.Length - 1}个同模物品上生效。", Vector2.Zero,
             Colors.PressEnterWarningBg);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(string.Join('\n', _affectedItems.Where(i => !ReferenceEquals(i.Name, selector.CurrentSelection.Item.Name))
@@ -512,13 +512,13 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     {
         var (type, article1, article2) = slot switch
         {
-            EquipSlot.Head    => (SwapType.Hat, "this", "it"),
-            EquipSlot.Ears    => (SwapType.Earrings, "these", "them"),
-            EquipSlot.Neck    => (SwapType.Necklace, "this", "it"),
-            EquipSlot.Wrists  => (SwapType.Bracelet, "these", "them"),
-            EquipSlot.RFinger => (SwapType.Ring, "this", "it"),
-            EquipSlot.LFinger => (SwapType.Ring, "this", "it"),
-            _                 => (SwapType.Ring, "this", "it"),
+            EquipSlot.Head    => (SwapType.头部装备,         "（源）", "（目标）"),
+            EquipSlot.Ears    => (SwapType.耳部装备,    "（源）", "（目标）"),
+            EquipSlot.Neck    => (SwapType.颈部装备,    "（源）", "（目标）"),
+            EquipSlot.Wrists  => (SwapType.腕部装备,    "（源）", "（目标）"),
+            EquipSlot.RFinger => (SwapType.手指装备,        "（源）", "（目标）"),
+            EquipSlot.LFinger => (SwapType.手指装备,        "（源）", "（目标）"),
+            _                 => (SwapType.手指装备,        "（源）", "（目标）"),
         };
         var (itemSelector, target, _, _) = _selectors[type];
         return (article1, article2, source ? itemSelector : target);
@@ -539,10 +539,10 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         _dirty |= sourceSelector.Draw("##itemSource", sourceSelector.CurrentSelection.Item.Name, string.Empty, InputWidth * 2 * UiHelpers.Scale,
             ImGui.GetTextLineHeightWithSpacing());
 
-        if (type == SwapType.Ring)
+        if (type == SwapType.手指装备)
         {
             ImGui.SameLine();
-            _dirty |= ImGui.Checkbox("Swap Right Ring", ref _useRightRing);
+            _dirty |= ImGui.Checkbox( "转换右指", ref _useRightRing );
         }
 
         ImGui.TableNextColumn();
@@ -551,17 +551,17 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         ImGui.TableNextColumn();
         _dirty |= targetSelector.Draw("##itemTarget", targetSelector.CurrentSelection.Item.Name, string.Empty, InputWidth * 2 * UiHelpers.Scale,
             ImGui.GetTextLineHeightWithSpacing());
-        if (type == SwapType.Ring)
+        if (type == SwapType.手指装备)
         {
             ImGui.SameLine();
-            _dirty |= ImGui.Checkbox("Swap Left Ring", ref _useLeftRing);
+            _dirty |= ImGui.Checkbox( "转换左指", ref _useLeftRing );
         }
 
         if (_affectedItems is not { Length: > 1 })
             return;
 
         ImGui.SameLine();
-        ImGuiUtil.DrawTextButton($"which will also affect {_affectedItems.Length - 1} other Items.", Vector2.Zero,
+        ImGuiUtil.DrawTextButton($"同时会在另外{_affectedItems.Length - 1}个同模道具上生效。", Vector2.Zero,
             Colors.PressEnterWarningBg);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(string.Join('\n', _affectedItems.Where(i => !ReferenceEquals(i.Name, targetSelector.CurrentSelection.Item.Name))
@@ -570,12 +570,12 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
 
     private void DrawHairSwap()
     {
-        using var tab = DrawTab(SwapType.Hair);
+        using var tab = DrawTab(SwapType.发型);
         if (!tab)
             return;
 
         using var table = ImRaii.Table("##settings", 2, ImGuiTableFlags.SizingFixedFit);
-        DrawTargetIdInput("Take this Hairstyle");
+        DrawTargetIdInput( "将这个发型" );
         DrawSourceIdInput();
         DrawGenderInput();
     }
@@ -588,34 +588,34 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
             return;
 
         using var table = ImRaii.Table("##settings", 2, ImGuiTableFlags.SizingFixedFit);
-        DrawTargetIdInput("Take this Face Type");
+        DrawTargetIdInput( "将这个脸型" );
         DrawSourceIdInput();
         DrawGenderInput();
     }
 
     private void DrawTailSwap()
     {
-        using var tab = DrawTab(SwapType.Tail);
+        using var tab = DrawTab(SwapType.尾巴);
         if (!tab)
             return;
 
         using var table = ImRaii.Table("##settings", 2, ImGuiTableFlags.SizingFixedFit);
-        DrawTargetIdInput("Take this Tail Type");
+        DrawTargetIdInput( "将这个尾巴形状" );
         DrawSourceIdInput();
-        DrawGenderInput("for all", 2);
+        DrawGenderInput( "给所有的", 2 );
     }
 
 
     private void DrawEarSwap()
     {
-        using var tab = DrawTab(SwapType.Ears);
+        using var tab = DrawTab(SwapType.耳朵);
         if (!tab)
             return;
 
         using var table = ImRaii.Table("##settings", 2, ImGuiTableFlags.SizingFixedFit);
-        DrawTargetIdInput("Take this Ear Type");
+        DrawTargetIdInput("将这个耳朵类型");
         DrawSourceIdInput();
-        DrawGenderInput("for all Viera", 0);
+        DrawGenderInput("给所有维埃拉族", 0);
     }
 
     private const float InputWidth = 120;
@@ -634,7 +634,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         _dirty |= ImGui.IsItemDeactivatedAfterEdit();
     }
 
-    private void DrawSourceIdInput(string text = "and put it on this one")
+    private void DrawSourceIdInput( string text = "转换给" )
     {
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
@@ -648,7 +648,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         _dirty |= ImGui.IsItemDeactivatedAfterEdit();
     }
 
-    private void DrawGenderInput(string text = "for all", int drawRace = 1)
+    private void DrawGenderInput(string text = "给所有的", int drawRace = 1)
     {
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
@@ -680,20 +680,20 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     private string NonExistentText()
         => _lastTab switch
         {
-            SwapType.Hat      => "One of the selected hats does not seem to exist.",
-            SwapType.Top      => "One of the selected tops does not seem to exist.",
-            SwapType.Gloves   => "One of the selected pairs of gloves does not seem to exist.",
-            SwapType.Pants    => "One of the selected pants does not seem to exist.",
-            SwapType.Shoes    => "One of the selected pairs of shoes does not seem to exist.",
-            SwapType.Earrings => "One of the selected earrings does not seem to exist.",
-            SwapType.Necklace => "One of the selected necklaces does not seem to exist.",
-            SwapType.Bracelet => "One of the selected bracelets does not seem to exist.",
-            SwapType.Ring     => "One of the selected rings does not seem to exist.",
-            SwapType.Hair     => "One of the selected hairstyles does not seem to exist for this gender and race combo.",
-            SwapType.Face     => "One of the selected faces does not seem to exist for this gender and race combo.",
-            SwapType.Ears     => "One of the selected ear types does not seem to exist for this gender and race combo.",
-            SwapType.Tail     => "One of the selected tails does not seem to exist for this gender and race combo.",
-            SwapType.Weapon   => "One of the selected weapons or tools does not seem to exist.",
+            SwapType.头部装备      => "选中的头部装备似乎不存在。",
+            SwapType.身体装备      => "选中的身体装备似乎不存在。",
+            SwapType.手部装备   => "选中的手部装备似乎不存在。",
+            SwapType.腿部装备    => "选中的腿部装备似乎不存在。",
+            SwapType.脚部装备    => "选中的脚部装备似乎不存在。",
+            SwapType.耳部装备 => "选中的耳环似乎不存在。",
+            SwapType.颈部装备 => "选中的项链似乎不存在。",
+            SwapType.腕部装备 => "选中的手镯似乎不存在。",
+            SwapType.手指装备     => "选中的戒指似乎不存在。",
+            SwapType.发型     => "选中的发型似乎不存在。",
+            SwapType.Face     => "选中的脸部似乎不存在。",
+            SwapType.耳朵     => "选中的耳朵类型似乎不存在。",
+            SwapType.尾巴     => "选中的尾巴似乎不存在。",
+            SwapType.Weapon   => "选中的武器似乎不存在。",
             _                 => string.Empty,
         };
 

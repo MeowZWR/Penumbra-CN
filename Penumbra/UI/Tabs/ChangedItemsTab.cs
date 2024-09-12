@@ -22,7 +22,7 @@ public class ChangedItemsTab(
     : ITab, IUiService
 {
     public ReadOnlySpan<byte> Label
-        => "Changed Items"u8;
+        => "更改项目"u8;
 
     private LowerString _changedItemFilter    = LowerString.Empty;
     private LowerString _changedItemModFilter = LowerString.Empty;
@@ -59,10 +59,10 @@ public class ChangedItemsTab(
           - 450 * UiHelpers.Scale
           - ImGui.GetStyle().ItemSpacing.X;
         ImGui.SetNextItemWidth(450 * UiHelpers.Scale);
-        LowerString.InputWithHint("##changedItemsFilter", "Filter Item...", ref _changedItemFilter, 128);
+        LowerString.InputWithHint("##changedItemsFilter", "按项目筛选...", ref _changedItemFilter, 128);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(varWidth);
-        LowerString.InputWithHint("##changedItemsModFilter", "Filter Mods...", ref _changedItemModFilter, 128);
+        LowerString.InputWithHint("##changedItemsModFilter", "按模组筛选...", ref _changedItemModFilter, 128);
         return varWidth;
     }
 
@@ -100,9 +100,9 @@ public class ChangedItemsTab(
         if (ImGui.IsItemHovered())
         {
             using var _ = ImRaii.Tooltip();
-            ImGui.TextUnformatted("Hold Control and click to jump to mod.\n");
+            ImGui.TextUnformatted("按住Ctrl并点击以跳转到模组。\n");
             if (mods.Count > 1)
-                ImGui.TextUnformatted("Other mods affecting this item:\n" + string.Join("\n", mods.Skip(1).Select(m => m.Name)));
+                ImGui.TextUnformatted("其他影响此项的模组：\n" + string.Join("\n", mods.Skip(1).Select(m => m.Name)));
         }
     }
 }

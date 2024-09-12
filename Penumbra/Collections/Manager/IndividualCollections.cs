@@ -225,7 +225,7 @@ public sealed partial class IndividualCollections
         return identifier.Type switch
         {
             IdentifierType.Player => $"{identifier.PlayerName} ({_actors.Data.ToWorldName(identifier.HomeWorld)})",
-            IdentifierType.Retainer => $"{identifier.PlayerName} (Retainer)",
+            IdentifierType.Retainer => $"{identifier.PlayerName} (雇员)",
             IdentifierType.Owned =>
                 $"{identifier.PlayerName} ({_actors.Data.ToWorldName(identifier.HomeWorld)})'s {_actors.Data.ToName(identifier.Kind, identifier.DataId)}",
             IdentifierType.Npc =>

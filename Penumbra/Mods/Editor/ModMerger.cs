@@ -1,4 +1,4 @@
-using Dalamud.Interface.ImGuiNotification;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Utility;
 using OtterGui;
 using OtterGui.Classes;
@@ -27,7 +27,7 @@ public class ModMerger : IDisposable, IService
         => _selection.Mod;
 
     public Mod?   MergeToMod;
-    public string OptionGroupName = "Merges";
+    public string OptionGroupName = "合并";
     public string OptionName      = string.Empty;
 
     private readonly Dictionary<string, string> _fileToFile         = [];

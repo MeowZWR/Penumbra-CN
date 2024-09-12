@@ -41,11 +41,11 @@ public readonly struct SingleModGroupEditDrawer(ModGroupEditDrawer editor, Singl
         var convertible = group.Options.Count <= IModGroup.MaxMultiOptions;
         var g = group;
         var e = editor.ModManager.OptionEditor.SingleEditor;
-        if (ImUtf8.ButtonEx("Convert to Multi Group", editor.AvailableWidth, !convertible))
+        if (ImUtf8.ButtonEx("转换为多选项组", editor.AvailableWidth, !convertible))
             editor.ActionQueue.Enqueue(() => e.ChangeToMulti(g));
         if (!convertible)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled,
-                "Can not convert to multi group since maximum number of options is exceeded."u8);
+                "由于超过了选项的最大数量限制，无法转换为多选项组。"u8);
     }
 
     private void DrawNewOption()
@@ -58,8 +58,8 @@ public readonly struct SingleModGroupEditDrawer(ModGroupEditDrawer editor, Singl
 
         var validName = name.Length > 0;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, validName
-                ? "Add a new option to this group."u8
-                : "Please enter a name for the new option."u8, default, !validName))
+                ? "向此组添加一个新选项。"u8
+                : "请输入新选项的名称。"u8, default, !validName))
         {
             editor.ModManager.OptionEditor.SingleEditor.AddOption(group, name);
             editor.NewOptionName = null;

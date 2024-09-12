@@ -39,7 +39,7 @@ public class ModsTab(
         => modManager.Valid;
 
     public ReadOnlySpan<byte> Label
-        => "Mods"u8;
+        => "模组列表"u8;
 
     public void DrawHeader()
         => tutorial.OpenTutorial(BasicTutorialSteps.Mods);
@@ -117,42 +117,42 @@ public class ModsTab(
                 ImGui.SameLine();
             }
 
-            ImGuiUtil.DrawTextButton("Redraw:        ", frameHeight, frameColor);
+            ImGuiUtil.DrawTextButton("重绘:        ", frameHeight, frameColor);
         }
 
         var hovered = ImGui.IsItemHovered();
         tutorial.OpenTutorial(BasicTutorialSteps.Redrawing);
         if (hovered)
-            ImGui.SetTooltip($"The supported modifiers for '/penumbra redraw' are:\n{TutorialService.SupportedRedrawModifiers}");
+            ImGui.SetTooltip($"/penumbra redraw'命令支持的修饰符为：\n{TutorialService.SupportedRedrawModifiers}");
 
         using var id       = ImRaii.PushId("Redraw");
         using var disabled = ImRaii.Disabled(clientState.LocalPlayer == null);
         ImGui.SameLine();
         var buttonWidth = frameHeight with { X = ImGui.GetContentRegionAvail().X / 5 };
         var tt = !objects[0].Valid
-            ? "\nCan only be used when you are logged in and your character is available."
+            ? "\n仅当您已登录并且您的角色可用时才能使用。"
             : string.Empty;
-        DrawButton(buttonWidth, "All", string.Empty, tt);
+        DrawButton(buttonWidth, "全部", string.Empty, tt);
         ImGui.SameLine();
-        DrawButton(buttonWidth, "Self", "self", tt);
+        DrawButton(buttonWidth, "自己", "self", tt);
         ImGui.SameLine();
 
         tt = targets.Target == null && targets.GPoseTarget == null
-            ? "\nCan only be used when you have a target."
+            ? "\n仅当您有目标时才能使用。"
             : string.Empty;
-        DrawButton(buttonWidth, "Target", "target", tt);
+        DrawButton(buttonWidth, "目标", "target", tt);
         ImGui.SameLine();
 
         tt = targets.FocusTarget == null
-            ? "\nCan only be used when you have a focus target."
+            ? "\n仅当您有焦点目标时才能使用。"
             : string.Empty;
-        DrawButton(buttonWidth, "Focus", "focus", tt);
+        DrawButton(buttonWidth, "焦点", "focus", tt);
         ImGui.SameLine();
 
         tt = !IsIndoors()
-            ? "\nCan currently only be used for indoor furniture."
+            ? "\n目前只能用于室内家具。"
             : string.Empty;
-        DrawButton(frameHeight with { X = ImGui.GetContentRegionAvail().X - 1 }, "Furniture", "furniture", tt);
+        DrawButton(frameHeight with { X = ImGui.GetContentRegionAvail().X - 1 }, "家具", "furniture", tt);
         return;
 
         void DrawButton(Vector2 size, string label, string lower, string additionalTooltip)
@@ -169,8 +169,8 @@ public class ModsTab(
             }
 
             ImGuiUtil.HoverTooltip(lower.Length > 0
-                ? $"Execute '/penumbra redraw {lower}'.{additionalTooltip}"
-                : $"Execute '/penumbra redraw'.{additionalTooltip}", ImGuiHoveredFlags.AllowWhenDisabled);
+                ? $"执行命令 '/penumbra redraw {lower}'.{additionalTooltip}"
+                : $"执行命令 '/penumbra redraw'.{additionalTooltip}", ImGuiHoveredFlags.AllowWhenDisabled);
         }
     }
 

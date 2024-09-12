@@ -133,7 +133,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     {
         _dragDrop.CreateImGuiSource("ModDragDrop", m => m.Extensions.Any(e => ValidModExtensions.Contains(e.ToLowerInvariant())), m =>
         {
-            ImGui.TextUnformatted($"Dragging mods for import:\n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
+            ImGui.TextUnformatted($"拖拽到模组选择器进行导入：\n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
             return true;
         });
         base.Draw(width);
@@ -177,7 +177,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     {
         DrawHelpPopup();
 
-        if (ImGuiUtil.OpenNameField("Create New Mod", ref _newModName))
+        if (ImGuiUtil.OpenNameField("创建新模组", ref _newModName))
         {
             var newDir = _modManager.Creator.CreateEmptyMod(_modManager.BasePath, _newModName);
             if (newDir != null)
@@ -236,37 +236,37 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     // Add custom context menu items.
     private void EnableDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("Enable Descendants"))
+        if (ImGui.MenuItem("启用子项"))
             SetDescendants(folder, true);
     }
 
     private void DisableDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("Disable Descendants"))
+        if (ImGui.MenuItem("禁用子项"))
             SetDescendants(folder, false);
     }
 
     private void InheritDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("Inherit Descendants"))
+        if (ImGui.MenuItem("继承子项"))
             SetDescendants(folder, true, true);
     }
 
     private void OwnDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("Stop Inheriting Descendants"))
+        if (ImGui.MenuItem("停止继承子项"))
             SetDescendants(folder, false, true);
     }
 
     private void ToggleLeafFavorite(FileSystem<Mod>.Leaf mod)
     {
-        if (ImGui.MenuItem(mod.Value.Favorite ? "Remove Favorite" : "Mark as Favorite"))
+        if (ImGui.MenuItem(mod.Value.Favorite ? "移除收藏" : "标记为收藏"))
             _modManager.DataEditor.ChangeModFavorite(mod.Value, !mod.Value.Favorite);
     }
 
     private void SetDefaultImportFolder(ModFileSystem.Folder folder)
     {
-        if (!ImGui.MenuItem("Set As Default Import Folder"))
+        if (!ImGui.MenuItem("设置为默认导入折叠组"))
             return;
 
         var newName = folder.FullName();
@@ -279,7 +279,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void ClearDefaultImportFolder()
     {
-        if (!ImGui.MenuItem("Clear Default Import Folder") || _config.DefaultImportFolder.Length <= 0)
+        if (!ImGui.MenuItem("清理默认导入折叠组") || _config.DefaultImportFolder.Length <= 0)
             return;
 
         _config.DefaultImportFolder = string.Empty;
@@ -290,16 +290,16 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void AddNewModButton(Vector2 size)
     {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), size, "Create a new, empty mod of a given name.",
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), size, "创建命名一个空白模组。",
                 !_modManager.Valid, true))
-            ImGui.OpenPopup("Create New Mod");
+            ImGui.OpenPopup("创建新模组");
     }
 
     /// <summary> Add an import mods button that opens a file selector. </summary>
     private void AddImportModButton(Vector2 size)
     {
         var button = ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.FileImport.ToIconString(), size,
-            "Import one or multiple mods from Tex Tools Mod Pack Files or Penumbra Mod Pack Files.", !_modManager.Valid, true);
+            "导入单个或多个来自TexTools、Penumbra创建的模组。", !_modManager.Valid, true);
         _tutorial.OpenTutorial(BasicTutorialSteps.ModImport);
         if (!button)
             return;
@@ -310,8 +310,8 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
                 ? _config.ModDirectory
                 : null;
 
-        _fileDialog.OpenFilePicker("Import Mod Pack",
-            "Mod Packs{.ttmp,.ttmp2,.pmp},TexTools Mod Packs{.ttmp,.ttmp2},Penumbra Mod Packs{.pmp},Archives{.zip,.7z,.rar}", (s, f) =>
+        _fileDialog.OpenFilePicker("导入模组文件",
+            "模组文件{.ttmp,.ttmp2,.pmp},TexTools模组文件{.ttmp,.ttmp2},Penumbra模组文件{.pmp},压缩文件{.zip,.7z,.rar}", (s, f) =>
             {
                 if (!s)
                     return;
@@ -332,22 +332,22 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         var currentName = leaf.Value.Name.Text;
         if (ImGui.IsWindowAppearing())
             ImGui.SetKeyboardFocusHere(0);
-        ImGui.TextUnformatted("Rename Mod:");
+        ImGui.TextUnformatted("重命名模组：");
         if (ImGui.InputText("##RenameMod", ref currentName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             _modManager.DataEditor.ChangeModName(leaf.Value, currentName);
             ImGui.CloseCurrentPopup();
         }
 
-        ImGuiUtil.HoverTooltip("Enter a new name here to rename the changed mod.");
+        ImGuiUtil.HoverTooltip("在此输入新名称以重命名已更改的模组。");
     }
 
     private void DeleteModButton(Vector2 size)
-        => DeleteSelectionButton(size, _config.DeleteModModifier, "mod", "mods", _modManager.DeleteMod);
+        => DeleteSelectionButton(size, _config.DeleteModModifier, "模组", "模组", _modManager.DeleteMod);
 
     private void AddHelpButton(Vector2 size)
     {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.QuestionCircle.ToIconString(), size, "Open extended help.", false, true))
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.QuestionCircle.ToIconString(), size, "查看帮助文档。", false, true))
             ImGui.OpenPopup("ExtendedHelp");
 
         _tutorial.OpenTutorial(BasicTutorialSteps.AdvancedHelp);
@@ -370,65 +370,65 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void DrawHelpPopup()
     {
-        ImGuiUtil.HelpPopup("ExtendedHelp", new Vector2(1000 * UiHelpers.Scale, 38.5f * ImGui.GetTextLineHeightWithSpacing()), () =>
+        ImGuiUtil.HelpPopup("ExtendedHelp", new Vector2(700 * UiHelpers.Scale, 38.5f * ImGui.GetTextLineHeightWithSpacing()), () =>
         {
             ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeight());
-            ImGui.TextUnformatted("Mod Management");
-            ImGui.BulletText("You can create empty mods or import mods with the buttons in this row.");
+            ImGui.TextUnformatted("模组管理");
+            ImGui.BulletText("你可以通过使用此行按钮来创建一个空白模组或导入模组。");
             using var indent = ImRaii.PushIndent();
-            ImGui.BulletText("Supported formats for import are: .ttmp, .ttmp2, .pmp.");
+            ImGui.BulletText("支持导入的格式为：.ttmp, .ttmp2, .pmp。");
             ImGui.BulletText(
-                "You can also support .zip, .7z or .rar archives, but only if they already contain Penumbra-styled mods with appropriate metadata.");
+                "也支持.zip, .7z 或 .rar压缩包, 但必须是Penumbra类型的含有正确元数据的模组压缩包。");
             indent.Pop(1);
-            ImGui.BulletText("You can also create empty mod folders and delete mods.");
-            ImGui.BulletText("For further editing of mods, select them and use the Edit Mod tab in the panel or the Advanced Editing popup.");
+            ImGui.BulletText("你也可以创建空白的模组文件或删除模组。");
+            ImGui.BulletText("要进一步编辑模组，请使用模组面板中的编辑选项卡或高级编辑弹出的窗口面板。");
             ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeight());
-            ImGui.TextUnformatted("Mod Selector");
-            ImGui.BulletText("Select a mod to obtain more information or change settings.");
-            ImGui.BulletText("Names are colored according to your config and their current state in the collection:");
+            ImGui.TextUnformatted("模组选择器");
+            ImGui.BulletText("选中一个模组查看更多信息或修改设置。");
+            ImGui.BulletText("模组名字会按你的设置显示符合他们在当前合集中状态的颜色：");
             indent.Push();
-            ImGuiUtil.BulletTextColored(ColorId.EnabledMod.Value(),           "enabled in the current collection.");
-            ImGuiUtil.BulletTextColored(ColorId.DisabledMod.Value(),          "disabled in the current collection.");
-            ImGuiUtil.BulletTextColored(ColorId.InheritedMod.Value(),         "enabled due to inheritance from another collection.");
-            ImGuiUtil.BulletTextColored(ColorId.InheritedDisabledMod.Value(), "disabled due to inheritance from another collection.");
-            ImGuiUtil.BulletTextColored(ColorId.UndefinedMod.Value(),         "unconfigured in all inherited collections.");
+            ImGuiUtil.BulletTextColored(ColorId.EnabledMod.Value(),           "在当前合集中已启用。");
+            ImGuiUtil.BulletTextColored(ColorId.DisabledMod.Value(),          "在当前合集中已禁用。");
+            ImGuiUtil.BulletTextColored(ColorId.InheritedMod.Value(),         "因从另一个合集继承而启用。");
+            ImGuiUtil.BulletTextColored(ColorId.InheritedDisabledMod.Value(), "因从另一个合集继承而禁用。");
+            ImGuiUtil.BulletTextColored(ColorId.UndefinedMod.Value(),         "未在所有继承的合集中配置。");
             ImGuiUtil.BulletTextColored(ColorId.NewMod.Value(),
-                "newly imported during this session. Will go away when first enabling a mod or when Penumbra is reloaded.");
+                "在此次会话中导入的新模组，会在启用模组或Penumbra重新加载后取消标记。");
             ImGuiUtil.BulletTextColored(ColorId.HandledConflictMod.Value(),
-                "enabled and conflicting with another enabled Mod, but on different priorities (i.e. the conflict is solved).");
+                "该模组已启用，但和其他已启用的模组冲突，并处于不同的优先级（举例：设置不同优先级后冲突已解决）。");
             ImGuiUtil.BulletTextColored(ColorId.ConflictingMod.Value(),
-                "enabled and conflicting with another enabled Mod on the same priority.");
-            ImGuiUtil.BulletTextColored(ColorId.FolderExpanded.Value(),  "expanded mod folder.");
-            ImGuiUtil.BulletTextColored(ColorId.FolderCollapsed.Value(), "collapsed mod folder");
+                "该模组已启用，但和其他已启用的模组冲突，并处于同一优先级。");
+            ImGuiUtil.BulletTextColored(ColorId.FolderExpanded.Value(), "展开折叠组。");
+            ImGuiUtil.BulletTextColored(ColorId.FolderCollapsed.Value(), "最小化折叠组。");
             indent.Pop(1);
-            ImGui.BulletText("Middle-click a mod to disable it if it is enabled or enable it if it is disabled.");
+            ImGui.BulletText("中键点击一个模组，如果是禁用则启用，如果是启用则禁用。");
             indent.Push();
             ImGui.BulletText(
-                $"Holding {_config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))} while middle-clicking lets it inherit, discarding settings.");
+                $"按住{_config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))}同时点击鼠标中键使其继承，放弃设置。");
             indent.Pop(1);
-            ImGui.BulletText("Right-click a mod to enter its sort order, which is its name by default, possibly with a duplicate number.");
+            ImGui.BulletText("右键点击一个模组并输入字符进行排序（默认按模组名称排）。可以使用相同的编号。");
             indent.Push();
-            ImGui.BulletText("A sort order differing from the mods name will not be displayed, it will just be used for ordering.");
+            ImGui.BulletText("输入的排序字符不同于模组名称，不会被显示出来，仅用于排序。");
             ImGui.BulletText(
-                "If the sort order string contains Forward-Slashes ('/'), the preceding substring will be turned into folders automatically.");
+                "如果输入的排序字符中包含斜杠('/'), 斜杠前的字符将被转换为折叠组的名称，这样你就可以对模组进行分类管理。");
             indent.Pop(1);
             ImGui.BulletText(
-                "You can drag and drop mods and subfolders into existing folders. Dropping them onto mods is the same as dropping them onto the parent of the mod.");
+                "你可以直接拖拽模组或者折叠组到另一个已经存在的折叠组中，拖拽到折叠组名称上或者里面的模组名称上效果一样。");
             indent.Push();
             ImGui.BulletText(
-                "You can select multiple mods and folders by holding Control while clicking them, and then drag all of them at once.");
+                "你可以通过按住CTRL+单击同时选中多个模组和折叠组，然后一次性拖动所有模组和折叠组。");
             ImGui.BulletText(
-                "Selected mods inside an also selected folder will be ignored when dragging and move inside their folder instead of directly into the target.");
+                "拖动和移动折叠组时，单独选择折叠组中的模组将被忽略，不会被直接移动到目标位置。");
             indent.Pop(1);
-            ImGui.BulletText("Right-clicking a folder opens a context menu.");
-            ImGui.BulletText("Right-clicking empty space allows you to expand or collapse all folders at once.");
-            ImGui.BulletText("Use the Filter Mods... input at the top to filter the list for mods whose name or path contain the text.");
+            ImGui.BulletText("右键单击折叠组打开菜单选项。");
+            ImGui.BulletText("在空白处右键可以选择展开或最小化所有折叠组。");
+            ImGui.BulletText("在模组列表上方的筛选框中可以输入模组名字或路径中包含的字符来进行筛选。");
             indent.Push();
-            ImGui.BulletText("You can enter n:[string] to filter only for names, without path.");
-            ImGui.BulletText("You can enter c:[string] to filter for Changed Items instead.");
-            ImGui.BulletText("You can enter a:[string] to filter for Mod Authors instead.");
+            ImGui.BulletText("你可以输入 n:[文字] 按名字筛选。");
+            ImGui.BulletText("你可以输入 c:[文字] 按修改的物品名称来筛选。");
+            ImGui.BulletText("你可以输入 a:[文字] 按作者名称来筛选。" );
             indent.Pop(1);
-            ImGui.BulletText("Use the expandable menu beside the input to filter for mods fulfilling specific criteria.");
+            ImGui.BulletText("使用输入框旁边的下拉菜单来筛选满足特定条件的模组。");
         });
     }
 
@@ -508,23 +508,23 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void SetFilterTooltip()
     {
-        FilterTooltip = "Filter mods for those where their full paths or names contain the given strings, split by spaces.\n"
-          + "Enter c:[string] to filter for mods changing specific items.\n"
-          + "Enter t:[string] to filter for mods set to specific tags.\n"
-          + "Enter n:[string] to filter only for mod names and no paths.\n"
-          + "Enter a:[string] to filter for mods by specific authors.\n"
-          + $"Enter s:[string] to filter for mods by the categories of the items they change (1-{ChangedItemFlagExtensions.NumCategories + 1} or partial category name).\n\n"
-          + "Use None as a placeholder value that only matches empty lists or names.\n"
-          + "Regularly, a mod has to match all supplied criteria separately.\n"
-          + "Put a - in front of a search token to search only for mods not matching the criterion.\n"
-          + "Put a ? in front of a search token to search for mods matching at least one of the '?'-criteria.\n"
-          + "Wrap spaces in \"[string with space]\" to match this exact combination of words.\n\n"
-          + "Example: 't:Tag1 t:\"Tag 2\" -t:Tag3 -a:None s:Body -c:Hempen ?c:Camise ?n:Top' will match any mod that\n"
-          + "    - contains the tags 'tag1' and 'tag 2'\n"
-          + "    - does not contain the tag 'tag3'\n"
-          + "    - has any author set (negating None means Any)\n"
-          + "    - changes an item of the 'Body' category\n"
-          + "    - and either contains a changed item with 'camise' in it's name, or has 'top' in the mod's name.";
+        FilterTooltip = "输入模组名字或路径中包含的字符来进行筛选。\n"
+          + "输入 c:[字符串] 按修改的物品名称筛选。\n"
+          + "输入 t:[字符串] 按模组标签筛选。\n"
+          + "输入 n:[字符串] 按模组名字筛选。\n"
+          + "输入 a:[字符串] 按作者名称筛选。\n"
+          + $"输入 s:[字符串] 按模组修改的物品的类别(1-{ChangedItemFlagExtensions.NumCategories + 1} 或不完整的类别名称)来进行筛选。\n"
+          + "使用[None]作为占位符值仅匹配空列表或名称。\n"
+          + "通常，模组需要分别匹配所有提供的条件。\n"
+          + "在搜索标记前加上 - 以仅搜索不符合该条件的模组。\n"
+          + "在搜索标记前加上 ? 以搜索至少符合一个“?”条件的模组。\n"
+          + "将包含空格的字符串用\"[带空格的字符串]\"括起来，以精确匹配词组组合。\n\n"
+          + "示例：'t:Tag1 t:\"Tag 2\" -t:Tag3 -a:None s:Body -c:Hempen ?c:Camise ?n:Top' 将匹配任何模组：\n"
+          + "    - 包含标签 'tag1' 和 'tag 2'\n"
+          + "    - 不包含标签 'tag3'\n"
+          + "    - 有任何作者（否定 None 意味着任何作者）\n"
+          + "    - 更改了 'Body' 类别中的项目\n"
+          + "    - 并且要么包含名称中有 'camise' 的更改项目，要么在模组名称中有 'top'。";
     }
 
     /// <summary> Appropriately identify and set the string filter and its type. </summary>
@@ -705,7 +705,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
             ImGui.GetStyle().ItemSpacing with { Y = 3 * UiHelpers.Scale });
 
-        if (ImGui.Checkbox("Everything", ref everything))
+        if (ImGui.Checkbox("全部", ref everything))
         {
             _stateFilter = everything ? ModFilterExtensions.UnfilteredStateMods : 0;
             SetFilterDirty();
@@ -751,7 +751,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             SetFilterDirty();
         }
 
-        ImGuiUtil.HoverTooltip("Filter mods for their activation status.\nRight-Click to clear all filters.");
+        ImGuiUtil.HoverTooltip("按激活状态筛选模组。\n右键点击以清除所有筛选。");
         ImGui.SetCursorPos(pos);
         return (remainingWidth, rightClick);
     }

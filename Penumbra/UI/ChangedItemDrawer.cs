@@ -144,7 +144,7 @@ public class ChangedItemDrawer : IDisposable, IUiService
             }
 
             if (ImGui.GetItemRectSize() == Vector2.Zero)
-                ImGui.TextUnformatted("No actions available.");
+                ImGui.TextUnformatted("没有可用的操作");
         }
     }
 
@@ -219,7 +219,7 @@ public class ChangedItemDrawer : IDisposable, IUiService
 
             using var popup = ImRaii.ContextPopupItem(type.ToString());
             if (popup)
-                if (ImGui.MenuItem("Enable Only This"))
+                if (ImGui.MenuItem("仅显示此项"))
                 {
                     typeFilter = type;
                     localRet   = true;

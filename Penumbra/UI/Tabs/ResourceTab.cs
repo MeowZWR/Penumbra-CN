@@ -17,7 +17,7 @@ public class ResourceTab(Configuration config, ResourceManagerService resourceMa
     : ITab, IUiService
 {
     public ReadOnlySpan<byte> Label
-        => "Resource Manager"u8;
+        => "资源管理器"u8;
 
     public bool IsVisible
         => config.DebugMode;
@@ -27,7 +27,7 @@ public class ResourceTab(Configuration config, ResourceManagerService resourceMa
     {
         // Filter for resources containing the input string.
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##resourceFilter", "Filter...", ref _resourceManagerFilter, Utf8GamePath.MaxGamePathLength);
+        ImGui.InputTextWithHint("##resourceFilter", "筛选...", ref _resourceManagerFilter, Utf8GamePath.MaxGamePathLength);
 
         using var child = ImRaii.Child("##ResourceManagerTab", -Vector2.One);
         if (!child)

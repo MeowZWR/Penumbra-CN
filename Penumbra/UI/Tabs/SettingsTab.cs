@@ -25,7 +25,7 @@ public class SettingsTab : ITab, IUiService
     public const int RootDirectoryMaxLength = 64;
 
     public ReadOnlySpan<byte> Label
-        => "Settings"u8;
+        => "插件设置"u8;
 
     private readonly Configuration               _config;
     private readonly FontReloader                _fontReloader;
@@ -96,12 +96,13 @@ public class SettingsTab : ITab, IUiService
             return;
 
         DrawEnabledBox();
-        EphemeralCheckbox("Lock Main Window", "Prevent the main window from being resized or moved.", _config.Ephemeral.FixMainWindow,
+        EphemeralCheckbox("锁定主窗口", "防止主窗口被调整大小或移动。", _config.Ephemeral.FixMainWindow,
             v => _config.Ephemeral.FixMainWindow = v);
 
         ImGui.NewLine();
         DrawRootFolder();
         DrawDirectoryButtons();
+        ImGui.NewLine();
         ImGui.NewLine();
 
         DrawGeneralSettings();
@@ -170,34 +171,34 @@ public class SettingsTab : ITab, IUiService
         }
 
         if (newName.Length > RootDirectoryMaxLength)
-            return ($"Path is too long. The maximum length is {RootDirectoryMaxLength}.", false);
+            return ($"路径过长。最大长度为 {RootDirectoryMaxLength} 。", false);
 
         if (Path.GetDirectoryName(newName).IsNullOrEmpty())
-            return ("Path is not allowed to be a drive root. Please add a directory.", false);
+            return ("路径不允许为驱动器根目录。请添加一个目录。", false);
 
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
         if (IsSubPathOf(desktop, newName))
-            return ("Path is not allowed to be on your Desktop.", false);
+            return ("路径不允许放在桌面。", false);
 
         var programFiles    = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
         var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         if (IsSubPathOf(programFiles, newName) || IsSubPathOf(programFilesX86, newName))
-            return ("Path is not allowed to be in ProgramFiles.", false);
+            return ("路径不允许放在ProgramFiles。", false);
 
         var dalamud = _pluginInterface.ConfigDirectory.Parent!.Parent!;
         if (IsSubPathOf(dalamud.FullName, newName))
-            return ("Path is not allowed to be inside your Dalamud directories.", false);
+            return ("路径不允许放在卫月目录。", false);
 
         if (Functions.GetDownloadsFolder(out var downloads) && IsSubPathOf(downloads, newName))
-            return ("Path is not allowed to be inside your Downloads folder.", false);
+            return ("路径不允许放在下载文件夹。", false);
 
         var gameDir = _gameData.GameData.DataPath.Parent!.Parent!.FullName;
         if (IsSubPathOf(gameDir, newName))
-            return ("Path is not allowed to be inside your game folder.", false);
+            return ("路径不允许放在游戏目录。", false);
 
         return selected
-            ? ($"Press Enter or Click Here to Save (Current Directory: {old})", true)
-            : ($"Click Here to Save (Current Directory: {old})", true);
+            ? ($"按下回车或单击此处保存(当前你目录：{old})", true)
+            : ($"点击此处保存(当前目录：{old})", true);
     }
 
     /// <summary> Changing the base mod directory. </summary>
@@ -210,7 +211,7 @@ public class SettingsTab : ITab, IUiService
     private void DrawDirectoryPickerButton()
     {
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Folder.ToIconString(), UiHelpers.IconButtonSize,
-                "Select a directory via dialog.", false, true))
+                "通过对话框选择一个目录。", false, true))
             return;
 
         _newModDirectory ??= _config.ModDirectory;
@@ -222,7 +223,7 @@ public class SettingsTab : ITab, IUiService
                 ? _config.ModDirectory
                 : ".";
 
-        _fileDialog.OpenFolderPicker("Choose Mod Directory", (b, s) => _newModDirectory = b ? s : _newModDirectory, startDir, false);
+        _fileDialog.OpenFolderPicker("选择模组目录", (b, s) => _newModDirectory = b ? s : _newModDirectory, startDir, false);
     }
 
     /// <summary>
@@ -253,16 +254,16 @@ public class SettingsTab : ITab, IUiService
             style.Pop();
             ImGui.SameLine();
 
-            const string tt = "This is where Penumbra will store your extracted mod files.\n"
-              + "TTMP files are not copied, just extracted.\n"
-              + "This directory needs to be accessible and you need write access here.\n"
-              + "It is recommended that this directory is placed on a fast hard drive, preferably an SSD.\n"
-              + "It should also be placed near the root of a logical drive - the shorter the total path to this folder, the better.\n"
-              + "Definitely do not place it in your Dalamud directory or any sub-directory thereof.";
+            const string tt = "这是Penumbra即将存储提取到的模组文件的地方。\n"
+              + "TTMP文件不会被复制，而是被解压到这里。\n"
+              + "此目录需要你有读写权限。\n"
+              + "建议将此目录放置于读写速度快的硬盘上，最好是固态硬盘。\n"
+              + "它还应该放在逻辑驱动器的根目录附近，总之此文件夹的总路径越短越好。\n"
+              + "绝对不要将此目录放在卫月目录或其子目录中。";
             ImGuiComponents.HelpMarker(tt);
             _tutorial.OpenTutorial(BasicTutorialSteps.GeneralTooltips);
             ImGui.SameLine();
-            ImGui.TextUnformatted("Root Directory");
+            ImGui.TextUnformatted("根目录");
             ImGuiUtil.HoverTooltip(tt);
         }
 
@@ -283,9 +284,9 @@ public class SettingsTab : ITab, IUiService
         UiHelpers.DrawOpenDirectoryButton(0, _modManager.BasePath, _modManager.Valid);
         ImGui.SameLine();
         var tt = _modManager.Valid
-            ? "Force Penumbra to completely re-scan your root directory as if it was restarted."
-            : "The currently selected folder is not valid. Please select a different folder.";
-        if (ImGuiUtil.DrawDisabledButton("Rediscover Mods", Vector2.Zero, tt, !_modManager.Valid))
+            ? "强制Penumbra完全重扫模组根目录，相当于重启Penumbra。"
+            : "当前选择的文件夹无效。请选择其他文件夹。";
+        if (ImGuiUtil.DrawDisabledButton("重新扫描模组", Vector2.Zero, tt, !_modManager.Valid))
             _modManager.DiscoverMods();
     }
 
@@ -293,7 +294,7 @@ public class SettingsTab : ITab, IUiService
     private void DrawEnabledBox()
     {
         var enabled = _config.EnableMods;
-        if (ImGui.Checkbox("Enable Mods", ref enabled))
+        if (ImGui.Checkbox("启用模组", ref enabled))
             _penumbra.SetEnabled(enabled);
 
         _tutorial.OpenTutorial(BasicTutorialSteps.EnableMods);
@@ -306,7 +307,7 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw all settings pertaining to the Mod Selector. </summary>
     private void DrawGeneralSettings()
     {
-        if (!ImGui.CollapsingHeader("General"))
+        if (!ImGui.CollapsingHeader("常规设置"))
         {
             _tutorial.OpenTutorial(BasicTutorialSteps.GeneralSettings);
             return;
@@ -356,9 +357,9 @@ public class SettingsTab : ITab, IUiService
             _singleGroupRadioMax = int.MaxValue;
         }
 
-        ImGuiUtil.LabeledHelpMarker("Upper Limit for Single-Selection Group Radio Buttons",
-            "All Single-Selection Groups with more options than specified here will be displayed as Combo-Boxes at the top.\n"
-          + "All other Single-Selection Groups will be displayed as a set of Radio-Buttons.");
+        ImGuiUtil.LabeledHelpMarker( "单选项组单选项显示上限",
+            "如果单选项组的选项数量等于或多于此处设定的值，将收起变更为下拉菜单。\n"
+          + "少于此值的单选项组仍会展开显示。");
     }
 
     private int _collapsibleGroupMin = int.MaxValue;
@@ -384,33 +385,33 @@ public class SettingsTab : ITab, IUiService
             _collapsibleGroupMin = int.MaxValue;
         }
 
-        ImGuiUtil.LabeledHelpMarker("Collapsible Option Group Limit",
-            "Lower Limit for option groups displaying the Collapse/Expand button at the top.");
+        ImGuiUtil.LabeledHelpMarker("选项组折叠设置",
+            "选项组选项数量高于此值时在选项组上方添加一个展开/折叠按钮。");
     }
 
 
     /// <summary> Draw the window hiding state checkboxes.  </summary>
     private void DrawHidingSettings()
     {
-        Checkbox("Open Config Window at Game Start", "Whether the Penumbra main window should be open or closed after launching the game.",
+        Checkbox("游戏启动时自动开启设置窗口", "在启动游戏后，Penumbra主窗口应该打开还是关闭。",
             _config.OpenWindowAtStart,               v => _config.OpenWindowAtStart = v);
 
-        Checkbox("Hide Config Window when UI is Hidden",
-            "Hide the Penumbra main window when you manually hide the in-game user interface.", _config.HideUiWhenUiHidden,
+        Checkbox("隐藏游戏UI时，隐藏设置窗口",
+            "手动隐藏游戏UI时，隐藏Penumbra的主窗口。", _config.HideUiWhenUiHidden,
             v =>
             {
                 _config.HideUiWhenUiHidden                   = v;
                 _pluginInterface.UiBuilder.DisableUserUiHide = !v;
             });
-        Checkbox("Hide Config Window when in Cutscenes",
-            "Hide the Penumbra main window when you are currently watching a cutscene.", _config.HideUiInCutscenes,
+        Checkbox( "过场动画时，隐藏设置窗口",
+            "在观看过场动画时，隐藏Penumbra的主窗口。", _config.HideUiInCutscenes,
             v =>
             {
                 _config.HideUiInCutscenes                        = v;
                 _pluginInterface.UiBuilder.DisableCutsceneUiHide = !v;
             });
-        Checkbox("Hide Config Window when in GPose",
-            "Hide the Penumbra main window when you are currently in GPose mode.", _config.HideUiInGPose,
+        Checkbox( "进入集体动作(GPose)模式时，隐藏设置窗口",
+            "进入集体动作模式时，隐藏Penumbra主窗口。", _config.HideUiInGPose,
             v =>
             {
                 _config.HideUiInGPose                         = v;
@@ -421,12 +422,12 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw all settings that do not fit into other categories. </summary>
     private void DrawMiscSettings()
     {
-        Checkbox("Print Chat Command Success Messages to Chat",
-            "Chat Commands usually print messages on failure but also on success to confirm your action. You can disable this here.",
+        Checkbox( "使用聊天命令后，将成功运行的消息输出到聊天窗口",
+            "聊天命令通常只在运行失败时输出消息到聊天窗口，但也可以在成功运行时输出消息供你确认。你可以在此处禁用这个功能。",
             _config.PrintSuccessfulCommandsToChat, v => _config.PrintSuccessfulCommandsToChat = v);
-        Checkbox("Hide Redraw Bar in Mod Panel", "Hides the lower redraw buttons in the mod panel in your Mods tab.",
+        Checkbox( "在模组界面中隐藏重绘栏", "隐藏模组选项卡下模组界面底部的重绘栏。",
             _config.HideRedrawBar,               v => _config.HideRedrawBar = v);
-        Checkbox("Hide Changed Item Filters", "Hides the category filter line in the Changed Items tab and the Changed Items mod panel.",
+        Checkbox("隐藏更改项目筛选图标", "隐藏在更改项目（包括模组面板里的更改项目）选项卡中的一行筛选图标。",
             _config.HideChangedItemFilters,   v =>
             {
                 _config.HideChangedItemFilters = v;
@@ -436,16 +437,16 @@ public class SettingsTab : ITab, IUiService
                     _config.Ephemeral.Save();
                 }
             });
-        Checkbox("Omit Machinist Offhands in Changed Items",
-            "Omits all Aetherotransformers (machinist offhands) in the changed items tabs because any change on them changes all of them at the moment.\n\n"
-          + "Changing this triggers a rediscovery of your mods so all changed items can be updated.",
+        Checkbox("在更改项目中忽略机工副手",
+            "在更改项目标签中忽略所有以太转换器（机工副手），因为对它们的任何更改都会同时更改所有这些项目。\n\n"
+          + "更改此选项会重新扫描您的模组，以便更新所有已更改的项目。",
             _config.HideMachinistOffhandFromChangedItems, v =>
             {
                 _config.HideMachinistOffhandFromChangedItems = v;
                 _modManager.DiscoverMods();
             });
-        Checkbox("Hide Priority Numbers in Mod Selector",
-            "Hides the bracketed non-zero priority numbers displayed in the mod selector when there is enough space for them.",
+        Checkbox("隐藏模组选择器优先级数字标识",
+            "如果模组选择器里的模组优先级不是0，而且有足够的空间显示，则在模组名称后添加优先级数字标识。勾选此选项后隐藏这个标识。",
             _config.HidePrioritiesInSelector, v => _config.HidePrioritiesInSelector = v);
         DrawSingleSelectRadioMax();
         DrawCollapsibleGroupMin();
@@ -454,28 +455,28 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw all settings pertaining to actor identification for collections. </summary>
     private void DrawIdentificationSettings()
     {
-        Checkbox("Use Interface Collection for other Plugin UIs",
-            "Use the collection assigned to your interface for other plugins requesting UI-textures and icons through Dalamud.",
+        Checkbox("允许其他插件的UI使用界面合集",
+            "允许其他卫月插件在调用UI材质时使用界面合集中的文件。",
             _dalamudSubstitutionProvider.Enabled, _dalamudSubstitutionProvider.Set);
-        Checkbox($"Use {TutorialService.AssignedCollections} in Lobby",
-            "If this is disabled, no mods are applied to characters in the lobby or at the aesthetician.",
+        Checkbox($"在登陆界面中使用 {TutorialService.AssignedCollections}",
+            "如果禁用此选项，则不会对登陆界面或美容师中的角色应用任何模组。",
             _config.ShowModsInLobby, v => _config.ShowModsInLobby = v);
-        Checkbox($"Use {TutorialService.AssignedCollections} in Character Window",
-            "Use the individual collection for your characters name or the Your Character collection in your main character window, if it is set.",
+        Checkbox($"在角色窗口中使用{TutorialService.AssignedCollections}",
+            "如果选中，以你的玩家名字命名的独立角色合集或你的角色组合集将在你的主角色窗口中生效。",
             _config.UseCharacterCollectionInMainWindow, v => _config.UseCharacterCollectionInMainWindow = v);
-        Checkbox($"Use {TutorialService.AssignedCollections} in Adventurer Cards",
-            "Use the appropriate individual collection for the adventurer card you are currently looking at, based on the adventurer's name.",
+        Checkbox($"在冒险者铭牌中使用{TutorialService.AssignedCollections}",
+            "如果选中，在查看冒险者铭牌时，根据冒险者的姓名，为其使用合适的合集。",
             _config.UseCharacterCollectionsInCards, v => _config.UseCharacterCollectionsInCards = v);
-        Checkbox($"Use {TutorialService.AssignedCollections} in Try-On Window",
-            "Use the individual collection for your character's name in your try-on, dye preview or glamour plate window, if it is set.",
+        Checkbox($"在试穿窗口中使用{TutorialService.AssignedCollections}",
+            "如果选中，在试穿、染色、幻化窗口中使用基于你的角色名字的独立合集。",
             _config.UseCharacterCollectionInTryOn, v => _config.UseCharacterCollectionInTryOn = v);
-        Checkbox("Use No Mods in Inspect Windows", "Use the empty collection for characters you are inspecting, regardless of the character.\n"
-          + "Takes precedence before the next option.", _config.UseNoModsInInspect, v => _config.UseNoModsInInspect = v);
-        Checkbox($"Use {TutorialService.AssignedCollections} in Inspect Windows",
-            "Use the appropriate individual collection for the character you are currently inspecting, based on their name.",
+        Checkbox( "在调查窗口中不使用模组", "在角色调查窗口中使用空合集，不管是什么角色。\n"
+          + "优先于下一个选项。", _config.UseNoModsInInspect, v => _config.UseNoModsInInspect = v);
+        Checkbox($"在调查窗口中使用{TutorialService.AssignedCollections}",
+            "根据当前调查的角色的名称，为其使用符合角色名称的合集。",
             _config.UseCharacterCollectionInInspect, v => _config.UseCharacterCollectionInInspect = v);
-        Checkbox($"Use {TutorialService.AssignedCollections} based on Ownership",
-            "Use the owner's name to determine the appropriate individual collection for mounts, companions, accessories and combat pets.",
+        Checkbox($"基于所有者使用{TutorialService.AssignedCollections}",
+            "使用所有者的名字来决定其坐骑、宠物、时尚配饰、战斗伙伴使用适当的角色合集。",
             _config.UseOwnerNameForCharacterCollection, v => _config.UseOwnerNameForCharacterCollection = v);
     }
 
@@ -500,7 +501,7 @@ public class SettingsTab : ITab, IUiService
                 }
         }
 
-        ImGuiUtil.LabeledHelpMarker("Sort Mode", "Choose the sort mode for the mod selector in the mods tab.");
+        ImGuiUtil.LabeledHelpMarker("模组排序", "选择模组选项卡中模组选择器的默认排序方式。");
     }
 
     private float _absoluteSelectorSize = float.NaN;
@@ -520,8 +521,8 @@ public class SettingsTab : ITab, IUiService
         }
 
         ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker("Mod Selector Absolute Size",
-            "The minimal absolute size of the mod selector in the mod tab in pixels.");
+        ImGuiUtil.LabeledHelpMarker("模组选择器的绝对尺寸",
+            "模组选项卡中模组选择器的最小绝对尺寸（以像素为单位）。");
     }
 
     private int _relativeSelectorSize = int.MaxValue;
@@ -530,7 +531,7 @@ public class SettingsTab : ITab, IUiService
     private void DrawRelativeSizeSelector()
     {
         var scaleModSelector = _config.ScaleModSelector;
-        if (ImGui.Checkbox("Scale Mod Selector With Window Size", ref scaleModSelector))
+        if (ImGui.Checkbox("模组选择器随主窗口大小缩放", ref scaleModSelector))
         {
             _config.ScaleModSelector = scaleModSelector;
             _config.Save();
@@ -548,8 +549,8 @@ public class SettingsTab : ITab, IUiService
         }
 
         ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker("Mod Selector Relative Size",
-            "Instead of keeping the mod-selector in the Installed Mods tab a fixed width, this will let it scale with the total size of the Penumbra window.");
+        ImGuiUtil.LabeledHelpMarker("模组选择器尺寸占比",
+            "这将使模组选择器的宽度与主窗口宽度成比例，而不是保持固定宽度。");
     }
 
     private void DrawRenameSettings()
@@ -574,10 +575,10 @@ public class SettingsTab : ITab, IUiService
 
         ImGui.SameLine();
         const string tt =
-            "Select which of the two renaming input fields are visible when opening the right-click context menu of a mod in the mod selector.";
+            "选择在模组选择器中打开模组右键上下文菜单时可见的两个重命名输入字段中的哪一个。";
         ImGuiComponents.HelpMarker(tt);
         ImGui.SameLine();
-        ImGui.TextUnformatted("Rename Fields in Mod Context Menu");
+        ImGui.TextUnformatted("模组上下文菜单中的重命名字段");
         ImGuiUtil.HoverTooltip(tt);
     }
 
@@ -588,15 +589,15 @@ public class SettingsTab : ITab, IUiService
         DrawAbsoluteSizeSelector();
         DrawRelativeSizeSelector();
         DrawRenameSettings();
-        Checkbox("Open Folders by Default", "Whether to start with all folders collapsed or expanded in the mod selector.",
+        Checkbox("默认展开折叠组", "打开模组选择器时，默认展开全部折叠组，否则最小化全部折叠组。",
             _config.OpenFoldersByDefault,   v =>
             {
                 _config.OpenFoldersByDefault = v;
                 _selector.SetFilterDirty();
             });
 
-        Widget.DoubleModifierSelector("Mod Deletion Modifier",
-            "A modifier you need to hold while clicking the Delete Mod button for it to take effect.", UiHelpers.InputTextWidth.X,
+        Widget.DoubleModifierSelector("模组删除组合键",
+            "在点击删除模组按钮时，选择是否需要使用组合键才令删除生效。防止误点。", UiHelpers.InputTextWidth.X,
             _config.DeleteModModifier,
             v =>
             {
@@ -608,11 +609,11 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw all settings pertaining to import and export of mods. </summary>
     private void DrawModHandlingSettings()
     {
-        Checkbox("Replace Non-Standard Symbols On Import",
-            "Replace all non-ASCII symbols in mod and option names with underscores when importing mods.", _config.ReplaceNonAsciiOnImport,
+        Checkbox("导入时替换非标准符号",
+            "导入模组时，将模组和选项名称中的所有非ASCII符号替换为下划线。", _config.ReplaceNonAsciiOnImport,
             v => _config.ReplaceNonAsciiOnImport = v);
-        Checkbox("Always Open Import at Default Directory",
-            "Open the import window at the location specified here every time, forgetting your previous path.",
+        Checkbox("打开导入窗口时始终使用默认目录",
+            "每次都在此处指定的目录位置打开导入窗口，不使用上一次的路径。",
             _config.AlwaysOpenDefaultImport, v => _config.AlwaysOpenDefaultImport = v);
         DrawDefaultModImportPath();
         DrawDefaultModAuthor();
@@ -637,7 +638,7 @@ public class SettingsTab : ITab, IUiService
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Folder.ToIconString()}##import", UiHelpers.IconButtonSize,
-                "Select a directory via dialog.", false, true))
+                "点击打开选择目录对话框。", false, true))
         {
             var startDir = _config.DefaultModImportPath.Length > 0 && Directory.Exists(_config.DefaultModImportPath)
                 ? _config.DefaultModImportPath
@@ -645,7 +646,7 @@ public class SettingsTab : ITab, IUiService
                     ? _config.ModDirectory
                     : null;
 
-            _fileDialog.OpenFolderPicker("Choose Default Import Directory", (b, s) =>
+            _fileDialog.OpenFolderPicker("选择默认导入目录", (b, s) =>
             {
                 if (!b)
                     return;
@@ -656,8 +657,8 @@ public class SettingsTab : ITab, IUiService
         }
 
         style.Pop();
-        ImGuiUtil.LabeledHelpMarker("Default Mod Import Directory",
-            "Set the directory that gets opened when using the file picker to import mods for the first time.");
+        ImGuiUtil.LabeledHelpMarker("模组默认导入目录",
+            "设置首次使用文件选择器导入模组时打开的目录。");
     }
 
     private string _tempExportDirectory = string.Empty;
@@ -677,14 +678,14 @@ public class SettingsTab : ITab, IUiService
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Folder.ToIconString()}##export", UiHelpers.IconButtonSize,
-                "Select a directory via dialog.", false, true))
+                "点击打开选择目录对话框。", false, true))
         {
             var startDir = _config.ExportDirectory.Length > 0 && Directory.Exists(_config.ExportDirectory)
                 ? _config.ExportDirectory
                 : Directory.Exists(_config.ModDirectory)
                     ? _config.ModDirectory
                     : null;
-            _fileDialog.OpenFolderPicker("Choose Default Export Directory", (b, s) =>
+            _fileDialog.OpenFolderPicker("选择默认导出目录", (b, s) =>
             {
                 if (b)
                     _modExportManager.UpdateExportDirectory(s);
@@ -692,9 +693,9 @@ public class SettingsTab : ITab, IUiService
         }
 
         style.Pop();
-        ImGuiUtil.LabeledHelpMarker("Default Mod Export Directory",
-            "Set the directory mods get saved to when using the export function or loaded from when reimporting backups.\n"
-          + "Keep this empty to use the root directory.");
+        ImGuiUtil.LabeledHelpMarker("默认模组导出目录",
+            "设置用于备份模组与恢复备份的路径。\n"
+          + "留空则使用根目录。");
     }
 
     /// <summary> Draw input for the default name to input as author into newly generated mods. </summary>
@@ -708,7 +709,7 @@ public class SettingsTab : ITab, IUiService
         if (ImGui.IsItemDeactivatedAfterEdit())
             _config.Save();
 
-        ImGuiUtil.LabeledHelpMarker("Default Mod Author", "Set the default author stored for newly created mods.");
+        ImGuiUtil.LabeledHelpMarker("默认模组作者", "为新创建的模组设置一个默认的作者名字。");
     }
 
     /// <summary> Draw input for the default folder to sort put newly imported mods into. </summary>
@@ -722,16 +723,16 @@ public class SettingsTab : ITab, IUiService
         if (ImGui.IsItemDeactivatedAfterEdit())
             _config.Save();
 
-        ImGuiUtil.LabeledHelpMarker("Default Mod Import Organizational Folder",
-            "Set the default Penumbra mod folder to place newly imported mods into.\nLeave blank to import into Root.");
+        ImGuiUtil.LabeledHelpMarker("默认模组导入折叠组",
+            "导入新模组后，模组默认进入以此名称命名的折叠组。\n留空则导入到根目录。");
     }
 
 
     /// <summary> Draw all settings pertaining to advanced editing of mods. </summary>
     private void DrawModEditorSettings()
     {
-        Checkbox("Advanced Editing: Edit Raw Tile UV Transforms",
-            "Edit the raw matrix components of tile UV transforms, instead of having them decomposed into scale, rotation and shear.",
+        Checkbox("高级编辑：编辑原始Tile UV变换",
+            "编辑Tile UV变换的原始矩阵组件，而不是将它们分解为缩放、旋转和剪切。",
             _config.EditRawTileTransforms, v => _config.EditRawTileTransforms = v);
     }
 
@@ -740,7 +741,7 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
-        if (!ImGui.CollapsingHeader("Colors"))
+        if (!ImGui.CollapsingHeader("配色设置"))
             return;
 
         foreach (var color in Enum.GetValues<ColorId>())
@@ -759,23 +760,23 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw all advanced settings. </summary>
     private void DrawAdvancedSettings()
     {
-        var header = ImGui.CollapsingHeader("Advanced");
+        var header = ImGui.CollapsingHeader("高级设置");
 
         if (!header)
             return;
 
         DrawCrashHandler();
         DrawMinimumDimensionConfig();
-        Checkbox("Auto Deduplicate on Import",
-            "Automatically deduplicate mod files on import. This will make mod file sizes smaller, but deletes (binary identical) files.",
+        Checkbox("在导入时自动清除重复文件",
+            "导入时自动清除模组中的重复文件。这将使模组文件的占用变小，但会删除（二进制相同的）文件。",
             _config.AutoDeduplicateOnImport, v => _config.AutoDeduplicateOnImport = v);
-        Checkbox("Auto Reduplicate UI Files on PMP Import",
-            "Automatically reduplicate and normalize UI-specific files on import from PMP files. This is STRONGLY recommended because deduplicated UI files crash the game.",
+        Checkbox("PMP导入时自动重复复制UI文件",
+            "从PMP文件导入时自动重复复制并规范化与UI有关的文件。强烈建议启用此选项，因为UI文件导入时去重会导致游戏崩溃。",
             _config.AutoReduplicateUiOnImport, v => _config.AutoReduplicateUiOnImport = v);
         DrawCompressionBox();
-        Checkbox("Keep Default Metadata Changes on Import",
-            "Normally, metadata changes that equal their default values, which are sometimes exported by TexTools, are discarded. "
-          + "Toggle this to keep them, for example if an option in a mod is supposed to disable a metadata change from a prior option.",
+        Checkbox("在导入时保持默认的元数据修改",
+            "在正常情况下，元数据修改的值（有时是由TexTools导出的）与游戏默认的值相同时，将被抛弃。"
+          + "切换此选项以保留它们 - 假如你认为某个模组中的某个选项在先前的选项中被禁用了元数据的修改。",
             _config.KeepDefaultMetaChanges, v => _config.KeepDefaultMetaChanges = v);
         DrawWaitForPluginsReflection();
         DrawEnableHttpApiBox();
@@ -787,8 +788,8 @@ public class SettingsTab : ITab, IUiService
 
     private void DrawCrashHandler()
     {
-        Checkbox("Enable Penumbra Crash Logging (Experimental)",
-            "Enables Penumbra to launch a secondary process that records some game activity which may or may not help diagnosing Penumbra-related game crashes.",
+        Checkbox("启用Penumbra崩溃记录（实验性功能）",
+            "使Penumbra能够启动一个二级进程，记录一些游戏活动，这可能对诊断与Penumbra相关的游戏崩溃有帮助，也可能没帮助。",
             _config.UseCrashHandler ?? false,
             v =>
             {
@@ -804,8 +805,8 @@ public class SettingsTab : ITab, IUiService
         if (!_compactor.CanCompact)
             return;
 
-        Checkbox("Use Filesystem Compression",
-            "Use Windows functionality to transparently reduce storage size of mod files on your computer. This might cost performance, but seems to generally be beneficial to performance by shifting more responsibility to the underused CPU and away from the overused hard drives.",
+        Checkbox("使用文件系统压缩",
+            "使用这个Windows功能（压缩驱动器）可以明显地减少计算机上模组文件的存储大小。\n这会提高CPU负担减少硬盘负担，对硬盘负担大CPU负担小的电脑性能有益。对硬盘负担小CPU负担大的电脑则可能减少性能。",
             _config.UseFileSystemCompression,
             v =>
             {
@@ -813,14 +814,14 @@ public class SettingsTab : ITab, IUiService
                 _compactor.Enabled               = v;
             });
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Compress Existing Files", Vector2.Zero,
-                "Try to compress all files in your root directory. This will take a while.",
+        if (ImGuiUtil.DrawDisabledButton("压缩现有文件", Vector2.Zero,
+                "尝试压缩根目录中的所有文件。这需要一段时间。",
                 _compactor.MassCompactRunning || !_modManager.Valid))
             _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories), CompressionAlgorithm.Xpress8K, true);
 
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Decompress Existing Files", Vector2.Zero,
-                "Try to decompress all files in your root directory. This will take a while.",
+        if (ImGuiUtil.DrawDisabledButton("解压缩现有文件", Vector2.Zero,
+                "尝试解压缩根目录中的所有文件。这需要一段时间。",
                 _compactor.MassCompactRunning || !_modManager.Valid))
             _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories), CompressionAlgorithm.None, true);
 
@@ -849,10 +850,10 @@ public class SettingsTab : ITab, IUiService
 
         var warning = x < Configuration.Constants.MinimumSizeX
             ? y < Configuration.Constants.MinimumSizeY
-                ? "Size is smaller than default: This may look undesirable."
-                : "Width is smaller than default: This may look undesirable."
+                ? "尺寸小于默认值：不建议。"
+                : "宽度小于默认值：不建议。"
             : y < Configuration.Constants.MinimumSizeY
-                ? "Height is smaller than default: This may look undesirable."
+                ? "高度小于默认值：不建议。"
                 : string.Empty;
         var buttonWidth = UiHelpers.InputTextWidth.X / 2.5f;
         ImGui.SetNextItemWidth(buttonWidth);
@@ -867,8 +868,8 @@ public class SettingsTab : ITab, IUiService
         edited |= ImGui.IsItemDeactivatedAfterEdit();
 
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Reset##resetMinSize", new Vector2(buttonWidth / 2 - ImGui.GetStyle().ItemSpacing.X * 2, 0),
-                $"Reset minimum dimensions to ({Configuration.Constants.MinimumSizeX}, {Configuration.Constants.MinimumSizeY}).",
+        if (ImGuiUtil.DrawDisabledButton("重置##resetMinSize", new Vector2(buttonWidth / 2 - ImGui.GetStyle().ItemSpacing.X * 2, 0),
+                $"将最小尺寸重置为({Configuration.Constants.MinimumSizeX}, {Configuration.Constants.MinimumSizeY}).",
                 x == Configuration.Constants.MinimumSizeX && y == Configuration.Constants.MinimumSizeY))
         {
             x      = Configuration.Constants.MinimumSizeX;
@@ -876,8 +877,8 @@ public class SettingsTab : ITab, IUiService
             edited = true;
         }
 
-        ImGuiUtil.LabeledHelpMarker("Minimum Window Dimensions",
-            "Set the minimum dimensions for resizing this window. Reducing these dimensions may cause the window to look bad or more confusing and is not recommended.");
+        ImGuiUtil.LabeledHelpMarker("窗口最小尺寸",
+            "设置此窗口的最小尺寸。不建议将值设置地比默认最小尺寸更小，可能导致窗口看起来很糟很混乱。");
 
         if (warning.Length > 0)
             ImGuiUtil.DrawTextButton(warning, UiHelpers.InputTextWidth, Colors.PressEnterWarningBg);
@@ -909,8 +910,8 @@ public class SettingsTab : ITab, IUiService
         }
 
         ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker("Enable HTTP API",
-            "Enables other applications, e.g. Anamnesis, to use some Penumbra functions, like requesting redraws.");
+        ImGuiUtil.LabeledHelpMarker("启用 HTTP API",
+            "允许其他程序（如Anamnesis）使用Penumbra的功能，比如请求重绘。");
     }
 
     /// <summary> Draw a checkbox to toggle Debug mode. </summary>
@@ -924,15 +925,15 @@ public class SettingsTab : ITab, IUiService
         }
 
         ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker("Enable Debug Mode",
-            "[DEBUG] Enable the Debug Tab and Resource Manager Tab as well as some additional data collection. Also open the config window on plugin load.");
+        ImGuiUtil.LabeledHelpMarker("启用调试模式",
+            "[DEBUG] 启用‘调试’和‘资源管理器’选项卡，操作一些额外数据。在插件加载时也会自动打开设置窗口。");
     }
 
     /// <summary> Draw a button that reloads resident resources. </summary>
     private void DrawReloadResourceButton()
     {
-        if (ImGuiUtil.DrawDisabledButton("Reload Resident Resources", Vector2.Zero,
-                "Reload some specific files that the game keeps in memory at all times.\nYou usually should not need to do this.",
+        if (ImGuiUtil.DrawDisabledButton("重新加载常驻资源", Vector2.Zero,
+                "重新加载一些始终保留在内存中的游戏特定文件。\n通常不需要执行此操作。",
                 !_characterUtility.Ready))
             _residentResources.Reload();
     }
@@ -940,7 +941,7 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw a button that reloads fonts. </summary>
     private void DrawReloadFontsButton()
     {
-        if (ImGuiUtil.DrawDisabledButton("Reload Fonts", Vector2.Zero, "Force the game to reload its font files.", !_fontReloader.Valid))
+        if (ImGuiUtil.DrawDisabledButton("重新加载字体", Vector2.Zero, "强制游戏重新加载调用的字体文件。", !_fontReloader.Valid))
             _fontReloader.Reload();
     }
 
@@ -950,15 +951,15 @@ public class SettingsTab : ITab, IUiService
         if (!_dalamudConfig.GetDalamudConfig(DalamudConfigService.WaitingForPluginsOption, out bool value))
         {
             using var disabled = ImRaii.Disabled();
-            Checkbox("Wait for Plugins on Startup (Disabled, can not access Dalamud Configuration)", string.Empty, false, _ => { });
+            Checkbox("在游戏加载之前等待插件加载 (已禁用，无法访问Dalamud设置。）", string.Empty, false, _ => { });
         }
         else
         {
-            Checkbox("Wait for Plugins on Startup",
-                "Some mods need to change files that are loaded once when the game starts and never afterwards.\n"
-              + "This can cause issues with Penumbra loading after the files are already loaded.\n"
-              + "This setting causes the game to wait until certain plugins have finished loading, making those mods work (in the base collection).\n\n"
-              + "This changes a setting in the Dalamud Configuration found at /xlsettings -> General.",
+            Checkbox("在游戏加载之前等待插件加载",
+                "有些模组需要修改在游戏开始时加载一次的文件之后再也不会加载的文件。\n"
+              + "游戏文件加载后Penumbra才加载该文件可能会导致出现问题。\n"
+              + "这个设置将导致游戏等待，直到Penumbra里的某些模组完成加载，使这些模组（一般在基础合集中）能够正常生效。\n\n"
+              + "这将更改Dalamud设置(命令 /xlsettings) -> 基本配置中的设置。",
                 value,
                 v => _dalamudConfig.SetDalamudConfig(DalamudConfigService.WaitingForPluginsOption, v, "doWaitForPluginsOnStartup"));
         }
@@ -985,24 +986,27 @@ public class SettingsTab : ITab, IUiService
         CustomGui.DrawGuideButton(Penumbra.Messager, width);
 
         ImGui.SetCursorPos(new Vector2(xPos, 3 * ImGui.GetFrameHeightWithSpacing()));
-        if (ImGui.Button("Restart Tutorial", new Vector2(width, 0)))
+        CustomGui.DrawCNDiscordButton( Penumbra.Messager, width );
+
+        ImGui.SetCursorPos(new Vector2(xPos, 4 * ImGui.GetFrameHeightWithSpacing()));
+        if (ImGui.Button("重新启动教程", new Vector2(width, 0)))
         {
             _config.Ephemeral.TutorialStep = 0;
             _config.Ephemeral.Save();
         }
 
-        ImGui.SetCursorPos(new Vector2(xPos, 4 * ImGui.GetFrameHeightWithSpacing()));
-        if (ImGui.Button("Show Changelogs", new Vector2(width, 0)))
+        ImGui.SetCursorPos(new Vector2(xPos, 5 * ImGui.GetFrameHeightWithSpacing()));
+        if (ImGui.Button("查看更新日志", new Vector2(width, 0)))
             _penumbra.ForceChangelogOpen();
     }
 
     private void DrawPredefinedTagsSection()
     {
-        if (!ImGui.CollapsingHeader("Tags"))
+        if (!ImGui.CollapsingHeader("标签设置"))
             return;
 
-        var tagIdx = _sharedTags.Draw("Predefined Tags: ",
-            "Predefined tags that can be added or removed from mods with a single click.", _predefinedTagManager,
+        var tagIdx = _sharedTags.Draw("预定义标签：",
+            "可以通过鼠标单击来添加或移除的预定义标签。", _predefinedTagManager,
             out var editedTag);
 
         if (tagIdx >= 0)

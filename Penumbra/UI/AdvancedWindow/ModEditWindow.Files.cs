@@ -35,7 +35,7 @@ public partial class ModEditWindow
 
     private void DrawFileTab()
     {
-        using var tab = ImRaii.TabItem("File Redirections");
+        using var tab = ImRaii.TabItem("文件重定向");
         if (!tab)
             return;
 
@@ -164,10 +164,10 @@ public partial class ModEditWindow
 
         return (groupCount, registry.SubModUsage.Count) switch
         {
-            (0, 0)   => "(unused)",
-            (1, 1)   => "(used 1 time)",
-            (1, > 1) => $"(used {registry.SubModUsage.Count} times in 1 group)",
-            _        => $"(used {registry.SubModUsage.Count} times over {groupCount} groups)",
+            (0, 0)   => "(未使用)",
+            (1, 1)   => "(使用了 1 次)",
+            (1, > 1) => $"(在 1 组中使用了 {registry.SubModUsage.Count} 次)",
+            _        => $"(在 {groupCount} 组中使用了 {registry.SubModUsage.Count} 次",
         };
 
         (IEnumerable<string>, int) GetMulti()
@@ -211,7 +211,7 @@ public partial class ModEditWindow
             _gamePathEdit = tmp;
         }
 
-        ImGuiUtil.HoverTooltip("Clear completely to remove the path from this mod.");
+        ImGuiUtil.HoverTooltip("从此模组中完全移除了此路径。");
 
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -238,7 +238,7 @@ public partial class ModEditWindow
         var tmp = _fileIdx == i && _pathIdx == -1 ? _gamePathEdit : string.Empty;
         var pos = ImGui.GetCursorPosX() - ImGui.GetFrameHeight();
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputTextWithHint("##new", "Add New Path...", ref tmp, Utf8GamePath.MaxGamePathLength))
+        if (ImGui.InputTextWithHint("##new", "添加新路径...", ref tmp, Utf8GamePath.MaxGamePathLength))
         {
             _fileIdx      = i;
             _pathIdx      = -1;
@@ -272,83 +272,83 @@ public partial class ModEditWindow
         using var spacing = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(3 * UiHelpers.Scale, 0));
         ImGui.SetNextItemWidth(30 * UiHelpers.Scale);
         ImGui.DragInt("##skippedFolders", ref _folderSkip, 0.01f, 0, 10);
-        ImGuiUtil.HoverTooltip("Skip the first N folders when automatically constructing the game path from the file path.");
+        ImGuiUtil.HoverTooltip("从文件路径自动构建游戏路径时，跳过指定数量的文件夹。");
         ImGui.SameLine();
         spacing.Pop();
-        if (ImGui.Button("Add Paths"))
+        if (ImGui.Button("添加路径"))
             _editor.FileEditor.AddPathsToSelected(_editor.Option!, _editor.Files.Available.Where(_selectedFiles.Contains), _folderSkip);
 
         ImGuiUtil.HoverTooltip(
-            "Add the file path converted to a game path to all selected files for the current option, optionally skipping the first N folders.");
+            "在当前选项（指'刷新数据'右边的模组选项）选中的所有文件中，添加模组文件路径替换游戏路径，可在前面设置数值跳过指定数量的文件夹。");
 
 
         ImGui.SameLine();
-        if (ImGui.Button("Remove Paths"))
+        if (ImGui.Button("移除路径"))
             _editor.FileEditor.RemovePathsFromSelected(_editor.Option!, _editor.Files.Available.Where(_selectedFiles.Contains));
 
-        ImGuiUtil.HoverTooltip("Remove all game paths associated with the selected files in the current option.");
+        ImGuiUtil.HoverTooltip("移除当前选项中所选文件的替换游戏路径。");
 
 
         ImGui.SameLine();
         var active = _config.DeleteModModifier.IsActive();
         var tt =
-            "Delete all selected files entirely from your filesystem, but not their file associations in the mod.\n!!!This can not be reverted!!!";
+            "从你的文件系统中完全删除选中的所有文件，但不删除替换游戏路径。\n！！！注意，此操作无法恢复！！！";
         if (_selectedFiles.Count == 0)
-            tt += "\n\nNo files selected.";
+            tt += "\n\n没有文件被删除。";
         else if (!active)
             tt += $"\n\nHold {_config.DeleteModModifier} to delete.";
 
-        if (ImGuiUtil.DrawDisabledButton("Delete Selected Files", Vector2.Zero, tt, _selectedFiles.Count == 0 || !active))
+        if (ImGuiUtil.DrawDisabledButton("删除选中的文件", Vector2.Zero, tt, _selectedFiles.Count == 0 || !active))
             _editor.FileEditor.DeleteFiles(_editor.Mod!, _editor.Option!, _editor.Files.Available.Where(_selectedFiles.Contains));
 
         ImGui.SameLine();
         var changes = _editor.FileEditor.Changes;
-        tt = changes ? "Apply the current file setup to the currently selected option." : "No changes made.";
-        if (ImGuiUtil.DrawDisabledButton("Apply Changes", Vector2.Zero, tt, !changes))
+        tt = changes ? "将当前文件设置应用到选中的文件。" : "没作出任何修改。";
+        if (ImGuiUtil.DrawDisabledButton("应用修改", Vector2.Zero, tt, !changes))
         {
             var failedFiles = _editor.FileEditor.Apply(_editor.Mod!, _editor.Option!);
             if (failedFiles > 0)
-                Penumbra.Log.Information($"Failed to apply {failedFiles} file redirections to {_editor.Option!.GetFullName()}.");
+                Penumbra.Log.Information($"应用{failedFiles}文件重定向到{_editor.Option!.GetFullName()}失败。");
         }
 
 
         ImGui.SameLine();
-        var label  = changes ? "Revert Changes" : "Reload Files";
-        var length = new Vector2(ImGui.CalcTextSize("Revert Changes").X, 0);
+        var label  = changes ? "撤销修改" : "重新加载文件";
+        var length = new Vector2( ImGui.CalcTextSize( "     撤销修改     " ).X, 0 );
         if (ImGui.Button(label, length))
             _editor.FileEditor.Revert(_editor.Mod!, _editor.Option!);
 
-        ImGuiUtil.HoverTooltip("Revert all revertible changes since the last file or option reload or data refresh.");
+        ImGuiUtil.HoverTooltip("恢复自上次的文件、选项重载或数据刷新以来所有可恢复的修改。");
 
         ImGui.SameLine();
-        ImGui.Checkbox("Overview Mode", ref _overviewMode);
+        ImGui.Checkbox("总览模式", ref _overviewMode);
     }
 
     private void DrawFileManagementNormal()
     {
         ImGui.SetNextItemWidth(250 * UiHelpers.Scale);
-        LowerString.InputWithHint("##filter", "Filter paths...", ref _fileFilter, Utf8GamePath.MaxGamePathLength);
+        LowerString.InputWithHint("##filter", "筛选路径...", ref _fileFilter, Utf8GamePath.MaxGamePathLength);
         ImGui.SameLine();
-        ImGui.Checkbox("Show Game Paths", ref _showGamePaths);
+        ImGui.Checkbox("显示游戏路径", ref _showGamePaths);
         ImGui.SameLine();
-        if (ImGui.Button("Unselect All"))
+        if (ImGui.Button("取消所有选择"))
             _selectedFiles.Clear();
 
         ImGui.SameLine();
-        if (ImGui.Button("Select Visible"))
+        if (ImGui.Button("选择可见项"))
             _selectedFiles.UnionWith(_editor.Files.Available.Where(CheckFilter));
 
         ImGui.SameLine();
-        if (ImGui.Button("Select Unused"))
+        if (ImGui.Button("选择未使用项"))
             _selectedFiles.UnionWith(_editor.Files.Available.Where(f => f.SubModUsage.Count == 0));
 
         ImGui.SameLine();
-        if (ImGui.Button("Select Used Here"))
+        if (ImGui.Button("选择已使用项"))
             _selectedFiles.UnionWith(_editor.Files.Available.Where(f => f.CurrentUsage > 0));
 
         ImGui.SameLine();
 
-        ImGuiUtil.RightAlign($"{_selectedFiles.Count} / {_editor.Files.Available.Count} Files Selected");
+        ImGuiUtil.RightAlign($"已选中{_selectedFiles.Count} / {_editor.Files.Available.Count}个文件。");
     }
 
     private void DrawFileManagementOverview()
@@ -360,12 +360,12 @@ public partial class ModEditWindow
         var width = ImGui.GetContentRegionAvail().X / 8;
 
         ImGui.SetNextItemWidth(width * 3);
-        LowerString.InputWithHint("##fileFilter", "Filter file...", ref _fileOverviewFilter1, Utf8GamePath.MaxGamePathLength);
+        LowerString.InputWithHint( "##fileFilter", "筛选文件...", ref _fileOverviewFilter1, Utf8GamePath.MaxGamePathLength );
         ImGui.SameLine();
         ImGui.SetNextItemWidth(width * 3);
-        LowerString.InputWithHint("##pathFilter", "Filter path...", ref _fileOverviewFilter2, Utf8GamePath.MaxGamePathLength);
+        LowerString.InputWithHint( "##pathFilter", "筛选路径...", ref _fileOverviewFilter2, Utf8GamePath.MaxGamePathLength );
         ImGui.SameLine();
         ImGui.SetNextItemWidth(width * 2);
-        LowerString.InputWithHint("##optionFilter", "Filter option...", ref _fileOverviewFilter3, Utf8GamePath.MaxGamePathLength);
+        LowerString.InputWithHint( "##optionFilter", "筛选选项...", ref _fileOverviewFilter3, Utf8GamePath.MaxGamePathLength );
     }
 }

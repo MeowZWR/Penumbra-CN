@@ -86,7 +86,7 @@ public sealed class ResourceWatcher : IDisposable, ITab, IUiService
     }
 
     public ReadOnlySpan<byte> Label
-        => "Resource Logger"u8;
+        => "资源日志记录器"u8;
 
     public void DrawContent()
     {
@@ -94,7 +94,7 @@ public sealed class ResourceWatcher : IDisposable, ITab, IUiService
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeightWithSpacing() / 2);
         var isEnabled = _ephemeral.EnableResourceWatcher;
-        if (ImGui.Checkbox("Enable", ref isEnabled))
+        if (ImGui.Checkbox("启用", ref isEnabled))
         {
             _ephemeral.EnableResourceWatcher = isEnabled;
             _ephemeral.Save();
@@ -103,12 +103,12 @@ public sealed class ResourceWatcher : IDisposable, ITab, IUiService
         ImGui.SameLine();
         DrawMaxEntries();
         ImGui.SameLine();
-        if (ImGui.Button("Clear"))
+        if (ImGui.Button("清除"))
             Clear();
 
         ImGui.SameLine();
         var onlyMatching = _ephemeral.OnlyAddMatchingResources;
-        if (ImGui.Checkbox("Store Only Matching", ref onlyMatching))
+        if (ImGui.Checkbox("仅存储匹配项", ref onlyMatching))
         {
             _ephemeral.OnlyAddMatchingResources = onlyMatching;
             _ephemeral.Save();
@@ -116,7 +116,7 @@ public sealed class ResourceWatcher : IDisposable, ITab, IUiService
 
         ImGui.SameLine();
         var writeToLog = _ephemeral.EnableResourceLogging;
-        if (ImGui.Checkbox("Write to Log", ref writeToLog))
+        if (ImGui.Checkbox("写入日志", ref writeToLog))
         {
             _ephemeral.EnableResourceLogging = writeToLog;
             _ephemeral.Save();
@@ -137,7 +137,7 @@ public sealed class ResourceWatcher : IDisposable, ITab, IUiService
         var       invalidRegex = _logRegex == null && _logFilter.Length > 0;
         using var color        = ImRaii.PushColor(ImGuiCol.Border, Colors.RegexWarningBorder, invalidRegex);
         using var style        = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, UiHelpers.Scale, invalidRegex);
-        if (ImGui.InputTextWithHint("##logFilter", "If path matches this Regex...", ref tmp, 256))
+        if (ImGui.InputTextWithHint("##logFilter", "如果路径与此正则表达式匹配...", ref tmp, 256))
             UpdateFilter(tmp, true);
     }
 
@@ -173,7 +173,7 @@ public sealed class ResourceWatcher : IDisposable, ITab, IUiService
     private void DrawMaxEntries()
     {
         ImGui.SetNextItemWidth(80 * UiHelpers.Scale);
-        ImGui.InputInt("Max. Entries", ref _newMaxEntries, 0, 0);
+        ImGui.InputInt("最大记录数", ref _newMaxEntries, 0, 0);
         var change = ImGui.IsItemDeactivatedAfterEdit();
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
         {
@@ -183,7 +183,7 @@ public sealed class ResourceWatcher : IDisposable, ITab, IUiService
 
         var maxEntries = _config.MaxResourceWatcherRecords;
         if (maxEntries != DefaultMaxEntries && ImGui.IsItemHovered())
-            ImGui.SetTooltip($"CTRL + Right-Click to reset to default {DefaultMaxEntries}.");
+            ImGui.SetTooltip($"CTRL+右键点击重置为默认的条数：{DefaultMaxEntries}.");
 
         if (!change)
             return;

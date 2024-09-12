@@ -15,7 +15,7 @@ public class IncognitoService(TutorialService tutorial) : IService
         var color = ColorId.FolderExpanded.Value();
         using (ImRaii.PushFrameBorder(ImUtf8.GlobalScale, color))
         {
-            var tt   = IncognitoMode ? "Toggle incognito mode off."u8 : "Toggle incognito mode on."u8;
+            var tt   = IncognitoMode ? "关闭匿名模式。"u8 : "开启匿名模式。"u8;
             var icon = IncognitoMode ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye;
             if (ImUtf8.IconButton(icon, tt, new Vector2(width, ImUtf8.FrameHeight), false, color))
                 IncognitoMode = !IncognitoMode;

@@ -116,7 +116,7 @@ public sealed class PredefinedTagManager : ISavable, IReadOnlyList<string>, ISer
           - (ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ItemInnerSpacing.X : 0));
         using var color = ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive), _isListOpen);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Tags.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Add Predefined Tags...", false, true))
+                "添加预定义标签...", false, true))
             _isListOpen = !_isListOpen;
     }
 
@@ -129,7 +129,7 @@ public sealed class PredefinedTagManager : ISavable, IReadOnlyList<string>, ISer
         if (!_isListOpen)
             return false;
 
-        ImGui.TextUnformatted("Predefined Tags");
+        ImGui.TextUnformatted("预定义标签");
         ImGui.Separator();
 
         var ret = false;

@@ -239,11 +239,11 @@ public partial class CombinedTexture
         ret |= ImGui.IsItemDeactivatedAfterEdit();
         ImGui.SameLine();
         ImGui.SetNextItemWidth(75.0f * UiHelpers.Scale);
-        ImGui.DragInt("Offsets##YOffset", ref _offsetY, 0.5f);
+        ImGui.DragInt("偏移##YOffset", ref _offsetY, 0.5f);
         ret |= ImGui.IsItemDeactivatedAfterEdit();
 
         ImGui.SetNextItemWidth(200.0f * UiHelpers.Scale);
-        using (var c = ImRaii.Combo("Combine Operation", CombineOpLabels[(int)_combineOp]))
+        using (var c = ImRaii.Combo("合并操作", CombineOpLabels[(int)_combineOp]))
         {
             if (c)
                 foreach (var op in Enum.GetValues<CombineOp>())
@@ -264,7 +264,7 @@ public partial class CombinedTexture
         var resizeOp = GetActualResizeOp(_resizeOp, _combineOp);
         using (var dis = ImRaii.Disabled((int)resizeOp < 0))
         {
-            ret |= ImGuiUtil.GenericEnumCombo("Resizing Mode", 200.0f * UiHelpers.Scale, _resizeOp, out _resizeOp,
+            ret |= ImGuiUtil.GenericEnumCombo("调整大小模式", 200.0f * UiHelpers.Scale, _resizeOp, out _resizeOp,
                 Enum.GetValues<ResizeOp>().Where(op => (int)op >= 0), op => ResizeOpLabels[(int)op]);
         }
 
@@ -355,7 +355,7 @@ public partial class CombinedTexture
         ImGui.SameLine();
         ImGui.Dummy(ImGuiHelpers.ScaledVector2(20, 0));
         ImGui.SameLine();
-        ImGui.TextUnformatted("Invert");
+        ImGui.TextUnformatted("反转");
         ImGui.SameLine();
 
         Channels channels = 0;
@@ -383,7 +383,7 @@ public partial class CombinedTexture
 
     private static bool PresetCombo(ref Matrix4x4 multiplier, ref Vector4 constant)
     {
-        using var combo = ImRaii.Combo("Presets", string.Empty, ImGuiComboFlags.NoPreview);
+        using var combo = ImRaii.Combo("预设", string.Empty, ImGuiComboFlags.NoPreview);
         if (!combo)
             return false;
 

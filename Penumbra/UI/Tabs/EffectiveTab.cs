@@ -20,7 +20,7 @@ public class EffectiveTab(CollectionManager collectionManager, CollectionSelectH
     : ITab, IUiService
 {
     public ReadOnlySpan<byte> Label
-        => "Effective Changes"u8;
+        => "生效更改"u8;
 
     public void DrawContent()
     {
@@ -75,13 +75,13 @@ public class EffectiveTab(CollectionManager collectionManager, CollectionSelectH
     {
         var tmp = _effectiveGamePathFilter.Text;
         ImGui.SetNextItemWidth(_effectiveLeftTextLength);
-        if (ImGui.InputTextWithHint("##gamePathFilter", "Filter game path...", ref tmp, 256))
+        if (ImGui.InputTextWithHint("##gamePathFilter", "根据游戏调用路径筛选...", ref tmp, 256))
             _effectiveGamePathFilter = tmp;
 
         ImGui.SameLine(_effectiveArrowLength + _effectiveLeftTextLength + 3 * ImGui.GetStyle().ItemSpacing.X);
         ImGui.SetNextItemWidth(-1);
         tmp = _effectiveFilePathFilter.Text;
-        if (ImGui.InputTextWithHint("##fileFilter", "Filter file path...", ref tmp, 256))
+        if (ImGui.InputTextWithHint("##fileFilter", "根据模组安装路径筛选...", ref tmp, 256))
             _effectiveFilePathFilter = tmp;
     }
 
@@ -141,7 +141,7 @@ public class EffectiveTab(CollectionManager collectionManager, CollectionSelectH
         ImGuiUtil.PrintIcon(FontAwesomeIcon.LongArrowAltLeft);
         ImGui.TableNextColumn();
         ImUtf8.CopyOnClickSelectable(name.Path.InternalName.Span);
-        ImGuiUtil.HoverTooltip($"\nChanged by {name.Mod.Name}.");
+        ImGuiUtil.HoverTooltip($"\n更改来自： {name.Mod.Name}.");
     }
 
     /// <summary> Draw a line for a path and its name. </summary>

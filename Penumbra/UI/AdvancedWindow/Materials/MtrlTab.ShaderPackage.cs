@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.ImGuiNotification;
 using ImGuiNET;
 using Newtonsoft.Json.Linq;
@@ -146,7 +146,7 @@ public partial class MtrlTab
                 ? await File.ReadAllBytesAsync(path.FullName)
                 : _gameData.GetFile(path.InternalName.ToString())?.Data;
             _loadedShpkPath     = path;
-            _associatedShpk     = data?.Length > 0 ? new ShpkFile(data) : throw new Exception("Failure to load file data.");
+            _associatedShpk     = data?.Length > 0 ? new ShpkFile(data) : throw new Exception("无法加载文件数据。");
             _loadedShpkPathName = path.ToPath();
         }
         catch (Exception e)
@@ -154,7 +154,7 @@ public partial class MtrlTab
             _loadedShpkPath     = FullPath.Empty;
             _loadedShpkPathName = string.Empty;
             _associatedShpk     = null;
-            Penumbra.Messager.NotificationMessage(e, $"Could not load {_loadedShpkPath.ToPath()}.", NotificationType.Error, false);
+            Penumbra.Messager.NotificationMessage(e, $"无法加载 {_loadedShpkPath.ToPath()}.", NotificationType.Error, false);
         }
         finally
         {
@@ -334,11 +334,11 @@ public partial class MtrlTab
             ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
 
             if (_associatedShpk == null)
-                ImUtf8.Text("Unable to find a suitable shader (.shpk) file for cross-references. Some functionality will be missing."u8,
+                ImUtf8.Text("无法找到适合的着色器 (.shpk) 文件进行交叉引用。一些功能将会缺失。"u8,
                     ImGuiUtil.HalfBlendText(0x80u)); // Half red
             else
                 ImUtf8.Text(
-                    "No dev-kit file found for this material's shaders. Please install one for optimal editing experience, such as actual constant names instead of hexadecimal identifiers."u8,
+                    "未找到此材质着色器的开发工具包文件。请安装一个以获得最佳编辑体验，显示实际常量名称而不是十六进制标识符。"u8,
                     ImGuiUtil.HalfBlendText(0x8080u)); // Half yellow
         }
 
@@ -391,16 +391,16 @@ public partial class MtrlTab
     /// </summary>
     private void DrawCustomAssociations()
     {
-        const string tooltip = "Click to copy file path to clipboard.";
+        const string tooltip = "点击复制文件路径到剪贴板";
         var text = _associatedShpk == null
-            ? "Associated .shpk file: None"
-            : $"Associated .shpk file: {_loadedShpkPathName}";
+            ? "关联的 .shpk 文件：无"
+            : $"关联的 .shpk 文件：{_loadedShpkPathName}";
         var devkitText = _associatedShpkDevkit == null
-            ? "Associated dev-kit file: None"
-            : $"Associated dev-kit file: {_loadedShpkDevkitPathName}";
+            ? "关联的开发工具包文件：无"
+            : $"关联的开发工具包文件：{_loadedShpkDevkitPathName}";
         var baseDevkitText = _associatedBaseDevkit == null
-            ? "Base dev-kit file: None"
-            : $"Base dev-kit file: {_loadedBaseDevkitPathName}";
+            ? "基础开发工具包文件：无"
+            : $"基础开发工具包文件：{_loadedBaseDevkitPathName}";
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
 
@@ -408,8 +408,8 @@ public partial class MtrlTab
         ImUtf8.CopyOnClickSelectable(devkitText,     _loadedShpkDevkitPathName, tooltip);
         ImUtf8.CopyOnClickSelectable(baseDevkitText, _loadedBaseDevkitPathName, tooltip);
 
-        if (ImUtf8.Button("Associate Custom .shpk File"u8))
-            _fileDialog.OpenFilePicker("Associate Custom .shpk File...", ".shpk", (success, name) =>
+        if (ImUtf8.Button("关联自定义 .shpk 文件"u8))
+            _fileDialog.OpenFilePicker("关联自定义 .shpk 文件...", ".shpk", (success, name) =>
             {
                 if (success)
                     LoadShpk(new FullPath(name[0]));
@@ -417,14 +417,14 @@ public partial class MtrlTab
 
         var moddedPath = FindAssociatedShpk(out var defaultPath, out var gamePath);
         ImGui.SameLine();
-        if (ImUtf8.ButtonEx("Associate Default .shpk File"u8, moddedPath.ToPath(), Vector2.Zero,
+        if (ImUtf8.ButtonEx("关联默认 .shpk 文件"u8, moddedPath.ToPath(), Vector2.Zero,
                 moddedPath.Equals(_loadedShpkPath)))
             LoadShpk(moddedPath);
 
         if (!gamePath.Path.Equals(moddedPath.InternalName))
         {
             ImGui.SameLine();
-            if (ImUtf8.ButtonEx("Associate Unmodded .shpk File", defaultPath, Vector2.Zero,
+            if (ImUtf8.ButtonEx("关联未修改的 .shpk 文件", defaultPath, Vector2.Zero,
                     gamePath.Path.Equals(_loadedShpkPath.InternalName)))
                 LoadShpk(new FullPath(gamePath));
         }
@@ -492,7 +492,7 @@ public partial class MtrlTab
         if (_associatedShpk == null)
             return;
 
-        using (var node = ImUtf8.TreeNode("Candidate Shaders"u8))
+        using (var node = ImUtf8.TreeNode("候选着色器"u8))
         {
             if (node)
                 ImUtf8.Text(_shadersString.Span);

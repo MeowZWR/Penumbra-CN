@@ -43,7 +43,7 @@ public partial class ModEditWindow
 
     private void DrawQuickImportTab()
     {
-        using var tab = ImRaii.TabItem("Import from Screen");
+        using var tab = ImRaii.TabItem("从画面导入");
         if (!tab)
         {
             _quickImportActions.Clear();
@@ -79,14 +79,14 @@ public partial class ModEditWindow
             _quickImportWritables.Add(resourceNode.FullPath, writable);
         }
 
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Save.ToIconString(), buttonSize, "Export this file.",
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Save.ToIconString(), buttonSize, "导出此文件.",
                 resourceNode.FullPath.FullName.Length == 0 || writable == null, true))
         {
             var fullPathStr = resourceNode.FullPath.FullName;
             var ext = resourceNode.PossibleGamePaths.Length == 1
                 ? Path.GetExtension(resourceNode.GamePath.ToString())
                 : Path.GetExtension(fullPathStr);
-            _fileDialog.OpenSavePicker($"Export {Path.GetFileName(fullPathStr)} to...", ext, Path.GetFileNameWithoutExtension(fullPathStr), ext,
+            _fileDialog.OpenSavePicker($"导出 {Path.GetFileName(fullPathStr)} 到...", ext, Path.GetFileNameWithoutExtension(fullPathStr), ext,
                 (success, name) =>
                 {
                     if (!success)
@@ -98,7 +98,7 @@ public partial class ModEditWindow
                     }
                     catch (Exception e)
                     {
-                        Penumbra.Log.Error($"Could not export {fullPathStr}:\n{e}");
+                        Penumbra.Log.Error($"无法导出 {fullPathStr}:\n{e}");
                     }
                 }, null, false);
         }
@@ -111,7 +111,7 @@ public partial class ModEditWindow
         }
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.FileImport.ToIconString(), buttonSize,
-                $"Add a copy of this file to {quickImport.OptionName}.", !quickImport.CanExecute, true))
+                $"添加此文件副本到 {quickImport.OptionName}.", !quickImport.CanExecute, true))
         {
             quickImport.Execute();
             _quickImportActions.Remove((resourceNode.GamePath, writable));

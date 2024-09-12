@@ -31,26 +31,26 @@ public static class ModFilterExtensions
 
     public static IReadOnlyList<(ModFilter On, ModFilter Off, string Name)> TriStatePairs =
     [
-        (ModFilter.Enabled, ModFilter.Disabled, "Enabled"),
-        (ModFilter.IsNew, ModFilter.NotNew, "Newly Imported"),
-        (ModFilter.Favorite, ModFilter.NotFavorite, "Favorite"),
-        (ModFilter.HasConfig, ModFilter.HasNoConfig, "Has Options"),
-        (ModFilter.HasFiles, ModFilter.HasNoFiles, "Has Redirections"),
-        (ModFilter.HasMetaManipulations, ModFilter.HasNoMetaManipulations, "Has Meta Manipulations"),
-        (ModFilter.HasFileSwaps, ModFilter.HasNoFileSwaps, "Has File Swaps"),
+        (ModFilter.Enabled, ModFilter.Disabled, "已启用"),
+        (ModFilter.IsNew, ModFilter.NotNew, "新导入"),
+        (ModFilter.Favorite, ModFilter.NotFavorite, "已收藏"),
+        (ModFilter.HasConfig, ModFilter.HasNoConfig, "有选项"),
+        (ModFilter.HasFiles, ModFilter.HasNoFiles, "有文件"),
+        (ModFilter.HasMetaManipulations, ModFilter.HasNoMetaManipulations, "有元数据操作"),
+        (ModFilter.HasFileSwaps, ModFilter.HasNoFileSwaps, "有文件替换"),
     ];
 
     public static IReadOnlyList<IReadOnlyList<(ModFilter Filter, string Name)>> Groups =
     [
         [
-            (ModFilter.NoConflict, "Has No Conflicts"),
-            (ModFilter.SolvedConflict, "Has Solved Conflicts"),
-            (ModFilter.UnsolvedConflict, "Has Unsolved Conflicts"),
+            (ModFilter.NoConflict, "无冲突"),
+            (ModFilter.SolvedConflict, "冲突已解决"),
+            (ModFilter.UnsolvedConflict, "冲突未解决"),
         ],
         [
-            (ModFilter.Undefined, "Not Configured"),
-            (ModFilter.Inherited, "Inherited Configuration"),
-            (ModFilter.Uninherited, "Own Configuration"),
+            (ModFilter.Undefined, "未被配置"),
+            (ModFilter.Inherited, "继承配置"),
+            (ModFilter.Uninherited, "自己的配置"),
         ],
     ];
 }

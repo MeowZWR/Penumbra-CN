@@ -12,7 +12,7 @@ namespace Penumbra.UI;
 /// <summary> Draw the progress information for import. </summary>
 public sealed class ImportPopup : Window, IUiService
 {
-    public const string WindowLabel = "Penumbra Import Status";
+    public const string WindowLabel = "Penumbra 导入状态";
 
     private readonly ModImportManager _modImportManager;
 
@@ -80,7 +80,7 @@ public sealed class ImportPopup : Window, IUiService
         }
 
         terminate |= import.State == ImporterState.Done
-            ? ImGui.Button("Close", -Vector2.UnitX)
+            ? ImGui.Button("关闭", -Vector2.UnitX)
             : import.DrawCancelButton(-Vector2.UnitX);
         if (terminate)
             _modImportManager.ClearImport();

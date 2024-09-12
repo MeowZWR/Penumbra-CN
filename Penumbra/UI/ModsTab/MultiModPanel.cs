@@ -23,7 +23,7 @@ public class MultiModPanel(ModFileSystemSelector _selector, ModDataEditor _edito
 
     private void DrawModList()
     {
-        using var tree = ImRaii.TreeNode("Currently Selected Objects", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.NoTreePushOnOpen);
+        using var tree = ImRaii.TreeNode("当前选中的对象", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.NoTreePushOnOpen);
         ImGui.Separator();
         if (!tree)
             return;
@@ -49,7 +49,7 @@ public class MultiModPanel(ModFileSystemSelector _selector, ModDataEditor _edito
                 using var id = ImRaii.PushId(i++);
                 ImGui.TableNextColumn();
                 var icon = (path is ModFileSystem.Leaf ? FontAwesomeIcon.FileCircleMinus : FontAwesomeIcon.FolderMinus).ToIconString();
-                if (ImGuiUtil.DrawDisabledButton(icon, new Vector2(sizeType), "Remove from selection.", false, true))
+                if (ImGuiUtil.DrawDisabledButton(icon, new Vector2(sizeType), "从选择中移除。", false, true))
                     _selector.RemovePathFromMultiSelection(path);
 
                 ImGui.TableNextColumn();
@@ -73,33 +73,33 @@ public class MultiModPanel(ModFileSystemSelector _selector, ModDataEditor _edito
     {
         var width = ImGuiHelpers.ScaledVector2(150, 0);
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("Multi Tagger:");
+        ImGui.TextUnformatted("批量标签：");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemSpacing.X));
-        ImGui.InputTextWithHint("##tag", "Local Tag Name...", ref _tag, 128);
+        ImGui.InputTextWithHint("##tag", "本地标签名称...", ref _tag, 128);
 
         UpdateTagCache();
         var label = _addMods.Count > 0
-            ? $"Add to {_addMods.Count} Mods"
-            : "Add";
+            ? $"添加到{_addMods.Count}个模组"
+            : "添加";
         var tooltip = _addMods.Count == 0
             ? _tag.Length == 0
-                ? "No tag specified."
-                : $"All mods selected already contain the tag \"{_tag}\", either locally or as mod data."
-            : $"Add the tag \"{_tag}\" to {_addMods.Count} mods as a local tag:\n\n\t{string.Join("\n\t", _addMods.Select(m => m.Name.Text))}";
+                ? "未指定标签。"
+                : $"所有选中的模组已包含标签 \"{_tag}\"，无论是本地还是作为模组数据。"
+            : $"将\"{_tag}\"作为本地标签添加到{_addMods.Count}个模组：\n\n\t{string.Join("\n\t", _addMods.Select(m => m.Name.Text))}";
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(label, width, tooltip, _addMods.Count == 0))
             foreach (var mod in _addMods)
                 _editor.ChangeLocalTag(mod, mod.LocalTags.Count, _tag);
 
         label = _removeMods.Count > 0
-            ? $"Remove from {_removeMods.Count} Mods"
-            : "Remove";
+            ? $"从 {_removeMods.Count} 个模组中移除"
+            : "移除";
         tooltip = _removeMods.Count == 0
             ? _tag.Length == 0
-                ? "No tag specified."
-                : $"No selected mod contains the tag \"{_tag}\" locally."
-            : $"Remove the local tag \"{_tag}\" from {_removeMods.Count} mods:\n\n\t{string.Join("\n\t", _removeMods.Select(m => m.Item1.Name.Text))}";
+                ? "未指定标签。"
+                : $"选中的模组不包含\"{_tag}\"这个本地标签。"
+            : $"从{_removeMods.Count}个模组移除本地标签\"{_tag}\" ：\n\n\t{string.Join("\n\t", _removeMods.Select(m => m.Item1.Name.Text))}";
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(label, width, tooltip, _removeMods.Count == 0))
             foreach (var (mod, index) in _removeMods)

@@ -24,7 +24,7 @@ public class ModPanelHeader : IDisposable
     public ModPanelHeader(IDalamudPluginInterface pi, CommunicatorService communicator)
     {
         _communicator = communicator;
-        _nameFont     = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
+        _nameFont     = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
         _communicator.ModDataChanged.Subscribe(OnModDataChange, ModDataChanged.Priority.ModPanelHeader);
     }
 
@@ -100,7 +100,7 @@ public class ModPanelHeader : IDisposable
             _modWebsite = _mod.Website;
             _websiteValid = Uri.TryCreate(_modWebsite, UriKind.Absolute, out var uriResult)
              && (uriResult.Scheme == Uri.UriSchemeHttps || uriResult.Scheme == Uri.UriSchemeHttp);
-            _modWebsiteButton = _websiteValid ? "Open Website" : _modWebsite.Length == 0 ? string.Empty : $"from  {_modWebsite}";
+            _modWebsiteButton = _websiteValid ? "打开网址" : _modWebsite.Length == 0 ? string.Empty : $"来自  {_modWebsite}";
             _modWebsiteButtonWidth = _websiteValid
                 ? ImGui.CalcTextSize(_modWebsiteButton).X + 2 * ImGui.GetStyle().FramePadding.X
                 : ImGui.CalcTextSize(_modWebsiteButton).X;
@@ -217,7 +217,7 @@ public class ModPanelHeader : IDisposable
     private void DrawAuthor()
     {
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
-        ImGuiUtil.TextColored(Colors.MetaInfoText, "by ");
+        ImGuiUtil.TextColored(Colors.MetaInfoText, "作者： ");
         ImGui.SameLine();
         style.Pop();
         ImGui.TextUnformatted(_modAuthor);
@@ -252,7 +252,7 @@ public class ModPanelHeader : IDisposable
         else
         {
             using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
-            ImGuiUtil.TextColored(Colors.MetaInfoText, "from ");
+            ImGuiUtil.TextColored(Colors.MetaInfoText, "来自 ");
             ImGui.SameLine();
             style.Pop();
             ImGui.TextUnformatted(_modWebsite);

@@ -20,7 +20,7 @@ public class ModMergeTab(ModMerger modMerger) : IUiService
         if (modMerger.MergeFromMod == null)
             return;
 
-        using var tab = ImRaii.TabItem("Merge Mods");
+        using var tab = ImRaii.TabItem("合并模组");
         if (!tab)
             return;
 
@@ -47,7 +47,7 @@ public class ModMergeTab(ModMerger modMerger) : IUiService
     {
         using var bigGroup = ImRaii.Group();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted($"Merge {modMerger.MergeFromMod!.Name} into ");
+        ImGui.TextUnformatted($"合并模组 {modMerger.MergeFromMod!.Name} 到 ");
         ImGui.SameLine();
         DrawCombo(size - ImGui.GetItemRectSize().X - ImGui.GetStyle().ItemSpacing.X);
 
@@ -62,10 +62,10 @@ public class ModMergeTab(ModMerger modMerger) : IUiService
                 : Colors.DiscordColor;
             using var c = ImRaii.PushColor(ImGuiCol.Border, color);
             ImGui.SetNextItemWidth(buttonWidth);
-            ImGui.InputTextWithHint("##optionGroupInput", "Target Option Group", ref modMerger.OptionGroupName, 64);
+            ImGui.InputTextWithHint("##optionGroupInput", "目标选项组", ref modMerger.OptionGroupName, 64);
             ImGuiUtil.HoverTooltip(
-                "The name of the new or existing option group to find or create the option in. Leave both group and option name blank for the default option.\n"
-              + "A red border indicates an existing option group, a blue border indicates a new one.");
+                "这是合并到目标模组中现有的或新建的选项组名称。将选项组和选项名称都留空则会将其合并到default option中。\n"
+              + "红色边框表示现有的选项组，蓝色边框表示新的选项组。");
             ImGui.SameLine();
 
 
@@ -76,31 +76,31 @@ public class ModMergeTab(ModMerger modMerger) : IUiService
                     : Colors.DiscordColor;
             c.Push(ImGuiCol.Border, color);
             ImGui.SetNextItemWidth(buttonWidth);
-            ImGui.InputTextWithHint("##optionInput", "Target Option Name", ref modMerger.OptionName, 64);
+            ImGui.InputTextWithHint("##optionInput", "目标选项名称", ref modMerger.OptionName, 64);
             ImGuiUtil.HoverTooltip(
-                "The name of the new or existing option to merge this mod into. Leave both group and option name blank for the default option.\n"
-              + "A red border indicates an existing option, a blue border indicates a new one.");
+                "这是合并到目标模组中现有的或新建的选项名称。将选项组和选项名称都留空则会将其合并到default option中。\n"
+              + "红色边框表示现有的选项组，蓝色边框表示新的选项组。");
         }
 
         if (modMerger.MergeFromMod.HasOptions)
-            ImGuiUtil.HoverTooltip("You can only specify a target option if the source mod has no true options itself.",
+            ImGuiUtil.HoverTooltip( "如果被合并模组没有真正的选项（默认选项或者只有一个单选项都不算），你必须为其在目标模组中分配一个选项。",
                 ImGuiHoveredFlags.AllowWhenDisabled);
 
-        if (ImGuiUtil.DrawDisabledButton("Merge", new Vector2(size, 0),
-                modMerger.CanMerge ? string.Empty : "Please select a target mod different from the current mod.", !modMerger.CanMerge))
+        if (ImGuiUtil.DrawDisabledButton("合并", new Vector2(size, 0),
+                modMerger.CanMerge ? string.Empty : "请选择一个不同于当前模组的目标模组。", !modMerger.CanMerge))
             modMerger.Merge();
     }
 
     private void DrawMergeIntoDesc()
     {
         ImGuiUtil.TextWrapped(modMerger.MergeFromMod!.HasOptions
-            ? "The currently selected mod has options.\n\nThis means, that all of those options will be merged into the target. If merging an option is not possible due to the redirections already existing in an existing option, it will revert all changes and break."
-            : "The currently selected mod has no true options.\n\nThis means that you can select an existing or new option to merge all its changes into in the target mod. On failure to merge into an existing option, all changes will be reverted.");
+            ? "当前被合并的模组拥有选项。\n\n这意味着，所有这些选项都将合并到目标中，如果目标模组中已存在相同选项且修改了相同的重定向路径，则会中断合并进程撤销所有更改。"
+            : "当前被合并的模组没有真正的选项（默认选项或者只有一个单选项都不算）。\n\n这意味着，你可以选择一个现有的选项或创建新的选项，将其所有更改合并到目标模组中。合并到现有选项失败时，所有更改将会被撤销。" );
     }
 
     private void DrawCombo(float width)
     {
-        _modCombo.Draw("##ModSelection", _modCombo.CurrentSelection?.Name.Text ?? "Select the target Mod...", string.Empty, width,
+        _modCombo.Draw("##ModSelection", _modCombo.CurrentSelection?.Name.Text ?? "选择目标模组...", string.Empty, width,
             ImGui.GetTextLineHeight());
         modMerger.MergeToMod = _modCombo.CurrentSelection;
     }
@@ -109,37 +109,37 @@ public class ModMergeTab(ModMerger modMerger) : IUiService
     {
         using var group = ImRaii.Group();
         ImGui.SetNextItemWidth(size);
-        ImGui.InputTextWithHint("##newModInput", "New Mod Name...", ref _newModName, 64);
-        ImGuiUtil.HoverTooltip("Choose a name for the newly created mod. This does not need to be unique.");
+        ImGui.InputTextWithHint("##newModInput", "新模组名称...", ref _newModName, 64);
+        ImGuiUtil.HoverTooltip("为新创建的模组命名一个名称，不需要具备唯一性。");
         var tt = _newModName.Length == 0
-            ? "Please enter a name for the newly created mod first."
+            ? "请先输入新建模组的名称。"
             : modMerger.SelectedOptions.Count == 0
-                ? "Please select at least one option to split off."
+                ? "请至少选择一个选项进行拆分。"
                 : string.Empty;
         var buttonText =
-            $"Split Off {modMerger.SelectedOptions.Count} Option{(modMerger.SelectedOptions.Count > 1 ? "s" : string.Empty)}###SplitOff";
+            $"拆分 {modMerger.SelectedOptions.Count} 个选项{(modMerger.SelectedOptions.Count > 1 ? "s" : string.Empty)}###SplitOff";
         if (ImGuiUtil.DrawDisabledButton(buttonText, new Vector2(size, 0), tt, tt.Length > 0))
             modMerger.SplitIntoMod(_newModName);
 
         ImGui.Dummy(Vector2.One);
         var buttonSize = new Vector2((size - 2 * ImGui.GetStyle().ItemSpacing.X) / 3, 0);
-        if (ImGui.Button("Select All", buttonSize))
+        if (ImGui.Button("全选", buttonSize))
             modMerger.SelectedOptions.UnionWith(modMerger.MergeFromMod!.AllDataContainers);
         ImGui.SameLine();
-        if (ImGui.Button("Unselect All", buttonSize))
+        if (ImGui.Button("取消全选", buttonSize))
             modMerger.SelectedOptions.Clear();
         ImGui.SameLine();
-        if (ImGui.Button("Invert Selection", buttonSize))
+        if (ImGui.Button("反选", buttonSize))
             modMerger.SelectedOptions.SymmetricExceptWith(modMerger.MergeFromMod!.AllDataContainers);
         DrawOptionTable(size);
     }
 
     private void DrawSplitOffDesc()
     {
-        ImGuiUtil.TextWrapped("Here you can create a copy or a partial copy of the currently selected mod.\n\n"
-          + "Select as many of the options you want to copy over, enter a new mod name and click Split Off.\n\n"
-          + "You can right-click option groups to select or unselect all options from that specific group, and use the three buttons above the table for quick manipulation of your selection.\n\n"
-          + "Only required files will be copied over to the new mod. The names of options and groups will be retained. If the Default option is not selected, the new mods default option will be empty.");
+        ImGuiUtil.TextWrapped("在这里，你可以选择创建当前所选模组的副本或部分副本。\n\n"
+          + "选择你需要复制的选项，输入新模组名称并点击拆分按钮。\n\n"
+          + "右键点击选项组可以全选或取消全选此组里的选项，也可以使用表格上方的三个按钮进行快速操作。\n\n"
+          + "只有选择的文件才会被复制到新的模组中，选项和选项组名称将会在新模组中保留，如果未选择'默认选项'，则新模组的'默认选项'将留空。");
     }
 
     private void DrawOptionTable(float size)
@@ -161,11 +161,11 @@ public class ModMergeTab(ModMerger modMerger) : IUiService
             return;
 
         ImGui.TableSetupColumn("##Selected",   ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("Option",       ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("Option Group", ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("#Files",       ImGuiTableColumnFlags.WidthFixed, 50 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("#Swaps",       ImGuiTableColumnFlags.WidthFixed, 50 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("#Manips",      ImGuiTableColumnFlags.WidthFixed, 50 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("选项",       ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("选项组", ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("#文件数",       ImGuiTableColumnFlags.WidthFixed, 50 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("#替换数",       ImGuiTableColumnFlags.WidthFixed, 50 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("#元数据数",      ImGuiTableColumnFlags.WidthFixed, 50 * ImGuiHelpers.GlobalScale);
         ImGui.TableHeadersRow();
         foreach (var (option, idx) in options.WithIndex())
         {
@@ -189,12 +189,12 @@ public class ModMergeTab(ModMerger modMerger) : IUiService
                 ImGui.Selectable(group.Name, false);
                 if (ImGui.BeginPopupContextItem("##groupContext"))
                 {
-                    if (ImGui.MenuItem("Select All"))
+                    if (ImGui.MenuItem("全选"))
                         // ReSharper disable once PossibleMultipleEnumeration
                         foreach (var opt in group.DataContainers)
                             Handle(opt, true);
 
-                    if (ImGui.MenuItem("Unselect All"))
+                    if (ImGui.MenuItem("取消全选"))
                         // ReSharper disable once PossibleMultipleEnumeration
                         foreach (var opt in group.DataContainers)
                             Handle(opt, false);

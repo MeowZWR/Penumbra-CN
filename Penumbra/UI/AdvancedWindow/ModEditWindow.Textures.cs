@@ -23,13 +23,13 @@ public partial class ModEditWindow
 
     private static readonly (string, string)[] SaveAsStrings =
     {
-        ("As Is", "Save the current texture with its own format without additional conversion or compression, if possible."),
-        ("RGBA (Uncompressed)",
-            "Save the current texture as an uncompressed BGRA bitmap. This requires the most space but technically offers the best quality."),
-        ("BC3 (Simple Compression)",
-            "Save the current texture compressed via BC3/DXT5 compression. This offers a 4:1 compression ratio and is quick with acceptable quality."),
-        ("BC7 (Complex Compression)",
-            "Save the current texture compressed via BC7 compression. This offers a 4:1 compression ratio and has almost indistinguishable quality, but may take a while."),
+        ("保持原样", "尽可能地将当前纹理保存为其自身格式，不作额外的转换或压缩。"),
+        ("RGBA (未压缩)",
+            "将当前纹理保存为未压缩的BGRA位图。文件体积最大，但在技术上能提供最好的质量。"),
+        ("BC3 (简单压缩)",
+            "将当前纹理保存为BC3/DXT5压缩格式。提供4:1的压缩比，速度快质量也可接受。"),
+        ("BC7 (复杂压缩)",
+            "将当前纹理保存为BC7压缩格式。提供4:1的压缩比，并且具有与未压缩格式几乎相同的质量，但要花一些时间。"),
     };
 
     private void DrawInputChild(string label, Texture tex, Vector2 size, Vector2 imageSize)
@@ -45,10 +45,10 @@ public partial class ModEditWindow
 
             using (var disabled = ImRaii.Disabled(!_center.SaveTask.IsCompleted))
             {
-                TextureDrawer.PathInputBox(_textures, tex, ref tex.TmpPath, "##input", "Import Image...",
-                    "Can import game paths as well as your own files.", Mod!.ModPath.FullName, _fileDialog, _config.DefaultModImportPath);
+                TextureDrawer.PathInputBox(_textures, tex, ref tex.TmpPath, "##input", "导入图像...",
+                    "可以导入游戏路径以及你自己的文件。", Mod!.ModPath.FullName, _fileDialog, _config.DefaultModImportPath);
                 if (_textureSelectCombo.Draw("##combo",
-                        "Select the textures included in this mod on your drive or the ones they replace from the game files.", tex.Path,
+                        "选择在你驱动器上的模组包含的纹理，或游戏文件中替换的纹理。", tex.Path,
                         Mod.ModPath.FullName.Length + 1, out var newPath)
                  && newPath != tex.Path)
                     tex.Load(_textures, newPath);
@@ -60,7 +60,7 @@ public partial class ModEditWindow
             }
 
             ImGui.NewLine();
-            using var child2 = ImRaii.Child("image");
+            using var child2 = ImRaii.Child("图像");
             if (child2)
                 TextureDrawer.Draw(tex, imageSize);
         }
@@ -90,27 +90,27 @@ public partial class ModEditWindow
     private void RedrawOnSaveBox()
     {
         var redraw = _config.Ephemeral.ForceRedrawOnFileChange;
-        if (ImGui.Checkbox("Redraw on Save", ref redraw))
+        if (ImGui.Checkbox("保存时重绘", ref redraw))
         {
             _config.Ephemeral.ForceRedrawOnFileChange = redraw;
             _config.Ephemeral.Save();
         }
 
-        ImGuiUtil.HoverTooltip("Force a redraw of your player character whenever you save a file here.");
+        ImGuiUtil.HoverTooltip("每次保存文件时，强制重新绘制你的角色。");
     }
 
     private void MipMapInput()
     {
         ImGui.Checkbox("##mipMaps", ref _addMipMaps);
         ImGuiUtil.HoverTooltip(
-            "Add the appropriate number of MipMaps to the file.");
+            "将适当数量的MipMaps添加到文件。" );
     }
 
     private bool _forceTextureStartPath = true;
 
     private void DrawOutputChild(Vector2 size, Vector2 imageSize)
     {
-        using var child = ImRaii.Child("Output", size, true);
+        using var child = ImRaii.Child("输出", size, true);
         if (!child)
             return;
 
@@ -125,12 +125,12 @@ public partial class ModEditWindow
             var canSaveInPlace = Path.IsPathRooted(_left.Path) && _left.Type is TextureType.Tex or TextureType.Dds or TextureType.Png;
             var isActive       = _config.DeleteModModifier.IsActive();
             var tt = isActive
-                ? "This saves the texture in place. This is not revertible."
-                : $"This saves the texture in place. This is not revertible. Hold {_config.DeleteModModifier} to save.";
+                ? "在原路径下保存直接覆盖原文件，此操作无法恢复。"
+                : $"在原路径下保存直接覆盖原文件，此操作无法恢复。按住{_config.DeleteModModifier}进行保存。";
 
             var buttonSize2 = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2,     0);
             var buttonSize3 = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 2) / 3, 0);
-            if (ImGuiUtil.DrawDisabledButton("Save in place", buttonSize2,
+            if (ImGuiUtil.DrawDisabledButton("覆盖保存", buttonSize2,
                     tt, !isActive || !canSaveInPlace || _center.IsLeftCopy && _currentSaveAs == (int)CombinedTexture.TextureSaveType.AsIs))
             {
                 _center.SaveAs(_left.Type, _textures, _left.Path, (CombinedTexture.TextureSaveType)_currentSaveAs, _addMipMaps);
@@ -139,23 +139,23 @@ public partial class ModEditWindow
             }
 
             ImGui.SameLine();
-            if (ImGui.Button("Save as TEX", buttonSize2))
+            if (ImGui.Button("保存为TEX格式", buttonSize2))
                 OpenSaveAsDialog(".tex");
 
-            if (ImGui.Button("Export as TGA", buttonSize3))
+            if (ImGui.Button("导出为TGA格式", buttonSize3))
                 OpenSaveAsDialog(".tga");
             ImGui.SameLine();
-            if (ImGui.Button("Export as PNG", buttonSize3))
+            if (ImGui.Button("导出为PNG格式", buttonSize3))
                 OpenSaveAsDialog(".png");
             ImGui.SameLine();
-            if (ImGui.Button("Export as DDS", buttonSize3))
+            if (ImGui.Button("导出为DDS格式", buttonSize3))
                 OpenSaveAsDialog(".dds");
             ImGui.NewLine();
 
             var canConvertInPlace = canSaveInPlace && _left.Type is TextureType.Tex && _center.IsLeftCopy;
 
-            if (ImGuiUtil.DrawDisabledButton("Convert to BC7", buttonSize3,
-                    "This converts the texture to BC7 format in place. This is not revertible.",
+            if (ImGuiUtil.DrawDisabledButton("转换为BC7", buttonSize3,
+                    "将此纹理转换为BC7压缩格式并覆盖原文件，此操作无法恢复。",
                     !canConvertInPlace || _left.Format is DXGIFormat.BC7Typeless or DXGIFormat.BC7UNorm or DXGIFormat.BC7UNormSRGB))
             {
                 _center.SaveAsTex(_textures, _left.Path, CombinedTexture.TextureSaveType.BC7, _left.MipMaps > 1);
@@ -164,8 +164,8 @@ public partial class ModEditWindow
             }
 
             ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton("Convert to BC3", buttonSize3,
-                    "This converts the texture to BC3 format in place. This is not revertible.",
+            if (ImGuiUtil.DrawDisabledButton("转换为BC3", buttonSize3,
+                    "将此纹理转换为BC3压缩格式并覆盖原文件，此操作无法恢复。",
                     !canConvertInPlace || _left.Format is DXGIFormat.BC3Typeless or DXGIFormat.BC3UNorm or DXGIFormat.BC3UNormSRGB))
             {
                 _center.SaveAsTex(_textures, _left.Path, CombinedTexture.TextureSaveType.BC3, _left.MipMaps > 1);
@@ -174,8 +174,8 @@ public partial class ModEditWindow
             }
 
             ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton("Convert to RGBA", buttonSize3,
-                    "This converts the texture to RGBA format in place. This is not revertible.",
+            if (ImGuiUtil.DrawDisabledButton("转换为RGBA", buttonSize3,
+                    "将此纹理转换为RGBA压缩格式并覆盖原文件，此操作无法恢复。",
                     !canConvertInPlace
                  || _left.Format is DXGIFormat.B8G8R8A8UNorm or DXGIFormat.B8G8R8A8Typeless or DXGIFormat.B8G8R8A8UNormSRGB))
             {
@@ -208,7 +208,7 @@ public partial class ModEditWindow
 
         ImGui.NewLine();
 
-        using var child2 = ImRaii.Child("image");
+        using var child2 = ImRaii.Child("图像");
         if (child2)
             _center.Draw(_textures, imageSize);
     }
@@ -228,7 +228,7 @@ public partial class ModEditWindow
     private void OpenSaveAsDialog(string defaultExtension)
     {
         var fileName = Path.GetFileNameWithoutExtension(_left.Path.Length > 0 ? _left.Path : _right.Path);
-        _fileDialog.OpenSavePicker("Save Texture as TEX, DDS, PNG or TGA...", "Textures{.png,.dds,.tex,.tga},.tex,.dds,.png,.tga", fileName,
+        _fileDialog.OpenSavePicker("保存纹理为TEX、DDS、PNG或TGA格式...", "纹理{.png,.dds,.tex,.tga},.tex,.dds,.png,.tga", fileName,
             defaultExtension,
             (a, b) =>
             {
@@ -275,7 +275,7 @@ public partial class ModEditWindow
 
     private void DrawTextureTab()
     {
-        using var tab = ImRaii.TabItem("Textures");
+        using var tab = ImRaii.TabItem("纹理");
         if (!tab)
             return;
 
@@ -287,18 +287,18 @@ public partial class ModEditWindow
                     if (!GetFirstTexture(m.Files, out var file))
                         return false;
 
-                    ImGui.TextUnformatted($"Dragging texture for editing: {Path.GetFileName(file)}");
+                    ImGui.TextUnformatted($"拖拽纹理进行编辑： {Path.GetFileName(file)}");
                     return true;
                 });
             var childWidth = GetChildWidth();
             var imageSize  = new Vector2(childWidth.X - ImGui.GetStyle().FramePadding.X * 2);
-            DrawInputChild("Input Texture", _left, childWidth, imageSize);
+            DrawInputChild("输入纹理", _left, childWidth, imageSize);
             ImGui.SameLine();
             DrawOutputChild(childWidth, imageSize);
             if (!_overlayCollapsed)
             {
                 ImGui.SameLine();
-                DrawInputChild("Overlay Texture", _right, childWidth, imageSize);
+                DrawInputChild("覆盖纹理", _right, childWidth, imageSize);
             }
 
             ImGui.SameLine();
@@ -306,15 +306,15 @@ public partial class ModEditWindow
         }
         catch (Exception e)
         {
-            Penumbra.Log.Error($"Unknown Error while drawing textures:\n{e}");
+            Penumbra.Log.Error($"在绘制纹理时发生了未知错误：\n{e}");
         }
     }
 
     private void DrawOverlayCollapseButton()
     {
         var (label, tooltip) = _overlayCollapsed
-            ? (">", "Show a third panel in which you can import an additional texture as an overlay for the primary texture.")
-            : ("<", "Hide the overlay texture panel and clear the currently loaded overlay texture, if any.");
+            ? (">", "显示覆盖纹理面板，可以在其中导入其他纹理作为主纹理的覆盖。")
+            : ("<", "隐藏覆盖纹理面板并清除当前加载的覆盖纹理（如果有）。");
         if (ImGui.Button(label, new Vector2(ImGui.GetTextLineHeight(), ImGui.GetContentRegionAvail().Y)))
             _overlayCollapsed = !_overlayCollapsed;
 

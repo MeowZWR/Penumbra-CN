@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui.Raii;
 using OtterGui.Services;
@@ -17,7 +17,7 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<EqpIdentifier, EqpEntryInternal>(editor, metaFiles), IService
 {
     public override ReadOnlySpan<byte> Label
-        => "Equipment Parameter Edits (EQP)###EQP"u8;
+        => "装备参数设置(设置可见性)(EQP)###EQP"u8;
 
     public override int NumColumns
         => 5;
@@ -34,11 +34,11 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("Copy all current EQP manipulations to clipboard."u8, MetaDictionary.SerializeTo([], Editor.Eqp));
+        CopyToClipboardButton("将当前所有EQP操作复制到剪贴板。"u8, MetaDictionary.SerializeTo([], Editor.Eqp));
 
         ImGui.TableNextColumn();
         var canAdd = !Editor.Contains(Identifier);
-        var tt     = canAdd ? "Stage this edit."u8 : "This entry is already edited."u8;
+        var tt     = canAdd ? "编辑此项。"u8 : "此项已被编辑。"u8;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, disabled: !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, Entry);
 
@@ -81,11 +81,11 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     {
         ImGui.TableNextColumn();
         ImUtf8.TextFramed($"{identifier.SetId.Id}", FrameColor);
-        ImUtf8.HoverTooltip("Model Set ID"u8);
+        ImUtf8.HoverTooltip("模型集合ID"u8);
 
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.Slot.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("Equip Slot"u8);
+        ImUtf8.HoverTooltip("装备位置"u8);
     }
 
     private static bool DrawEntry(EquipSlot slot, EqpEntryInternal defaultEntry, ref EqpEntryInternal entry, bool disabled)
@@ -123,7 +123,7 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         var ret = IdInput("##eqpPrimaryId"u8, unscaledWidth, identifier.SetId.Id, out var setId, 0, ExpandedEqpGmpBase.Count - 1,
             identifier.SetId.Id <= 1);
         ImUtf8.HoverTooltip(
-            "Model Set ID - You can usually find this as the 'e####' part of an item path.\nThis should generally not be left <= 1 unless you explicitly want that."u8);
+            "模型集合ID - 通常可以在物品路径的'e####'部分找到。也可以在更改项目中查看。\n除非你明确需要，否则通常不应将此值设置为小于等于1。"u8);
         if (ret)
             identifier = identifier with { SetId = setId };
         return ret;
@@ -132,7 +132,7 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     public static bool DrawEquipSlot(ref EqpIdentifier identifier, float unscaledWidth = 100)
     {
         var ret = Combos.EqpEquipSlot("##eqpSlot", identifier.Slot, out var slot, unscaledWidth);
-        ImUtf8.HoverTooltip("Equip Slot"u8);
+        ImUtf8.HoverTooltip("装备位置"u8);
         if (ret)
             identifier = identifier with { Slot = slot };
         return ret;

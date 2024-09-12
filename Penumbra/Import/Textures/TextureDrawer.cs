@@ -26,7 +26,7 @@ public static class TextureDrawer
         else if (texture.LoadError != null)
         {
             const string link = "https://aka.ms/vcredist";
-            ImGui.TextUnformatted("Could not load file:");
+            ImGui.TextUnformatted("无法加载文件：");
 
             if (texture.LoadError is DllNotFoundException)
             {
@@ -66,12 +66,12 @@ public static class TextureDrawer
                     current.Load(textures, paths[0]);
             }
 
-            fileDialog.OpenFilePicker("Open Image...", "Textures{.png,.dds,.tex,.tga}", UpdatePath, 1, startPath, false);
+            fileDialog.OpenFilePicker("打开图像...", "纹理{.png,.dds,.tex,.tga}", UpdatePath, 1, startPath, false);
         }
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Recycle.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Reload the currently selected path.", false,
+                "重新加载当前选中路径。", false,
                 true))
             current.Reload(textures);
     }
@@ -79,18 +79,18 @@ public static class TextureDrawer
     private static void DrawData(Texture texture)
     {
         using var table = ImRaii.Table("##data", 2, ImGuiTableFlags.SizingFixedFit);
-        ImGuiUtil.DrawTableColumn("Width");
+        ImGuiUtil.DrawTableColumn("宽");
         ImGuiUtil.DrawTableColumn(texture.TextureWrap!.Width.ToString());
-        ImGuiUtil.DrawTableColumn("Height");
+        ImGuiUtil.DrawTableColumn("高");
         ImGuiUtil.DrawTableColumn(texture.TextureWrap!.Height.ToString());
-        ImGuiUtil.DrawTableColumn("File Type");
+        ImGuiUtil.DrawTableColumn("文件类型");
         ImGuiUtil.DrawTableColumn(texture.Type.ToString());
-        ImGuiUtil.DrawTableColumn("Bitmap Size");
+        ImGuiUtil.DrawTableColumn("位图大小");
         ImGuiUtil.DrawTableColumn($"{Functions.HumanReadableSize(texture.RgbaPixels.Length)} ({texture.RgbaPixels.Length} Bytes)");
         switch (texture.BaseImage.Image)
         {
             case ScratchImage s:
-                ImGuiUtil.DrawTableColumn("Format");
+                ImGuiUtil.DrawTableColumn("格式");
                 ImGuiUtil.DrawTableColumn(s.Meta.Format.ToString());
                 ImGuiUtil.DrawTableColumn("Mip Levels");
                 ImGuiUtil.DrawTableColumn(s.Meta.MipLevels.ToString());
@@ -152,7 +152,7 @@ public static class TextureDrawer
         public bool Draw(string label, string tooltip, string current, int skipPrefix, out string newPath)
         {
             _skipPrefix = skipPrefix;
-            var startPath = current.Length > 0 ? current : "Choose a modded texture from this mod here...";
+            var startPath = current.Length > 0 ? current : "在此处选择一个此模组的纹理...";
             if (!Draw(label, startPath, tooltip, -0.0001f, ImGui.GetTextLineHeightWithSpacing()))
             {
                 newPath = current;

@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using OtterGui.Services;
@@ -16,7 +16,7 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<RspIdentifier, RspEntry>(editor, metaFiles), IService
 {
     public override ReadOnlySpan<byte> Label
-        => "Racial Scaling Edits (RSP)###RSP"u8;
+        => "种族缩放编辑(全局修改)(RSP)###RSP"u8;
 
     public override int NumColumns
         => 5;
@@ -33,11 +33,11 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("Copy all current RSP manipulations to clipboard."u8, MetaDictionary.SerializeTo([], Editor.Rsp));
+        CopyToClipboardButton("复制当前所有RSP操作到剪贴板。"u8, MetaDictionary.SerializeTo([], Editor.Rsp));
 
         ImGui.TableNextColumn();
         var canAdd = !Editor.Contains(Identifier);
-        var tt     = canAdd ? "Stage this edit."u8 : "This entry is already edited."u8;
+        var tt     = canAdd ? "编辑此项。"u8 : "此项已被编辑。"u8;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, disabled: !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, Entry);
 
@@ -80,11 +80,11 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     {
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.SubRace.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("Model Set ID"u8);
+        ImUtf8.HoverTooltip("模型集合ID"u8);
 
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.Attribute.ToFullString(), FrameColor);
-        ImUtf8.HoverTooltip("Equip Slot"u8);
+        ImUtf8.HoverTooltip("装备位置"u8);
     }
 
     private static bool DrawEntry(RspEntry defaultEntry, ref RspEntry entry, bool disabled)
@@ -101,7 +101,7 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     public static bool DrawSubRace(ref RspIdentifier identifier, float unscaledWidth = 150)
     {
         var ret = Combos.SubRace("##rspSubRace", identifier.SubRace, out var subRace, unscaledWidth);
-        ImUtf8.HoverTooltip("Racial Clan"u8);
+        ImUtf8.HoverTooltip("种族部族"u8);
         if (ret)
             identifier = identifier with { SubRace = subRace };
         return ret;
@@ -110,7 +110,7 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     public static bool DrawAttribute(ref RspIdentifier identifier, float unscaledWidth = 200)
     {
         var ret = Combos.RspAttribute("##rspAttribute", identifier.Attribute, out var attribute, unscaledWidth);
-        ImUtf8.HoverTooltip("Scaling Attribute"u8);
+        ImUtf8.HoverTooltip("缩放属性"u8);
         if (ret)
             identifier = identifier with { Attribute = attribute };
         return ret;
