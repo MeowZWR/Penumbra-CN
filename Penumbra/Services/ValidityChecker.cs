@@ -13,7 +13,7 @@ public class ValidityChecker : IService
 	public const string MeowrsRepositoryLower = "https://meowrs.com/https://raw.githubusercontent.com/meowzwr/dalamudplugin/global/meowrs.json";
     public const string OtterCnRepositoryLower = "https://dalamud_cn_3rd.otters.cloud/plugins/all";
     public const string OtterCnRepositoryLowerPen = "https://dalamud_cn_3rd.otters.cloud/plugins/penumbra";
-    public const string SeaOfStarsLower = "https://raw.githubusercontent.com/ottermandias/seaofstars/main/repo.json";
+    public const string MeowrsPlogonLower = "https://plogon.meowrs.com/cn";
 
     public readonly bool DevPenumbraExists;
     public readonly bool IsNotInstalledPenumbra;
@@ -98,7 +98,7 @@ public class ValidityChecker : IService
             MeowrsRepositoryLower       => true,
             OtterCnRepositoryLower      => true,
             OtterCnRepositoryLowerPen   => true,
-            SeaOfStarsLower             => true,
+            MeowrsPlogonLower           => true,
             _               			=> false,
         };
 #else
