@@ -7,8 +7,8 @@
         <Company>absolute gangstas</Company>
         <Product>Penumbra</Product>
         <Copyright>Copyright © 2022</Copyright>
-        <FileVersion>9.0.0.1</FileVersion>
-        <AssemblyVersion>9.0.0.1</AssemblyVersion>
+        <FileVersion>1.2.1.4</FileVersion>
+        <AssemblyVersion>1.2.1.4</AssemblyVersion>
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>

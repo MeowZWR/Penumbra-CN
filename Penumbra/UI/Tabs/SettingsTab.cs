@@ -458,7 +458,7 @@ public class SettingsTab : ITab, IUiService
         Checkbox("允许其他插件的UI使用界面合集",
             "允许其他卫月插件在调用UI材质时使用界面合集中的文件。",
             _dalamudSubstitutionProvider.Enabled, _dalamudSubstitutionProvider.Set);
-        Checkbox($"在登陆界面中使用 {TutorialService.AssignedCollections}",
+        Checkbox($"在登陆界面中使用{TutorialService.AssignedCollections}",
             "如果禁用此选项，则不会对登陆界面或美容师中的角色应用任何模组。",
             _config.ShowModsInLobby, v => _config.ShowModsInLobby = v);
         Checkbox($"在角色窗口中使用{TutorialService.AssignedCollections}",
