@@ -8,12 +8,18 @@ namespace Penumbra.Services;
 
 public class ValidityChecker : IService
 {
-    public const string Repository          = "https://raw.githubusercontent.com/MeowZWR/DalamudPlugin/global/repo.json";
-    public const string RepositoryLower = "https://raw.githubusercontent.com/meowzwr/dalamudplugin/global/repo.json";
-	public const string MeowrsRepositoryLower = "https://meowrs.com/https://raw.githubusercontent.com/meowzwr/dalamudplugin/global/meowrs.json";
-    public const string OtterCnRepositoryLower = "https://dalamud_cn_3rd.otters.cloud/plugins/all";
-    public const string OtterCnRepositoryLowerPen = "https://dalamud_cn_3rd.otters.cloud/plugins/penumbra";
-    public const string MeowrsPlogonLower = "https://plogon.meowrs.com/cn";
+    public const string Repository              = "https://plogon.meowrs.com/cn";
+    public const string RepositoryOtter3rd      = "https://dalamud_cn_3rd.otters.cloud/plugins/all";
+    public const string RepositoryGlobal        = "https://plogon.meowrs.com/global";
+    public const string RepositoryOfficial      = "https://raw.githubusercontent.com/Ottermandias/SeaOfStars/main/repo.json";
+
+    // 定义基础路径进行部分匹配
+    private static readonly string[] ValidRepositoryBases =
+    {
+        "https://raw.githubusercontent.com/meowzwr/",
+        "https://dalamud_cn_3rd.otters.cloud/",
+        "https://plogon.meowrs.com/"
+    };
 
     public readonly bool DevPenumbraExists;
     public readonly bool IsNotInstalledPenumbra;
@@ -91,16 +97,10 @@ public class ValidityChecker : IService
     private static bool CheckSourceRepo(IDalamudPluginInterface pi)
     {
 #if !DEBUG
-        return pi.SourceRepository?.Trim().ToLowerInvariant() switch
-        {
-            null                		=> false,
-            RepositoryLower     		=> true,
-            MeowrsRepositoryLower       => true,
-            OtterCnRepositoryLower      => true,
-            OtterCnRepositoryLowerPen   => true,
-            MeowrsPlogonLower           => true,
-            _               			=> false,
-        };
+        var sourceRepo = pi.SourceRepository?.Trim().ToLowerInvariant();
+
+        //仅通过部分匹配验证
+        return sourceRepo != null && ValidRepositoryBases.Any(baseUrl => sourceRepo.Contains(baseUrl));
 #else
         return true;
 #endif
