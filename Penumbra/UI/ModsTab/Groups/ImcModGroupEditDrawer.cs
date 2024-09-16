@@ -6,6 +6,7 @@ using OtterGui.Text;
 using OtterGui.Text.Widget;
 using OtterGuiInternal.Utility;
 using Penumbra.GameData.Structs;
+using Penumbra.Meta;
 using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager.OptionEditor;
 using Penumbra.Mods.SubMods;
@@ -18,17 +19,24 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
     public void Draw()
     {
         var identifier   = group.Identifier;
-        var defaultEntry = editor.ImcChecker.GetDefaultEntry(identifier, true).Entry;
+        var defaultEntry = ImcChecker.GetDefaultEntry(identifier, true).Entry;
         var entry        = group.DefaultEntry;
         var changes      = false;
 
-        var width = editor.AvailableWidth.X - ImUtf8.ItemInnerSpacing.X - ImUtf8.CalcTextSize("所有变体"u8).X;
+        var width = editor.AvailableWidth.X - 3 * ImUtf8.ItemInnerSpacing.X - ImUtf8.ItemSpacing.X - ImUtf8.CalcTextSize("所有变体"u8).X - ImUtf8.CalcTextSize("仅属性"u8).X - 2 * ImUtf8.FrameHeight;
         ImUtf8.TextFramed(identifier.ToString(), 0, new Vector2(width, 0), borderColor: ImGui.GetColorU32(ImGuiCol.Border));
+
         ImUtf8.SameLineInner();
         var allVariants = group.AllVariants;
         if (ImUtf8.Checkbox("所有变体"u8, ref allVariants))
             editor.ModManager.OptionEditor.ImcEditor.ChangeAllVariants(group, allVariants);
         ImUtf8.HoverTooltip("使此组覆盖所有对应的变体，而不仅仅是指定的一个。"u8);
+
+        ImGui.SameLine();
+        var onlyAttributes = group.OnlyAttributes;
+        if (ImUtf8.Checkbox("Only Attributes"u8, ref onlyAttributes))
+            editor.ModManager.OptionEditor.ImcEditor.ChangeOnlyAttributes(group, onlyAttributes);
+        ImUtf8.HoverTooltip("Only overwrite the attribute flags and take all the other values from the game's default entry instead of the one configured here.\n\nMainly useful if used with All Variants to keep the material IDs for each variant."u8);
 
         using (ImUtf8.Group())
         {
