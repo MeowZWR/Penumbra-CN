@@ -137,7 +137,7 @@ public partial class MtrlTab
     private async Task DoLoadShpk(FullPath path)
     {
         _shadersKnown = false;
-        _shaderHeader = $"Shader ({Mtrl.ShaderPackage.Name})###Shader";
+        _shaderHeader = $"着色器 ({Mtrl.ShaderPackage.Name})###Shader";
         _shpkLoading  = true;
 
         try
@@ -355,7 +355,7 @@ public partial class MtrlTab
 
         var ret = false;
         ImGui.SetNextItemWidth(UiHelpers.Scale * 250.0f);
-        using var c = ImRaii.Combo("Shader Package", Mtrl.ShaderPackage.Name);
+        using var c = ImRaii.Combo("着色器包", Mtrl.ShaderPackage.Name);
         if (c)
             foreach (var value in GetShpkNames())
             {
@@ -376,7 +376,7 @@ public partial class MtrlTab
     {
         var shpkFlags = (int)Mtrl.ShaderPackage.Flags;
         ImGui.SetNextItemWidth(UiHelpers.Scale * 250.0f);
-        if (!ImGui.InputInt("Shader Flags", ref shpkFlags, 0, 0,
+        if (!ImGui.InputInt("着色器标志", ref shpkFlags, 0, 0,
                 ImGuiInputTextFlags.CharsHexadecimal | (disabled ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None)))
             return false;
 

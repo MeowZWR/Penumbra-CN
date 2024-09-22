@@ -26,7 +26,7 @@ public partial class MtrlTab
             return false;
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (!ImUtf8.CollapsingHeader("Color Table"u8, ImGuiTreeNodeFlags.DefaultOpen))
+        if (!ImUtf8.CollapsingHeader("颜色表"u8, ImGuiTreeNodeFlags.DefaultOpen))
             return false;
 
         ColorTableCopyAllClipboardButton();
@@ -65,7 +65,7 @@ public partial class MtrlTab
         if (Mtrl.Table == null)
             return;
 
-        if (!ImUtf8.Button("Export All Rows to Clipboard"u8, ImGuiHelpers.ScaledVector2(200, 0)))
+        if (!ImUtf8.Button("将所有行导出到剪贴板"u8, ImGuiHelpers.ScaledVector2(200, 0)))
             return;
 
         try
@@ -91,9 +91,9 @@ public partial class MtrlTab
         var (dyeId1, (name1, dyeColor1, gloss1)) = _stainService.StainCombo1.CurrentSelection;
         var (dyeId2, (name2, dyeColor2, gloss2)) = _stainService.StainCombo2.CurrentSelection;
         var tt = dyeId1 == 0 && dyeId2 == 0
-            ? "Select a preview dye first."u8
-            : "Apply all preview values corresponding to the dye template and chosen dye where dyeing is enabled."u8;
-        if (ImUtf8.ButtonEx("Apply Preview Dye"u8, tt, disabled: disabled || dyeId1 == 0 && dyeId2 == 0))
+            ? "请先选择一个预览染剂。"u8
+            : "应用预览值到启用了染色功能的染料模板和所选染剂。"u8;
+        if (ImUtf8.ButtonEx("应用预览染剂"u8, tt, disabled: disabled || dyeId1 == 0 && dyeId2 == 0))
         {
             var ret = false;
             if (Mtrl.DyeTable != null)
@@ -108,11 +108,11 @@ public partial class MtrlTab
         }
 
         ImGui.SameLine();
-        var label = dyeId1 == 0 ? "Preview Dye 1###previewDye1" : $"{name1} (Preview 1)###previewDye1";
+        var label = dyeId1 == 0 ? "预览染剂 1###previewDye1" : $"{name1} (Preview 1)###previewDye1";
         if (_stainService.StainCombo1.Draw(label, dyeColor1, string.Empty, true, gloss1))
             UpdateColorTablePreview();
         ImGui.SameLine();
-        label = dyeId2 == 0 ? "Preview Dye 2###previewDye2" : $"{name2} (Preview 2)###previewDye2";
+        label = dyeId2 == 0 ? "预览染剂 2###previewDye2" : $"{name2} (Preview 2)###previewDye2";
         if (_stainService.StainCombo2.Draw(label, dyeColor2, string.Empty, true, gloss2))
             UpdateColorTablePreview();
         return false;
@@ -123,7 +123,7 @@ public partial class MtrlTab
         if (Mtrl.Table == null)
             return false;
 
-        if (!ImUtf8.ButtonEx("Import All Rows from Clipboard"u8, ImGuiHelpers.ScaledVector2(200, 0), disabled))
+        if (!ImUtf8.ButtonEx("从剪贴板导入所有行"u8, ImGuiHelpers.ScaledVector2(200, 0), disabled))
             return false;
 
         try
@@ -154,7 +154,7 @@ public partial class MtrlTab
         if (Mtrl.Table == null)
             return;
 
-        if (!ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this row to your clipboard."u8,
+        if (!ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "将此行导出到剪贴板。"u8,
                 ImGui.GetFrameHeight() * Vector2.One))
             return;
 
@@ -179,7 +179,7 @@ public partial class MtrlTab
     private bool ColorTableDyeableCheckbox()
     {
         var dyeable = Mtrl.DyeTable != null;
-        var ret     = ImUtf8.Checkbox("Dyeable"u8, ref dyeable);
+        var ret     = ImUtf8.Checkbox("可染色的"u8, ref dyeable);
 
         if (ret)
         {
@@ -202,7 +202,7 @@ public partial class MtrlTab
         if (Mtrl.Table == null)
             return false;
 
-        if (!ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8,
+        if (!ImUtf8.IconButton(FontAwesomeIcon.Paste, "将剪贴板中导出的行导入到此行。"u8,
                 ImGui.GetFrameHeight() * Vector2.One, disabled))
             return false;
 
@@ -231,7 +231,7 @@ public partial class MtrlTab
     private void ColorTablePairHighlightButton(int pairIdx, bool disabled)
     {
         ImUtf8.IconButton(FontAwesomeIcon.Crosshairs,
-            "Highlight this pair of rows on your character, if possible.\n\nHighlight colors can be configured in Penumbra's settings."u8,
+            "在角色上高亮显示这一对行（如果可以）。\n\n高亮颜色可以在 Penumbra 的设置中进行配置。"u8,
             ImGui.GetFrameHeight() * Vector2.One, disabled || _colorTablePreviewers.Count == 0);
 
         if (ImGui.IsItemHovered())
@@ -243,7 +243,7 @@ public partial class MtrlTab
     private void ColorTableRowHighlightButton(int rowIdx, bool disabled)
     {
         ImUtf8.IconButton(FontAwesomeIcon.Crosshairs,
-            "Highlight this row on your character, if possible.\n\nHighlight colors can be configured in Penumbra's settings."u8,
+            "在角色上高亮显示这一行（如果可以）。\n\n高亮颜色可以在 Penumbra 的设置中进行配置。"u8,
             ImGui.GetFrameHeight() * Vector2.One, disabled || _colorTablePreviewers.Count == 0);
 
         if (ImGui.IsItemHovered())
@@ -454,17 +454,17 @@ public partial class MtrlTab
         {
             var tmp = value;
             ImGui.SetNextItemWidth(floatSize);
-            ret |= CtDragHalf("##TileTransformUU"u8, "Tile Repeat U"u8, ref tmp.UU, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
+            ret |= CtDragHalf("##TileTransformUU"u8, "平铺重复 U"u8, ref tmp.UU, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(floatSize);
-            ret |= CtDragHalf("##TileTransformVV"u8, "Tile Repeat V"u8, ref tmp.VV, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
+            ret |= CtDragHalf("##TileTransformVV"u8, "平铺重复 V"u8, ref tmp.VV, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
             if (!twoRowLayout)
                 ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(floatSize);
-            ret |= CtDragHalf("##TileTransformUV"u8, "Tile Skew U"u8, ref tmp.UV, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
+            ret |= CtDragHalf("##TileTransformUV"u8, "平铺偏斜 U"u8, ref tmp.UV, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(floatSize);
-            ret |= CtDragHalf("##TileTransformVU"u8, "Tile Skew V"u8, ref tmp.VU, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
+            ret |= CtDragHalf("##TileTransformVU"u8, "平铺偏斜 V"u8, ref tmp.VU, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
             if (!ret || tmp == value)
                 return false;
 
@@ -476,23 +476,23 @@ public partial class MtrlTab
             rotation *= 180.0f / MathF.PI;
             shear    *= 180.0f / MathF.PI;
             ImGui.SetNextItemWidth(floatSize);
-            var scaleXChanged = CtDragScalar("##TileScaleU"u8, "Tile Scale U"u8, ref scale.X, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
+            var scaleXChanged = CtDragScalar("##TileScaleU"u8, "平铺缩放 U"u8, ref scale.X, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
             var activated     = ImGui.IsItemActivated();
             var deactivated   = ImGui.IsItemDeactivated();
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(floatSize);
-            var scaleYChanged = CtDragScalar("##TileScaleV"u8, "Tile Scale V"u8, ref scale.Y, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
+            var scaleYChanged = CtDragScalar("##TileScaleV"u8, "平铺缩放 V"u8, ref scale.Y, "%.2f"u8, HalfMinValue, HalfMaxValue, 0.1f);
             activated   |= ImGui.IsItemActivated();
             deactivated |= ImGui.IsItemDeactivated();
             if (!twoRowLayout)
                 ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(floatSize);
-            var rotationChanged = CtDragScalar("##TileRotation"u8, "Tile Rotation"u8, ref rotation, "%.0f°"u8, -180.0f, 180.0f, 1.0f);
+            var rotationChanged = CtDragScalar("##TileRotation"u8, "平铺旋转"u8, ref rotation, "%.0f°"u8, -180.0f, 180.0f, 1.0f);
             activated   |= ImGui.IsItemActivated();
             deactivated |= ImGui.IsItemDeactivated();
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(floatSize);
-            var shearChanged = CtDragScalar("##TileShear"u8, "Tile Shear"u8, ref shear, "%.0f°"u8, -90.0f, 90.0f, 1.0f);
+            var shearChanged = CtDragScalar("##TileShear"u8, "平铺剪切"u8, ref shear, "%.0f°"u8, -90.0f, 90.0f, 1.0f);
             activated   |= ImGui.IsItemActivated();
             deactivated |= ImGui.IsItemDeactivated();
             if (deactivated)

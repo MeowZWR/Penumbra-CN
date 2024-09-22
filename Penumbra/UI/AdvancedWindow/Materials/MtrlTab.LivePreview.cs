@@ -1,4 +1,4 @@
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using ImGuiNET;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -23,7 +23,7 @@ public partial class MtrlTab
         if (disabled)
             return;
 
-        if (ImUtf8.Button("Reload live preview"u8))
+        if (ImUtf8.Button("重新加载实时预览"u8))
             BindToMaterialInstances();
 
         if (_materialPreviewers.Count != 0 || _colorTablePreviewers.Count != 0)
@@ -32,7 +32,7 @@ public partial class MtrlTab
         ImGui.SameLine();
         using var c = ImRaii.PushColor(ImGuiCol.Text, Colors.RegexWarningBorder);
         ImUtf8.Text(
-            "The current material has not been found on your character. Please check the Import from Screen tab for more information."u8);
+            "未在您的角色上找到当前材质。请查看“画面角色”选项卡以获取更多信息。"u8);
     }
 
     private unsafe void BindToMaterialInstances()

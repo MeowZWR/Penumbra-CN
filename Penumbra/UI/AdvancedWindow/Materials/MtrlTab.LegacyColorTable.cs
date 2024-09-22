@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using OtterGui;
@@ -69,25 +69,25 @@ public partial class MtrlTab
         ImGui.TableNextColumn();
         ImUtf8.TableHeader(default(ReadOnlySpan<byte>));
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Row"u8);
+        ImUtf8.TableHeader("行"u8);
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Diffuse"u8);
+        ImUtf8.TableHeader("漫反射"u8);
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Specular"u8);
+        ImUtf8.TableHeader("高光"u8);
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Emissive"u8);
+        ImUtf8.TableHeader("发光"u8);
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Gloss"u8);
+        ImUtf8.TableHeader("光泽"u8);
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Tile"u8);
+        ImUtf8.TableHeader("瓷砖"u8);
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Repeat / Skew"u8);
+        ImUtf8.TableHeader("重复/偏斜"u8);
         if (hasDyeTable)
         {
             ImGui.TableNextColumn();
-            ImUtf8.TableHeader("Dye"u8);
+            ImUtf8.TableHeader("染色"u8);
             ImGui.TableNextColumn();
-            ImUtf8.TableHeader("Dye Preview"u8);
+            ImUtf8.TableHeader("染色预览"u8);
         }
     }
 
@@ -114,64 +114,64 @@ public partial class MtrlTab
 
         ImGui.TableNextColumn();
         using var dis = ImRaii.Disabled(disabled);
-        ret |= CtColorPicker("##Diffuse"u8, "Diffuse Color"u8, row.DiffuseColor,
+        ret |= CtColorPicker("##Diffuse"u8, "漫反射颜色"u8, row.DiffuseColor,
             c => table[rowIdx].DiffuseColor = c);
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeDiffuse"u8, "Apply Diffuse Color on Dye"u8, dye.DiffuseColor,
+            ret |= CtApplyStainCheckbox("##dyeDiffuse"u8, "在染色上应用漫反射颜色"u8, dye.DiffuseColor,
                 b => dyeTable[rowIdx].DiffuseColor = b);
         }
 
         ImGui.TableNextColumn();
-        ret |= CtColorPicker("##Specular"u8, "Specular Color"u8, row.SpecularColor,
+        ret |= CtColorPicker("##Specular"u8, "高光颜色"u8, row.SpecularColor,
             c => table[rowIdx].SpecularColor = c);
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeSpecular"u8, "Apply Specular Color on Dye"u8, dye.SpecularColor,
+            ret |= CtApplyStainCheckbox("##dyeSpecular"u8, "在染色上应用高光颜色"u8, dye.SpecularColor,
                 b => dyeTable[rowIdx].SpecularColor = b);
         }
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(pctSize);
-        ret |= CtDragScalar("##SpecularMask"u8, "Specular Strength"u8, (float)row.SpecularMask * 100.0f, "%.0f%%"u8, 0f, HalfMaxValue * 100.0f,
+        ret |= CtDragScalar("##SpecularMask"u8, "高光强度"u8, (float)row.SpecularMask * 100.0f, "%.0f%%"u8, 0f, HalfMaxValue * 100.0f,
             1.0f,
             v => table[rowIdx].SpecularMask = (Half)(v * 0.01f));
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeSpecularMask"u8, "Apply Specular Strength on Dye"u8, dye.SpecularMask,
+            ret |= CtApplyStainCheckbox("##dyeSpecularMask"u8, "在染色上应用高光强度"u8, dye.SpecularMask,
                 b => dyeTable[rowIdx].SpecularMask = b);
         }
 
         ImGui.TableNextColumn();
-        ret |= CtColorPicker("##Emissive"u8, "Emissive Color"u8, row.EmissiveColor,
+        ret |= CtColorPicker("##Emissive"u8, "自发光颜色"u8, row.EmissiveColor,
             c => table[rowIdx].EmissiveColor = c);
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeEmissive"u8, "Apply Emissive Color on Dye"u8, dye.EmissiveColor,
+            ret |= CtApplyStainCheckbox("##dyeEmissive"u8, "在染色上应用自发光颜色"u8, dye.EmissiveColor,
                 b => dyeTable[rowIdx].EmissiveColor = b);
         }
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(floatSize);
         var glossStrengthMin = ImGui.GetIO().KeyCtrl ? 0.0f : HalfEpsilon;
-        ret |= CtDragHalf("##Shininess"u8, "Gloss Strength"u8, row.Shininess, "%.1f"u8, glossStrengthMin, HalfMaxValue,
+        ret |= CtDragHalf("##Shininess"u8, "光泽强度"u8, row.Shininess, "%.1f"u8, glossStrengthMin, HalfMaxValue,
             Math.Max(0.1f, (float)row.Shininess * 0.025f),
             v => table[rowIdx].Shininess = v);
 
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeShininess"u8, "Apply Gloss Strength on Dye"u8, dye.Shininess,
+            ret |= CtApplyStainCheckbox("##dyeShininess"u8, "在染色上应用光泽强度"u8, dye.Shininess,
                 b => dyeTable[rowIdx].Shininess = b);
         }
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(intSize);
-        ret |= CtTileIndexPicker("##TileIndex"u8, "Tile Index"u8, row.TileIndex, true,
+        ret |= CtTileIndexPicker("##TileIndex"u8, "瓷砖索引"u8, row.TileIndex, true,
             value => table[rowIdx].TileIndex = value);
 
         ImGui.TableNextColumn();
@@ -188,7 +188,7 @@ public partial class MtrlTab
                 ret                       = true;
             }
 
-            ImGuiUtil.HoverTooltip("Dye Template", ImGuiHoveredFlags.AllowWhenDisabled);
+            ImGuiUtil.HoverTooltip("染色模板", ImGuiHoveredFlags.AllowWhenDisabled);
 
             ImGui.TableNextColumn();
             ret |= DrawLegacyDyePreview(rowIdx, disabled, dye, floatSize);
@@ -221,67 +221,67 @@ public partial class MtrlTab
 
         ImGui.TableNextColumn();
         using var dis = ImRaii.Disabled(disabled);
-        ret |= CtColorPicker("##Diffuse"u8, "Diffuse Color"u8, row.DiffuseColor,
+        ret |= CtColorPicker("##Diffuse"u8, "漫反射颜色"u8, row.DiffuseColor,
             c => table[rowIdx].DiffuseColor = c);
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeDiffuse"u8, "Apply Diffuse Color on Dye"u8, dye.DiffuseColor,
+            ret |= CtApplyStainCheckbox("##dyeDiffuse"u8, "在染色上应用漫反射颜色"u8, dye.DiffuseColor,
                 b => dyeTable[rowIdx].DiffuseColor = b);
         }
 
         ImGui.TableNextColumn();
-        ret |= CtColorPicker("##Specular"u8, "Specular Color"u8, row.SpecularColor,
+        ret |= CtColorPicker("##Specular"u8, "高光颜色"u8, row.SpecularColor,
             c => table[rowIdx].SpecularColor = c);
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeSpecular"u8, "Apply Specular Color on Dye"u8, dye.SpecularColor,
+            ret |= CtApplyStainCheckbox("##dyeSpecular"u8, "在染色上应用高光颜色"u8, dye.SpecularColor,
                 b => dyeTable[rowIdx].SpecularColor = b);
         }
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(pctSize);
-        ret |= CtDragScalar("##SpecularMask"u8, "Specular Strength"u8, (float)row.Scalar7 * 100.0f, "%.0f%%"u8, 0f, HalfMaxValue * 100.0f, 1.0f,
+        ret |= CtDragScalar("##SpecularMask"u8, "高光强度"u8, (float)row.Scalar7 * 100.0f, "%.0f%%"u8, 0f, HalfMaxValue * 100.0f, 1.0f,
             v => table[rowIdx].Scalar7 = (Half)(v * 0.01f));
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeSpecularMask"u8, "Apply Specular Strength on Dye"u8, dye.Metalness,
+            ret |= CtApplyStainCheckbox("##dyeSpecularMask"u8, "在染色上应用高光强度"u8, dye.Metalness,
                 b => dyeTable[rowIdx].Metalness = b);
         }
 
         ImGui.TableNextColumn();
-        ret |= CtColorPicker("##Emissive"u8, "Emissive Color"u8, row.EmissiveColor,
+        ret |= CtColorPicker("##Emissive"u8, "自发光颜色"u8, row.EmissiveColor,
             c => table[rowIdx].EmissiveColor = c);
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeEmissive"u8, "Apply Emissive Color on Dye"u8, dye.EmissiveColor,
+            ret |= CtApplyStainCheckbox("##dyeEmissive"u8, "在染色上应用自发光颜色"u8, dye.EmissiveColor,
                 b => dyeTable[rowIdx].EmissiveColor = b);
         }
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(floatSize);
         var glossStrengthMin = ImGui.GetIO().KeyCtrl ? 0.0f : HalfEpsilon;
-        ret |= CtDragHalf("##Shininess"u8, "Gloss Strength"u8, row.Scalar3, "%.1f"u8, glossStrengthMin, HalfMaxValue,
+        ret |= CtDragHalf("##Shininess"u8, "光泽强度"u8, row.Scalar3, "%.1f"u8, glossStrengthMin, HalfMaxValue,
             Math.Max(0.1f, (float)row.Scalar3 * 0.025f),
             v => table[rowIdx].Scalar3 = v);
 
         if (dyeTable != null)
         {
             ImUtf8.SameLineInner();
-            ret |= CtApplyStainCheckbox("##dyeShininess"u8, "Apply Gloss Strength on Dye"u8, dye.Scalar3,
+            ret |= CtApplyStainCheckbox("##dyeShininess"u8, "在染色上应用光泽强度"u8, dye.Scalar3,
                 b => dyeTable[rowIdx].Scalar3 = b);
         }
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(intSize);
-        ret |= CtTileIndexPicker("##TileIndex"u8, "Tile Index"u8, row.TileIndex, true,
+        ret |= CtTileIndexPicker("##TileIndex"u8, "瓷砖索引"u8, row.TileIndex, true,
             value => table[rowIdx].TileIndex = value);
         ImUtf8.SameLineInner();
         ImGui.SetNextItemWidth(pctSize);
-        ret |= CtDragScalar("##TileAlpha"u8, "Tile Opacity"u8, (float)row.TileAlpha * 100.0f, "%.0f%%"u8, 0f, HalfMaxValue * 100.0f, 1.0f,
+        ret |= CtDragScalar("##TileAlpha"u8, "瓷砖透明度"u8, (float)row.TileAlpha * 100.0f, "%.0f%%"u8, 0f, HalfMaxValue * 100.0f, 1.0f,
             v => table[rowIdx].TileAlpha = (Half)(v * 0.01f));
 
         ImGui.TableNextColumn();
@@ -292,7 +292,7 @@ public partial class MtrlTab
         {
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(byteSize);
-            ret |= CtDragScalar("##DyeChannel"u8, "Dye Channel"u8, dye.Channel + 1, "%hhd"u8, 1, StainService.ChannelCount, 0.25f,
+            ret |= CtDragScalar("##DyeChannel"u8, "染色通道"u8, dye.Channel + 1, "%hhd"u8, 1, StainService.ChannelCount, 0.25f,
                 value => dyeTable[rowIdx].Channel = (byte)(Math.Clamp(value, 1, StainService.ChannelCount) - 1));
             ImUtf8.SameLineInner();
             _stainService.LegacyTemplateCombo.CurrentDyeChannel = dye.Channel;
@@ -303,7 +303,7 @@ public partial class MtrlTab
                 ret                       = true;
             }
 
-            ImGuiUtil.HoverTooltip("Dye Template", ImGuiHoveredFlags.AllowWhenDisabled);
+            ImGuiUtil.HoverTooltip("染色模板", ImGuiHoveredFlags.AllowWhenDisabled);
 
             ImGui.TableNextColumn();
             ret |= DrawLegacyDyePreview(rowIdx, disabled, dye, floatSize);
@@ -321,7 +321,7 @@ public partial class MtrlTab
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing / 2);
 
         var ret = ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.PaintBrush.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-            "Apply the selected dye to this row.", disabled, true);
+            "将选定的染料应用于此行。", disabled, true);
 
         ret = ret && Mtrl.ApplyDyeToRow(_stainService.LegacyStmFile, [stain], rowIdx);
 
@@ -340,7 +340,7 @@ public partial class MtrlTab
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing / 2);
 
         var ret = ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.PaintBrush.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-            "Apply the selected dye to this row.", disabled, true);
+            "将选定的染料应用于此行。", disabled, true);
 
         ret = ret
          && Mtrl.ApplyDyeToRow(_stainService.LegacyStmFile, [

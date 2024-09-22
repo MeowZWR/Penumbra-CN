@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -261,37 +261,37 @@ public partial class MtrlTab
         ref var row = ref table[rowIdx];
         var     dye = dyeTable?[rowIdx] ?? default;
 
-        ret |= CtColorPicker("Diffuse Color"u8, default, row.DiffuseColor,
+        ret |= CtColorPicker("漫反射颜色"u8, default, row.DiffuseColor,
             c => table[rowIdx].DiffuseColor = c);
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeDiffuseColor"u8, "Apply Diffuse Color on Dye"u8, dye.DiffuseColor,
+            ret |= CtApplyStainCheckbox("##dyeDiffuseColor"u8, "在染色时应用漫反射颜色"u8, dye.DiffuseColor,
                 b => dyeTable[rowIdx].DiffuseColor = b);
             ImUtf8.SameLineInner();
-            CtColorPicker("##dyePreviewDiffuseColor"u8, "Dye Preview for Diffuse Color"u8, dyePack?.DiffuseColor);
+            CtColorPicker("##dyePreviewDiffuseColor"u8, "漫反射颜色的染色预览"u8, dyePack?.DiffuseColor);
         }
 
-        ret |= CtColorPicker("Specular Color"u8, default, row.SpecularColor,
+        ret |= CtColorPicker("镜面反射颜色"u8, default, row.SpecularColor,
             c => table[rowIdx].SpecularColor = c);
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeSpecularColor"u8, "Apply Specular Color on Dye"u8, dye.SpecularColor,
+            ret |= CtApplyStainCheckbox("##dyeSpecularColor"u8, "在染色时应用镜面反射颜色"u8, dye.SpecularColor,
                 b => dyeTable[rowIdx].SpecularColor = b);
             ImUtf8.SameLineInner();
-            CtColorPicker("##dyePreviewSpecularColor"u8, "Dye Preview for Specular Color"u8, dyePack?.SpecularColor);
+            CtColorPicker("##dyePreviewSpecularColor"u8, "镜面反射颜色的染色预览"u8, dyePack?.SpecularColor);
         }
 
-        ret |= CtColorPicker("Emissive Color"u8, default, row.EmissiveColor,
+        ret |= CtColorPicker("自发光颜色"u8, default, row.EmissiveColor,
             c => table[rowIdx].EmissiveColor = c);
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeEmissiveColor"u8, "Apply Emissive Color on Dye"u8, dye.EmissiveColor,
+            ret |= CtApplyStainCheckbox("##dyeEmissiveColor"u8, "在染色时应用自发光颜色"u8, dye.EmissiveColor,
                 b => dyeTable[rowIdx].EmissiveColor = b);
             ImUtf8.SameLineInner();
-            CtColorPicker("##dyePreviewEmissiveColor"u8, "Dye Preview for Emissive Color"u8, dyePack?.EmissiveColor);
+            CtColorPicker("##dyePreviewEmissiveColor"u8, "自发光颜色的染色预览"u8, dyePack?.EmissiveColor);
         }
 
         return ret;
@@ -313,17 +313,17 @@ public partial class MtrlTab
         var     dye = dyeTable?[rowIdx] ?? default;
 
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragHalf(isRowB ? "Field #19"u8 : "Anisotropy Degree"u8, default, row.Anisotropy, "%.2f"u8, 0.0f, HalfMaxValue, 0.1f,
+        ret |= CtDragHalf(isRowB ? "Field #19"u8 : "各向异性度"u8, default, row.Anisotropy, "%.2f"u8, 0.0f, HalfMaxValue, 0.1f,
             v => table[rowIdx].Anisotropy = v);
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeAnisotropy"u8, isRowB ? "Apply Field #19 on Dye"u8 : "Apply Anisotropy Degree on Dye"u8,
+            ret |= CtApplyStainCheckbox("##dyeAnisotropy"u8, isRowB ? "Apply Field #19 on Dye"u8 : "在染色时应用各向异性度"u8,
                 dye.Anisotropy,
                 b => dyeTable[rowIdx].Anisotropy = b);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            CtDragHalf("##dyePreviewAnisotropy"u8, isRowB ? "Dye Preview for Field #19"u8 : "Dye Preview for Anisotropy Degree"u8,
+            CtDragHalf("##dyePreviewAnisotropy"u8, isRowB ? "Dye Preview for Field #19"u8 : "各向异性度的染色预览"u8,
                 dyePack?.Anisotropy,               "%.2f"u8);
         }
 
@@ -342,7 +342,7 @@ public partial class MtrlTab
         var     dye = dyeTable?[rowIdx] ?? default;
 
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Shader ID"u8, default, row.ShaderId, "%d"u8, (ushort)0, (ushort)255, 0.25f,
+        ret |= CtDragScalar("着色器 ID"u8, default, row.ShaderId, "%d"u8, (ushort)0, (ushort)255, 0.25f,
             v => table[rowIdx].ShaderId = v);
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
@@ -351,7 +351,7 @@ public partial class MtrlTab
         ret |= CtSphereMapIndexPicker("###SphereMapIndex"u8, default, row.SphereMapIndex, false,
             v => table[rowIdx].SphereMapIndex = v);
         ImUtf8.SameLineInner();
-        ImUtf8.Text("Sphere Map"u8);
+        ImUtf8.Text("球面贴图"u8);
         if (dyeTable != null)
         {
             var textRectMin = ImGui.GetItemRectMin();
@@ -359,30 +359,30 @@ public partial class MtrlTab
             ImGui.SameLine(dyeOffset);
             var cursor = ImGui.GetCursorScreenPos();
             ImGui.SetCursorScreenPos(cursor with { Y = float.Lerp(textRectMin.Y, textRectMax.Y, 0.5f) - ImGui.GetFrameHeight() * 0.5f });
-            ret |= CtApplyStainCheckbox("##dyeSphereMapIndex"u8, "Apply Sphere Map on Dye"u8, dye.SphereMapIndex,
+            ret |= CtApplyStainCheckbox("##dyeSphereMapIndex"u8, "在染色时应用球面贴图"u8, dye.SphereMapIndex,
                 b => dyeTable[rowIdx].SphereMapIndex = b);
             ImUtf8.SameLineInner();
             ImGui.SetCursorScreenPos(ImGui.GetCursorScreenPos() with { Y = cursor.Y });
             ImGui.SetNextItemWidth(scalarSize + itemSpacing + 64.0f);
             using var dis = ImRaii.Disabled();
-            CtSphereMapIndexPicker("###SphereMapIndexDye"u8, "Dye Preview for Sphere Map"u8, dyePack?.SphereMapIndex ?? ushort.MaxValue, false,
+            CtSphereMapIndexPicker("###SphereMapIndexDye"u8, "球面贴图染色预览"u8, dyePack?.SphereMapIndex ?? ushort.MaxValue, false,
                 Nop);
         }
 
         ImGui.Dummy(new Vector2(64.0f, 0.0f));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Sphere Map Intensity"u8, default, (float)row.SphereMapMask * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f,
+        ret |= CtDragScalar("球面贴图强度"u8, default, (float)row.SphereMapMask * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f,
             HalfMaxValue * 100.0f,                    1.0f,
             v => table[rowIdx].SphereMapMask = (Half)(v * 0.01f));
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeSphereMapMask"u8, "Apply Sphere Map Intensity on Dye"u8, dye.SphereMapMask,
+            ret |= CtApplyStainCheckbox("##dyeSphereMapMask"u8, "在染色时应用球面贴图强度"u8, dye.SphereMapMask,
                 b => dyeTable[rowIdx].SphereMapMask = b);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            CtDragScalar("##dyeSphereMapMask"u8, "Dye Preview for Sphere Map Intensity"u8, (float?)dyePack?.SphereMapMask * 100.0f, "%.0f%%"u8);
+            CtDragScalar("##dyeSphereMapMask"u8, "球面贴图强度染色预览"u8, (float?)dyePack?.SphereMapMask * 100.0f, "%.0f%%"u8);
         }
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
@@ -396,7 +396,7 @@ public partial class MtrlTab
         ret |= CtTileIndexPicker("###TileIndex"u8, default, row.TileIndex, false,
             v => table[rowIdx].TileIndex = v);
         ImUtf8.SameLineInner();
-        ImUtf8.Text("Tile"u8);
+        ImUtf8.Text("瓦片"u8);
 
         ImGui.SameLine(subColWidth);
         ImGui.SetCursorScreenPos(ImGui.GetCursorScreenPos() with { Y = cursorPos.Y + (lineHeight - rightLineHeight) * 0.5f });
@@ -406,7 +406,7 @@ public partial class MtrlTab
             ImGui.Dummy(new Vector2(scalarSize, 0.0f));
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            ret |= CtDragScalar("Tile Opacity"u8, default, (float)row.TileAlpha * 100.0f, "%.0f%%"u8, 0.0f, HalfMaxValue * 100.0f, 1.0f,
+            ret |= CtDragScalar("瓦片透明度"u8, default, (float)row.TileAlpha * 100.0f, "%.0f%%"u8, 0.0f, HalfMaxValue * 100.0f, 1.0f,
                 v => table[rowIdx].TileAlpha = (Half)(v * 0.01f));
 
             ret |= CtTileTransformMatrix(row.TileTransform, scalarSize, true,
@@ -414,7 +414,7 @@ public partial class MtrlTab
             ImUtf8.SameLineInner();
             ImGui.SetCursorScreenPos(ImGui.GetCursorScreenPos()
               - new Vector2(0.0f, (ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y) * 0.5f));
-            ImUtf8.Text("Tile Transform"u8);
+            ImUtf8.Text("瓦片变换"u8);
         }
 
         return ret;
@@ -435,32 +435,32 @@ public partial class MtrlTab
         var     dye = dyeTable?[rowIdx] ?? default;
 
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Roughness"u8, default, (float)row.Roughness * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f, HalfMaxValue * 100.0f,
+        ret |= CtDragScalar("粗糙度"u8, default, (float)row.Roughness * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f, HalfMaxValue * 100.0f,
             1.0f,
             v => table[rowIdx].Roughness = (Half)(v * 0.01f));
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeRoughness"u8, "Apply Roughness on Dye"u8, dye.Roughness,
+            ret |= CtApplyStainCheckbox("##dyeRoughness"u8, "在染色时应用粗糙度"u8, dye.Roughness,
                 b => dyeTable[rowIdx].Roughness = b);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            CtDragScalar("##dyePreviewRoughness"u8, "Dye Preview for Roughness"u8, (float?)dyePack?.Roughness * 100.0f, "%.0f%%"u8);
+            CtDragScalar("##dyePreviewRoughness"u8, "粗糙度染色预览"u8, (float?)dyePack?.Roughness * 100.0f, "%.0f%%"u8);
         }
 
         ImGui.SameLine(subColWidth);
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Metalness"u8, default, (float)row.Metalness * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f, HalfMaxValue * 100.0f,
+        ret |= CtDragScalar("金属度"u8, default, (float)row.Metalness * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f, HalfMaxValue * 100.0f,
             1.0f,
             v => table[rowIdx].Metalness = (Half)(v * 0.01f));
         if (dyeTable != null)
         {
             ImGui.SameLine(subColWidth + dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeMetalness"u8, "Apply Metalness on Dye"u8, dye.Metalness,
+            ret |= CtApplyStainCheckbox("##dyeMetalness"u8, "在染色时应用金属度"u8, dye.Metalness,
                 b => dyeTable[rowIdx].Metalness = b);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            CtDragScalar("##dyePreviewMetalness"u8, "Dye Preview for Metalness"u8, (float?)dyePack?.Metalness * 100.0f, "%.0f%%"u8);
+            CtDragScalar("##dyePreviewMetalness"u8, "金属度染色预览"u8, (float?)dyePack?.Metalness * 100.0f, "%.0f%%"u8);
         }
 
         return ret;
@@ -481,45 +481,45 @@ public partial class MtrlTab
         var     dye = dyeTable?[rowIdx] ?? default;
 
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Sheen"u8, default, (float)row.SheenRate * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f, HalfMaxValue * 100.0f, 1.0f,
+        ret |= CtDragScalar("光泽"u8, default, (float)row.SheenRate * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f, HalfMaxValue * 100.0f, 1.0f,
             v => table[rowIdx].SheenRate = (Half)(v * 0.01f));
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeSheenRate"u8, "Apply Sheen on Dye"u8, dye.SheenRate,
+            ret |= CtApplyStainCheckbox("##dyeSheenRate"u8, "在染色时应用光泽"u8, dye.SheenRate,
                 b => dyeTable[rowIdx].SheenRate = b);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            CtDragScalar("##dyePreviewSheenRate"u8, "Dye Preview for Sheen"u8, (float?)dyePack?.SheenRate * 100.0f, "%.0f%%"u8);
+            CtDragScalar("##dyePreviewSheenRate"u8, "光泽染色预览"u8, (float?)dyePack?.SheenRate * 100.0f, "%.0f%%"u8);
         }
 
         ImGui.SameLine(subColWidth);
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Sheen Tint"u8, default, (float)row.SheenTintRate * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f,
+        ret |= CtDragScalar("光泽色调"u8, default, (float)row.SheenTintRate * 100.0f, "%.0f%%"u8, HalfMinValue * 100.0f,
             HalfMaxValue * 100.0f,          1.0f,
             v => table[rowIdx].SheenTintRate = (Half)(v * 0.01f));
         if (dyeTable != null)
         {
             ImGui.SameLine(subColWidth + dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeSheenTintRate"u8, "Apply Sheen Tint on Dye"u8, dye.SheenTintRate,
+            ret |= CtApplyStainCheckbox("##dyeSheenTintRate"u8, "在染色时应用光泽色调"u8, dye.SheenTintRate,
                 b => dyeTable[rowIdx].SheenTintRate = b);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            CtDragScalar("##dyePreviewSheenTintRate"u8, "Dye Preview for Sheen Tint"u8, (float?)dyePack?.SheenTintRate * 100.0f, "%.0f%%"u8);
+            CtDragScalar("##dyePreviewSheenTintRate"u8, "光泽色调染色预览"u8, (float?)dyePack?.SheenTintRate * 100.0f, "%.0f%%"u8);
         }
 
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Sheen Roughness"u8, default, 100.0f / (float)row.SheenAperture, "%.0f%%"u8, 100.0f / HalfMaxValue,
+        ret |= CtDragScalar("光泽粗糙度"u8, default, 100.0f / (float)row.SheenAperture, "%.0f%%"u8, 100.0f / HalfMaxValue,
             100.0f / HalfEpsilon,                1.0f,
             v => table[rowIdx].SheenAperture = (Half)(100.0f / v));
         if (dyeTable != null)
         {
             ImGui.SameLine(dyeOffset);
-            ret |= CtApplyStainCheckbox("##dyeSheenRoughness"u8, "Apply Sheen Roughness on Dye"u8, dye.SheenAperture,
+            ret |= CtApplyStainCheckbox("##dyeSheenRoughness"u8, "在染色时应用光泽粗糙度"u8, dye.SheenAperture,
                 b => dyeTable[rowIdx].SheenAperture = b);
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            CtDragScalar("##dyePreviewSheenRoughness"u8, "Dye Preview for Sheen Roughness"u8, 100.0f / (float?)dyePack?.SheenAperture,
+            CtDragScalar("##dyePreviewSheenRoughness"u8, "光泽粗糙度染色预览"u8, 100.0f / (float?)dyePack?.SheenAperture,
                 "%.0f%%"u8);
         }
 
@@ -592,14 +592,14 @@ public partial class MtrlTab
     private bool DrawDye(ColorDyeTable dyeTable, DyePack? dyePack, int rowIdx)
     {
         var scalarSize       = ColorTableScalarSize * UiHelpers.Scale;
-        var applyButtonWidth = ImUtf8.CalcTextSize("Apply Preview Dye"u8).X + ImGui.GetStyle().FramePadding.X * 2.0f;
+        var applyButtonWidth = ImUtf8.CalcTextSize("应用预览染色"u8).X + ImGui.GetStyle().FramePadding.X * 2.0f;
         var subColWidth      = CalculateSubColumnWidth(2, applyButtonWidth);
 
         var     ret = false;
         ref var dye = ref dyeTable[rowIdx];
 
         ImGui.SetNextItemWidth(scalarSize);
-        ret |= CtDragScalar("Dye Channel"u8, default, dye.Channel + 1, "%d"u8, 1, StainService.ChannelCount, 0.1f,
+        ret |= CtDragScalar("染色通道"u8, default, dye.Channel + 1, "%d"u8, 1, StainService.ChannelCount, 0.1f,
             value => dyeTable[rowIdx].Channel = (byte)(Math.Clamp(value, 1, StainService.ChannelCount) - 1));
         ImGui.SameLine(subColWidth);
         ImGui.SetNextItemWidth(scalarSize);
@@ -611,10 +611,10 @@ public partial class MtrlTab
         }
 
         ImUtf8.SameLineInner();
-        ImUtf8.Text("Dye Template"u8);
+        ImUtf8.Text("染色模板"u8);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - applyButtonWidth + ImGui.GetStyle().ItemSpacing.X);
         using var dis = ImRaii.Disabled(!dyePack.HasValue);
-        if (ImUtf8.Button("Apply Preview Dye"u8))
+        if (ImUtf8.Button("应用预览染色"u8))
             ret |= Mtrl.ApplyDyeToRow(_stainService.GudStmFile, [
                 _stainService.StainCombo1.CurrentSelection.Key,
                 _stainService.StainCombo2.CurrentSelection.Key,

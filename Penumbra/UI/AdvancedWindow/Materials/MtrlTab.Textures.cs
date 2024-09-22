@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -96,12 +96,12 @@ public partial class MtrlTab
         => addressMode switch
         {
             TextureAddressMode.Wrap =>
-                "Tile the texture at every UV integer junction.\n\nFor example, for U values between 0 and 3, the texture is repeated three times."u8,
+                "在每个 UV 整数交界处平铺纹理。\n\n例如，对于 U 值在 0 到 3 之间，纹理重复三次。"u8,
             TextureAddressMode.Mirror =>
-                "Flip the texture at every UV integer junction.\n\nFor U values between 0 and 1, for example, the texture is addressed normally; between 1 and 2, the texture is mirrored; between 2 and 3, the texture is normal again; and so on."u8,
+                "在每个 UV 整数交界处翻转纹理。\n\n例如，对于 U 值在 0 到 1 之间，纹理正常使用；在 1 到 2 之间，纹理镜像；在 2 到 3 之间，纹理再次正常；依此类推。"u8,
             TextureAddressMode.Clamp =>
-                "Texture coordinates outside the range [0.0, 1.0] are set to the texture color at 0.0 or 1.0, respectively."u8,
-            TextureAddressMode.Border => "Texture coordinates outside the range [0.0, 1.0] are set to the border color (generally black)."u8,
+                "超出范围 [0.0, 1.0] 的纹理坐标将分别设置为 0.0 或 1.0 处的纹理颜色。"u8,
+            TextureAddressMode.Border => "超出范围 [0.0, 1.0] 的纹理坐标将设置为边缘颜色（通常为黑色）。"u8,
             _                         => ""u8,
         };
 
@@ -111,7 +111,7 @@ public partial class MtrlTab
             return false;
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (!ImGui.CollapsingHeader("Textures and Samplers", ImGuiTreeNodeFlags.DefaultOpen))
+        if (!ImGui.CollapsingHeader("纹理和采样器", ImGuiTreeNodeFlags.DefaultOpen))
             return false;
 
         var       frameHeight = ImGui.GetFrameHeight();
@@ -129,7 +129,7 @@ public partial class MtrlTab
             ImGui.TableNextColumn();
             if (ImGuiUtil.DrawDisabledButton((unfolded ? FontAwesomeIcon.CaretDown : FontAwesomeIcon.CaretRight).ToIconString(),
                     new Vector2(frameHeight),
-                    "Settings for this texture and the associated sampler", false, true))
+                    "此纹理及其相关采样器的设置", false, true))
             {
                 unfolded = !unfolded;
                 if (unfolded)
@@ -199,7 +199,7 @@ public partial class MtrlTab
         ref var sampler = ref Mtrl.ShaderPackage.Samplers[samplerIdx];
 
         var dx11 = texture.DX11;
-        if (ImUtf8.Checkbox("Prepend -- to the file name on DirectX 11"u8, ref dx11))
+        if (ImUtf8.Checkbox("在 DirectX 11 中，将文件名前加上 --"u8, ref dx11))
         {
             texture.DX11 = dx11;
             ret          = true;
@@ -217,7 +217,7 @@ public partial class MtrlTab
         }
 
         ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("U Address Mode"u8, "Method to use for resolving a U texture coordinate that is outside the 0 to 1 range.");
+        ImUtf8.LabeledHelpMarker("U 地址模式"u8, "用于解析超出 0 到 1 范围的 U 纹理坐标的方法。");
 
         ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
         addressMode = samplerFlags.VAddressMode;
@@ -229,7 +229,7 @@ public partial class MtrlTab
         }
 
         ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("V Address Mode"u8, "Method to use for resolving a V texture coordinate that is outside the 0 to 1 range.");
+        ImUtf8.LabeledHelpMarker("V 地址模式"u8, "用于解析超出 0 到 1 范围的 V 纹理坐标的方法。");
 
         var lodBias = samplerFlags.LodBias;
         ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
@@ -241,8 +241,8 @@ public partial class MtrlTab
         }
 
         ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("Level of Detail Bias"u8,
-            "Offset from the calculated mipmap level.\n\nHigher means that the texture will start to lose detail nearer.\nLower means that the texture will keep its detail until farther.");
+        ImUtf8.LabeledHelpMarker("细节层级偏差"u8,
+            "来自计算的 mipmap 层级的偏移量。\n\n更高的值意味着纹理在更近的距离开始失去细节。\n更低的值意味着纹理在更远的距离保持细节。");
 
         var minLod = samplerFlags.MinLod;
         ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
@@ -254,20 +254,20 @@ public partial class MtrlTab
         }
 
         ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("Minimum Level of Detail"u8,
-            "Most detailed mipmap level to use.\n\n0 is the full-sized texture, 1 is the half-sized texture, 2 is the quarter-sized texture, and so on.\n15 will forcibly reduce the texture to its smallest mipmap.");
+        ImUtf8.LabeledHelpMarker("最小细节层级"u8,
+            "使用的最详细的 mipmap 层级。\n\n0 是全尺寸纹理，1 是半尺寸纹理，2 是四分之一尺寸纹理，以此类推。\n15 将强制将纹理减少到其最小的 mipmap。");
 
-        using var t = ImUtf8.TreeNode("Advanced Settings"u8);
+        using var t = ImUtf8.TreeNode("高级设置"u8);
         if (!t)
             return ret;
 
         ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
-        if (ImUtf8.InputScalar("Texture Flags"u8, ref texture.Flags, "%04X"u8,
+        if (ImUtf8.InputScalar("纹理标志"u8, ref texture.Flags, "%04X"u8,
                 flags: disabled ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None))
             ret = true;
 
         ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
-        if (ImUtf8.InputScalar("Sampler Flags"u8, ref sampler.Flags, "%08X"u8,
+        if (ImUtf8.InputScalar("采样器标志"u8, ref sampler.Flags, "%08X"u8,
                 flags: ImGuiInputTextFlags.CharsHexadecimal | (disabled ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None)))
         {
             ret = true;

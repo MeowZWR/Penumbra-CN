@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -127,9 +127,9 @@ public partial class MtrlTab
         Constants.RemoveAll(group => group.Constants.Count == 0);
         Constants.Sort((x, y) =>
         {
-            if (string.Equals(x.Header, "Further Constants", StringComparison.Ordinal))
+            if (string.Equals(x.Header, "更多常量", StringComparison.Ordinal))
                 return 1;
-            if (string.Equals(y.Header, "Further Constants", StringComparison.Ordinal))
+            if (string.Equals(y.Header, "更多常量", StringComparison.Ordinal))
                 return -1;
 
             return string.Compare(x.Header, y.Header, StringComparison.Ordinal);
@@ -153,7 +153,7 @@ public partial class MtrlTab
             return false;
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (!ImGui.CollapsingHeader("Material Constants"))
+        if (!ImGui.CollapsingHeader("材质常量"))
             return false;
 
         using var _ = ImRaii.PushId("MaterialConstants");
@@ -187,7 +187,7 @@ public partial class MtrlTab
                         : buffer[slice].ContainsAnyExcept((byte)0);
                     ImUtf8.SameLineInner();
                     if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Backspace.ToIconString(), ImGui.GetFrameHeight() * Vector2.One,
-                            "Reset this constant to its default value.\n\nHold Ctrl to unlock.", !ImGui.GetIO().KeyCtrl || !canReset, true))
+                            "将此常量重置为默认值。\n\n按住Ctrl键以解锁。", !ImGui.GetIO().KeyCtrl || !canReset, true))
                     {
                         ret = true;
                         if (defaultValue.Length > 0)

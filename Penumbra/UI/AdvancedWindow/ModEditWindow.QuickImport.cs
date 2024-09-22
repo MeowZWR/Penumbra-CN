@@ -138,7 +138,7 @@ public partial class ModEditWindow
 
     public class QuickImportAction
     {
-        public const string FallbackOptionName = "the current option";
+        public const string FallbackOptionName = "当前选项";
 
         private readonly string       _optionName;
         private readonly Utf8GamePath _gamePath;

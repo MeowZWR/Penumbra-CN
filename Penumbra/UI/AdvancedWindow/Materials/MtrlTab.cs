@@ -1,4 +1,4 @@
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -72,8 +72,8 @@ public sealed partial class MtrlTab : IWritable, IDisposable
         if (disabled || Mtrl.IsDawntrail)
             return false;
 
-        if (!ImUtf8.ButtonEx("Update MTRL Version to Dawntrail"u8,
-                "Try using this if the material can not be loaded or should use legacy shaders.\n\nThis is not revertible."u8,
+        if (!ImUtf8.ButtonEx("将 MTRL 版本更新至「金曦之遗辉」"u8,
+                "如果材质无法加载或需要使用旧版着色器，可尝试使用此方法。\n\n此操作不可逆。"u8,
                 new Vector2(-0.1f, 0), false, 0, Colors.PressEnterWarningBg))
             return false;
 
@@ -118,7 +118,7 @@ public sealed partial class MtrlTab : IWritable, IDisposable
         using var dis = ImRaii.Disabled(disabled);
 
         var tmp = shaderFlags.EnableTransparency;
-        if (ImUtf8.Checkbox("Enable Transparency"u8, ref tmp))
+        if (ImUtf8.Checkbox("启用透明度"u8, ref tmp))
         {
             shaderFlags.EnableTransparency = tmp;
             ret                            = true;
@@ -127,7 +127,7 @@ public sealed partial class MtrlTab : IWritable, IDisposable
 
         ImGui.SameLine(200 * UiHelpers.Scale + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X);
         tmp = shaderFlags.HideBackfaces;
-        if (ImUtf8.Checkbox("Hide Backfaces"u8, ref tmp))
+        if (ImUtf8.Checkbox("隐藏背面"u8, ref tmp))
         {
             shaderFlags.HideBackfaces = tmp;
             ret                       = true;
@@ -138,7 +138,7 @@ public sealed partial class MtrlTab : IWritable, IDisposable
         {
             ImGui.SameLine(400 * UiHelpers.Scale + 2 * ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X);
 
-            ImUtf8.Text("Loading shader (.shpk) file. Some functionality will only be available after this is done."u8,
+            ImUtf8.Text("正在加载着色器 (.shpk) 文件。部分功能将在加载完成后才可用。"u8,
                 ImGuiUtil.HalfBlendText(0x808000u)); // Half cyan
         }
 
@@ -147,7 +147,7 @@ public sealed partial class MtrlTab : IWritable, IDisposable
 
     private void DrawOtherMaterialDetails(bool _)
     {
-        if (!ImUtf8.CollapsingHeader("Further Content"u8))
+        if (!ImUtf8.CollapsingHeader("更多内容"u8))
             return;
 
         using (var sets = ImUtf8.TreeNode("UV Sets"u8, ImGuiTreeNodeFlags.DefaultOpen))
