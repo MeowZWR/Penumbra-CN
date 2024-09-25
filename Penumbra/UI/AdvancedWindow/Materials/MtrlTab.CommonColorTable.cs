@@ -108,11 +108,11 @@ public partial class MtrlTab
         }
 
         ImGui.SameLine();
-        var label = dyeId1 == 0 ? "预览染剂 1###previewDye1" : $"{name1} (Preview 1)###previewDye1";
+        var label = dyeId1 == 0 ? "预览染剂 1###previewDye1" : $"{name1}（预览 1）###previewDye1";
         if (_stainService.StainCombo1.Draw(label, dyeColor1, string.Empty, true, gloss1))
             UpdateColorTablePreview();
         ImGui.SameLine();
-        label = dyeId2 == 0 ? "预览染剂 2###previewDye2" : $"{name2} (Preview 2)###previewDye2";
+        label = dyeId2 == 0 ? "预览染剂 2###previewDye2" : $"{name2}（预览 2）###previewDye2";
         if (_stainService.StainCombo2.Draw(label, dyeColor2, string.Empty, true, gloss2))
             UpdateColorTablePreview();
         return false;

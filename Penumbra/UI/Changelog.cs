@@ -75,7 +75,7 @@ public class PenumbraChangelog : IUiService
 	        .RegisterHighlight("IMC组现在允许关闭默认条目中已启用的属性。")
 	        .RegisterImportant("移除了“更新Bibo”按钮。由于旧模组需要更新，这一功能已经多余。")
 	        .RegisterEntry("点击该按钮通常对新模组弊大于利。", 1)
-	        .RegisterEntry("如果你仍然需要批量迁移模型中的材质，材质重新分配选项卡仍然可以用于此操作。", 1)
+	        .RegisterEntry("如果你仍然需要批量迁移模型中的材质，高级编辑中的材质指定选项卡仍然可以用于此操作。", 1)
 	        .RegisterEntry("“画面角色”选项卡已更新并改进，现在可以以更有用的形式显示模组的实际路径。")
 	        .RegisterImportant("模型导入/导出功能暂时禁用，直到完成与「金曦之遗辉」相关的更改。")
 	        .RegisterHighlight("现在可以通过右键点击状态，在模组的合集选项卡中更改模组状态。")

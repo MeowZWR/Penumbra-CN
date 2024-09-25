@@ -98,7 +98,7 @@ public class ModPanelSettingsTab(
         if (ImGui.InputInt("##Priority", ref priority, 0, 0))
             _currentPriority = priority;
         if (new ModPriority(priority).IsHidden)
-            ImUtf8.HoverTooltip($"This priority is special-cased to hide this mod in conflict tabs ({ModPriority.HiddenMin}, {ModPriority.HiddenMax}).");
+            ImUtf8.HoverTooltip($"此优先级特殊处理以在冲突标签中隐藏此模组（{ModPriority.HiddenMin}, {ModPriority.HiddenMax}）。");
 
 
         if (ImGui.IsItemDeactivatedAfterEdit() && _currentPriority.HasValue)

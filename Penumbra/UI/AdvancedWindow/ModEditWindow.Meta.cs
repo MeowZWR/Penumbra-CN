@@ -91,7 +91,7 @@ public partial class ModEditWindow
         if (otherOptionData.TotalCount <= 0)
             return;
 
-        var text = $"{otherOptionData.TotalCount} Edits in other Options";
+        var text = $"在其他选项中有 {otherOptionData.TotalCount} 个修改";
         var size = ImGui.CalcTextSize(text).X;
         ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - size, oldPos + ImGui.GetStyle().FramePadding.Y));
         ImGuiUtil.TextColored(ColorId.RedundantAssignment.Value() | 0xFF000000, text);
