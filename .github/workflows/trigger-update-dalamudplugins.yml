@@ -17,7 +17,7 @@ jobs:
         run: |
           # Set the required variables
           repo_owner="MeowZWR" 
-          repo_name="SeaOfStars"  
+          repo_name="DalamudPlugin"  
           event_type="request-update-run-action" 
   
           curl -L \
