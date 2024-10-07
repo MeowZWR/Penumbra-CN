@@ -97,9 +97,7 @@ public partial class ModEditWindow
 
     private void DrawImportExport(MdlTab tab, bool disabled)
     {
-        // TODO: Enable when functional.
-        using var dawntrailDisabled = ImRaii.Disabled();
-        if (!ImGui.CollapsingHeader("导入 / 导出（由于「金曦之遗辉」格式有变化，当前已禁用）") || true)
+        if (!ImGui.CollapsingHeader("导入 / 导出"))
             return;
 
         var childSize = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
