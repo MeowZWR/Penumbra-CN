@@ -77,8 +77,9 @@ public sealed class ConfigWindow : Window, IUiService
             {
                 DrawProblemWindow(
                     $"在尝试从游戏数据加载IMC文件时发生了 {_validityChecker.ImcExceptions.Count} 个错误。\n"
-                  + "这通常意味着你用TexTools安装了mod，但没有初始化就更新游戏而对游戏文件产生了损坏。\n"
-                  + "建议不要同时使用TexTools和Penumbra（或其他基于Lumina的工具)。\n\n"
+                  + "这通常是因为你的模组使用了国服/国际服当前客户端不存在的物品，下面报错中指出了物品编号，请移除相关模组。\n\n"
+                  + "也有可能你用TexTools安装了模组，但没有初始化就更新游戏而对游戏文件产生了损坏。\n"
+                  + "建议不要同时使用TexTools和Penumbra（或其他基于Lumina的工具)来安装模组。\n"
                   + "请修复客户端。");
                 DrawImcExceptions();
             }

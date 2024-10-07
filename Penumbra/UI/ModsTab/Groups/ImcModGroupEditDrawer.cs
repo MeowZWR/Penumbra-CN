@@ -34,9 +34,9 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
 
         ImGui.SameLine();
         var onlyAttributes = group.OnlyAttributes;
-        if (ImUtf8.Checkbox("Only Attributes"u8, ref onlyAttributes))
+        if (ImUtf8.Checkbox("仅属性"u8, ref onlyAttributes))
             editor.ModManager.OptionEditor.ImcEditor.ChangeOnlyAttributes(group, onlyAttributes);
-        ImUtf8.HoverTooltip("Only overwrite the attribute flags and take all the other values from the game's default entry instead of the one configured here.\n\nMainly useful if used with All Variants to keep the material IDs for each variant."u8);
+        ImUtf8.HoverTooltip("仅覆盖属性标志，其他值则使用游戏的默认项，而不是此处配置的项。\n\n主要在与所有变体一起使用时有用，以保持每个变体的材质 ID。"u8);
 
         using (ImUtf8.Group())
         {
