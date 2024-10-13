@@ -48,15 +48,16 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         _selectors = new Dictionary<SwapType, (ItemSelector Source, ItemSelector Target, string TextFrom, string TextTo)>
         {
             // @formatter:off
-            [SwapType.头部装备]      = (new ItemSelector(itemService, selector, FullEquipType.Head),   new ItemSelector(itemService, null, FullEquipType.Head),   "头部装备（源）",        "头部装备（目标）" ),
-            [SwapType.身体装备]      = (new ItemSelector(itemService, selector, FullEquipType.Body),   new ItemSelector(itemService, null, FullEquipType.Body),   "身体装备（源）",        "身体装备（目标）" ),
-            [SwapType.手部装备]   = (new ItemSelector(itemService, selector, FullEquipType.Hands),  new ItemSelector(itemService, null, FullEquipType.Hands),  "手部装备（源）",    "手部装备（目标）"  ),
-            [SwapType.腿部装备]    = (new ItemSelector(itemService, selector, FullEquipType.Legs),   new ItemSelector(itemService, null, FullEquipType.Legs),   "腿部装备（源）",     "腿部装备（目标）"  ),
-            [SwapType.脚部装备]    = (new ItemSelector(itemService, selector, FullEquipType.Feet),   new ItemSelector(itemService, null, FullEquipType.Feet),   "脚部装备（源）",     "脚部装备（目标）"  ),
-            [SwapType.耳部装备] = (new ItemSelector(itemService, selector, FullEquipType.Ears),   new ItemSelector(itemService, null, FullEquipType.Ears),   "耳部装备（源）",  "耳部装备（目标）"  ),
-            [SwapType.颈部装备] = (new ItemSelector(itemService, selector, FullEquipType.Neck),   new ItemSelector(itemService, null, FullEquipType.Neck),   "颈部装备（源）",   "颈部装备（目标）" ),
-            [SwapType.腕部装备] = (new ItemSelector(itemService, selector, FullEquipType.Wrists), new ItemSelector(itemService, null, FullEquipType.Wrists), "手腕装备（源）", "手腕装备（目标）"  ),
-            [SwapType.手指装备]     = (new ItemSelector(itemService, selector, FullEquipType.Finger), new ItemSelector(itemService, null, FullEquipType.Finger), "手指装备（源）",       "手指装备（目标）" ),
+            [SwapType.头部装备] = (new ItemSelector(itemService, selector, FullEquipType.Head),    new ItemSelector(itemService, null, FullEquipType.Head),     "头部装备（源）", "头部装备（目标）" ),
+            [SwapType.身体装备] = (new ItemSelector(itemService, selector, FullEquipType.Body),    new ItemSelector(itemService, null, FullEquipType.Body),     "身体装备（源）", "身体装备（目标）" ),
+            [SwapType.手部装备] = (new ItemSelector(itemService, selector, FullEquipType.Hands),   new ItemSelector(itemService, null, FullEquipType.Hands),    "手部装备（源）", "手部装备（目标）" ),
+            [SwapType.腿部装备] = (new ItemSelector(itemService, selector, FullEquipType.Legs),    new ItemSelector(itemService, null, FullEquipType.Legs),     "腿部装备（源）", "腿部装备（目标）" ),
+            [SwapType.脚部装备] = (new ItemSelector(itemService, selector, FullEquipType.Feet),    new ItemSelector(itemService, null, FullEquipType.Feet),     "脚部装备（源）", "脚部装备（目标）" ),
+            [SwapType.耳部装备] = (new ItemSelector(itemService, selector, FullEquipType.Ears),    new ItemSelector(itemService, null, FullEquipType.Ears),     "耳部装备（源）", "耳部装备（目标）" ),
+            [SwapType.颈部装备] = (new ItemSelector(itemService, selector, FullEquipType.Neck),    new ItemSelector(itemService, null, FullEquipType.Neck),     "颈部装备（源）", "颈部装备（目标）" ),
+            [SwapType.腕部装备] = (new ItemSelector(itemService, selector, FullEquipType.Wrists),  new ItemSelector(itemService, null, FullEquipType.Wrists),   "手腕装备（源）", "手腕装备（目标）" ),
+            [SwapType.手指装备] = (new ItemSelector(itemService, selector, FullEquipType.Finger),  new ItemSelector(itemService, null, FullEquipType.Finger),   "手指装备（源）", "手指装备（目标）" ),
+            [SwapType.面部配饰] = (new ItemSelector(itemService, selector, FullEquipType.Glasses), new ItemSelector(itemService, null, FullEquipType.Glasses),  "面部配饰（源）", "面部配饰（目标）" ),
             // @formatter:on
         };
 
@@ -129,6 +130,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         耳朵,
         尾巴,
         Weapon,
+        面部配饰,
     }
 
     private class ItemSelector(ItemData data, ModFileSystemSelector? selector, FullEquipType type)
@@ -158,14 +160,14 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     private ModSettings? _modSettings;
     private bool         _dirty;
 
-    private SwapType   _lastTab       = SwapType.发型;
-    private Gender     _currentGender = Gender.Male;
-    private ModelRace  _currentRace   = ModelRace.Midlander;
-    private int        _targetId;
-    private int        _sourceId;
-    private Exception? _loadException;
-    private EquipSlot  _slotFrom = EquipSlot.Head;
-    private EquipSlot  _slotTo   = EquipSlot.Ears;
+    private SwapType         _lastTab       = SwapType.发型;
+    private Gender           _currentGender = Gender.Male;
+    private ModelRace        _currentRace   = ModelRace.Midlander;
+    private int              _targetId;
+    private int              _sourceId;
+    private Exception?       _loadException;
+    private BetweenSlotTypes _slotFrom = BetweenSlotTypes.Hat;
+    private BetweenSlotTypes _slotTo   = BetweenSlotTypes.Earrings;
 
     private string     _newModName    = string.Empty;
     private string     _newGroupName  = "转换";
@@ -200,18 +202,19 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
                 case SwapType.颈部装备:
                 case SwapType.腕部装备:
                 case SwapType.手指装备:
+                case SwapType.面部配饰:
                     var values = _selectors[_lastTab];
                     if (values.Source.CurrentSelection.Item.Type != FullEquipType.Unknown
                      && values.Target.CurrentSelection.Item.Type != FullEquipType.Unknown)
                         _affectedItems = _swapData.LoadEquipment(values.Target.CurrentSelection.Item, values.Source.CurrentSelection.Item,
                             _useCurrentCollection ? _collectionManager.Active.Current : null, _useRightRing, _useLeftRing);
-
                     break;
                 case SwapType.BetweenSlots:
                     var (_, _, selectorFrom) = GetAccessorySelector(_slotFrom, true);
                     var (_, _, selectorTo)   = GetAccessorySelector(_slotTo,   false);
                     if (selectorFrom.CurrentSelection.Item.Valid && selectorTo.CurrentSelection.Item.Valid)
-                        _affectedItems = _swapData.LoadTypeSwap(_slotTo, selectorTo.CurrentSelection.Item, _slotFrom, selectorFrom.CurrentSelection.Item,
+                        _affectedItems = _swapData.LoadTypeSwap(ToEquipSlot(_slotTo), selectorTo.CurrentSelection.Item, ToEquipSlot(_slotFrom),
+                            selectorFrom.CurrentSelection.Item,
                             _useCurrentCollection ? _collectionManager.Active.Current : null);
                     break;
                 case SwapType.发型 when _targetId > 0 && _sourceId > 0:
@@ -264,7 +267,23 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     }
 
     private string CreateDescription()
-        => $"Created by swapping {_lastTab} {_sourceId} onto {_lastTab} {_targetId} for {_currentRace.ToName()} {_currentGender.ToName()}s in {_mod!.Name}.";
+    {
+        switch (_lastTab)
+        {
+            case SwapType.耳朵:
+            case SwapType.Face:
+            case SwapType.发型:
+            case SwapType.尾巴:
+                return
+                    $"Created by swapping {_lastTab} {_sourceId} onto {_lastTab} {_targetId} for {_currentRace.ToName()} {_currentGender.ToName()}s in {_mod!.Name}.";
+            case SwapType.BetweenSlots:
+                return
+                    $"Created by swapping {GetAccessorySelector(_slotFrom, true).Item3.CurrentSelection.Item.Name} onto {GetAccessorySelector(_slotTo, false).Item3.CurrentSelection.Item.Name} in {_mod!.Name}.";
+            default:
+                return
+                    $"Created by swapping {_selectors[_lastTab].Source.CurrentSelection.Item.Name} onto {_selectors[_lastTab].Target.CurrentSelection.Item.Name} in {_mod!.Name}.";
+        }
+    }
 
     private void UpdateOption()
     {
@@ -416,6 +435,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         DrawEquipmentSwap(SwapType.颈部装备);
         DrawEquipmentSwap(SwapType.腕部装备);
         DrawEquipmentSwap(SwapType.手指装备);
+        DrawEquipmentSwap(SwapType.面部配饰);
         DrawAccessorySwap();
         DrawHairSwap();
         //DrawFaceSwap();
@@ -454,23 +474,24 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(100 * UiHelpers.Scale);
-        using( var combo = ImRaii.Combo( "##fromType", _slotFrom is EquipSlot.Head ? "头部装备" : _slotFrom.ToName() ) )
+        using (var combo = ImRaii.Combo("##fromType", ToName(_slotFrom)))
         {
             if (combo)
-                foreach (var slot in EquipSlotExtensions.AccessorySlots.Prepend(EquipSlot.Head))
+                foreach (var slot in Enum.GetValues<BetweenSlotTypes>())
                 {
-                    if (!ImGui.Selectable(slot is EquipSlot.Head ? "头部装备" : slot.ToName(), slot == _slotFrom) || slot == _slotFrom)
+                    if (!ImGui.Selectable(ToName(slot), slot == _slotFrom) || slot == _slotFrom)
                         continue;
 
                     _dirty    = true;
                     _slotFrom = slot;
                     if (slot == _slotTo)
-                        _slotTo = EquipSlotExtensions.AccessorySlots.First(s => slot != s);
+                        _slotTo = AvailableToTypes.First(s => slot != s);
                 }
         }
 
         ImGui.TableNextColumn();
-        _dirty |= selector.Draw("##itemSource", selector.CurrentSelection.Item.Name ?? string.Empty, string.Empty, InputWidth * 2 * UiHelpers.Scale,
+        _dirty |= selector.Draw("##itemSource", selector.CurrentSelection.Item.Name ?? string.Empty, string.Empty,
+            InputWidth * 2 * UiHelpers.Scale,
             ImGui.GetTextLineHeightWithSpacing());
 
         (article1, _, selector) = GetAccessorySelector(_slotTo, false);
@@ -480,12 +501,12 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(100 * UiHelpers.Scale);
-        using (var combo = ImRaii.Combo("##toType", _slotTo.ToName()))
+        using (var combo = ImRaii.Combo("##toType", ToName(_slotTo)))
         {
             if (combo)
-                foreach (var slot in EquipSlotExtensions.AccessorySlots.Where(s => s != _slotFrom))
+                foreach (var slot in AvailableToTypes.Where(t => t != _slotFrom))
                 {
-                    if (!ImGui.Selectable(slot.ToName(), slot == _slotTo) || slot == _slotTo)
+                    if (!ImGui.Selectable(ToName(slot), slot == _slotTo) || slot == _slotTo)
                         continue;
 
                     _dirty  = true;
@@ -508,17 +529,18 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
                 .Select(i => i.Name)));
     }
 
-    private (string, string, ItemSelector) GetAccessorySelector(EquipSlot slot, bool source)
+    private (string, string, ItemSelector) GetAccessorySelector(BetweenSlotTypes slot, bool source)
     {
         var (type, article1, article2) = slot switch
         {
-            EquipSlot.Head    => (SwapType.头部装备,         "（源）", "（目标）"),
-            EquipSlot.Ears    => (SwapType.耳部装备,    "（源）", "（目标）"),
-            EquipSlot.Neck    => (SwapType.颈部装备,    "（源）", "（目标）"),
-            EquipSlot.Wrists  => (SwapType.腕部装备,    "（源）", "（目标）"),
-            EquipSlot.RFinger => (SwapType.手指装备,        "（源）", "（目标）"),
-            EquipSlot.LFinger => (SwapType.手指装备,        "（源）", "（目标）"),
-            _                 => (SwapType.手指装备,        "（源）", "（目标）"),
+            BetweenSlotTypes.Hat       => (SwapType.头部装备, "（源）", "（目标）"),
+            BetweenSlotTypes.Earrings  => (SwapType.耳部装备, "（源）", "（目标）"),
+            BetweenSlotTypes.Necklace  => (SwapType.颈部装备, "（源）", "（目标）"),
+            BetweenSlotTypes.Bracelets => (SwapType.腕部装备, "（源）", "（目标）"),
+            BetweenSlotTypes.RightRing => (SwapType.手指装备, "（源）", "（目标）"),
+            BetweenSlotTypes.LeftRing  => (SwapType.手指装备, "（源）", "（目标）"),
+            BetweenSlotTypes.Glasses   => (SwapType.面部配饰, "（源）", "（目标）"),
+            _                          => (SwapType.手指装备, "（源）", "（目标）"),
         };
         var (itemSelector, target, _, _) = _selectors[type];
         return (article1, article2, source ? itemSelector : target);
@@ -680,20 +702,21 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     private string NonExistentText()
         => _lastTab switch
         {
-            SwapType.头部装备      => "选中的头部装备似乎不存在。",
-            SwapType.身体装备      => "选中的身体装备似乎不存在。",
-            SwapType.手部装备   => "选中的手部装备似乎不存在。",
-            SwapType.腿部装备    => "选中的腿部装备似乎不存在。",
-            SwapType.脚部装备    => "选中的脚部装备似乎不存在。",
-            SwapType.耳部装备 => "选中的耳环似乎不存在。",
-            SwapType.颈部装备 => "选中的项链似乎不存在。",
-            SwapType.腕部装备 => "选中的手镯似乎不存在。",
-            SwapType.手指装备     => "选中的戒指似乎不存在。",
-            SwapType.发型     => "选中的发型似乎不存在。",
-            SwapType.Face     => "选中的脸部似乎不存在。",
-            SwapType.耳朵     => "选中的耳朵类型似乎不存在。",
-            SwapType.尾巴     => "选中的尾巴似乎不存在。",
-            SwapType.Weapon   => "选中的武器似乎不存在。",
+            SwapType.头部装备 => "选择的头部装备似乎不存在。",
+            SwapType.身体装备 => "选择的身体装备似乎不存在。",
+            SwapType.手部装备 => "选择的手部装备似乎不存在。",
+            SwapType.腿部装备 => "选择的腿部装备似乎不存在。",
+            SwapType.脚部装备 => "选择的脚部装备似乎不存在。",
+            SwapType.耳部装备 => "选择的耳环似乎不存在。",
+            SwapType.颈部装备 => "选择的项链似乎不存在。",
+            SwapType.腕部装备 => "选择的手镯似乎不存在。",
+            SwapType.手指装备 => "选择的戒指似乎不存在。",
+            SwapType.面部配饰 => "选择的面部配饰似乎不存在。",
+            SwapType.发型     => "选择的发型似乎不存在。",
+            SwapType.Face     => "选择的脸部似乎不存在。",
+            SwapType.耳朵     => "选择的耳朵类型似乎不存在。",
+            SwapType.尾巴     => "选择的尾巴似乎不存在。",
+            SwapType.Weapon   => "选择的武器似乎不存在。",
             _                 => string.Empty,
         };
 
@@ -746,4 +769,44 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         UpdateOption();
         _dirty = true;
     }
+
+    private enum BetweenSlotTypes
+    {
+        Hat,
+        Earrings,
+        Necklace,
+        Bracelets,
+        RightRing,
+        LeftRing,
+        Glasses,
+    }
+
+    private static EquipSlot ToEquipSlot(BetweenSlotTypes type)
+        => type switch
+        {
+            BetweenSlotTypes.Hat       => EquipSlot.Head,
+            BetweenSlotTypes.Earrings  => EquipSlot.Ears,
+            BetweenSlotTypes.Necklace  => EquipSlot.Neck,
+            BetweenSlotTypes.Bracelets => EquipSlot.Wrists,
+            BetweenSlotTypes.RightRing => EquipSlot.RFinger,
+            BetweenSlotTypes.LeftRing  => EquipSlot.LFinger,
+            BetweenSlotTypes.Glasses   => BonusItemFlag.Glasses.ToEquipSlot(),
+            _                          => EquipSlot.Unknown,
+        };
+
+    private static string ToName(BetweenSlotTypes type)
+        => type switch
+        {
+            BetweenSlotTypes.Hat       => "Hat",
+            BetweenSlotTypes.Earrings  => "Earrings",
+            BetweenSlotTypes.Necklace  => "Necklace",
+            BetweenSlotTypes.Bracelets => "Bracelets",
+            BetweenSlotTypes.RightRing => "Right Ring",
+            BetweenSlotTypes.LeftRing  => "Left Ring",
+            BetweenSlotTypes.Glasses   => "Glasses",
+            _                          => "Unknown",
+        };
+
+    private static readonly IReadOnlyList<BetweenSlotTypes> AvailableToTypes =
+        Enum.GetValues<BetweenSlotTypes>().Where(s => s is not BetweenSlotTypes.Hat).ToArray();
 }
