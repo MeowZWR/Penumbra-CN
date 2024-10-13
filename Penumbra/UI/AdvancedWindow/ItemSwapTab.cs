@@ -797,13 +797,13 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     private static string ToName(BetweenSlotTypes type)
         => type switch
         {
-            BetweenSlotTypes.Hat       => "Hat",
-            BetweenSlotTypes.Earrings  => "Earrings",
-            BetweenSlotTypes.Necklace  => "Necklace",
-            BetweenSlotTypes.Bracelets => "Bracelets",
-            BetweenSlotTypes.RightRing => "Right Ring",
-            BetweenSlotTypes.LeftRing  => "Left Ring",
-            BetweenSlotTypes.Glasses   => "Glasses",
+            BetweenSlotTypes.Hat       => "头部装备",
+            BetweenSlotTypes.Earrings  => "耳部装备",
+            BetweenSlotTypes.Necklace  => "颈部装备",
+            BetweenSlotTypes.Bracelets => "腕部装备",
+            BetweenSlotTypes.RightRing => "右指装备",
+            BetweenSlotTypes.LeftRing  => "左指装备",
+            BetweenSlotTypes.Glasses   => "面部配饰",
             _                          => "Unknown",
         };
 

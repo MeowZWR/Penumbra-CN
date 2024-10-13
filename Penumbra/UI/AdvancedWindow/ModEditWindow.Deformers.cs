@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
@@ -35,10 +35,10 @@ public partial class ModEditWindow
                    .Push(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
         {
             ImGui.SetNextItemWidth(width);
-            ImUtf8.InputText("##grFilter"u8, ref _pbdData.RaceCodeFilter, "Filter..."u8);
+            ImUtf8.InputText("##grFilter"u8, ref _pbdData.RaceCodeFilter, "筛选..."u8);
         }
 
-        using var child = ImUtf8.Child("GenderRace"u8,
+        using var child = ImUtf8.Child("性别与种族"u8,
             new Vector2(width, ImGui.GetContentRegionMax().Y - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y), true);
         if (!child)
             return;
@@ -74,10 +74,10 @@ public partial class ModEditWindow
                    .Push(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
         {
             ImGui.SetNextItemWidth(width);
-            ImUtf8.InputText("##boneFilter"u8, ref _pbdData.BoneFilter, "Filter..."u8);
+            ImUtf8.InputText("##boneFilter"u8, ref _pbdData.BoneFilter, "筛选..."u8);
         }
 
-        using var child = ImUtf8.Child("Bone"u8,
+        using var child = ImUtf8.Child("骨骼"u8,
             new Vector2(width, ImGui.GetContentRegionMax().Y - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y), true);
         if (!child)
             return;
@@ -87,7 +87,7 @@ public partial class ModEditWindow
 
         if (_pbdData.SelectedDeformer.IsEmpty)
         {
-            ImUtf8.Text("<Empty>"u8);
+            ImUtf8.Text("<空>"u8);
         }
         else
         {
@@ -106,7 +106,7 @@ public partial class ModEditWindow
 
     private bool DrawBoneData(PbdTab tab, bool disabled)
     {
-        using var child = ImUtf8.Child("Data"u8,
+        using var child = ImUtf8.Child("数据"u8,
             ImGui.GetContentRegionAvail() with { Y = ImGui.GetContentRegionMax().Y - ImGui.GetStyle().WindowPadding.Y }, true);
         if (!child)
             return false;
@@ -140,7 +140,7 @@ public partial class ModEditWindow
     private bool DrawAddNewBone(PbdTab tab, bool disabled, in TransformMatrix matrix, float width)
     {
         var ret = false;
-        ImUtf8.TextFrameAligned("Copy the values of the bone "u8);
+        ImUtf8.TextFrameAligned("复制骨骼 "u8);
         ImGui.SameLine(0, 0);
         using (ImRaii.PushColor(ImGuiCol.Text, ColorId.NewMod.Value()))
         {
@@ -148,14 +148,14 @@ public partial class ModEditWindow
         }
 
         ImGui.SameLine(0, 0);
-        ImUtf8.TextFrameAligned(" to a new bone of name"u8);
+        ImUtf8.TextFrameAligned(" 的数值到新骨骼并命名为"u8);
 
         var fullWidth = width * 4 + ImGui.GetStyle().ItemSpacing.X * 3;
         ImGui.SetNextItemWidth(fullWidth);
-        ImUtf8.InputText("##newBone"u8, ref _pbdData.NewBoneName, "New Bone Name..."u8);
-        ImUtf8.TextFrameAligned("for all races that have a corresponding bone."u8);
+        ImUtf8.InputText("##newBone"u8, ref _pbdData.NewBoneName, "新骨骼名称..."u8);
+        ImUtf8.TextFrameAligned("应用于所有有对应骨骼的种族。"u8);
         ImGui.SameLine(0, fullWidth - width - ImGui.GetItemRectSize().X);
-        if (ImUtf8.ButtonEx("Apply"u8, ""u8, new Vector2(width, 0),
+        if (ImUtf8.ButtonEx("应用"u8, ""u8, new Vector2(width, 0),
                 disabled || _pbdData.NewBoneName.Length == 0 || _pbdData.SelectedBone == null))
         {
             foreach (var deformer in tab.File.Deformers)
@@ -167,7 +167,7 @@ public partial class ModEditWindow
                  && deformer.RacialDeformer.DeformMatrices.TryGetValue(_pbdData.NewBoneName, out var newBoneMatrix)
                  && !newBoneMatrix.Equals(existingMatrix))
                     Penumbra.Messager.AddMessage(new Notification(
-                        $"Could not add deformer matrix to {deformer.GenderRace.ToName()}, Bone {_pbdData.NewBoneName} because it already has a deformer that differs from the intended one.",
+                        $"无法将变形矩阵添加到 {deformer.GenderRace.ToName()}，骨骼 {_pbdData.NewBoneName}，因为它已经存在一个不同的变形矩阵。",
                         NotificationType.Warning));
                 else
                     ret = true;
@@ -176,7 +176,7 @@ public partial class ModEditWindow
             _pbdData.NewBoneName = string.Empty;
         }
 
-        if (ImUtf8.ButtonEx("Copy Values to Single New Bone Entry"u8, ""u8, new Vector2(fullWidth, 0),
+        if (ImUtf8.ButtonEx("将数值复制到单一新骨骼条目"u8, ""u8, new Vector2(fullWidth, 0),
                 disabled || _pbdData.NewBoneName.Length == 0 || _pbdData.SelectedDeformer!.DeformMatrices.ContainsKey(_pbdData.NewBoneName)))
         {
             _pbdData.SelectedDeformer!.DeformMatrices[_pbdData.NewBoneName] = matrix;
@@ -218,13 +218,13 @@ public partial class ModEditWindow
     private bool DrawCopyPasteButtons(bool disabled, in TransformMatrix matrix, float width)
     {
         var size = new Vector2(width, 0);
-        if (ImUtf8.Button("Copy Values"u8, size))
+        if (ImUtf8.Button("复制数值"u8, size))
             _pbdData.CopiedMatrix = matrix;
 
         ImGui.SameLine();
 
         var ret = false;
-        if (ImUtf8.ButtonEx("Paste Values"u8, ""u8, size, disabled || !_pbdData.CopiedMatrix.HasValue))
+        if (ImUtf8.ButtonEx("粘贴数值"u8, ""u8, size, disabled || !_pbdData.CopiedMatrix.HasValue))
         {
             _pbdData.SelectedDeformer!.DeformMatrices[_pbdData.SelectedBone!] = _pbdData.CopiedMatrix!.Value;
             ret                                                               = true;
@@ -234,7 +234,7 @@ public partial class ModEditWindow
         ImGui.SameLine();
         if (modifier)
         {
-            if (ImUtf8.ButtonEx("Delete"u8, "Delete this bone entry."u8, size, disabled))
+            if (ImUtf8.ButtonEx("删除"u8, "删除此骨骼项。"u8, size, disabled))
             {
                 ret                   |= _pbdData.SelectedDeformer!.DeformMatrices.Remove(_pbdData.SelectedBone!);
                 _pbdData.SelectedBone =  null;
@@ -242,7 +242,7 @@ public partial class ModEditWindow
         }
         else
         {
-            ImUtf8.ButtonEx("Delete"u8, $"Delete this bone entry. Hold {_config.DeleteModModifier} to delete.", size, true);
+            ImUtf8.ButtonEx("删除"u8, $"删除此骨骼项。按住 {_config.DeleteModModifier} 来删除。", size, true);
         }
 
         return ret;
@@ -303,9 +303,9 @@ public partial class ModEditWindow
         ImGui.SameLine();
         using (ImUtf8.Group())
         {
-            ImUtf8.TextFrameAligned("Scale"u8);
-            ImUtf8.TextFrameAligned("Translation"u8);
-            ImUtf8.TextFrameAligned("Rotation (Quaternion, rijk)"u8);
+            ImUtf8.TextFrameAligned("缩放"u8);
+            ImUtf8.TextFrameAligned("平移"u8);
+            ImUtf8.TextFrameAligned("旋转 (四元数, rijk)"u8);
         }
 
         if (ret)

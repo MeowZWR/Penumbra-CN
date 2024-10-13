@@ -667,7 +667,7 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
             () => PopulateIsOnPlayer(_editor.Files.Shpk, ResourceType.Shpk), DrawShaderPackagePanel,
             () => Mod?.ModPath.FullName ?? string.Empty,
             (bytes, path, _) => new ShpkTab(_fileDialog, bytes, path));
-        _pbdTab = new FileEditor<PbdTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "Deformers", ".pbd",
+        _pbdTab = new FileEditor<PbdTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "变形器", ".pbd",
             () => _editor.Files.Pbd, DrawDeformerPanel,
             () => Mod?.ModPath.FullName ?? string.Empty,
             (bytes, path, _) => new PbdTab(bytes, path));
