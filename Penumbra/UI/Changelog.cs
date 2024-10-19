@@ -53,11 +53,42 @@ public class PenumbraChangelog : IUiService
         Add1_1_0_0(Changelog);
         Add1_1_1_0(Changelog);
         Add1_2_1_0(Changelog);
+        Add1_3_0_0(Changelog);
     }
 
     #region Changelogs
 
-	private static void Add1_2_1_0(Changelog log)
+    private static void Add1_3_0_0(Changelog log)
+        => log.NextVersion("版本 1.3.0.0")
+
+            .RegisterHighlight("高级编辑窗口中的纹理选项卡现在可以导入和导出 .tga 文件。")
+            .RegisterEntry("现在也可以导入 BC4 和 BC6 纹理。", 1)
+            .RegisterHighlight("新增了对眼镜槽（面部配饰）进行道具交换的功能。")
+            .RegisterEntry("对面部配饰/额外物品进行了大量重构。如果出现任何问题，请告知。", 1)
+            .RegisterEntry("编辑模组选项卡现在会显示模组的导入日期，并且可以通过按钮重置。")
+            .RegisterEntry("还增加了一个按钮用于打开包含本地模组数据的文件。", 1)
+            .RegisterHighlight("现在可以将 IMC 组配置为仅应用其条目的属性标志，并从默认值中获取其他值。")
+            .RegisterEntry("这允许在设置属性的同时保持每个 IMC 组条目的材质索引。", 1)
+            .RegisterHighlight("模型导入/导出已修复并重新启用（感谢 ackwell 和 ramen）。")
+            .RegisterHighlight("添加了一个 hack，允许额外物品（面部配饰、眼镜）拥有 VFX。")
+            .RegisterEntry("还修复了之前允许饰品拥有 VFX 的 hack 不再工作的情况。", 1)
+            .RegisterHighlight("在高级编辑窗口中添加了对 PBD 文件的基础编辑选项。")
+            .RegisterEntry("现在准备高级编辑窗口中的模组不会冻结游戏，直到准备完成。")
+            .RegisterEntry("高级编辑窗口中的元操作现在已经排序，并且绘制时不会显著影响性能。")
+            .RegisterEntry("高级编辑窗口中添加了一个按钮，可以从模组中删除所有包含默认值的元数据操作。")
+            .RegisterEntry("现在，在从压缩包和 .pmps 导入时，如果没有在其他地方设置，包含默认值的元数据操作也会被移除，而不仅仅是 .ttmps。", 1)
+            .RegisterEntry("基于复选框的模组筛选器现在是三态复选框，而不是两个不相交的复选框。")
+            .RegisterEntry("现在可以复制资源日志中的路径。")
+            .RegisterEntry("在通过 Heliosphere 更新模组时，屏蔽了一些冗余的错误日志。")
+            .RegisterEntry("为 TexTools 互操作性添加了“Page”到导入的模组数据中。该值在 Penumbra 中不使用，只是持久化。")
+            .RegisterEntry("更新了所有外部依赖项。")
+            .RegisterEntry("修复了与亚人 IMC 条目相关的问题。")
+            .RegisterEntry("修复了模组导入窗口中的一些越界错误。")
+            .RegisterEntry("修复了有关首次创建模组元数据文件的竞态条件问题。")
+            .RegisterEntry("修复了合并模组选项卡中长模组标题的问题。")
+            .RegisterEntry("其他一些杂项修复。");
+
+    private static void Add1_2_1_0(Changelog log)
 	    => log.NextVersion("版本 1.2.1.0")
 	        .RegisterHighlight("Penumbra 现在已为「金曦之遗辉」发布新版本！")
 	        .RegisterEntry("你的模组可能需要更新。请使用TexTools的相关功能。", 1)
@@ -96,7 +127,7 @@ public class PenumbraChangelog : IUiService
 	        .RegisterEntry("修正了模组合并器文件查找和大小写的问题。（1.1.1.2）")
 	        .RegisterEntry("修正了在某些情况下，文件保存时模组合并或物品交换无法生效的问题。（1.1.1.2）");
 
-	private static void Add1_1_1_0(Changelog log)
+    private static void Add1_1_1_0(Changelog log)
 	    => log.NextVersion("版本 1.1.1.0")
 	        .RegisterHighlight("模组的筛选现在被标记化，现在可以同时筛选多个条件或排除特定条件。")
 	        .RegisterEntry("鼠标悬停在筛选器上可在工具提示中查看新的可用选项。", 1)
