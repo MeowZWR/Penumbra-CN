@@ -65,7 +65,7 @@ public static class ChangedItemFlagExtensions
             ChangedItemIconFlag.Wrists        => EquipSlot.Wrists.ToName(),
             ChangedItemIconFlag.Finger        => "戒指",
             ChangedItemIconFlag.Monster       => "怪物",
-            ChangedItemIconFlag.Demihuman     => "蛮族",
+            ChangedItemIconFlag.Demihuman     => "亚人",
             ChangedItemIconFlag.Customization => "外貌",
             ChangedItemIconFlag.Action        => "技能",
             ChangedItemIconFlag.Emote         => "情感动作",
