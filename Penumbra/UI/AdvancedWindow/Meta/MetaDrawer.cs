@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -138,10 +138,10 @@ public abstract class MetaDrawer<TIdentifier, TEntry>(ModMetaEditor editor, Meta
     protected void DrawMetaButtons(TIdentifier identifier, TEntry entry)
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("Copy this manipulation to clipboard."u8, new JArray { MetaDictionary.Serialize(identifier, entry)! });
+        CopyToClipboardButton("将此操作复制到剪贴板。"u8, new JArray { MetaDictionary.Serialize(identifier, entry)! });
 
         ImGui.TableNextColumn();
-        if (ImUtf8.IconButton(FontAwesomeIcon.Trash, "Delete this meta manipulation."u8))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Trash, "删除此元数据操作。"u8))
             Editor.Changes |= Editor.Remove(identifier);
     }
 
