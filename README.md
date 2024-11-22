@@ -1,31 +1,37 @@
 # Penumbra
 
-Penumbra is a runtime mod loader for FINAL FANTASY XIV, with a bunch of other useful features baked in:
+Penumbra 用于最终幻想14的运行时模组加载器，同时还内置了许多实用功能：
 
-* No need to back up your install - mods don't touch game files
-* Disable and enable mods without restarting the game
-* Resolve conflicts between mods by changing mod order
-* Files can be edited and are often replicated in-game after a map change or closing and reopening a window
+* 无需备份您的游戏安装文件 - 模组不会修改游戏本体；
+* 无需重启游戏即可启用或禁用模组；
+* 通过调整模组顺序解决模组之间的冲突；
+* 修改的文件通常会在切换地图或关闭并重新打开窗口后在游戏中生效。
 
-## Support
-Either open an issue here or join us in [Discord](https://discord.gg/kVva7DHV4r).
+## 支持
+* 您可以在此提交问题（Issue），或者加入原作者的 [Discord](https://discord.gg/kVva7DHV4r) 讨论（注意因为客户端不同，这里不会对国服进行支持）；   
+* 讨论模组请加入 [国服 MOD 社区](http://discord.gg/QvrVye3)；  
+* 对插件有疑问请加入 [獭爹的 Discord](https://discord.gg/VyRewjcr)；
 
-## Contributing
-Contributions are welcome, but please make an issue first before writing any code. It's possible what you want to implement is out of scope for this project, or could be reworked so that it would provide greater benefit.
+## 贡献
+欢迎提交贡献代码，但在编写代码之前，请先创建一个 Issue。您希望实现的功能可能超出此项目的范围，或者可以重新设计以提供更大的益处。
 
-## TexTools Mods
-Penumbra has support for most TexTools modpacks however this is provided on a best-effort basis and support is not guaranteed. Built in tooling will be added to Penumbra over time to avoid many common TexTools use cases.
+## TexTools 模组
+Penumbra 支持大多数 TexTools 模组包，但这是在尽力支持的基础上提供的，无法保证全面兼容。随着时间推移，Penumbra 将逐步添加内置工具以减少许多常见的 TexTools 用例需求。
 
-## Installing 
-While this project is still a work in progress, you can use it by adding the following URL to the custom plugin repositories list in your Dalamud settings
-An image-based install (and usage) guide to do this is provided by unaffiliated user Serenity: https://reniguide.info/
+## 安装方法
+此项目仍在开发中，您可以通过在卫月设置中的自定义插件仓库列表中添加以下 URL 使用该项目。  
+一位非官方用户 Serenity 提供了一个基于图片的安装（以及使用）指南：https://reniguide.info/ （英文）。
 
-1. `/xlsettings` -> Experimental tab
-2. Copy and paste the repo.json link below
-3. Click on the + button
-4. Click on the "Save and Close" button
-5. You will now see Penumbra listed in the Available Plugins tab in the Dalamud Plugin Installer
-6. Do not forget to actually install Penumbra from this tab.
+1. 输入 `/xlsettings` -> 打开“测试版”标签页；
+2. 复制并粘贴最下面的獭三方链接；
+3. 点击“+”按钮；
+4. 点击“保存更改”按钮；
+5. 您现在可以在卫月插件安装器的“所有插件”标签页中搜索到 Penumbra；
+6. 点击“安装”按钮安装插件。
 
-Please do not install Penumbra manually by downloading a release zip and unpacking it into your devPlugins folder. That will require manually updating Penumbra and you will miss out on features and bug fixes as you won't get update notifications automatically. Any manually installed copies of Penumbra should be removed before switching to the custom plugin respository method, as they will conflict.
-- https://raw.githubusercontent.com/xivdev/Penumbra/master/repo.json
+请勿通过下载 Releases 中的压缩包并解压到 devPlugins 文件夹的方法来手动安装 Penumbra。这样做您将无法自动收到更新通知、错过新功能和错误修复。在通过插件安装器安装 Penumbra 之前，应删除所有手动安装的 Penumbra 副本，因为它们会发生冲突。
+
+请使用獭三方仓库：
+```
+https://dalamud_cn_3rd.otters.cloud/plugins/all
+```
