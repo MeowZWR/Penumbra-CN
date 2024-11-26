@@ -60,21 +60,21 @@ public class PenumbraChangelog : IUiService
     #region Changelogs
 
     private static void Add1_3_1_0(Changelog log)
-        => log.NextVersion("Version 1.3.1.0")
-            .RegisterEntry("Penumbra has been updated for Dalamud API 11 and patch 7.1.")
-            .RegisterImportant("There are some known issues with potential crashes using certain VFX/SFX mods, probably related to sound files.")
-            .RegisterEntry("If you encounter those issues, please report them in the discord and potentially disable the corresponding mods for the time being.", 1)
-            .RegisterImportant("The modding of .atch files has been disabled. Outdated modded versions of these files cause crashes when loaded.")
-            .RegisterEntry("A better way for modular modding of .atch files via meta changes will release to the testing branch soonish.", 1)
-            .RegisterHighlight("Temporary collections (as created by Mare) will now always respect ownership.")
-            .RegisterEntry("This means that you can toggle this setting off if you do not want it, and Mare will still work for minions and mounts of other players.", 1)
-            .RegisterEntry("The new physics and animation engine files (.kdb and .bnmb) should now be correctly redirected and respect EST changes.")
-            .RegisterEntry("Fixed issues with EQP entries being labeled wrongly and global EQP not changing all required values for earrings.")
-            .RegisterEntry("Fixed an issue with global EQP changes of a mod being reset upon reloading the mod.")
-            .RegisterEntry("Fixed another issue with left rings and mare synchronization / the on-screen tab.")
-            .RegisterEntry("Maybe fixed some issues with characters appearing in the login screen being misidentified.")
-            .RegisterEntry("Some improvements for debug visualization have been made.");
-            
+        => log.NextVersion("版本 1.3.1.0")
+            .RegisterEntry("Penumbra 已更新以支持 Dalamud API 11 和 7.1 游戏版本。")
+            .RegisterImportant("已知使用某些 VFX/SFX 模组可能导致崩溃，可能与音频文件有关。")
+            .RegisterEntry("如果您遇到这些问题，请在 Discord 中报告，并暂时禁用相关模组。", 1)
+            .RegisterImportant("已禁用修改的 .atch 文件。过期的这些文件会在加载时会导致崩溃。")
+            .RegisterEntry("通过元数据更改实现修改 .atch 文件的更好方法将很快在测试分支发布。", 1)
+            .RegisterHighlight("临时合集（如 Mare 创建的合集）现在将始终遵循所有权规则。")
+            .RegisterEntry("这意味着您可以关闭此设置，而 Mare 仍然可以正确处理其他玩家的宠物和坐骑。", 1)
+            .RegisterEntry("新的物理和动画引擎文件（.kdb 和 .bnmb）现在可以正确重定向并遵循 EST 变更。")
+            .RegisterEntry("修复了 EQP 条目标记错误的问题，且全局 EQP 未正确修改耳环的所有必要值的问题。")
+            .RegisterEntry("修复了重新加载模组时模组的全局 EQP 更改被重置的问题。")
+            .RegisterEntry("修复了左手戒指与 Mare 同步 / 画面角色 标签页的问题。")
+            .RegisterEntry("可能修复了登录画面中角色被错误识别的问题。")
+            .RegisterEntry("改进了调试模块的可视化功能。");
+
 
     private static void Add1_3_0_0(Changelog log)
         => log.NextVersion("版本 1.3.0.0")
