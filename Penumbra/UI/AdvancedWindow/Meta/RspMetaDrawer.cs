@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
+using Newtonsoft.Json.Linq;
 using OtterGui.Services;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -33,7 +34,7 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("复制当前所有RSP操作到剪贴板。"u8, MetaDictionary.SerializeTo([], Editor.Rsp));
+        CopyToClipboardButton("复制当前所有RSP操作到剪贴板。"u8, new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Rsp)));
 
         ImGui.TableNextColumn();
         var canAdd = !Editor.Contains(Identifier);

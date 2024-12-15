@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using ImGuiNET;
+using Newtonsoft.Json.Linq;
 using OtterGui.Services;
 using OtterGui.Text;
 using Penumbra.Meta;
@@ -29,7 +30,7 @@ public sealed class GlobalEqpMetaDrawer(ModMetaEditor editor, MetaFileManager me
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("复制当前所有全局EQP操作到剪贴板。"u8, MetaDictionary.SerializeTo([], Editor.GlobalEqp));
+        CopyToClipboardButton("复制当前所有全局EQP操作到剪贴板。"u8, new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.GlobalEqp)));
 
         ImGui.TableNextColumn();
         var canAdd = !Editor.Contains(Identifier);

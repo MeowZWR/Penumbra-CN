@@ -21,6 +21,7 @@ using ResidentResourceManager = Penumbra.Interop.Services.ResidentResourceManage
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
 using Penumbra.GameData.Data;
+using Penumbra.GameData.Files;
 using Penumbra.Interop.Hooks;
 using Penumbra.Interop.Hooks.ResourceLoading;
 
@@ -186,7 +187,7 @@ public class Penumbra : IDalamudPlugin
         ReadOnlySpan<string> relevantPlugins =
         [
             "Glamourer", "MareSynchronos", "CustomizePlus", "SimpleHeels", "VfxEditor", "heliosphere-plugin", "Ktisis", "Brio", "DynamicBridge",
-            "IllusioVitae", "Aetherment", "LoporritSync", "GagSpeak",
+            "IllusioVitae", "Aetherment", "LoporritSync", "GagSpeak", "RoleplayingVoiceDalamud",
         ];
         var plugins = _services.GetService<IDalamudPluginInterface>().InstalledPlugins
             .GroupBy(p => p.InternalName)

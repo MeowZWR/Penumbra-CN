@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using OtterGui.Services;
+using Penumbra.Collections.Cache;
 using Penumbra.Meta;
 using Penumbra.Meta.Files;
 using Penumbra.Meta.Manipulations;
@@ -58,6 +59,7 @@ public class ModMetaEditor(
             OtherData[MetaManipulationType.Gmp].Add(name, option.Manipulations.GetCount(MetaManipulationType.Gmp));
             OtherData[MetaManipulationType.Est].Add(name, option.Manipulations.GetCount(MetaManipulationType.Est));
             OtherData[MetaManipulationType.Rsp].Add(name, option.Manipulations.GetCount(MetaManipulationType.Rsp));
+            OtherData[MetaManipulationType.Atch].Add(name, option.Manipulations.GetCount(MetaManipulationType.Atch));
             OtherData[MetaManipulationType.GlobalEqp].Add(name, option.Manipulations.GetCount(MetaManipulationType.GlobalEqp));
         }
 
@@ -146,6 +148,23 @@ public class ModMetaEditor(
         {
             var defaultEntry = CmpFile.GetDefault(metaFileManager, key.SubRace, key.Attribute);
             if (!defaultEntry.Equals(value))
+            {
+                dict.TryAdd(key, value);
+            }
+            else
+            {
+                Penumbra.Log.Verbose($"Deleted default-valued meta-entry {key}.");
+                ++count;
+            }
+        }
+
+        foreach (var (key, value) in clone.Atch)
+        {
+            var defaultEntry = AtchCache.GetDefault(metaFileManager, key);
+            if (!defaultEntry.HasValue)
+                continue;
+
+            if (!defaultEntry.Value.Equals(value))
             {
                 dict.TryAdd(key, value);
             }

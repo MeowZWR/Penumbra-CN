@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
+using Newtonsoft.Json.Linq;
 using OtterGui.Services;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -34,7 +35,7 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("将当前所有EQDP操作复制到剪贴板。"u8, MetaDictionary.SerializeTo([], Editor.Eqdp));
+        CopyToClipboardButton("将当前所有EQDP操作复制到剪贴板。"u8, new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Eqdp)));
 
         ImGui.TableNextColumn();
         var validRaceCode = CharacterUtilityData.EqdpIdx(Identifier.GenderRace, false) >= 0;

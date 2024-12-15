@@ -56,6 +56,7 @@ public partial class ModEditWindow
         DrawEditHeader(MetaManipulationType.Est);
         DrawEditHeader(MetaManipulationType.Gmp);
         DrawEditHeader(MetaManipulationType.Rsp);
+        DrawEditHeader(MetaManipulationType.Atch);
         DrawEditHeader(MetaManipulationType.GlobalEqp);
     }
 
@@ -110,7 +111,7 @@ public partial class ModEditWindow
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), iconSize, tooltip, false, true))
             return;
 
-        var text = Functions.ToCompressedBase64(manipulations, MetaApi.CurrentVersion);
+        var text = Functions.ToCompressedBase64(manipulations, 0);
         if (text.Length > 0)
             ImGui.SetClipboardText(text);
     }
@@ -121,8 +122,7 @@ public partial class ModEditWindow
         {
             var clipboard = ImGuiUtil.GetClipboardText();
 
-            var version = Functions.FromCompressedBase64<MetaDictionary>(clipboard, out var manips);
-            if (version == MetaApi.CurrentVersion && manips != null)
+            if (MetaApi.ConvertManips(clipboard, out var manips, out _))
             {
                 _editor.MetaEditor.UpdateTo(manips);
                 _editor.MetaEditor.Changes = true;
@@ -138,8 +138,7 @@ public partial class ModEditWindow
         if (ImGui.Button("应用剪贴板中的设置"))
         {
             var clipboard = ImGuiUtil.GetClipboardText();
-            var version   = Functions.FromCompressedBase64<MetaDictionary>(clipboard, out var manips);
-            if (version == MetaApi.CurrentVersion && manips != null)
+            if (MetaApi.ConvertManips(clipboard, out var manips, out _))
             {
                 _editor.MetaEditor.SetTo(manips);
                 _editor.MetaEditor.Changes = true;

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using ImGuiNET;
+using Newtonsoft.Json.Linq;
 using OtterGui.Raii;
 using OtterGui.Services;
 using OtterGui.Text;
@@ -35,7 +36,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("将当前所有IMC操作复制到剪贴板。"u8, MetaDictionary.SerializeTo([], Editor.Imc));
+        CopyToClipboardButton("将当前所有IMC操作复制到剪贴板。"u8, new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Imc)));
         ImGui.TableNextColumn();
         var canAdd = _fileExists && !Editor.Contains(Identifier);
         var tt     = canAdd ? "编辑此项。"u8 : !_fileExists ? "此IMC文件不存在。"u8 : "此项已被编辑。"u8;
@@ -116,7 +117,6 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             ImUtf8.TextFramed(identifier.EquipSlot.ToName(), FrameColor);
             ImUtf8.HoverTooltip("装备位置"u8);
         }
-
     }
 
     private static bool DrawEntry(ImcEntry defaultEntry, ref ImcEntry entry, bool addDefault)
@@ -161,8 +161,9 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         {
             var (equipSlot, secondaryId) = type switch
             {
-                ObjectType.Equipment => (identifier.EquipSlot.IsEquipment() ? identifier.EquipSlot : EquipSlot.Head, (SecondaryId) 0),
-                ObjectType.DemiHuman => (identifier.EquipSlot.IsEquipment() ? identifier.EquipSlot : EquipSlot.Head, identifier.SecondaryId == 0 ? 1 : identifier.SecondaryId),
+                ObjectType.Equipment => (identifier.EquipSlot.IsEquipment() ? identifier.EquipSlot : EquipSlot.Head, (SecondaryId)0),
+                ObjectType.DemiHuman => (identifier.EquipSlot.IsEquipment() ? identifier.EquipSlot : EquipSlot.Head,
+                    identifier.SecondaryId == 0 ? 1 : identifier.SecondaryId),
                 ObjectType.Accessory => (identifier.EquipSlot.IsAccessory() ? identifier.EquipSlot : EquipSlot.Ears, (SecondaryId)0),
                 _                    => (EquipSlot.Unknown, identifier.SecondaryId == 0 ? 1 : identifier.SecondaryId),
             };
