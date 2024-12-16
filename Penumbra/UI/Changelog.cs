@@ -61,16 +61,16 @@ public class PenumbraChangelog : IUiService
     #region Changelogs
 
     private static void Add1_3_2_0(Changelog log)
-        => log.NextVersion("Version 1.3.2.0")
-            .RegisterHighlight("Added ATCH meta manipulations that allow the composite editing of attachment points across multiple mods.")
-            .RegisterEntry("Those ATCH manipulations should be shared via Mare Synchronos.", 1)
-            .RegisterEntry("This is an early implementation and might be bug-prone. Let me know of any issues. It was in testing for quite a while without reports.", 1)
-            .RegisterEntry("Added jumping to identified mods in the On-Screen tab via Control + Right-Click and improved their display slightly.")
-            .RegisterEntry("Added some right-click context menu copy options in the File Redirections editor for paths.")
-            .RegisterHighlight("Added the option to change a specific mod's settings via chat commands by using '/penumbra mod settings'.")
-            .RegisterEntry("Fixed issues with the copy-pasting of meta manipulations.")
-            .RegisterEntry("Fixed some other issues related to meta manipulations.")
-            .RegisterEntry("Updated available NPC names and fixed an issue with some supposedly invisible characters in names showing in ImGui.");
+        => log.NextVersion("版本 1.3.2.0")
+            .RegisterHighlight("新增 ATCH 元数据操作，允许跨多个模组对骨骼挂点进行组合编辑。")
+            .RegisterEntry("这些 ATCH 操作应通过 Mare Synchronos 共享。", 1)
+            .RegisterEntry("这是一个早期实现，可能存在问题。如果发现问题，请告知。尽管它已经测试了一段时间，但尚未收到反馈。", 1)
+            .RegisterEntry("在“画面角色”选项卡中通过 Ctrl + 右键单击跳转到已识别的模组，并稍微改进了其显示。")
+            .RegisterEntry("在文件重定向编辑器中，在路径的右键上下文菜单中增加了一些复制选项。")
+            .RegisterHighlight("新增通过聊天命令 '/penumbra mod settings' 更改特定模组设置的选项。")
+            .RegisterEntry("修复了元数据操作复制粘贴的问题。")
+            .RegisterEntry("修复了与数据元操作相关的其他一些问题。")
+            .RegisterEntry("更新了可用的 NPC 名称，并修复了某些假定不可见字符在 ImGui 中显示的问题。");
 
 
     private static void Add1_3_1_0(Changelog log)

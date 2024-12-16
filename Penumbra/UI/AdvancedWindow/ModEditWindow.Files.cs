@@ -212,7 +212,7 @@ public partial class ModEditWindow
 
         using (ImRaii.Disabled(registry.CurrentUsage == 0))
         {
-            if (ImUtf8.Selectable("Copy Game Paths"u8))
+            if (ImUtf8.Selectable("复制游戏路径"u8))
             {
                 _cutPaths.Clear();
                 for (var j = 0; j < registry.SubModUsage.Count; ++j)
@@ -227,7 +227,7 @@ public partial class ModEditWindow
 
         using (ImRaii.Disabled(registry.CurrentUsage == 0))
         {
-            if (ImUtf8.Selectable("Cut Game Paths"u8))
+            if (ImUtf8.Selectable("剪切游戏路径"u8))
             {
                 _cutPaths.Clear();
                 for (var j = 0; j < registry.SubModUsage.Count; ++j)
@@ -243,7 +243,7 @@ public partial class ModEditWindow
 
         using (ImRaii.Disabled(_cutPaths.Count == 0))
         {
-            if (ImUtf8.Selectable("Paste Game Paths"u8))
+            if (ImUtf8.Selectable("粘贴游戏路径"u8))
             {
                 foreach (var path in _cutPaths)
                     _editor.FileEditor.SetGamePath(_editor.Option!, i, -1, path);

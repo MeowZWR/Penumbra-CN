@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using Newtonsoft.Json.Linq;
 using OtterGui.Raii;
@@ -19,7 +19,7 @@ namespace Penumbra.UI.AdvancedWindow.Meta;
 public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, IService
 {
     public override ReadOnlySpan<byte> Label
-        => "Attachment Points (ATCH)###ATCH"u8;
+        => "骨骼挂点（ATCH）###ATCH"u8;
 
     public override int NumColumns
         => 10;
@@ -48,12 +48,12 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, ISer
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("Copy all current ATCH manipulations to clipboard."u8,
+        CopyToClipboardButton("复制当前所有ATCH操作到剪贴板。"u8,
             new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Atch)));
 
         ImGui.TableNextColumn();
         var canAdd = !Editor.Contains(Identifier);
-        var tt     = canAdd ? "Stage this edit."u8 : "This entry is already edited."u8;
+        var tt     = canAdd ? "编辑此项。"u8 : "此项已被编辑。"u8;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, disabled: !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, Entry);
 
@@ -134,18 +134,18 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, ISer
     {
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.Race.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("Model Race"u8);
+        ImUtf8.HoverTooltip("模型种族"u8);
 
         ImGui.TableNextColumn();
         DrawGender(ref identifier, true);
 
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.Type.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("Attachment Point Type"u8);
+        ImUtf8.HoverTooltip("挂点类型"u8);
 
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.EntryIndex.ToString(), FrameColor);
-        ImUtf8.HoverTooltip("State Entry Index"u8);
+        ImUtf8.HoverTooltip("状态条目索引"u8);
     }
 
     private static bool DrawEntry(in AtchEntry defaultEntry, ref AtchEntry entry, bool disabled)
@@ -163,35 +163,35 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, ISer
             changes = true;
         }
 
-        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Bone Name"u8);
+        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "骨骼名称"u8);
 
         ImGui.SetNextItemWidth(200 * ImUtf8.GlobalScale);
         changes |= ImUtf8.InputScalar("##AtchScale"u8, ref entry.Scale);
-        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Scale"u8);
+        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "缩放"u8);
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(120 * ImUtf8.GlobalScale);
         changes |= ImUtf8.InputScalar("##AtchOffsetX"u8, ref entry.OffsetX);
-        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Offset X-Coordinate"u8);
+        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "偏移 X 坐标"u8);
         ImGui.SetNextItemWidth(120 * ImUtf8.GlobalScale);
         changes |= ImUtf8.InputScalar("##AtchRotationX"u8, ref entry.RotationX);
-        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Rotation X-Axis"u8);
+        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "旋转 X 轴"u8);
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(120 * ImUtf8.GlobalScale);
         changes |= ImUtf8.InputScalar("##AtchOffsetY"u8, ref entry.OffsetY);
-        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Offset Y-Coordinate"u8);
+        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "偏移 Y 坐标"u8);
         ImGui.SetNextItemWidth(120 * ImUtf8.GlobalScale);
         changes |= ImUtf8.InputScalar("##AtchRotationY"u8, ref entry.RotationY);
-        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Rotation Y-Axis"u8);
+        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "旋转 Y 轴"u8);
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(120 * ImUtf8.GlobalScale);
         changes |= ImUtf8.InputScalar("##AtchOffsetZ"u8, ref entry.OffsetZ);
-        ImUtf8.HoverTooltip("Offset Z-Coordinate"u8);
+        ImUtf8.HoverTooltip("偏移 Z 坐标"u8);
         ImGui.SetNextItemWidth(120 * ImUtf8.GlobalScale);
         changes |= ImUtf8.InputScalar("##AtchRotationZ"u8, ref entry.RotationZ);
-        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "Rotation Z-Axis"u8);
+        ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "旋转 Z 轴"u8);
 
         return changes;
     }
@@ -199,7 +199,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, ISer
     private static bool DrawRace(ref AtchIdentifier identifier, float unscaledWidth = 100)
     {
         var ret = Combos.Race("##atchRace", identifier.Race, out var race, unscaledWidth);
-        ImUtf8.HoverTooltip("Model Race"u8);
+        ImUtf8.HoverTooltip("模型种族"u8);
         if (ret)
             identifier = identifier with { GenderRace = Names.CombinedRace(identifier.Gender, race) };
 
@@ -210,7 +210,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, ISer
     {
         var isMale = identifier.Gender is Gender.Male;
 
-        if (!ImUtf8.IconButton(isMale ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus, "Gender"u8, buttonColor: disabled ? 0x000F0000u : 0)
+        if (!ImUtf8.IconButton(isMale ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus, "性别"u8, buttonColor: disabled ? 0x000F0000u : 0)
          || disabled)
             return false;
 
@@ -220,7 +220,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, ISer
 
     private static bool DrawPointInput(ref AtchIdentifier identifier, AtchPointCombo combo)
     {
-        if (!combo.Draw("##AtchPoint", identifier.Type.ToName(), "Attachment Point Type", 160 * ImUtf8.GlobalScale,
+        if (!combo.Draw("##AtchPoint", identifier.Type.ToName(), "挂点类型", 160 * ImUtf8.GlobalScale,
                 ImGui.GetTextLineHeightWithSpacing()))
             return false;
 
@@ -234,7 +234,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>, ISer
         ImGui.SetNextItemWidth(40 * ImUtf8.GlobalScale);
         var ret = ImUtf8.DragScalar("##AtchEntry"u8, ref index, 0, (ushort)(currentAtchPoint.Entries.Length - 1), 0.05f,
             ImGuiSliderFlags.AlwaysClamp);
-        ImUtf8.HoverTooltip("State Entry Index"u8);
+        ImUtf8.HoverTooltip("状态条目索引"u8);
         if (!ret)
             return false;
 
