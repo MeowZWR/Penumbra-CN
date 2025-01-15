@@ -25,7 +25,7 @@ public class CollectionSelectHeader : IUiService
         _selection         = selection;
         _resolver          = resolver;
         _activeCollections = collectionManager.Active;
-        _collectionCombo   = new CollectionCombo(collectionManager, () => collectionManager.Storage.OrderBy(c => c.Name).ToList());
+        _collectionCombo   = new CollectionCombo(collectionManager, () => collectionManager.Storage.OrderBy(c => c.Identity.Name).ToList());
     }
 
     /// <summary> Draw the header line that can quick switch between collections. </summary>
@@ -77,11 +77,11 @@ public class CollectionSelectHeader : IUiService
         return CheckCollection(collection) switch
         {
             CollectionState.Empty => (collection, "无", "基础合集已被配置为不使用模组。", true),
-            CollectionState.Selected => (collection, collection.Name,
+            CollectionState.Selected => (collection, collection.Identity.Name,
                 "已将配置的基础合集选择为当前操作的合集。", true),
-            CollectionState.Available => (collection, collection.Name,
-                $"选择被配置给基础合集使用的合集[{collection.Name}]作为当前可操作的合集。", false),
-            _ => throw new Exception("Can not happen."),
+            CollectionState.Available => (collection, collection.Identity.Name,
+                $"选择被配置给基础合集使用的合集[{collection.Identity.Name}]作为当前可操作的合集。", false),
+            _ => throw new Exception("不可能发生。"),
         };
     }
 
@@ -91,11 +91,12 @@ public class CollectionSelectHeader : IUiService
         return CheckCollection(collection) switch
         {
             CollectionState.Empty => (collection, "无", "加载的玩家角色已被配置为不使用模组。", true),
-            CollectionState.Selected => (collection, collection.Name,
+            CollectionState.Selected => (collection, collection.Identity.Name,
                 "配置为用于当前玩家角色的合集已被选择为当前操作合集。", true),
-            CollectionState.Available => (collection, collection.Name,
-                $"选择分配给当前玩家的合集[{collection.Name}]作为当前可操作的合集。", false),
-            _ => throw new Exception("Can not happen."),
+            CollectionState.Available => (collection, collection.Identity.Name,
+                $"选择分配给当前玩家的合集[{collection.Identity.Name}]作为当前可操作的合集。",
+                false),
+            _ => throw new Exception("不可能发生。"),
         };
     }
 
@@ -105,11 +106,11 @@ public class CollectionSelectHeader : IUiService
         return CheckCollection(collection) switch
         {
             CollectionState.Empty => (collection, "无", "界面合集已被配置为不使用模组。", true),
-            CollectionState.Selected => (collection, collection.Name,
+            CollectionState.Selected => (collection, collection.Identity.Name,
                 "配置为用于游戏界面的合集已被选择为当前操作合集。", true),
-            CollectionState.Available => (collection, collection.Name,
-                $"选择分配给界面的合集[{collection.Name}]作为当前可操作的合集。", false),
-            _ => throw new Exception("Can not happen."),
+            CollectionState.Available => (collection, collection.Identity.Name,
+                $"选择分配给界面的合集[{collection.Identity.Name}]作为当前可操作的合集。", false),
+            _ => throw new Exception("不可能发生。"),
         };
     }
 
@@ -120,10 +121,10 @@ public class CollectionSelectHeader : IUiService
         {
             CollectionState.Unavailable => (null, "未继承",
                 "选中的模组的设置未继承自其他合集。", true),
-            CollectionState.Available => (collection, collection!.Name,
-                $"当前选中模组设置继承自[{collection!.Name}]，点击切换到此合集作为当前可操作的合集。",
+            CollectionState.Available => (collection, collection!.Identity.Name,
+                $"当前选中模组设置继承自[{collection!.Identity.Name}]，点击切换到此合集作为当前可操作的合集。",
                 false),
-            _ => throw new Exception("Can not happen."),
+            _ => throw new Exception("不可能发生。"),
         };
     }
 

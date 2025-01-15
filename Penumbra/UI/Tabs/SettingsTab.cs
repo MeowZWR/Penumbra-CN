@@ -10,8 +10,10 @@ using OtterGui.Compression;
 using OtterGui.Custom;
 using OtterGui.Raii;
 using OtterGui.Services;
+using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.Api;
+using Penumbra.Collections;
 using Penumbra.Interop.Services;
 using Penumbra.Mods.Manager;
 using Penumbra.Services;
@@ -46,6 +48,7 @@ public class SettingsTab : ITab, IUiService
     private readonly PredefinedTagManager        _predefinedTagManager;
     private readonly CrashHandlerService         _crashService;
     private readonly MigrationSectionDrawer      _migrationDrawer;
+    private readonly CollectionAutoSelector      _autoSelector;
 
     private int _minimumX = int.MaxValue;
     private int _minimumY = int.MaxValue;
@@ -57,7 +60,7 @@ public class SettingsTab : ITab, IUiService
         CharacterUtility characterUtility, ResidentResourceManager residentResources, ModExportManager modExportManager, HttpApi httpApi,
         DalamudSubstitutionProvider dalamudSubstitutionProvider, FileCompactor compactor, DalamudConfigService dalamudConfig,
         IDataManager gameData, PredefinedTagManager predefinedTagConfig, CrashHandlerService crashService,
-        MigrationSectionDrawer migrationDrawer)
+        MigrationSectionDrawer migrationDrawer, CollectionAutoSelector autoSelector)
     {
         _pluginInterface             = pluginInterface;
         _config                      = config;
@@ -80,6 +83,7 @@ public class SettingsTab : ITab, IUiService
         _predefinedTagManager = predefinedTagConfig;
         _crashService         = crashService;
         _migrationDrawer      = migrationDrawer;
+        _autoSelector         = autoSelector;
     }
 
     public void DrawHeader()
@@ -422,7 +426,11 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw all settings that do not fit into other categories. </summary>
     private void DrawMiscSettings()
     {
-        Checkbox( "使用聊天命令后，将成功运行的消息输出到聊天窗口",
+        Checkbox("自动选择角色关联合集",
+            "在每次登录时，自动选择与当前角色关联的合集作为当前编辑的合集。",
+            _config.AutoSelectCollection, _autoSelector.SetAutomaticSelection);
+
+        Checkbox("使用聊天命令后，将成功运行的消息输出到聊天窗口",
             "聊天命令通常只在运行失败时输出消息到聊天窗口，但也可以在成功运行时输出消息供你确认。你可以在此处禁用这个功能。",
             _config.PrintSuccessfulCommandsToChat, v => _config.PrintSuccessfulCommandsToChat = v);
         Checkbox( "在模组界面中隐藏重绘栏", "隐藏模组选项卡下模组界面底部的重绘栏。",
@@ -767,8 +775,9 @@ public class SettingsTab : ITab, IUiService
 
         DrawCrashHandler();
         DrawMinimumDimensionConfig();
+        DrawHdrRenderTargets();
         Checkbox("在导入时自动清除重复文件",
-            "导入时自动清除模组中的重复文件。这将使模组文件的占用变小，但会删除（二进制相同的）文件。",
+            "导入时自动清除模组中的重复文件。这将使模组文件的占用变小，但会删除（二进制完全相同的）文件。",
             _config.AutoDeduplicateOnImport, v => _config.AutoDeduplicateOnImport = v);
         Checkbox("PMP导入时自动重复复制UI文件",
             "从PMP文件导入时自动重复复制并规范化与UI有关的文件。强烈建议启用此选项，因为UI文件导入时去重会导致游戏崩溃。",
@@ -817,13 +826,15 @@ public class SettingsTab : ITab, IUiService
         if (ImGuiUtil.DrawDisabledButton("压缩现有文件", Vector2.Zero,
                 "尝试压缩根目录中的所有文件。这需要一段时间。",
                 _compactor.MassCompactRunning || !_modManager.Valid))
-            _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories), CompressionAlgorithm.Xpress8K, true);
+            _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories), CompressionAlgorithm.Xpress8K,
+                true);
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("解压缩现有文件", Vector2.Zero,
                 "尝试解压缩根目录中的所有文件。这需要一段时间。",
                 _compactor.MassCompactRunning || !_modManager.Valid))
-            _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories), CompressionAlgorithm.None, true);
+            _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories), CompressionAlgorithm.None,
+                true);
 
         if (_compactor.MassCompactRunning)
         {
@@ -892,6 +903,33 @@ public class SettingsTab : ITab, IUiService
         _minimumX           = int.MaxValue;
         _minimumY           = int.MaxValue;
         _config.Save();
+    }
+
+    private void DrawHdrRenderTargets()
+    {
+        ImGui.SetNextItemWidth(ImUtf8.CalcTextSize("M"u8).X * 5.0f + ImGui.GetFrameHeight());
+        using (var combo = ImUtf8.Combo("##hdrRenderTarget"u8, _config.HdrRenderTargets ? "HDR"u8 : "SDR"u8))
+        {
+            if (combo)
+            {
+                if (ImUtf8.Selectable("HDR"u8, _config.HdrRenderTargets) && !_config.HdrRenderTargets)
+                {
+                    _config.HdrRenderTargets = true;
+                    _config.Save();
+                }
+
+                if (ImUtf8.Selectable("SDR"u8, !_config.HdrRenderTargets) && _config.HdrRenderTargets)
+                {
+                    _config.HdrRenderTargets = false;
+                    _config.Save();
+                }
+            }
+        }
+
+        ImGui.SameLine();
+        ImUtf8.LabeledHelpMarker("Diffuse Dynamic Range"u8,
+            "Set the dynamic range that can be used for diffuse colors in materials without causing visual artifacts.\n"u8
+          + "Changing this setting requires a game restart. It also only works if Wait for Plugins on Startup is enabled."u8);
     }
 
     /// <summary> Draw a checkbox for the HTTP API that creates and destroys the web server when toggled. </summary>

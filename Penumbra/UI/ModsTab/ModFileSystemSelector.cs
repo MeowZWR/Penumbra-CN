@@ -62,6 +62,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         SubscribeRightClickFolder(f => SetQuickMove(f, 1, _config.QuickMoveFolder2, s => { _config.QuickMoveFolder2 = s; _config.Save(); }), 120);
         SubscribeRightClickFolder(f => SetQuickMove(f, 2, _config.QuickMoveFolder3, s => { _config.QuickMoveFolder3 = s; _config.Save(); }), 130);
         SubscribeRightClickLeaf(ToggleLeafFavorite);
+        SubscribeRightClickLeaf(DrawTemporaryOptions);
         SubscribeRightClickLeaf(l => QuickMove(l, _config.QuickMoveFolder1, _config.QuickMoveFolder2, _config.QuickMoveFolder3));
         SubscribeRightClickMain(ClearDefaultImportFolder, 100);
         SubscribeRightClickMain(() => ClearQuickMove(0, _config.QuickMoveFolder1, () => {_config.QuickMoveFolder1 = string.Empty; _config.Save();}), 110);
@@ -133,7 +134,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     {
         _dragDrop.CreateImGuiSource("ModDragDrop", m => m.Extensions.Any(e => ValidModExtensions.Contains(e.ToLowerInvariant())), m =>
         {
-            ImGui.TextUnformatted($"拖拽到模组选择器进行导入：\n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
+            ImUtf8.Text($"拖拽到模组选择器进行导入：n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
             return true;
         });
         base.Draw(width);
@@ -194,14 +195,14 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     protected override void DrawLeafName(FileSystem<Mod>.Leaf leaf, in ModState state, bool selected)
     {
         var flags = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
-        using var c = ImRaii.PushColor(ImGuiCol.Text, state.Color.Value())
+        using var c = ImRaii.PushColor(ImGuiCol.Text, state.Color.Tinted(state.Tint))
             .Push(ImGuiCol.HeaderHovered, 0x4000FFFF, leaf.Value.Favorite);
-        using var id = ImRaii.PushId(leaf.Value.Index);
-        ImRaii.TreeNode(leaf.Value.Name, flags).Dispose();
+        using var id = ImUtf8.PushId(leaf.Value.Index);
+        ImUtf8.TreeNode(leaf.Value.Name.Text, flags).Dispose();
         if (ImGui.IsItemClicked(ImGuiMouseButton.Middle))
         {
             _modManager.SetKnown(leaf.Value);
-            var (setting, collection) = _collectionManager.Active.Current[leaf.Value.Index];
+            var (setting, collection) = _collectionManager.Active.Current.GetActualSettings(leaf.Value.Index);
             if (_config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift)).IsActive())
             {
                 _collectionManager.Editor.SetModInheritance(_collectionManager.Active.Current, leaf.Value, true);
@@ -242,31 +243,58 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void DisableDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("禁用子项"))
+        if (ImUtf8.MenuItem("禁用子项"u8))
             SetDescendants(folder, false);
     }
 
     private void InheritDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("继承子项"))
+        if (ImUtf8.MenuItem("继承子项"u8))
             SetDescendants(folder, true, true);
     }
 
     private void OwnDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("停止继承子项"))
+        if (ImUtf8.MenuItem("停止继承子项"u8))
             SetDescendants(folder, false, true);
     }
 
     private void ToggleLeafFavorite(FileSystem<Mod>.Leaf mod)
     {
-        if (ImGui.MenuItem(mod.Value.Favorite ? "移除收藏" : "标记为收藏"))
+        if (ImUtf8.MenuItem(mod.Value.Favorite ? "移除收藏"u8 : "标记为收藏"u8))
             _modManager.DataEditor.ChangeModFavorite(mod.Value, !mod.Value.Favorite);
+    }
+
+    private void DrawTemporaryOptions(FileSystem<Mod>.Leaf mod)
+    {
+        const string source       = "yourself";
+        var          tempSettings = _collectionManager.Active.Current.GetTempSettings(mod.Value.Index);
+        if (tempSettings is { Lock: > 0 })
+            return;
+
+        if (tempSettings is { Lock: <= 0 } && ImUtf8.MenuItem("移除临时设置"u8))
+            _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value, null);
+        var actual = _collectionManager.Active.Current.GetActualSettings(mod.Value.Index).Settings;
+        if (actual?.Enabled is true && ImUtf8.MenuItem("临时禁用"u8))
+            _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value,
+                new TemporaryModSettings(mod.Value, actual, source) { Enabled = false });
+
+        if (actual is not { Enabled: true } && ImUtf8.MenuItem("临时启用"u8))
+        {
+            var newSettings = actual is null
+                ? TemporaryModSettings.DefaultSettings(mod.Value, source, true)
+                : new TemporaryModSettings(mod.Value, actual, source) { Enabled = true };
+            _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value, newSettings);
+        }
+
+        if (tempSettings is null && ImUtf8.MenuItem("设置为临时"u8))
+            _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value,
+                new TemporaryModSettings(mod.Value, actual, source));
     }
 
     private void SetDefaultImportFolder(ModFileSystem.Folder folder)
     {
-        if (!ImGui.MenuItem("设置为默认导入折叠组"))
+        if (!ImUtf8.MenuItem("置为默认导入折叠组"u8))
             return;
 
         var newName = folder.FullName();
@@ -279,7 +307,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void ClearDefaultImportFolder()
     {
-        if (!ImGui.MenuItem("清理默认导入折叠组") || _config.DefaultImportFolder.Length <= 0)
+        if (!ImUtf8.MenuItem("清理默认导入折叠组"u8) || _config.DefaultImportFolder.Length <= 0)
             return;
 
         _config.DefaultImportFolder = string.Empty;
@@ -290,16 +318,15 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void AddNewModButton(Vector2 size)
     {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), size, "创建命名一个空白模组。",
-                !_modManager.Valid, true))
-            ImGui.OpenPopup("创建新模组");
+        if (ImUtf8.IconButton(FontAwesomeIcon.Plus, "创建命名一个空白模组。"u8, size, !_modManager.Valid))
+            ImUtf8.OpenPopup("创建新模组"u8);
     }
 
     /// <summary> Add an import mods button that opens a file selector. </summary>
     private void AddImportModButton(Vector2 size)
     {
-        var button = ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.FileImport.ToIconString(), size,
-            "导入单个或多个来自TexTools、Penumbra创建的模组。", !_modManager.Valid, true);
+        var button = ImUtf8.IconButton(FontAwesomeIcon.FileImport,
+            "导入单个或多个来自TexTools、Penumbra创建的模组。"u8, size, !_modManager.Valid);
         _tutorial.OpenTutorial(BasicTutorialSteps.ModImport);
         if (!button)
             return;
@@ -332,14 +359,14 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         var currentName = leaf.Value.Name.Text;
         if (ImGui.IsWindowAppearing())
             ImGui.SetKeyboardFocusHere(0);
-        ImGui.TextUnformatted("重命名模组：");
-        if (ImGui.InputText("##RenameMod", ref currentName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
+        ImUtf8.Text("重命名模组："u8);
+        if (ImUtf8.InputText("##RenameMod"u8, ref currentName, flags: ImGuiInputTextFlags.EnterReturnsTrue))
         {
             _modManager.DataEditor.ChangeModName(leaf.Value, currentName);
             ImGui.CloseCurrentPopup();
         }
 
-        ImGuiUtil.HoverTooltip("在此输入新名称以重命名已更改的模组。");
+        ImUtf8.HoverTooltip("在此输入新名称以重命名已更改的模组。"u8);
     }
 
     private void DeleteModButton(Vector2 size)
@@ -347,8 +374,8 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void AddHelpButton(Vector2 size)
     {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.QuestionCircle.ToIconString(), size, "查看帮助文档。", false, true))
-            ImGui.OpenPopup("ExtendedHelp");
+        if (ImUtf8.IconButton(FontAwesomeIcon.QuestionCircle, "查看帮助文档。"u8, size, false))
+            ImUtf8.OpenPopup("ExtendedHelp"u8);
 
         _tutorial.OpenTutorial(BasicTutorialSteps.AdvancedHelp);
     }
@@ -373,62 +400,61 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         ImGuiUtil.HelpPopup("ExtendedHelp", new Vector2(700 * UiHelpers.Scale, 38.5f * ImGui.GetTextLineHeightWithSpacing()), () =>
         {
             ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeight());
-            ImGui.TextUnformatted("模组管理");
-            ImGui.BulletText("你可以通过使用此行按钮来创建一个空白模组或导入模组。");
+            ImUtf8.Text("模组管理"u8);
+            ImUtf8.BulletText("你可以通过使用此行按钮来创建一个空白模组或导入模组。"u8);
             using var indent = ImRaii.PushIndent();
-            ImGui.BulletText("支持导入的格式为：.ttmp, .ttmp2, .pmp。");
-            ImGui.BulletText(
-                "也支持.zip, .7z 或 .rar压缩包, 但必须是Penumbra类型的含有正确元数据的模组压缩包。");
+            ImUtf8.BulletText("支持导入的格式为：.ttmp, .ttmp2, .pmp。"u8);
+            ImUtf8.BulletText(
+                "也支持.zip, .7z 或 .rar压缩包, 但必须是Penumbra类型的含有正确元数据的模组压缩包。"u8);
             indent.Pop(1);
-            ImGui.BulletText("你也可以创建空白的模组文件或删除模组。");
-            ImGui.BulletText("要进一步编辑模组，请使用模组面板中的编辑选项卡或高级编辑弹出的窗口面板。");
+            ImUtf8.BulletText("你也可以创建空白的模组文件或删除模组。"u8);
+            ImUtf8.BulletText(
+                "要进一步编辑模组，请使用模组面板中的编辑选项卡或高级编辑弹出的窗口面板。"u8);
             ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeight());
-            ImGui.TextUnformatted("模组选择器");
-            ImGui.BulletText("选中一个模组查看更多信息或修改设置。");
-            ImGui.BulletText("模组名字会按你的设置显示符合他们在当前合集中状态的颜色：");
+            ImUtf8.Text("模组选择器"u8);
+            ImUtf8.BulletText("选中一个模组查看更多信息或修改设置。"u8);
+            ImUtf8.BulletText("模组名字会按你的设置显示符合他们在当前合集中状态的颜色："u8);
             indent.Push();
-            ImGuiUtil.BulletTextColored(ColorId.EnabledMod.Value(),           "在当前合集中已启用。");
-            ImGuiUtil.BulletTextColored(ColorId.DisabledMod.Value(),          "在当前合集中已禁用。");
-            ImGuiUtil.BulletTextColored(ColorId.InheritedMod.Value(),         "因从另一个合集继承而启用。");
-            ImGuiUtil.BulletTextColored(ColorId.InheritedDisabledMod.Value(), "因从另一个合集继承而禁用。");
-            ImGuiUtil.BulletTextColored(ColorId.UndefinedMod.Value(),         "未在所有继承的合集中配置。");
-            ImGuiUtil.BulletTextColored(ColorId.NewMod.Value(),
-                "在此次会话中导入的新模组，会在启用模组或Penumbra重新加载后取消标记。");
-            ImGuiUtil.BulletTextColored(ColorId.HandledConflictMod.Value(),
-                "该模组已启用，但和其他已启用的模组冲突，并处于不同的优先级（举例：设置不同优先级后冲突已解决）。");
-            ImGuiUtil.BulletTextColored(ColorId.ConflictingMod.Value(),
-                "该模组已启用，但和其他已启用的模组冲突，并处于同一优先级。");
-            ImGuiUtil.BulletTextColored(ColorId.FolderExpanded.Value(), "展开折叠组。");
-            ImGuiUtil.BulletTextColored(ColorId.FolderCollapsed.Value(), "最小化折叠组。");
+            ImUtf8.BulletTextColored(ColorId.EnabledMod.Value(),           "在当前合集中已启用。"u8);
+            ImUtf8.BulletTextColored(ColorId.DisabledMod.Value(),          "在当前合集中已禁用。"u8);
+            ImUtf8.BulletTextColored(ColorId.InheritedMod.Value(),         "因继承自另一个合集而启用。"u8);
+            ImUtf8.BulletTextColored(ColorId.InheritedDisabledMod.Value(), "因继承自另一个合集而禁用。"u8);
+            ImUtf8.BulletTextColored(ColorId.UndefinedMod.Value(),         "未在所有继承的合集中配置。"u8);
+            ImUtf8.BulletTextColored(ColorId.HandledConflictMod.Value(),
+                "该模组已启用，但和其他已启用的模组冲突，并处于不同的优先级（举例：设置不同优先级后冲突已解决）。"u8);
+            ImUtf8.BulletTextColored(ColorId.ConflictingMod.Value(),
+                "该模组已启用，但和其他已启用的模组冲突，并处于同一优先级。"u8);
+            ImUtf8.BulletTextColored(ColorId.FolderExpanded.Value(),  "展开折叠组。"u8);
+            ImUtf8.BulletTextColored(ColorId.FolderCollapsed.Value(), "最小化折叠组。"u8);
             indent.Pop(1);
-            ImGui.BulletText("中键点击一个模组，如果是禁用则启用，如果是启用则禁用。");
+            ImUtf8.BulletText("中键点击一个模组，如果是禁用则启用，如果是启用则禁用。"u8);
             indent.Push();
-            ImGui.BulletText(
-                $"按住{_config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))}同时点击鼠标中键使其继承，放弃设置。");
+            ImUtf8.BulletText(
+                $"按住 {_config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))} 的同时点击鼠标中键使其继承，放弃设置。");
             indent.Pop(1);
-            ImGui.BulletText("右键点击一个模组并输入字符进行排序（默认按模组名称排）。可以使用相同的编号。");
+            ImUtf8.BulletText("右键点击一个模组并输入字符进行排序（默认按模组名称排）。可以使用相同的编号。"u8);
             indent.Push();
-            ImGui.BulletText("输入的排序字符不同于模组名称，不会被显示出来，仅用于排序。");
-            ImGui.BulletText(
-                "如果输入的排序字符中包含斜杠('/'), 斜杠前的字符将被转换为折叠组的名称，这样你就可以对模组进行分类管理。");
+            ImUtf8.BulletText("输入的排序字符不同于模组名称，不会被显示出来，仅用于排序。"u8);
+            ImUtf8.BulletText(
+                "如果输入的排序字符中包含斜杠('/'), 斜杠前的字符将被转换为折叠组的名称，这样你就可以对模组进行分类管理。"u8);
             indent.Pop(1);
-            ImGui.BulletText(
-                "你可以直接拖拽模组或者折叠组到另一个已经存在的折叠组中，拖拽到折叠组名称上或者里面的模组名称上效果一样。");
+            ImUtf8.BulletText(
+                "你可以直接拖拽模组或者折叠组到另一个已经存在的折叠组中，拖拽到折叠组名称上或者里面的模组名称上效果一样。"u8);
             indent.Push();
-            ImGui.BulletText(
-                "你可以通过按住CTRL+单击同时选中多个模组和折叠组，然后一次性拖动所有模组和折叠组。");
-            ImGui.BulletText(
-                "拖动和移动折叠组时，单独选择折叠组中的模组将被忽略，不会被直接移动到目标位置。");
+            ImUtf8.BulletText(
+                "你可以通过按住CTRL+单击同时选中多个模组和折叠组，然后一次性拖动所有模组和折叠组。"u8);
+            ImUtf8.BulletText(
+                "拖动和移动折叠组时，单独选择折叠组中的模组将被忽略，不会被直接移动到目标位置。"u8);
             indent.Pop(1);
-            ImGui.BulletText("右键单击折叠组打开菜单选项。");
-            ImGui.BulletText("在空白处右键可以选择展开或最小化所有折叠组。");
-            ImGui.BulletText("在模组列表上方的筛选框中可以输入模组名字或路径中包含的字符来进行筛选。");
+            ImUtf8.BulletText("右键单击折叠组打开菜单选项。"u8);
+            ImUtf8.BulletText("在空白处右键可以选择展开或最小化所有折叠组。"u8);
+            ImUtf8.BulletText("在模组列表上方的筛选框中可以输入模组名字或路径中包含的字符来进行筛选。"u8);
             indent.Push();
-            ImGui.BulletText("你可以输入 n:[文字] 按名字筛选。");
-            ImGui.BulletText("你可以输入 c:[文字] 按修改的物品名称来筛选。");
-            ImGui.BulletText("你可以输入 a:[文字] 按作者名称来筛选。" );
+            ImUtf8.BulletText("你可以输入 n:[文字] 按名字筛选。"u8);
+            ImUtf8.BulletText("你可以输入 c:[文字] 按修改的物品名称来筛选。"u8);
+            ImUtf8.BulletText("你可以输入 a:[文字] 按作者名称来筛选。"u8);
             indent.Pop(1);
-            ImGui.BulletText("使用输入框旁边的下拉菜单来筛选满足特定条件的模组。");
+            ImUtf8.BulletText("使用输入框旁边的下拉菜单来筛选满足特定条件的模组。"u8);
         });
     }
 
@@ -501,6 +527,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     public struct ModState
     {
         public ColorId     Color;
+        public ColorId     Tint;
         public ModPriority Priority;
     }
 
@@ -571,24 +598,31 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         => !_filter.IsVisible(leaf);
 
     /// <summary> Only get the text color for a mod if no filters are set. </summary>
-    private ColorId GetTextColor(Mod mod, ModSettings? settings, ModCollection collection)
+    private (ColorId Color, ColorId Tint) GetTextColor(Mod mod, ModSettings? settings, ModCollection collection)
     {
-        if (_modManager.IsNew(mod))
-            return ColorId.NewMod;
+        var tint = settings.IsTemporary()
+            ? ColorId.TemporaryModSettingsTint
+            : _modManager.IsNew(mod)
+                ? ColorId.NewModTint
+                : ColorId.NoTint;
+        if (settings.IsTemporary())
+            tint = ColorId.TemporaryModSettingsTint;
 
         if (settings == null)
-            return ColorId.UndefinedMod;
+            return (ColorId.UndefinedMod, tint);
 
         if (!settings.Enabled)
-            return collection != _collectionManager.Active.Current ? ColorId.InheritedDisabledMod : ColorId.DisabledMod;
+            return (collection != _collectionManager.Active.Current
+                ? ColorId.InheritedDisabledMod
+                : ColorId.DisabledMod, tint);
 
         var conflicts = _collectionManager.Active.Current.Conflicts(mod);
         if (conflicts.Count == 0)
-            return collection != _collectionManager.Active.Current ? ColorId.InheritedMod : ColorId.EnabledMod;
+            return (collection != _collectionManager.Active.Current ? ColorId.InheritedMod : ColorId.EnabledMod, tint);
 
-        return conflicts.Any(c => !c.Solved)
+        return (conflicts.Any(c => !c.Solved)
             ? ColorId.ConflictingMod
-            : ColorId.HandledConflictMod;
+            : ColorId.HandledConflictMod, tint);
     }
 
     private bool CheckStateFilters(Mod mod, ModSettings? settings, ModCollection collection, ref ModState state)
@@ -620,6 +654,15 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
                 return true;
         }
 
+        // isNew color takes precedence before other colors.
+        if (settings.IsTemporary())
+            state.Tint = ColorId.TemporaryModSettingsTint;
+        else if (isNew)
+            state.Tint = ColorId.NewModTint;
+        else
+            state.Tint = ColorId.NoTint;
+
+
         // Handle settings.
         if (settings == null)
         {
@@ -631,7 +674,9 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         }
         else if (!settings.Enabled)
         {
-            state.Color = collection == _collectionManager.Active.Current ? ColorId.DisabledMod : ColorId.InheritedDisabledMod;
+            state.Color = collection != _collectionManager.Active.Current
+                ? ColorId.InheritedDisabledMod
+                : ColorId.DisabledMod;
             if (!_stateFilter.HasFlag(ModFilter.Disabled)
              || !_stateFilter.HasFlag(ModFilter.NoConflict))
                 return true;
@@ -666,9 +711,6 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             }
         }
 
-        // isNew color takes precedence before other colors.
-        if (isNew)
-            state.Color = ColorId.NewMod;
 
         return false;
     }
@@ -677,7 +719,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     private bool ApplyFiltersAndState(ModFileSystem.Leaf leaf, out ModState state)
     {
         var mod = leaf.Value;
-        var (settings, collection) = _collectionManager.Active.Current[mod.Index];
+        var (settings, collection) = _collectionManager.Active.Current.GetActualSettings(mod.Index);
 
         state = new ModState
         {
@@ -690,13 +732,13 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         if (_stateFilter != ModFilterExtensions.UnfilteredStateMods)
             return CheckStateFilters(mod, settings, collection, ref state);
 
-        state.Color = GetTextColor(mod, settings, collection);
+        (state.Color, state.Tint) = GetTextColor(mod, settings, collection);
         return false;
     }
 
     private bool DrawFilterCombo(ref bool everything)
     {
-        using var combo = ImRaii.Combo("##filterCombo", string.Empty,
+        using var combo = ImUtf8.Combo("##filterCombo"u8, ""u8,
             ImGuiComboFlags.NoPreview | ImGuiComboFlags.PopupAlignLeft | ImGuiComboFlags.HeightLargest);
         var ret = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         if (!combo)
@@ -705,7 +747,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
             ImGui.GetStyle().ItemSpacing with { Y = 3 * UiHelpers.Scale });
 
-        if (ImGui.Checkbox("全部", ref everything))
+        if (ImUtf8.Checkbox("全部"u8, ref everything))
         {
             _stateFilter = everything ? ModFilterExtensions.UnfilteredStateMods : 0;
             SetFilterDirty();
@@ -751,7 +793,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             SetFilterDirty();
         }
 
-        ImGuiUtil.HoverTooltip("按激活状态筛选模组。\n右键点击以清除所有筛选。");
+        ImUtf8.HoverTooltip("按激活状态筛选模组。\n右键点击以清除所有筛选。"u8);
         ImGui.SetCursorPos(pos);
         return (remainingWidth, rightClick);
     }

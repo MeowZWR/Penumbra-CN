@@ -56,6 +56,8 @@ public class Configuration : IPluginConfiguration, ISavable, IService
     public bool  HideUiWhenUiHidden             { get; set; } = false;
     public bool  UseDalamudUiTextureRedirection { get; set; } = true;
 
+    public bool AutoSelectCollection { get; set; } = false;
+
     public bool        ShowModsInLobby                      { get; set; } = true;
     public bool        UseCharacterCollectionInMainWindow   { get; set; } = true;
     public bool        UseCharacterCollectionsInCards       { get; set; } = true;
@@ -100,7 +102,7 @@ public class Configuration : IPluginConfiguration, ISavable, IService
     public bool           UseFileSystemCompression      { get; set; } = true;
     public bool           EnableHttpApi                 { get; set; } = true;
 
-    public bool MigrateImportedModelsToV6 { get; set; } = true;
+    public bool MigrateImportedModelsToV6        { get; set; } = true;
     public bool MigrateImportedMaterialsToLegacy { get; set; } = true;
 
     public string DefaultModImportPath    { get; set; } = string.Empty;
@@ -108,6 +110,7 @@ public class Configuration : IPluginConfiguration, ISavable, IService
     public bool   KeepDefaultMetaChanges  { get; set; } = false;
     public string DefaultModAuthor        { get; set; } = DefaultTexToolsData.Author;
     public bool   EditRawTileTransforms   { get; set; } = false;
+    public bool   HdrRenderTargets        { get; set; } = true;
 
     public Dictionary<ColorId, uint> Colors { get; set; }
         = Enum.GetValues<ColorId>().ToDictionary(c => c, c => c.Data().DefaultColor);
