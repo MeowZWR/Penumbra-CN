@@ -227,7 +227,7 @@ public class ModPanelSettingsTab(
                     "使用当前的临时设置覆盖此合集中的该模组的实际设置。"u8,
                     new Vector2(buttonSize, 0))
                 : ImUtf8.ButtonEx("设置为永久"u8,
-                    $"使用当前临时设置覆盖此合集中的该模组的实际设置。\n按住 {config.DeleteModModifier} 以覆盖。",
+                    $"使用当前的临时设置覆盖该模组在此合集中的实际设置。\n按住 {config.DeleteModModifier} 以覆盖。",
                     new Vector2(buttonSize, 0), true);
             if (overwrite)
             {
@@ -250,7 +250,7 @@ public class ModPanelSettingsTab(
         else
         {
             var actual = collectionManager.Active.Current.GetActualSettings(selection.Mod!.Index).Settings;
-            if (ImUtf8.ButtonEx("设置为永久"u8, "将当前设置复制到临时设置中以进行实验。"u8))
+            if (ImUtf8.ButtonEx("设置为临时"u8, "将当前设置复制到临时设置中以进行实验。"u8))
                 collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
                     new TemporaryModSettings(selection.Mod!, actual, "yourself"));
         }
