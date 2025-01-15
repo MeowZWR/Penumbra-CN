@@ -92,7 +92,8 @@ public class ModPanelSettingsTab(
         if (!_inherited)
             return;
 
-        using var color = ImRaii.PushColor(ImGuiCol.Button, Colors.PressEnterWarningBg);
+        var inheritanceBorderColor = ImGui.GetColorU32(ImGuiCol.Border);
+        using var color = ImRaii.PushColor(ImGuiCol.Border, inheritanceBorderColor);
         var       width = new Vector2(ImGui.GetContentRegionAvail().X, 0);
         if (ImUtf8.ButtonEx($"此模组设置继承自合集：{selection.Collection.Identity.Name}.", width, _locked))
         {
