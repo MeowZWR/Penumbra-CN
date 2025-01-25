@@ -85,3 +85,17 @@ jobs:
           git add repo.json
           git commit -m "[CI] Updating repo.json for ${{ github.ref_name }}" || true
           git push origin cn
+          
+      - name: Trigger Workflow in DalamudPlugin Repository
+        run: |          
+          repo_owner="MeowZWR"
+          repo_name="DalamudPlugin"
+          event_type="request-update-run-action"
+          
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.MEOWRSTRIGGER }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/$repo_owner/$repo_name/dispatches \
+            -d "{\"event_type\": \"$event_type\", \"client_payload\": {\"unit\": false, \"integration\": true}}"
