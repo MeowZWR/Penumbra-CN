@@ -72,23 +72,21 @@ public partial class ModCreator(
         if (!Directory.Exists(mod.ModPath.FullName))
             return false;
 
-        modDataChange = dataEditor.LoadMeta(this, mod);
+        modDataChange = ModMeta.Load(dataEditor, this, mod);
         if (modDataChange.HasFlag(ModDataChangeType.Deletion) || mod.Name.Length == 0)
             return false;
 
-        modDataChange |= dataEditor.LoadLocalData(mod);
+        modDataChange |= ModLocalData.Load(dataEditor, mod);
         LoadDefaultOption(mod);
         LoadAllGroups(mod);
         if (incorporateMetaChanges)
             IncorporateAllMetaChanges(mod, true);
         if (deleteDefaultMetaChanges && !Config.KeepDefaultMetaChanges)
-        {
             foreach (var container in mod.AllDataContainers)
             {
                 if (ModMetaEditor.DeleteDefaultValues(metaFileManager, container.Manipulations))
                     saveService.ImmediateSaveSync(new ModSaveGroup(container, Config.ReplaceNonAsciiOnImport));
             }
-        }
 
         return true;
     }
@@ -186,7 +184,8 @@ public partial class ModCreator(
     /// If .meta or .rgsp files are encountered, parse them and incorporate their meta changes into the mod.
     /// If delete is true, the files are deleted afterwards.
     /// </summary>
-    public (bool Changes, List<string> DeleteList) IncorporateMetaChanges(IModDataContainer option, DirectoryInfo basePath, bool delete, bool deleteDefault)
+    public (bool Changes, List<string> DeleteList) IncorporateMetaChanges(IModDataContainer option, DirectoryInfo basePath, bool delete,
+        bool deleteDefault)
     {
         var deleteList   = new List<string>();
         var oldSize      = option.Manipulations.Count;
@@ -447,9 +446,10 @@ public partial class ModCreator(
             var json = JObject.Parse(File.ReadAllText(file.FullName));
             switch (json[nameof(Type)]?.ToObject<GroupType>() ?? GroupType.Single)
             {
-                case GroupType.Multi:  return MultiModGroup.Load(mod, json);
-                case GroupType.Single: return SingleModGroup.Load(mod, json);
-                case GroupType.Imc:    return ImcModGroup.Load(mod, json);
+                case GroupType.Multi:     return MultiModGroup.Load(mod, json);
+                case GroupType.Single:    return SingleModGroup.Load(mod, json);
+                case GroupType.Imc:       return ImcModGroup.Load(mod, json);
+                case GroupType.Combining: return CombiningModGroup.Load(mod, json);
             }
         }
         catch (Exception e)
