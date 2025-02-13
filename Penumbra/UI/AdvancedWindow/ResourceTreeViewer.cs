@@ -357,17 +357,17 @@ public class ResourceTreeViewer(
     private static ReadOnlySpan<byte> GetPathStatusLabel(ResourceNode.PathStatus status)
         => status switch
         {
-            ResourceNode.PathStatus.External    => "(managed by external tools)"u8,
-            ResourceNode.PathStatus.NonExistent => "(not found)"u8,
-            _                                   => "(unavailable)"u8,
+            ResourceNode.PathStatus.External    => "(由外部工具管理)"u8,
+            ResourceNode.PathStatus.NonExistent => "(未找到)"u8,
+            _                                   => "(不可用)"u8,
         };
 
     private static string GetPathStatusDescription(ResourceNode.PathStatus status)
         => status switch
         {
-            ResourceNode.PathStatus.External    => "The actual path to this file is unavailable, because it is managed by external tools.",
-            ResourceNode.PathStatus.NonExistent => "The actual path to this file is unavailable, because it seems to have been moved or deleted since it was loaded.",
-            _                                   => "The actual path to this file is unavailable.",
+            ResourceNode.PathStatus.External    => "该文件的实际路径不可用，因为它由外部工具管理。",
+            ResourceNode.PathStatus.NonExistent => "该文件的实际路径不可用，因为它在加载后可能已被移动或删除。",
+            _                                   => "该文件的实际路径不可用。",
         };
 
     [Flags]

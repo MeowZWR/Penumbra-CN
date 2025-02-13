@@ -249,7 +249,7 @@ public class SettingsTab : ITab, IUiService
             {
                 using var color = ImRaii.PushColor(ImGuiCol.Border, Colors.RegexWarningBorder)
                     .Push(ImGuiCol.TextDisabled, Colors.RegexWarningBorder, !_modManager.Valid);
-                save = ImGui.InputTextWithHint("##rootDirectory", "Enter Root Directory here (MANDATORY)...", ref _newModDirectory,
+                save = ImGui.InputTextWithHint("##rootDirectory", "在此输入根目录（必填）...", ref _newModDirectory,
                     RootDirectoryMaxLength, ImGuiInputTextFlags.EnterReturnsTrue);
             }
 
@@ -846,9 +846,9 @@ public class SettingsTab : ITab, IUiService
             ImGui.ProgressBar((float)_compactor.CurrentIndex / _compactor.TotalFiles,
                 new Vector2(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X - UiHelpers.IconButtonSize.X,
                     ImGui.GetFrameHeight()),
-                _compactor.CurrentFile?.FullName[(_modManager.BasePath.FullName.Length + 1)..] ?? "Gathering Files...");
+                _compactor.CurrentFile?.FullName[(_modManager.BasePath.FullName.Length + 1)..] ?? "正在收集文件...");
             ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Ban.ToIconString(), UiHelpers.IconButtonSize, "Cancel the mass action.",
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Ban.ToIconString(), UiHelpers.IconButtonSize, "取消此批量操作。",
                     !_compactor.MassCompactRunning, true))
                 _compactor.CancelMassCompact();
         }
@@ -932,9 +932,9 @@ public class SettingsTab : ITab, IUiService
         }
 
         ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("Diffuse Dynamic Range"u8,
-            "Set the dynamic range that can be used for diffuse colors in materials without causing visual artifacts.\n"u8
-          + "Changing this setting requires a game restart. It also only works if Wait for Plugins on Startup is enabled."u8);
+        ImUtf8.LabeledHelpMarker("漫反射动态范围"u8,
+            "设置材质中漫反射颜色可用的动态范围，以避免产生视觉伪影。\n"u8
+          + "更改此设置需要重启游戏。此设置仅在启用“启动时等待插件”时有效。"u8);
     }
 
     /// <summary> Draw a checkbox for the HTTP API that creates and destroys the web server when toggled. </summary>
@@ -1004,26 +1004,26 @@ public class SettingsTab : ITab, IUiService
             ImGui.NewLine();
         }
 
-        if (ImUtf8.ButtonEx("Clear Unused Local Mod Data Files"u8,
-                "Delete all local mod data files that do not correspond to currently installed mods."u8, default,
+        if (ImUtf8.ButtonEx("清理未使用的本地模组数据文件"u8,
+                "删除所有与当前安装的模组不匹配的本地模组数据文件。"u8, default,
                 !enabled || _cleanupService.IsRunning))
             _cleanupService.CleanUnusedLocalData();
         if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking to delete files.");
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"点击时按住 {_config.DeleteModModifier} 以删除文件。");
 
-        if (ImUtf8.ButtonEx("Clear Backup Files"u8,
-                "Delete all backups of .json configuration files in your configuration folder and all backups of mod group files in your mod directory."u8,
+        if (ImUtf8.ButtonEx("清理备份文件"u8,
+                "删除配置文件夹中的所有.json配置文件备份和模组目录中的所有模组组文件备份。"u8,
                 default, !enabled || _cleanupService.IsRunning))
             _cleanupService.CleanBackupFiles();
         if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking to delete files.");
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"点击时按住 {_config.DeleteModModifier} 以删除文件。");
 
-        if (ImUtf8.ButtonEx("Clear All Unused Settings"u8,
-                "Remove all mod settings in all of your collections that do not correspond to currently installed mods."u8, default,
+        if (ImUtf8.ButtonEx("清理所有未使用的设置"u8,
+                "移除所有不对应当前安装模组的所有收藏中的模组设置。"u8, default,
                 !enabled || _cleanupService.IsRunning))
             _cleanupService.CleanupAllUnusedSettings();
         if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking to remove settings.");
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"点击时按住 {_config.DeleteModModifier} 以移除设置。");
     }
 
     /// <summary> Draw a checkbox that toggles the dalamud setting to wait for plugins on open. </summary>

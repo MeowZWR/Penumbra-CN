@@ -79,9 +79,9 @@ public class AddGroupDrawer : IUiService
 
     private void DrawCombiningGroupButton(Mod mod, Vector2 width)
     {
-        if (!ImUtf8.ButtonEx("Add Combining Group"u8, _groupNameValid
-                    ? "Add a new combining option group to this mod."u8
-                    : "Can not add a new group of this name."u8,
+        if (!ImUtf8.ButtonEx("添加组合型选项组"u8, _groupNameValid
+                    ? "为此模组添加一个新的组合选项组。"u8
+                    : "无法添加以该名称命名的新组。"u8,
                 width, !_groupNameValid))
             return;
 

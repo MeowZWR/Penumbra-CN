@@ -1,4 +1,4 @@
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -44,8 +44,8 @@ public readonly struct CombiningModGroupEditDrawer(ModGroupEditDrawer editor, Co
 
         var validName = name.Length > 0;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, validName
-                ? "Add a new option to this group."u8
-                : "Please enter a name for the new option."u8, default, !validName))
+                ? "为此组添加一个新选项。"u8
+                : "请输入新选项的名称。"u8, default, !validName))
         {
             editor.ModManager.OptionEditor.CombiningEditor.AddOption(group, name);
             editor.NewOptionName = null;
@@ -54,8 +54,8 @@ public readonly struct CombiningModGroupEditDrawer(ModGroupEditDrawer editor, Co
 
     private unsafe void DrawContainerNames()
     {
-        if (ImUtf8.ButtonEx("Edit Container Names"u8,
-                "Add optional names to separate data containers of the combining group.\nThose are just for easier identification while editing the mod, and are not generally displayed to the user."u8,
+        if (ImUtf8.ButtonEx("编辑容器名称"u8,
+                "为组合组的数据容器添加可选名称。\n这些名称仅用于在编辑模组时方便识别，一般不会显示给用户。"u8,
                 new Vector2(400 * ImUtf8.GlobalScale, 0)))
             ImUtf8.OpenPopup("DataContainerNames"u8);
 
@@ -93,7 +93,7 @@ public readonly struct CombiningModGroupEditDrawer(ModGroupEditDrawer editor, Co
         }
 
         var name = editor.CombiningDisplayIndex == index ? editor.CombiningDisplayName ?? container.Name : container.Name;
-        if (ImUtf8.InputText("##Nothing"u8, ref name, "Optional Display Name..."u8))
+        if (ImUtf8.InputText("##Nothing"u8, ref name, "可选显示名称..."u8))
         {
             editor.CombiningDisplayIndex = index;
             editor.CombiningDisplayName  = name;
