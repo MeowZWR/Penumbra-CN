@@ -9,6 +9,7 @@ using OtterGui.Widgets;
 using Penumbra.GameData;
 using Penumbra.GameData.Files;
 using Penumbra.Import.Models;
+using Penumbra.Import.Models.Import;
 using Penumbra.String.Classes;
 using Penumbra.UI.Classes;
 
@@ -16,7 +17,7 @@ namespace Penumbra.UI.AdvancedWindow;
 
 public partial class ModEditWindow
 {
-    private const int MdlMaterialMaximum = 4;
+    private const int MdlMaterialMaximum = ModelImporter.MaterialLimit;
 
     private const string MdlImportDocumentation =
         @"https://github.com/xivdev/Penumbra/wiki/Model-IO#user-content-9b49d296-23ab-410a-845b-a3be769b71ea";
@@ -87,7 +88,7 @@ public partial class ModEditWindow
         if (disabled || tab.Mdl.Version is not MdlFile.V5)
             return;
 
-        if (!ImUtf8.ButtonEx("将MDL版本从V5更新到V6"u8, "如果感觉「金曦之遗辉」之前的模型的骨骼权重有问题，请尝试使用此版本。\n\n注意操作不可逆。"u8,
+        if (!ImUtf8.ButtonEx("Update MDL Version from V5 to V6"u8, "Try using this if the bone weights of a pre-Dawntrail model seem wrong.\n\nThis is not revertible."u8,
                 new Vector2(-0.1f, 0), false, 0, Colors.PressEnterWarningBg))
             return;
 
@@ -97,7 +98,7 @@ public partial class ModEditWindow
 
     private void DrawImportExport(MdlTab tab, bool disabled)
     {
-        if (!ImGui.CollapsingHeader("导入 / 导出"))
+        if (!ImGui.CollapsingHeader("Import / Export"))
             return;
 
         var childSize = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
@@ -120,18 +121,18 @@ public partial class ModEditWindow
                 if (!GetFirstModel(m.Files, out var file))
                     return false;
 
-                ImGui.TextUnformatted($"拖拽模型到此处进行编辑： {Path.GetFileName(file)}");
+                ImGui.TextUnformatted($"Dragging model for editing: {Path.GetFileName(file)}");
                 return true;
             });
 
-        using (ImRaii.FramedGroup("导入", size, headerPreIcon: FontAwesomeIcon.FileImport))
+        using (ImRaii.FramedGroup("Import", size, headerPreIcon: FontAwesomeIcon.FileImport))
         {
-            ImGui.Checkbox("保持当前材质",  ref tab.ImportKeepMaterials);
-            ImGui.Checkbox("保持当前属性", ref tab.ImportKeepAttributes);
+            ImGui.Checkbox("Keep current materials",  ref tab.ImportKeepMaterials);
+            ImGui.Checkbox("Keep current attributes", ref tab.ImportKeepAttributes);
 
-            if (ImGuiUtil.DrawDisabledButton("导入glTF格式", Vector2.Zero, "导入一个glTF文件，覆盖此mdl的内容。",
+            if (ImGuiUtil.DrawDisabledButton("Import from glTF", Vector2.Zero, "Imports a glTF file, overriding the content of this mdl.",
                     tab.PendingIo))
-                _fileDialog.OpenFilePicker("加载来自glTF格式的模型。", "glTF{.gltf,.glb}", (success, paths) =>
+                _fileDialog.OpenFilePicker("Load model from glTF.", "glTF{.gltf,.glb}", (success, paths) =>
                 {
                     if (success && paths.Count > 0)
                         tab.Import(paths[0]);
@@ -148,11 +149,11 @@ public partial class ModEditWindow
     private void DrawExport(MdlTab tab, Vector2 size, bool _)
     {
         using var id    = ImRaii.PushId("export");
-        using var frame = ImRaii.FramedGroup("导出", size, headerPreIcon: FontAwesomeIcon.FileExport);
+        using var frame = ImRaii.FramedGroup("Export", size, headerPreIcon: FontAwesomeIcon.FileExport);
 
         if (tab.GamePaths == null)
         {
-            ImGui.TextUnformatted(tab.IoExceptions.Count == 0 ? "解析模型游戏路径。" : "解析模型游戏路径失败。");
+            ImGui.TextUnformatted(tab.IoExceptions.Count == 0 ? "Resolving model game paths." : "Failed to resolve model game paths.");
 
             return;
         }
@@ -161,18 +162,18 @@ public partial class ModEditWindow
 
         ImGui.Checkbox("##exportGeneratedMissingBones", ref tab.ExportConfig.GenerateMissingBones);
         ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker("生成丢失的骨骼",
-            "警告：启用此选项可能导致导出的网格不可用。\n"
-          + "它的主要目的是允许导出模型权重到不存在的骨骼。\n"
-          + "在启用之前，请确保在当前合集中启用了依赖项，并且正确配置了EST元数据。");
+        ImGuiUtil.LabeledHelpMarker("Generate missing bones",
+            "WARNING: Enabling this option can result in unusable exported meshes.\n"
+          + "It is primarily intended to allow exporting models weighted to bones that do not exist.\n"
+          + "Before enabling, ensure dependencies are enabled in the current collection, and EST metadata is correctly configured.");
 
         var gamePath = tab.GamePathIndex >= 0 && tab.GamePathIndex < tab.GamePaths.Count
             ? tab.GamePaths[tab.GamePathIndex]
             : _customGamePath;
 
-        if (ImGuiUtil.DrawDisabledButton("导出为glTF格式", Vector2.Zero, "将此mdl文件导出到glTF，以便在3D创作应用程序中使用。",
+        if (ImGuiUtil.DrawDisabledButton("Export to glTF", Vector2.Zero, "Exports this mdl file to glTF, for use in 3D authoring applications.",
                 tab.PendingIo || gamePath.IsEmpty))
-            _fileDialog.OpenSavePicker("将模型保存为glTF。", ".glb", Path.GetFileNameWithoutExtension(gamePath.Filename().ToString()),
+            _fileDialog.OpenSavePicker("Save model as glTF.", ".glb", Path.GetFileNameWithoutExtension(gamePath.Filename().ToString()),
                 ".glb", (valid, path) =>
                 {
                     if (!valid)
@@ -254,8 +255,8 @@ public partial class ModEditWindow
             return;
         }
 
-        ImGui.TextUnformatted("未检测到关联的游戏路径。有效的游戏路径是当前导出所必需的。");
-        if (!ImGui.InputTextWithHint("##customInput", "输入自定义游戏路径...", ref _customPath, 256))
+        ImGui.TextUnformatted("No associated game path detected. Valid game paths are currently necessary for exporting.");
+        if (!ImGui.InputTextWithHint("##customInput", "Enter custom game path...", ref _customPath, 256))
             return;
 
         if (!Utf8GamePath.FromString(_customPath, out _customGamePath))
@@ -265,7 +266,7 @@ public partial class ModEditWindow
     /// <summary> I disliked the combo with only one selection so turn it into a button in that case. </summary>
     private static void DrawComboButton(MdlTab tab)
     {
-        const string label       = "游戏路径";
+        const string label       = "Game Path";
         var          preview     = tab.GamePaths![tab.GamePathIndex].ToString();
         var          labelWidth  = ImGui.CalcTextSize(label).X + ImGui.GetStyle().ItemInnerSpacing.X;
         var          buttonWidth = ImGui.GetContentRegionAvail().X - labelWidth - ImGui.GetStyle().ItemSpacing.X;
@@ -278,12 +279,12 @@ public partial class ModEditWindow
             using var group = ImRaii.Group();
             ImGui.Button(preview, new Vector2(buttonWidth, 0));
             ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-            ImGui.TextUnformatted("游戏路径");
+            ImGui.TextUnformatted("Game Path");
         }
         else
         {
             ImGui.SetNextItemWidth(buttonWidth);
-            using var combo = ImRaii.Combo("游戏路径", preview);
+            using var combo = ImRaii.Combo("Game Path", preview);
             if (combo.Success)
                 foreach (var (path, index) in tab.GamePaths.WithIndex())
                 {
@@ -296,12 +297,12 @@ public partial class ModEditWindow
 
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             ImGui.SetClipboardText(preview);
-        ImGuiUtil.HoverTooltip("右键单击可复制到剪贴板。", ImGuiHoveredFlags.AllowWhenDisabled);
+        ImGuiUtil.HoverTooltip("Right-Click to copy to clipboard.", ImGuiHoveredFlags.AllowWhenDisabled);
     }
 
     private void DrawDocumentationLink(string address)
     {
-        const string text = "说明文档（英文） →";
+        const string text = "Documentation →";
 
         var framePadding = ImGui.GetStyle().FramePadding;
         var width        = ImGui.CalcTextSize(text).X + framePadding.X * 2;
@@ -322,7 +323,7 @@ public partial class ModEditWindow
         var invalidMaterialCount = tab.Mdl.Materials.Count(material => !tab.ValidateMaterial(material));
 
         var oldPos = ImGui.GetCursorPosY();
-        var header = ImGui.CollapsingHeader("材质");
+        var header = ImGui.CollapsingHeader("Materials");
         var newPos = ImGui.GetCursorPos();
         if (invalidMaterialCount > 0)
         {
@@ -362,7 +363,7 @@ public partial class ModEditWindow
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##newMaterial", "添加新材质...", ref _modelNewMaterial, Utf8GamePath.MaxGamePathLength, inputFlags);
+        ImGui.InputTextWithHint("##newMaterial", "Add new material...", ref _modelNewMaterial, Utf8GamePath.MaxGamePathLength, inputFlags);
         var validName = tab.ValidateMaterial(_modelNewMaterial);
         ImGui.TableNextColumn();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), UiHelpers.IconButtonSize, string.Empty, !validName, true))
@@ -384,7 +385,7 @@ public partial class ModEditWindow
         var       ret = false;
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted($"材质 #{materialIndex + 1}");
+        ImGui.TextUnformatted($"Material #{materialIndex + 1}");
 
         var temp = materials[materialIndex];
         ImGui.TableNextColumn();
@@ -405,10 +406,10 @@ public partial class ModEditWindow
         // Need to have at least one material.
         if (materials.Length > 1)
         {
-            var tt             = "删除此材料。\n以该材质为目标的任何网格都将更新为使用材质 #1.";
+            var tt             = "Delete this material.\nAny meshes targeting this material will be updated to use material #1.";
             var modifierActive = _config.DeleteModModifier.IsActive();
             if (!modifierActive)
-                tt += $"\n按住{_config.DeleteModModifier}进行删除操作。";
+                tt += $"\nHold {_config.DeleteModModifier} to delete.";
 
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize, tt, !modifierActive, true))
             {
@@ -438,7 +439,7 @@ public partial class ModEditWindow
 
     private bool DrawModelLodDetails(MdlTab tab, int lodIndex, bool disabled)
     {
-        using var lodNode = ImRaii.TreeNode($"细节层次 #{lodIndex + 1}", ImGuiTreeNodeFlags.DefaultOpen);
+        using var lodNode = ImRaii.TreeNode($"Level of Detail #{lodIndex + 1}", ImGuiTreeNodeFlags.DefaultOpen);
         if (!lodNode)
             return false;
 
@@ -453,7 +454,7 @@ public partial class ModEditWindow
 
     private bool DrawModelMeshDetails(MdlTab tab, int meshIndex, bool disabled)
     {
-        using var meshNode = ImRaii.TreeNode($"网格 #{meshIndex + 1}", ImGuiTreeNodeFlags.DefaultOpen);
+        using var meshNode = ImRaii.TreeNode($"Mesh #{meshIndex + 1}", ImGuiTreeNodeFlags.DefaultOpen);
         if (!meshNode)
             return false;
 
@@ -471,7 +472,7 @@ public partial class ModEditWindow
         // Vertex elements
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("顶点元素");
+        ImGui.TextUnformatted("Vertex Elements");
 
         ImGui.TableNextColumn();
         DrawVertexElementDetails(file.VertexDeclarations[meshIndex].VertexElements);
@@ -479,7 +480,7 @@ public partial class ModEditWindow
         // Mesh material
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("材质");
+        ImGui.TextUnformatted("Material");
 
         ImGui.TableNextColumn();
         var ret = DrawMaterialCombo(tab, meshIndex, disabled);
@@ -493,7 +494,7 @@ public partial class ModEditWindow
 
     private static void DrawVertexElementDetails(MdlStructs.VertexElement[] vertexElements)
     {
-        using var node = ImRaii.TreeNode($"点击展开");
+        using var node = ImRaii.TreeNode($"Click to expand");
         if (!node)
             return;
         
@@ -557,7 +558,7 @@ public partial class ModEditWindow
 
         ImGui.TableNextColumn();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted($"属性 #{subMeshOffset + 1}");
+        ImGui.TextUnformatted($"Attributes #{subMeshOffset + 1}");
 
         ImGui.TableNextColumn();
         var data       = disabled ? _preview : _main;
@@ -584,7 +585,7 @@ public partial class ModEditWindow
 
     private bool DrawOtherModelDetails(LoadedData data)
     {
-        using var header = ImRaii.CollapsingHeader("更多内容");
+        using var header = ImRaii.CollapsingHeader("Further Content");
         if (!header)
             return false;
 
@@ -668,7 +669,7 @@ public partial class ModEditWindow
 
         if (data.LastFile.RemainingData.Length > 0)
         {
-            using var t = ImRaii.TreeNode($"其他数据 (Size: {data.LastFile.RemainingData.Length})###AdditionalData");
+            using var t = ImRaii.TreeNode($"Additional Data (Size: {data.LastFile.RemainingData.Length})###AdditionalData");
             if (t)
                 Widget.DrawHexViewer(data.LastFile.RemainingData);
         }

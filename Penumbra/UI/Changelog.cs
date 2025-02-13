@@ -57,9 +57,31 @@ public class PenumbraChangelog : IUiService
         Add1_3_1_0(Changelog);
         Add1_3_2_0(Changelog);
         Add1_3_3_0(Changelog);
+        Add1_3_4_0(Changelog);
     }
 
     #region Changelogs
+
+    private static void Add1_3_4_0(Changelog log)
+        => log.NextVersion("Version 1.3.4.0")
+            .RegisterHighlight("Added HDR functionality to diffuse buffers. This allows more accurate representation of non-standard color values for e.g. skin or hair colors when used with advanced customizations in Glamourer.")
+            .RegisterEntry("This option requires Wait For Plugins On Load to be enabled in Dalamud and to be enabled on start to work. It is on by default but can be turned off.", 1)
+            .RegisterHighlight("Added a new option group type: Combining Groups.")
+            .RegisterEntry("A combining group behaves similarly to a multi group for the user, but instead of enabling the different options separately, it results in exactly one option per choice of settings.", 1)
+            .RegisterEntry("Example: The user sees 2 checkboxes [+25%, +50%], but the 4 different selection states result in +0%, +25%, +50% or +75% if both are toggled on. Every choice of settings can be configured separately by the mod creator.", 1)
+            .RegisterEntry("Added new functionality to better track copies of the player character in cutscenes if they get forced to specific clothing, like in the Margrat cutscene. Might improve tracking in wedding ceremonies, too, let me know.")
+            .RegisterEntry("Added a display of the number of selected files and folders to the multi mod selection.")
+            .RegisterEntry("Added cleaning functionality to remove outdated or unused files or backups from the config and mod folders via manual action.")
+            .RegisterEntry("Updated the Bone and Material limits in the Model Importer.")
+            .RegisterEntry("Improved handling of IMC and Material files loaded asynchronously.")
+            .RegisterEntry("Added IPC functionality to query temporary settings.")
+            .RegisterEntry("Improved some mod setting IPC functions.")
+            .RegisterEntry("Fixed some path detection issues in the OnScreen tab.")
+            .RegisterEntry("Fixed some issues with temporary mod settings.")
+            .RegisterEntry("Fixed issues with IPC calls before the game has finished loading.")
+            .RegisterEntry("Fixed using the wrong dye channel in the material editor previews.")
+            .RegisterEntry("Added some log warnings if outdated materials are loaded by the game.")
+            .RegisterEntry("Added Schemas for some of the json files generated and read by Penumbra to the solution.");
 
     private static void Add1_3_3_0(Changelog log)
         => log.NextVersion("版本 1.3.3.0")
@@ -106,11 +128,10 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("修复了左手戒指与 Mare 同步 / 画面角色 标签页的问题。")
             .RegisterEntry("可能修复了登录画面中角色被错误识别的问题。")
             .RegisterEntry("改进了调试模块的可视化功能。");
-
+            
 
     private static void Add1_3_0_0(Changelog log)
         => log.NextVersion("版本 1.3.0.0")
-
             .RegisterHighlight("高级编辑窗口中的纹理选项卡现在可以导入和导出 .tga 文件。")
             .RegisterEntry("现在也可以导入 BC4 和 BC6 纹理。", 1)
             .RegisterHighlight("新增了对眼镜槽（面部配饰）进行道具交换的功能。")
@@ -137,6 +158,7 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("修复了有关首次创建模组元数据文件的竞态条件问题。")
             .RegisterEntry("修复了合并模组选项卡中长模组标题的问题。")
             .RegisterEntry("其他一些杂项修复。");
+
 
     private static void Add1_2_1_0(Changelog log)
 	    => log.NextVersion("版本 1.2.1.0")
@@ -271,7 +293,6 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("修复了剧情人物识别的问题。（1.0.0.4）")
             .RegisterEntry("添加了本地环境信息以更好的提交支持信息。（1.0.0.4）")
             .RegisterEntry("修复了在 IPC 中复制的模组设置缺少未使用设置的问题。（1.0.0.3）");
-
 
     private static void Add1_0_0_0(Changelog log)
         => log.NextVersion("Version 1.0.0.0")
