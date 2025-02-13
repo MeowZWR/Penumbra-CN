@@ -2,8 +2,8 @@ name: Create Release
 
 on:
   push:
-    tags-ignore:
-      - testing_*
+    tags:
+      - cn_*
 
 jobs:
   build:
@@ -24,11 +24,11 @@ jobs:
           Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev"
       - name: Build
         run: |
-          $ver = '${{ github.ref_name }}'
+          $ver = '${{ github.ref_name }}' -replace 'cn_'
           invoke-expression 'dotnet build --no-restore --configuration Release --nologo -p:Version=$ver -p:FileVersion=$ver -p:AssemblyVersion=$ver'
       - name: write version into jsons
         run: |
-          $ver = '${{ github.ref_name }}'
+          $ver = '${{ github.ref_name }}' -replace 'cn_'
           $path = './Penumbra/bin/Release/Penumbra.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json.AssemblyVersion = $ver
@@ -65,10 +65,11 @@ jobs:
       - name: Write out repo.json
         run: |
           $ver = '${{ github.ref_name }}'
+          $verNoPrefix = $ver -replace '^cn_', ''
           $path = './repo.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
-          $json[0].AssemblyVersion = $ver
-          $json[0].TestingAssemblyVersion = $ver
+          $json[0].AssemblyVersion = $verNoPrefix
+          $json[0].TestingAssemblyVersion = $verNoPrefix
           $json[0].DownloadLinkInstall = $json.DownloadLinkInstall -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
           $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
           $json[0].DownloadLinkUpdate = $json.DownloadLinkUpdate -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
