@@ -64,7 +64,7 @@ public class PenumbraChangelog : IUiService
 
     private static void Add1_3_4_0(Changelog log)
         => log.NextVersion("Version 1.3.4.0")
-            .RegisterHighlight("为漫反射缓冲区添加HDR功能。当与 Glamourer 的高级定制功能配合使用时，可以更准确地表现非标准颜色值（例如皮肤或发色）。")
+            .RegisterHighlight("为漫反射缓冲区添加HDR功能。当与 Glamourer 的高级外貌功能配合使用时，可以更准确地表现非标准颜色值（例如皮肤或发色）。")
             .RegisterEntry("此功能需要在卫月设置中启用“在游戏加载前等待插件初始化完成”并在启动时启用才能正常工作。默认开启但可手动关闭。", 1)
             .RegisterHighlight("新增选项组类型：组合型选项组（Combining Groups）。")
             .RegisterEntry("组合型选项组对用户的表现类似多选组，但不同选项的开启会导致设置组合生成唯一的配置结果。", 1)
