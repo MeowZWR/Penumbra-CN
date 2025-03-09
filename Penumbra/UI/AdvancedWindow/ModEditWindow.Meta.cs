@@ -4,6 +4,8 @@ using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.Api.Api;
+using Penumbra.GameData.Data;
+using Penumbra.GameData.Enums;
 using Penumbra.Meta.Manipulations;
 using Penumbra.UI.AdvancedWindow.Meta;
 using Penumbra.UI.Classes;
@@ -43,8 +45,10 @@ public partial class ModEditWindow
         if (ImUtf8.Button("写入为TexTools文件"u8))
             _metaFileManager.WriteAllTexToolsMeta(Mod!);
         ImGui.SameLine();
-        if (ImUtf8.ButtonEx("移除所有默认值", "删除列表中所有被设置为默认值的条目。"u8))
+        if (ImUtf8.ButtonEx("移除所有默认值"u8, "删除列表中所有被设置为默认值的条目。"u8))
             _editor.MetaEditor.DeleteDefaultValues();
+        ImGui.SameLine();
+        DrawAtchDragDrop();
 
         using var child = ImRaii.Child("##meta", -Vector2.One, true);
         if (!child)
@@ -58,6 +62,25 @@ public partial class ModEditWindow
         DrawEditHeader(MetaManipulationType.Rsp);
         DrawEditHeader(MetaManipulationType.Atch);
         DrawEditHeader(MetaManipulationType.GlobalEqp);
+    }
+
+    private void DrawAtchDragDrop()
+    {
+        _dragDropManager.CreateImGuiSource("atchDrag", f => f.Extensions.Contains(".atch"), f =>
+        {
+            var gr = Parser.ParseRaceCode(f.Files.FirstOrDefault() ?? string.Empty);
+            if (gr is GenderRace.Unknown)
+                return false;
+
+            ImUtf8.Text($"正在拖拽 .atch 文件，适用于 {gr.ToName()}...");
+            return true;
+        });
+        ImUtf8.ButtonEx("导入 .atch 文件"u8,
+            _dragDropManager.IsDragging ? ""u8 : "将包含种族代码路径的 .atch 文件拖拽至此以导入其值。"u8,
+            default,
+            !_dragDropManager.IsDragging);
+        if (_dragDropManager.CreateImGuiTarget("atchDrag", out var files, out _) && files.FirstOrDefault() is { } file)
+            _metaDrawers.Atch.ImportFile(file);
     }
 
     private void DrawEditHeader(MetaManipulationType type)

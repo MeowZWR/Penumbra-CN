@@ -180,7 +180,7 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
     private bool       _useLeftRing  = true;
     private bool       _useRightRing = true;
 
-    private EquipItem[]? _affectedItems;
+    private HashSet<EquipItem>? _affectedItems;
 
     private void UpdateState()
     {
@@ -541,11 +541,11 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
 
         _dirty |= selector.Draw("##itemTarget", selector.CurrentSelection.Item.Name, string.Empty, InputWidth * 2 * UiHelpers.Scale,
             ImGui.GetTextLineHeightWithSpacing());
-        if (_affectedItems is not { Length: > 1 })
+        if (_affectedItems is not { Count: > 1 })
             return;
 
         ImGui.SameLine();
-        ImGuiUtil.DrawTextButton($"将同时在另外{_affectedItems.Length - 1}个同模物品上生效。", Vector2.Zero,
+        ImGuiUtil.DrawTextButton($"将同时在另外 {_affectedItems.Count - 1} 个同模物品上生效。", Vector2.Zero,
             Colors.PressEnterWarningBg);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(string.Join('\n', _affectedItems.Where(i => !ReferenceEquals(i.Name, selector.CurrentSelection.Item.Name))
@@ -602,11 +602,11 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
             _dirty |= ImGui.Checkbox( "转换左指", ref _useLeftRing );
         }
 
-        if (_affectedItems is not { Length: > 1 })
+        if (_affectedItems is not { Count: > 1 })
             return;
 
         ImGui.SameLine();
-        ImGuiUtil.DrawTextButton($"同时会在另外{_affectedItems.Length - 1}个同模道具上生效。", Vector2.Zero,
+        ImGuiUtil.DrawTextButton($"将同时在另外 {_affectedItems.Count - 1} 个同模道具上生效。", Vector2.Zero,
             Colors.PressEnterWarningBg);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(string.Join('\n', _affectedItems.Where(i => !ReferenceEquals(i.Name, targetSelector.CurrentSelection.Item.Name))

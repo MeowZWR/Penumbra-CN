@@ -121,11 +121,12 @@ public class ModPanelSettingsTab(
             return;
 
         modManager.SetKnown(selection.Mod!);
-        if (_temporary)
+        if (_temporary || config.DefaultTemporaryMode)
         {
-            selection.TemporarySettings!.ForceInherit = false;
-            selection.TemporarySettings!.Enabled      = enabled;
-            collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!, selection.TemporarySettings);
+            var temporarySettings = selection.TemporarySettings ?? new TemporaryModSettings(selection.Mod!, selection.Settings);
+            temporarySettings.ForceInherit = false;
+            temporarySettings.Enabled      = enabled;
+            collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!, temporarySettings);
         }
         else
         {
@@ -155,12 +156,13 @@ public class ModPanelSettingsTab(
         {
             if (_currentPriority != settings.Priority.Value)
             {
-                if (_temporary)
+                if (_temporary || config.DefaultTemporaryMode)
                 {
-                    selection.TemporarySettings!.ForceInherit = false;
-                    selection.TemporarySettings!.Priority     = new ModPriority(_currentPriority.Value);
+                    var temporarySettings = selection.TemporarySettings ?? new TemporaryModSettings(selection.Mod!, selection.Settings);
+                    temporarySettings.ForceInherit = false;
+                    temporarySettings.Priority     = new ModPriority(_currentPriority.Value);
                     collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
-                        selection.TemporarySettings);
+                        temporarySettings);
                 }
                 else
                 {
@@ -206,11 +208,12 @@ public class ModPanelSettingsTab(
             };
             if (inherit)
             {
-                if (_temporary)
+                if (_temporary || config.DefaultTemporaryMode)
                 {
-                    selection.TemporarySettings!.ForceInherit = true;
+                    var temporarySettings = selection.TemporarySettings ?? new TemporaryModSettings(selection.Mod!, selection.Settings);
+                    temporarySettings.ForceInherit = true;
                     collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
-                        selection.TemporarySettings);
+                        temporarySettings);
                 }
                 else
                 {
@@ -252,7 +255,7 @@ public class ModPanelSettingsTab(
             var actual = collectionManager.Active.Current.GetActualSettings(selection.Mod!.Index).Settings;
             if (ImUtf8.ButtonEx("设置为临时"u8, "将当前设置复制到临时设置中以进行实验。"u8))
                 collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
-                    new TemporaryModSettings(selection.Mod!, actual, "yourself"));
+                    new TemporaryModSettings(selection.Mod!, actual));
         }
     }
 }

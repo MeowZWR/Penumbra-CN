@@ -23,7 +23,7 @@ public sealed class CollectionCache : IDisposable
     private readonly CollectionCacheManager                                          _manager;
     private readonly ModCollection                                                   _collection;
     public readonly  CollectionModData                                               ModData       = new();
-    private readonly SortedList<string, (SingleArray<IMod>, IIdentifiedObjectData?)> _changedItems = [];
+    private readonly SortedList<string, (SingleArray<IMod>, IIdentifiedObjectData)> _changedItems = [];
     public readonly  ConcurrentDictionary<Utf8GamePath, ModPath>                     ResolvedFiles = new();
     public readonly  CustomResourceCache                                             CustomResources;
     public readonly  MetaCache                                                       Meta;
@@ -43,7 +43,7 @@ public sealed class CollectionCache : IDisposable
     private int _changedItemsSaveCounter = -1;
 
     // Obtain currently changed items. Computes them if they haven't been computed before.
-    public IReadOnlyDictionary<string, (SingleArray<IMod>, IIdentifiedObjectData?)> ChangedItems
+    public IReadOnlyDictionary<string, (SingleArray<IMod>, IIdentifiedObjectData)> ChangedItems
     {
         get
         {
@@ -282,11 +282,11 @@ public sealed class CollectionCache : IDisposable
         {
             case ".atch" or ".eqp" or ".eqdp" or ".est" or ".gmp" or ".cmp" or ".imc":
                 Penumbra.Messager.NotificationMessage(
-                    $"Redirection of {ext} files for {mod.Name} is unsupported. Please use the corresponding meta manipulations instead.",
+                    $"Redirection of {ext} files for {mod.Name} is unsupported. This probably means that the mod is outdated and may not work correctly.\n\nPlease tell the mod creator to use the corresponding meta manipulations instead.",
                     NotificationType.Warning);
                 return false;
             case ".lvb" or ".lgb" or ".sgb":
-                Penumbra.Messager.NotificationMessage($"Redirection of {ext} files for {mod.Name} is unsupported as this breaks the game.",
+                Penumbra.Messager.NotificationMessage($"Redirection of {ext} files for {mod.Name} is unsupported as this breaks the game.\n\nThis mod will probably not work correctly.",
                     NotificationType.Warning);
                 return false;
             default: return true;
@@ -441,7 +441,7 @@ public sealed class CollectionCache : IDisposable
             // Skip IMCs because they would result in far too many false-positive items,
             // since they are per set instead of per item-slot/item/variant.
             var identifier = _manager.MetaFileManager.Identifier;
-            var items      = new SortedList<string, IIdentifiedObjectData?>(512);
+            var items      = new SortedList<string, IIdentifiedObjectData>(512);
 
             void AddItems(IMod mod)
             {

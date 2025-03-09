@@ -25,7 +25,6 @@ public class ResourceTreeViewer(
     private const ResourceTreeFactory.Flags ResourceTreeFactoryFlags =
         ResourceTreeFactory.Flags.RedactExternalPaths | ResourceTreeFactory.Flags.WithUiData | ResourceTreeFactory.Flags.WithOwnership;
 
-    private readonly CommunicatorService _communicator = communicator;
     private readonly HashSet<nint>       _unfolded     = [];
 
     private readonly Dictionary<nint, NodeVisibility> _filterCache = [];
@@ -278,7 +277,7 @@ public class ResourceTreeViewer(
                 if (ImGui.IsItemClicked())
                     ImGui.SetClipboardText(resourceNode.FullPath.ToPath());
                 if (hasMod && ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
-                    _communicator.SelectTab.Invoke(TabType.Mods, mod);
+                    communicator.SelectTab.Invoke(TabType.Mods, mod);
 
                 ImGuiUtil.HoverTooltip(
                     $"{resourceNode.FullPath.ToPath()}\n\n点击复制到剪贴板。{(hasMod ? "\nCtrl + 右键点击跳转到模组。" : string.Empty)}{GetAdditionalDataSuffix(resourceNode.AdditionalData)}");

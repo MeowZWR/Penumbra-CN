@@ -29,6 +29,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.GetCollectionForObject.Provider(pi, api.Collection),
             IpcSubscribers.SetCollection.Provider(pi, api.Collection),
             IpcSubscribers.SetCollectionForObject.Provider(pi, api.Collection),
+            IpcSubscribers.CheckCurrentChangedItemFunc.Provider(pi, api.Collection),
 
             IpcSubscribers.ConvertTextureFile.Provider(pi, api.Editing),
             IpcSubscribers.ConvertTextureData.Provider(pi, api.Editing),
@@ -54,6 +55,8 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.GetModPath.Provider(pi, api.Mods),
             IpcSubscribers.SetModPath.Provider(pi, api.Mods),
             IpcSubscribers.GetChangedItems.Provider(pi, api.Mods),
+            IpcSubscribers.GetChangedItemAdapterDictionary.Provider(pi, api.Mods),
+            IpcSubscribers.GetChangedItemAdapterList.Provider(pi, api.Mods),
 
             IpcSubscribers.GetAvailableModSettings.Provider(pi, api.ModSettings),
             IpcSubscribers.GetCurrentModSettings.Provider(pi, api.ModSettings),

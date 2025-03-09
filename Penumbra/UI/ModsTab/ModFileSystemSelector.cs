@@ -64,6 +64,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         SubscribeRightClickLeaf(ToggleLeafFavorite);
         SubscribeRightClickLeaf(DrawTemporaryOptions);
         SubscribeRightClickLeaf(l => QuickMove(l, _config.QuickMoveFolder1, _config.QuickMoveFolder2, _config.QuickMoveFolder3));
+        SubscribeRightClickMain(ClearTemporarySettings, 105);
         SubscribeRightClickMain(ClearDefaultImportFolder, 100);
         SubscribeRightClickMain(() => ClearQuickMove(0, _config.QuickMoveFolder1, () => {_config.QuickMoveFolder1 = string.Empty; _config.Save();}), 110);
         SubscribeRightClickMain(() => ClearQuickMove(1, _config.QuickMoveFolder2, () => {_config.QuickMoveFolder2 = string.Empty; _config.Save();}), 120);
@@ -237,8 +238,14 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     // Add custom context menu items.
     private void EnableDescendants(ModFileSystem.Folder folder)
     {
-        if (ImGui.MenuItem("启用子项"))
+        if (ImUtf8.MenuItem("启用子项"u8))
             SetDescendants(folder, true);
+    }
+
+    private void ClearTemporarySettings()
+    {
+        if (ImUtf8.MenuItem("清除临时设置"u8))
+            _collectionManager.Editor.ClearTemporarySettings(_collectionManager.Active.Current);
     }
 
     private void DisableDescendants(ModFileSystem.Folder folder)
@@ -267,8 +274,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void DrawTemporaryOptions(FileSystem<Mod>.Leaf mod)
     {
-        const string source       = "yourself";
-        var          tempSettings = _collectionManager.Active.Current.GetTempSettings(mod.Value.Index);
+        var tempSettings = _collectionManager.Active.Current.GetTempSettings(mod.Value.Index);
         if (tempSettings is { Lock: > 0 })
             return;
 
@@ -277,19 +283,19 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         var actual = _collectionManager.Active.Current.GetActualSettings(mod.Value.Index).Settings;
         if (actual?.Enabled is true && ImUtf8.MenuItem("临时禁用"u8))
             _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value,
-                new TemporaryModSettings(mod.Value, actual, source) { Enabled = false });
+                new TemporaryModSettings(mod.Value, actual) { Enabled = false });
 
         if (actual is not { Enabled: true } && ImUtf8.MenuItem("临时启用"u8))
         {
             var newSettings = actual is null
-                ? TemporaryModSettings.DefaultSettings(mod.Value, source, true)
-                : new TemporaryModSettings(mod.Value, actual, source) { Enabled = true };
+                ? TemporaryModSettings.DefaultSettings(mod.Value, TemporaryModSettings.OwnSource, true)
+                : new TemporaryModSettings(mod.Value, actual) { Enabled = true };
             _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value, newSettings);
         }
 
         if (tempSettings is null && ImUtf8.MenuItem("设置为临时"u8))
             _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value,
-                new TemporaryModSettings(mod.Value, actual, source));
+                new TemporaryModSettings(mod.Value, actual));
     }
 
     private void SetDefaultImportFolder(ModFileSystem.Folder folder)

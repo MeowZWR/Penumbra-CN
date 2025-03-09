@@ -70,15 +70,15 @@ public readonly struct GlobalEqpManipulation : IMetaIdentifier
     public override string ToString()
         => $"Global EQP - {Type}{(Condition != 0 ? $" - {Condition.Id}" : string.Empty)}";
 
-    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, IIdentifiedObjectData?> changedItems)
+    public void AddChangedItems(ObjectIdentification identifier, IDictionary<string, IIdentifiedObjectData> changedItems)
     {
         var path = Type switch
         {
-            GlobalEqpType.DoNotHideEarrings     => GamePaths.Accessory.Mdl.Path(Condition, GenderRace.MidlanderMale, EquipSlot.Ears),
-            GlobalEqpType.DoNotHideNecklace     => GamePaths.Accessory.Mdl.Path(Condition, GenderRace.MidlanderMale, EquipSlot.Neck),
-            GlobalEqpType.DoNotHideBracelets    => GamePaths.Accessory.Mdl.Path(Condition, GenderRace.MidlanderMale, EquipSlot.Wrists),
-            GlobalEqpType.DoNotHideRingR        => GamePaths.Accessory.Mdl.Path(Condition, GenderRace.MidlanderMale, EquipSlot.RFinger),
-            GlobalEqpType.DoNotHideRingL        => GamePaths.Accessory.Mdl.Path(Condition, GenderRace.MidlanderMale, EquipSlot.LFinger),
+            GlobalEqpType.DoNotHideEarrings     => GamePaths.Mdl.Accessory(Condition, GenderRace.MidlanderMale, EquipSlot.Ears),
+            GlobalEqpType.DoNotHideNecklace     => GamePaths.Mdl.Accessory(Condition, GenderRace.MidlanderMale, EquipSlot.Neck),
+            GlobalEqpType.DoNotHideBracelets    => GamePaths.Mdl.Accessory(Condition, GenderRace.MidlanderMale, EquipSlot.Wrists),
+            GlobalEqpType.DoNotHideRingR        => GamePaths.Mdl.Accessory(Condition, GenderRace.MidlanderMale, EquipSlot.RFinger),
+            GlobalEqpType.DoNotHideRingL        => GamePaths.Mdl.Accessory(Condition, GenderRace.MidlanderMale, EquipSlot.LFinger),
             GlobalEqpType.DoNotHideHrothgarHats => string.Empty,
             GlobalEqpType.DoNotHideVieraHats    => string.Empty,
             _                                   => string.Empty,
@@ -86,9 +86,9 @@ public readonly struct GlobalEqpManipulation : IMetaIdentifier
         if (path.Length > 0)
             identifier.Identify(changedItems, path);
         else if (Type is GlobalEqpType.DoNotHideVieraHats)
-            changedItems["All Hats for Viera"] = null;
+            changedItems.UpdateCountOrSet("All Hats for Viera", () => new IdentifiedName());
         else if (Type is GlobalEqpType.DoNotHideHrothgarHats)
-            changedItems["All Hats for Hrothgar"] = null;
+            changedItems.UpdateCountOrSet("All Hats for Hrothgar", () => new IdentifiedName());
     }
 
     public MetaIndex FileIndex()

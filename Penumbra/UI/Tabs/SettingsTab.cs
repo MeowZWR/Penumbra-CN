@@ -431,8 +431,7 @@ public class SettingsTab : ITab, IUiService
         Checkbox("自动选择角色关联合集",
             "在每次登录时，自动选择与当前角色关联的合集作为当前编辑的合集。",
             _config.AutoSelectCollection, _autoSelector.SetAutomaticSelection);
-
-        Checkbox("使用聊天命令后，将成功运行的消息输出到聊天窗口",
+        Checkbox("将成功运行的消息输出到聊天窗口",
             "聊天命令通常只在运行失败时输出消息到聊天窗口，但也可以在成功运行时输出消息供你确认。你可以在此处禁用这个功能。",
             _config.PrintSuccessfulCommandsToChat, v => _config.PrintSuccessfulCommandsToChat = v);
         Checkbox( "在模组界面中隐藏重绘栏", "隐藏模组选项卡下模组界面底部的重绘栏。",
@@ -447,6 +446,15 @@ public class SettingsTab : ITab, IUiService
                     _config.Ephemeral.Save();
                 }
             });
+
+        ChangedItemModeExtensions.DrawCombo("##ChangedItemMode"u8, _config.ChangedItemDisplay, UiHelpers.InputTextWidth.X, v =>
+        {
+            _config.ChangedItemDisplay = v;
+            _config.Save();
+        });
+        ImUtf8.LabeledHelpMarker("模组更改项目显示模式"u8,
+            "配置如何在模组信息面板中显示单个模组的更改项目。"u8);
+
         Checkbox("在更改项目中忽略机工副手",
             "在更改项目标签中忽略所有以太转换器（机工副手），因为对它们的任何更改都会同时更改所有这些项目。\n\n"
           + "更改此选项会重新扫描您的模组，以便更新所有已更改的项目。",
@@ -619,6 +627,9 @@ public class SettingsTab : ITab, IUiService
     /// <summary> Draw all settings pertaining to import and export of mods. </summary>
     private void DrawModHandlingSettings()
     {
+        Checkbox("默认使用临时设置",
+            "当您对合集进行任何更改时，首先将其应用为临时更改，如果您希望保留这些更改，则需要点击“转为永久”。",
+            _config.DefaultTemporaryMode, v => _config.DefaultTemporaryMode = v);
         Checkbox("导入时替换非标准符号",
             "导入模组时，将模组和选项名称中的所有非ASCII符号替换为下划线。", _config.ReplaceNonAsciiOnImport,
             v => _config.ReplaceNonAsciiOnImport = v);
