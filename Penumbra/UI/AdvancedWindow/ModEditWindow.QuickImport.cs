@@ -112,7 +112,7 @@ public partial class ModEditWindow
         var canQuickImport     = quickImport.CanExecute;
         var quickImportEnabled = canQuickImport && (!resourceNode.Protected || _config.DeleteModModifier.IsActive());
         if (ImUtf8.IconButton(FontAwesomeIcon.FileImport,
-                $"添加此文件副本到 {quickImport.OptionName}.{(canQuickImport && !quickImportEnabled ? $"\按住 {_config.DeleteModModifier} 同时点击来添加" : string.Empty)}",
+                $"添加此文件副本到 {quickImport.OptionName}.{(canQuickImport && !quickImportEnabled ? $"\n按住 {_config.DeleteModModifier} 同时点击来添加" : string.Empty)}",
                 buttonSize,
                 !quickImportEnabled))
         {

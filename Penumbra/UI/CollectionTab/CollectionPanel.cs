@@ -55,11 +55,11 @@ public sealed class CollectionPanel(
     /// <summary> Draw the panel containing beginners information and simple assignments. </summary>
     public void DrawSimple()
     {
-        ImGuiUtil.TextWrapped( "合集是已安装的模组的一组设置，包括它们的启用状态、优先级和模组内的设置。你可以创建任意数量的合集。\n"
-          + "在左侧选中并突出显示的合集就是你当前在模组选项卡中编辑的设置会生效的合集。\n");
+        ImGuiUtil.TextWrapped( "合集是一组模组配置，包含启用状态、优先级和模组内的选项设置。你可以创建任意数量的合集。\n"
+          + "左侧选中并高亮显示的合集，是你在模组列表选项卡中正在编辑的合集。\n");
         ImGuiUtil.TextWrapped(
-            "你可以将这些合集分配给一些对象，这样可以使不同的对象使用不同的模组设置。\n"
-          + "通过点击下面的对象按钮，可以将现有的合集分配给该对象。");
+            "你可以将这些合集分配给一些对象，这样可以使不同的对象使用不同的模组配置。\n"
+          + "通过点击下面的对象按钮，或拖动合集到对象，可以将现有的合集分配给该对象。");
         ImGui.Separator();
 
         var buttonWidth = new Vector2(200 * ImGuiHelpers.GlobalScale, 2 * ImGui.GetTextLineHeightWithSpacing());

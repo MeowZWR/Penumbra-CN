@@ -135,7 +135,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
     {
         _dragDrop.CreateImGuiSource("ModDragDrop", m => m.Extensions.Any(e => ValidModExtensions.Contains(e.ToLowerInvariant())), m =>
         {
-            ImUtf8.Text($"拖拽到模组选择器进行导入：n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
+            ImUtf8.Text($"拖拽到模组选择器进行导入：\n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
             return true;
         });
         base.Draw(width);
@@ -300,7 +300,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
 
     private void SetDefaultImportFolder(ModFileSystem.Folder folder)
     {
-        if (!ImUtf8.MenuItem("置为默认导入折叠组"u8))
+        if (!ImUtf8.MenuItem("★设置为默认导入折叠组"u8))
             return;
 
         var newName = folder.FullName();

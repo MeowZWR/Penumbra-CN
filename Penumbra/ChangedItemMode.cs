@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui.Text;
 
 namespace Penumbra;
@@ -15,20 +15,20 @@ public static class ChangedItemModeExtensions
     public static ReadOnlySpan<byte> ToName(this ChangedItemMode mode)
         => mode switch
         {
-            ChangedItemMode.GroupedCollapsed => "Grouped (Collapsed)"u8,
-            ChangedItemMode.GroupedExpanded  => "Grouped (Expanded)"u8,
-            ChangedItemMode.Alphabetical     => "Alphabetical"u8,
-            _                                => "Error"u8,
+            ChangedItemMode.GroupedCollapsed => "分组（折叠）"u8,
+            ChangedItemMode.GroupedExpanded  => "分组（展开）"u8,
+            ChangedItemMode.Alphabetical     => "按字母顺序"u8,
+            _                                => "错误"u8,
         };
 
     public static ReadOnlySpan<byte> ToTooltip(this ChangedItemMode mode)
         => mode switch
         {
             ChangedItemMode.GroupedCollapsed =>
-                "Display items as groups by their model and slot. Collapse those groups to a single item by default. Prefers items with more changes affecting them or configured items as the main item."u8,
+                "按模型和槽位将项目分组显示。默认情况下将这些组折叠为单个项目。优先选择受更多更改影响或已配置的物品作为主项目。"u8,
             ChangedItemMode.GroupedExpanded =>
-                "Display items as groups by their model and slot. Expand those groups showing all items by default. Prefers items with more changes affecting them or configured items as the main item."u8,
-            ChangedItemMode.Alphabetical => "Display all changed items in a single list sorted alphabetically."u8,
+                "按模型和槽位将项目分组显示。默认情况下展开这些组以显示所有项目。优先选择受更多更改影响或已配置的物品作为主项目。"u8,
+            ChangedItemMode.Alphabetical => "按字母顺序显示所有更改项目。"u8,
             _                            => ""u8,
         };
 

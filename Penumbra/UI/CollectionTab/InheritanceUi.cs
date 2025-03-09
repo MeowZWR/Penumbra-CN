@@ -71,7 +71,7 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
 	            "如果发现某个被继承合集中的模组为‘启用’或‘禁用’，来自该合集的设置将被使用。" );
 	        ImGui.BulletText( "如果未找到此类合集，则该模组将被视为已禁用。" );
             ImGui.BulletText(
-	            "左侧框中突出显示的合集（注意其颜色），不会生效，因为它已经在继承合集的次级继承中了。" );
+	            "左侧框中高亮显示的合集（注意其颜色），不会生效，因为它已经在继承合集的次级继承中了。" );
             ImGui.NewLine();
 	        ImGui.TextUnformatted( "例子" );
 	        ImGui.BulletText("合集A：启用了两个模组 - Bibo+和紧身小背心。");

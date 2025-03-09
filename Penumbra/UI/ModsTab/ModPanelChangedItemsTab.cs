@@ -255,9 +255,9 @@ public class ModPanelChangedItemsTab(
         if (obj.Expandable)
         {
             if (ImUtf8.IconButton(obj.Expanded ? FontAwesomeIcon.CaretDown : FontAwesomeIcon.CaretRight,
-                    obj.Expanded     ? "Hide the other items using the same model." :
-                    obj.Children > 1 ? $"Show {obj.Children} other items using the same model." :
-                                       "Show one other item using the same model.",
+                    obj.Expanded     ? "隐藏使用相同模型的其他物品。" :
+                    obj.Children > 1 ? $"显示 {obj.Children} 个使用相同模型的其他物品。" :
+                                       "显示一个使用相同模型的其他物品。",
                     _buttonSize))
             {
                 _stateStorage.SetBool(obj.Id, !obj.Expanded);
