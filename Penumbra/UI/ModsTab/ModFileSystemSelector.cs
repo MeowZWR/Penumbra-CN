@@ -293,7 +293,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value, newSettings);
         }
 
-        if (tempSettings is null && ImUtf8.MenuItem("设置为临时"u8))
+        if (tempSettings is null && ImUtf8.MenuItem("设为临时"u8))
             _collectionManager.Editor.SetTemporarySettings(_collectionManager.Active.Current, mod.Value,
                 new TemporaryModSettings(mod.Value, actual));
     }

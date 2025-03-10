@@ -186,7 +186,7 @@ public class ModPanelSettingsTab(
     {
         var drawInherited = !_inherited && selection.Settings != ModSettings.Empty;
         var scroll        = ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ScrollbarSize + ImGui.GetStyle().ItemInnerSpacing.X : 0;
-        var buttonSize    = ImUtf8.CalcTextSize("设置为永久_"u8).X;
+        var buttonSize    = ImUtf8.CalcTextSize("设为永久_"u8).X;
         var offset = drawInherited
             ? buttonSize + ImUtf8.CalcTextSize("继承设置"u8).X + ImGui.GetStyle().FramePadding.X * 4 + ImGui.GetStyle().ItemSpacing.X
             : buttonSize + ImGui.GetStyle().FramePadding.X * 2;
@@ -226,10 +226,10 @@ public class ModPanelSettingsTab(
         if (_temporary)
         {
             var overwrite = enabled
-                ? ImUtf8.ButtonEx("设置为永久"u8,
+                ? ImUtf8.ButtonEx("设为永久"u8,
                     "使用当前的临时设置覆盖此合集中的该模组的实际设置。"u8,
                     new Vector2(buttonSize, 0))
-                : ImUtf8.ButtonEx("设置为永久"u8,
+                : ImUtf8.ButtonEx("设为永久"u8,
                     $"使用当前的临时设置覆盖该模组在此合集中的实际设置。\n按住 {config.DeleteModModifier} 以覆盖。",
                     new Vector2(buttonSize, 0), true);
             if (overwrite)
@@ -253,7 +253,7 @@ public class ModPanelSettingsTab(
         else
         {
             var actual = collectionManager.Active.Current.GetActualSettings(selection.Mod!.Index).Settings;
-            if (ImUtf8.ButtonEx("设置为临时"u8, "将当前设置复制到临时设置中以进行实验。"u8))
+            if (ImUtf8.ButtonEx("设为临时"u8, "将当前设置复制到临时设置中以进行实验。"u8))
                 collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
                     new TemporaryModSettings(selection.Mod!, actual));
         }
