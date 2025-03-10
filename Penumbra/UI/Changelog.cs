@@ -13,7 +13,7 @@ public class PenumbraChangelog : IUiService
     public PenumbraChangelog(Configuration config)
     {
         _config   = config;
-        Changelog = new Changelog("Penumbra 更新日志", ConfigData, Save);
+        Changelog = new Changelog("Penumbra Changelog", ConfigData, Save);
 
         Add5_7_0(Changelog);
         Add5_7_1(Changelog);
@@ -58,9 +58,45 @@ public class PenumbraChangelog : IUiService
         Add1_3_2_0(Changelog);
         Add1_3_3_0(Changelog);
         Add1_3_4_0(Changelog);
+        Add1_3_5_0(Changelog);
     }
 
     #region Changelogs
+
+    private static void Add1_3_5_0(Changelog log)
+        => log.NextVersion("版本 1.3.5.0")
+            .RegisterImportant(
+                "重定向不支持的文件类型（如 .atch）现在在启用时会产生警告。请更新仍包含这些文件的模组或请求其创建者更新。")
+            .RegisterEntry("现在可以在高级编辑的元数据部分导入 .atch 文件，将其非与游戏默认值不同的更改添加到模组中。")
+            .RegisterHighlight("在设置和模组选项卡的合集栏中添加了始终使用临时设置的选项。")
+            .RegisterEntry(
+                "启用此选项时，您在当前合集中所做的所有更改将作为临时更改应用，您必须使用“设为永久”将其设为永久。",
+                1)
+            .RegisterEntry(
+                "这对于尝试新模组而无需稍后重置其设置或在 Glamourer 中创建模组关联应该很有用。",
+                1)
+            .RegisterEntry(
+                "在模组选择器空白区域的上下文菜单中添加了清除所有手动临时设置的选项。")
+            .RegisterHighlight(
+                "资源树现在考虑了一些额外的文件，如贴花，并改进了一些不应通常被修改的文件的快速导入行为。")
+            .RegisterHighlight("单个模组的更改项目显示已大幅改进。")
+            .RegisterEntry("任何更改的项目现在将在其工具提示中显示有多少个单独的编辑影响它。", 1)
+            .RegisterEntry("装备现在按其模型 ID 分组，减少了混乱。", 1)
+            .RegisterEntry(
+                "显示的主要装备是受影响更改最多的那个，但可以由模组创建者和本地配置为特定项目。",
+                1)
+            .RegisterEntry(
+                "模组中存储的首选更改项目将在导出模组时共享，并用作本地首选项的默认值，这些首选项不会共享。",
+                2)
+            .RegisterEntry(
+                "您可以在设置中配置组是自动折叠还是展开，或完全删除分组。", 1)
+            .RegisterHighlight("修复了支持多个 UV 的模型导入/导出。")
+            .RegisterEntry("添加了一些与更改项目相关的 IPC。")
+            .RegisterEntry("骨骼和物理更改现在应该在更改项目中识别。")
+            .RegisterEntry("项目交换现在也会正确交换多装备槽的 EQP 条目。")
+            .RegisterEntry("通过 IPC 传输元数据编辑应该比以前更有效率。")
+            .RegisterEntry("修复了一些匿名名称在某些过场动画中的问题。")
+            .RegisterEntry("新提取的模组文件夹现在会尝试重命名三次，然后才被视为失败。");
 
     private static void Add1_3_4_0(Changelog log)
         => log.NextVersion("Version 1.3.4.0")
@@ -86,7 +122,7 @@ public class PenumbraChangelog : IUiService
     private static void Add1_3_3_0(Changelog log)
         => log.NextVersion("版本 1.3.3.0")
             .RegisterHighlight("为合集添加了临时设置。")
-            .RegisterEntry("在编辑模组设置时，可以通过右键菜单或设置面板中的按钮手动将设置设置为临时（并可恢复）。", 1)
+            .RegisterEntry("在编辑模组设置时，可以通过右键菜单或设置面板中的按钮手动将设置设为临时（并可恢复）。", 1)
             .RegisterEntry("这可以用来测试模组或更改，而无需永久保存这些更改或事后恢复旧设置。", 1)
             .RegisterEntry("更重要的是，其他插件可以通过IPC设置此选项，允许 Glamourer 在应用模组关联时仅设置和重置临时设置。", 1)
             .RegisterEntry("作为极端示例，您可以仅在合集内启用角色的一致模组，并仅通过临时设置让 Glamourer 处理所有装备模组。", 1)
@@ -112,7 +148,6 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("修复了与数据元操作相关的其他一些问题。")
             .RegisterEntry("更新了可用的 NPC 名称，并修复了某些假定不可见字符在 ImGui 中显示的问题。");
 
-
     private static void Add1_3_1_0(Changelog log)
         => log.NextVersion("版本 1.3.1.0")
             .RegisterEntry("Penumbra 已更新以支持 Dalamud API 11 和 7.1 游戏版本。")
@@ -128,7 +163,6 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("修复了左手戒指与 Mare 同步 / 画面角色 标签页的问题。")
             .RegisterEntry("可能修复了登录画面中角色被错误识别的问题。")
             .RegisterEntry("改进了调试模块的可视化功能。");
-            
 
     private static void Add1_3_0_0(Changelog log)
         => log.NextVersion("版本 1.3.0.0")
@@ -158,7 +192,6 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("修复了有关首次创建模组元数据文件的竞态条件问题。")
             .RegisterEntry("修复了合并模组选项卡中长模组标题的问题。")
             .RegisterEntry("其他一些杂项修复。");
-
 
     private static void Add1_2_1_0(Changelog log)
 	    => log.NextVersion("版本 1.2.1.0")
@@ -371,7 +404,6 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry(
                 "Improved messaging: many warnings or errors appearing will stay a little longer and can now be looked at in a Messages tab (visible only if there have been any).")
             .RegisterEntry("Fixed an issue with leading or trailing spaces when renaming mods.");
-
 
     private static void Add8_0_0(Changelog log)
         => log.NextVersion("Version 0.8.0.0")
