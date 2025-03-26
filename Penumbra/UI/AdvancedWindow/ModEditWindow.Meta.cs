@@ -75,12 +75,34 @@ public partial class ModEditWindow
             ImUtf8.Text($"正在拖拽 .atch 文件，适用于 {gr.ToName()}...");
             return true;
         });
-        ImUtf8.ButtonEx("导入 .atch 文件"u8,
-            _dragDropManager.IsDragging ? ""u8 : "将包含种族代码路径的 .atch 文件拖拽至此以导入其值。"u8,
-            default,
-            !_dragDropManager.IsDragging);
+        var hasAtch = _editor.Files.Atch.Count > 0;
+        if (ImUtf8.ButtonEx("导入 .atch 文件"u8,
+                _dragDropManager.IsDragging
+                    ? ""u8
+                    : hasAtch
+                        ? "拖拽包含种族代码路径的.atch文件到此处导入其数值。\n\n点击从模组中选择.atch文件"u8
+                        : "拖拽包含种族代码路径的.atch文件到此处导入其数值"u8, default,
+                !_dragDropManager.IsDragging && !hasAtch)
+         && hasAtch)
+            ImUtf8.OpenPopup("##atchPopup"u8);
         if (_dragDropManager.CreateImGuiTarget("atchDrag", out var files, out _) && files.FirstOrDefault() is { } file)
             _metaDrawers.Atch.ImportFile(file);
+
+        using var popup = ImUtf8.Popup("##atchPopup"u8);
+        if (!popup)
+            return;
+
+        if (!hasAtch)
+        {
+            ImGui.CloseCurrentPopup();
+            return;
+        }
+
+        foreach (var atchFile in _editor.Files.Atch)
+        {
+            if (ImUtf8.Selectable(atchFile.RelPath.Path.Span) && atchFile.File.Exists)
+                _metaDrawers.Atch.ImportFile(atchFile.File.FullName);
+        }
     }
 
     private void DrawEditHeader(MetaManipulationType type)

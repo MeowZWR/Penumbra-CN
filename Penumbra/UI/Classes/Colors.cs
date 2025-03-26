@@ -34,6 +34,7 @@ public enum ColorId : short
     PredefinedTagAdd,
     PredefinedTagRemove,
     TemporaryModSettingsTint,
+    ChangedItemPreferenceStar,
     NoTint,
 }
 
@@ -110,6 +111,7 @@ public static class Colors
             ColorId.TemporaryModSettingsTint      => (0x30FF0000, "具有临时设置的模组",                 "一个具有临时设置的模组。此颜色用作常规状态颜色的色调。"),
             ColorId.NewModTint                    => (0x8000FF00, "新模组色调",                         "一个在当前会话中刚刚导入或创建的模组，尚未启用。此颜色用作常规状态颜色的色调。"),
             ColorId.NoTint                        => (0x00000000, "无色调",                             "所有模组的默认色调。"),
+            ColorId.ChangedItemPreferenceStar     => (0x30FFFFFF, "首选更改项目星标",                    "模组面板的更改项目标签页中，用于优先处理特定项目的星标按钮颜色。"),
             _                                     => throw new ArgumentOutOfRangeException( nameof( color ), color, null ),
             // @formatter:on
         };

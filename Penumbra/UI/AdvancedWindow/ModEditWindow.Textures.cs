@@ -23,13 +23,19 @@ public partial class ModEditWindow
 
     private static readonly (string, string)[] SaveAsStrings =
     {
-        ("保持原样", "尽可能地将当前纹理保存为其自身格式，不作额外的转换或压缩。"),
-        ("RGBA (未压缩)",
-            "将当前纹理保存为未压缩的BGRA位图。文件体积最大，但在技术上能提供最好的质量。"),
-        ("BC3 (简单压缩)",
-            "将当前纹理保存为BC3/DXT5压缩格式。提供4:1的压缩比，速度快质量也可接受。"),
-        ("BC7 (复杂压缩)",
-            "将当前纹理保存为BC7压缩格式。提供4:1的压缩比，并且具有与未压缩格式几乎相同的质量，但要花一些时间。"),
+        ("保持原样", "尽可能以当前纹理的原始格式保存，不进行额外的转换或压缩。"),
+        ("RGBA (未压缩)", 
+            "将当前纹理保存为未压缩的BGRA位图。\n这种方式占用空间最大，但理论上能提供最佳质量。"),
+        ("BC1 (简单压缩，适用于不透明RGB)", 
+            "使用BC1/DXT1压缩保存当前纹理。\n提供8:1压缩比，速度快且质量可接受，但仅支持RGB，不含Alpha通道。\n\n适用于漫反射贴图和装备纹理以节省空间。"),
+        ("BC3 (简单压缩，适用于RGBA)", 
+            "使用BC3/DXT5压缩保存当前纹理。\n提供4:1压缩比，速度快且质量可接受，完整支持RGBA。\n\n通用格式，适用于大多数纹理。"),
+        ("BC4 (简单压缩，适用于不透明灰度图)", 
+            "使用BC4压缩保存当前纹理。\n提供8:1压缩比，质量几乎无损，但仅支持灰度图，不含Alpha通道。\n\n适用于面部彩绘和传统标记。"),
+        ("BC5 (简单压缩，适用于不透明RG通道)", 
+            "使用BC5压缩保存当前纹理。\n提供4:1压缩比，质量几乎无损，但仅支持RG通道，不含B或Alpha通道。\n\n推荐用于索引贴图，不推荐用于法线贴图。"),
+        ("BC7 (复杂压缩，适用于RGBA)", 
+            "使用BC7压缩保存当前纹理。\n提供4:1压缩比，质量几乎无损，但可能需要较长时间处理。\n\n通用格式，适用于大多数纹理。")
     };
 
     private void DrawInputChild(string label, Texture tex, Vector2 size, Vector2 imageSize)
@@ -134,7 +140,7 @@ public partial class ModEditWindow
                     tt, !isActive || !canSaveInPlace || _center.IsLeftCopy && _currentSaveAs == (int)CombinedTexture.TextureSaveType.AsIs))
             {
                 _center.SaveAs(_left.Type, _textures, _left.Path, (CombinedTexture.TextureSaveType)_currentSaveAs, _addMipMaps);
-                InvokeChange(Mod, _left.Path);
+                AddChangeTask(_left.Path);
                 AddReloadTask(_left.Path, false);
             }
 
@@ -159,7 +165,7 @@ public partial class ModEditWindow
                     !canConvertInPlace || _left.Format is DXGIFormat.BC7Typeless or DXGIFormat.BC7UNorm or DXGIFormat.BC7UNormSRGB))
             {
                 _center.SaveAsTex(_textures, _left.Path, CombinedTexture.TextureSaveType.BC7, _left.MipMaps > 1);
-                InvokeChange(Mod, _left.Path);
+                AddChangeTask(_left.Path);
                 AddReloadTask(_left.Path, false);
             }
 
@@ -169,7 +175,7 @@ public partial class ModEditWindow
                     !canConvertInPlace || _left.Format is DXGIFormat.BC3Typeless or DXGIFormat.BC3UNorm or DXGIFormat.BC3UNormSRGB))
             {
                 _center.SaveAsTex(_textures, _left.Path, CombinedTexture.TextureSaveType.BC3, _left.MipMaps > 1);
-                InvokeChange(Mod, _left.Path);
+                AddChangeTask(_left.Path);
                 AddReloadTask(_left.Path, false);
             }
 
@@ -180,7 +186,7 @@ public partial class ModEditWindow
                  || _left.Format is DXGIFormat.B8G8R8A8UNorm or DXGIFormat.B8G8R8A8Typeless or DXGIFormat.B8G8R8A8UNormSRGB))
             {
                 _center.SaveAsTex(_textures, _left.Path, CombinedTexture.TextureSaveType.Bitmap, _left.MipMaps > 1);
-                InvokeChange(Mod, _left.Path);
+                AddChangeTask(_left.Path);
                 AddReloadTask(_left.Path, false);
             }
         }
@@ -235,7 +241,7 @@ public partial class ModEditWindow
                 if (a)
                 {
                     _center.SaveAs(null, _textures, b, (CombinedTexture.TextureSaveType)_currentSaveAs, _addMipMaps);
-                    InvokeChange(Mod, b);
+                    AddChangeTask(b);
                     if (b == _left.Path)
                         AddReloadTask(_left.Path, false);
                     else if (b == _right.Path)
@@ -243,6 +249,17 @@ public partial class ModEditWindow
                 }
             }, Mod!.ModPath.FullName, _forceTextureStartPath);
         _forceTextureStartPath = false;
+    }
+
+    private void AddChangeTask(string path)
+    {
+        _center.SaveTask.ContinueWith(t =>
+        {
+            if (!t.IsCompletedSuccessfully)
+                return;
+
+            _framework.RunOnFrameworkThread(() => InvokeChange(Mod, path));
+        }, TaskScheduler.Default);
     }
 
     private void AddReloadTask(string path, bool right)
