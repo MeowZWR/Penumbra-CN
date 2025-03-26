@@ -67,7 +67,7 @@ public class PenumbraChangelog : IUiService
         => log.NextVersion("版本 1.3.5.0")
             .RegisterImportant(
                 "重定向不支持的文件类型（如 .atch）现在在启用时会产生警告。请更新仍包含这些文件的模组或请求其创建者更新。")
-            .RegisterEntry("现在可以在高级编辑的元数据部分导入 .atch 文件，将其非与游戏默认值不同的更改添加到模组中。")
+            .RegisterEntry("现在可以在高级编辑的元数据部分导入 .atch 文件，将其与游戏默认值不同的更改添加到模组中。")
             .RegisterHighlight("在设置和模组选项卡的合集栏中添加了始终使用临时设置的选项。")
             .RegisterEntry(
                 "启用此选项时，您在当前合集中所做的所有更改将作为临时更改应用，您必须使用“设为永久”将其设为永久。",

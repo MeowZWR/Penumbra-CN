@@ -285,7 +285,7 @@ public class ModPanelChangedItemsTab(
 
     private void DrawPreferredButton(IdentifiedItem item, int idx)
     {
-        if (ImUtf8.IconButton(FontAwesomeIcon.Star, "Prefer displaying this item instead of the current primary item.\n\nRight-click for more options."u8, _buttonSize,
+        if (ImUtf8.IconButton(FontAwesomeIcon.Star, "优先显示此物品而不是当前主要物品。\n\n右键单击以查看更多选项。"u8, _buttonSize,
                 false, ImGui.GetColorU32(ImGuiCol.TextDisabled, 0.1f)))
             dataEditor.AddPreferredItem(selector.Selected!, item.Item.Id, false, true);
         using var context = ImUtf8.PopupContextItem("StarContext"u8, ImGuiPopupFlags.MouseButtonRight);
@@ -301,10 +301,10 @@ public class ModPanelChangedItemsTab(
                 if (cache.Data[idx].Data is IdentifiedItem it)
                 {
                     if (selector.Selected!.PreferredChangedItems.Contains(it.Item.Id)
-                     && ImUtf8.MenuItem("Remove Parent from Local Preferred Items"u8))
+                        && ImUtf8.MenuItem("从本地首选项中移除父项"u8))
                         dataEditor.RemovePreferredItem(selector.Selected!, it.Item.Id, false);
                     if (selector.Selected!.DefaultPreferredItems.Contains(it.Item.Id)
-                     && ImUtf8.MenuItem("Remove Parent from Default Preferred Items"u8))
+                        && ImUtf8.MenuItem("从默认首选项中移除父项"u8))
                         dataEditor.RemovePreferredItem(selector.Selected!, it.Item.Id, true);
                 }
 
@@ -314,19 +314,19 @@ public class ModPanelChangedItemsTab(
         var enabled = !selector.Selected!.DefaultPreferredItems.Contains(item.Item.Id);
         if (enabled)
         {
-            if (ImUtf8.MenuItem("Add to Local and Default Preferred Changed Items"u8))
+            if (ImUtf8.MenuItem("添加到本地和默认首选更改项目"u8))
                 dataEditor.AddPreferredItem(selector.Selected!, item.Item.Id, true, true);
         }
         else
         {
-            if (ImUtf8.MenuItem("Remove from Default Preferred Changed Items"u8))
+            if (ImUtf8.MenuItem("从默认首选更改项目中移除"u8))
                 dataEditor.RemovePreferredItem(selector.Selected!, item.Item.Id, true);
         }
 
-        if (ImUtf8.MenuItem("Reset Local Preferred Items to Default"u8))
+        if (ImUtf8.MenuItem("将本地首选项重置为默认值"u8))
             dataEditor.ResetPreferredItems(selector.Selected!);
 
-        if (ImUtf8.MenuItem("Clear Local and Default Preferred Items not Changed by the Mod"u8))
+        if (ImUtf8.MenuItem("清除本地和默认首选项中未被模组更改的项目"u8))
             dataEditor.ClearInvalidPreferredItems(selector.Selected!);
     }
 

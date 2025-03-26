@@ -77,9 +77,9 @@ public class CollectionSelectHeader : IUiService
         }
 
         ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled,
-            "Toggle the temporary settings mode, where all changes you do create temporary settings first and need to be made permanent if desired.\n"u8);
+            "切换临时设置模式，在此模式下，您所做的所有更改将首先创建为临时设置，如果需要，可以将其设为永久设置。\n"u8);
         if (!hold)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking to toggle.");
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"按住 {_config.DeleteModModifier} 并点击以切换。");
     }
 
     private enum CollectionState
