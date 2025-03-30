@@ -3,7 +3,6 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
-using Penumbra.GameData;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.String.Classes;
 using static Penumbra.GameData.Files.MaterialStructs.SamplerFlags;
@@ -16,18 +15,22 @@ public partial class MtrlTab
     public readonly List<(string Label, int TextureIndex, int SamplerIndex, string Description, bool MonoFont)> Textures = new(4);
 
     public readonly HashSet<int>  UnfoldedTextures = new(4);
+    public readonly HashSet<uint> TextureIds       = new(16);
     public readonly HashSet<uint> SamplerIds       = new(16);
     public          float         TextureLabelWidth;
+    private         bool          _samplersPinned;
 
     private void UpdateTextures()
     {
         Textures.Clear();
+        TextureIds.Clear();
         SamplerIds.Clear();
         if (_associatedShpk == null)
         {
+            TextureIds.UnionWith(Mtrl.ShaderPackage.Samplers.Select(sampler => sampler.SamplerId));
             SamplerIds.UnionWith(Mtrl.ShaderPackage.Samplers.Select(sampler => sampler.SamplerId));
             if (Mtrl.Table != null)
-                SamplerIds.Add(TableSamplerId);
+                TextureIds.Add(TableSamplerId);
 
             foreach (var (sampler, index) in Mtrl.ShaderPackage.Samplers.WithIndex())
                 Textures.Add(($"0x{sampler.SamplerId:X8}", sampler.TextureIndex, index, string.Empty, true));
@@ -35,31 +38,39 @@ public partial class MtrlTab
         else
         {
             foreach (var index in _vertexShaders)
-                SamplerIds.UnionWith(_associatedShpk.VertexShaders[index].Samplers.Select(sampler => sampler.Id));
-            foreach (var index in _pixelShaders)
-                SamplerIds.UnionWith(_associatedShpk.PixelShaders[index].Samplers.Select(sampler => sampler.Id));
-            if (!_shadersKnown)
             {
-                SamplerIds.UnionWith(Mtrl.ShaderPackage.Samplers.Select(sampler => sampler.SamplerId));
-                if (Mtrl.Table != null)
-                    SamplerIds.Add(TableSamplerId);
+                TextureIds.UnionWith(_associatedShpk.VertexShaders[index].Textures.Select(texture => texture.Id));
+                SamplerIds.UnionWith(_associatedShpk.VertexShaders[index].Samplers.Select(sampler => sampler.Id));
             }
 
-            foreach (var samplerId in SamplerIds)
+            foreach (var index in _pixelShaders)
             {
-                var shpkSampler = _associatedShpk.GetSamplerById(samplerId);
-                if (shpkSampler is not { Slot: 2 })
+                TextureIds.UnionWith(_associatedShpk.PixelShaders[index].Textures.Select(texture => texture.Id));
+                SamplerIds.UnionWith(_associatedShpk.PixelShaders[index].Samplers.Select(sampler => sampler.Id));
+            }
+
+            if (_samplersPinned || !_shadersKnown)
+            {
+                TextureIds.UnionWith(Mtrl.ShaderPackage.Samplers.Select(sampler => sampler.SamplerId));
+                if (Mtrl.Table != null)
+                    TextureIds.Add(TableSamplerId);
+            }
+
+            foreach (var textureId in TextureIds)
+            {
+                var shpkTexture = _associatedShpk.GetTextureById(textureId);
+                if (shpkTexture is not { Slot: 2 })
                     continue;
 
-                var dkData     = TryGetShpkDevkitData<DevkitSampler>("Samplers", samplerId, true);
+                var dkData     = TryGetShpkDevkitData<DevkitSampler>("Samplers", textureId, true);
                 var hasDkLabel = !string.IsNullOrEmpty(dkData?.Label);
 
-                var sampler = Mtrl.GetOrAddSampler(samplerId, dkData?.DefaultTexture ?? string.Empty, out var samplerIndex);
-                Textures.Add((hasDkLabel ? dkData!.Label : shpkSampler.Value.Name, sampler.TextureIndex, samplerIndex,
+                var sampler = Mtrl.GetOrAddSampler(textureId, dkData?.DefaultTexture ?? string.Empty, out var samplerIndex);
+                Textures.Add((hasDkLabel ? dkData!.Label : shpkTexture.Value.Name, sampler.TextureIndex, samplerIndex,
                     dkData?.Description ?? string.Empty, !hasDkLabel));
             }
 
-            if (SamplerIds.Contains(TableSamplerId))
+            if (TextureIds.Contains(TableSamplerId))
                 Mtrl.Table ??= new ColorTable();
         }
 
@@ -205,57 +216,66 @@ public partial class MtrlTab
             ret          = true;
         }
 
-        ref var samplerFlags = ref Wrap(ref sampler.Flags);
-
-        ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
-        var addressMode = samplerFlags.UAddressMode;
-        if (ComboTextureAddressMode("##UAddressMode"u8, ref addressMode))
+        if (SamplerIds.Contains(sampler.SamplerId))
         {
-            samplerFlags.UAddressMode = addressMode;
-            ret                       = true;
-            SetSamplerFlags(sampler.SamplerId, sampler.Flags);
+            ref var samplerFlags = ref Wrap(ref sampler.Flags);
+
+            ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
+            var addressMode = samplerFlags.UAddressMode;
+            if (ComboTextureAddressMode("##UAddressMode"u8, ref addressMode))
+            {
+                samplerFlags.UAddressMode = addressMode;
+                ret                       = true;
+                SetSamplerFlags(sampler.SamplerId, sampler.Flags);
+            }
+
+            ImGui.SameLine();
+            ImUtf8.LabeledHelpMarker("U 地址模式"u8,
+                "用于解析超出 0 到 1 范围的 U 纹理坐标的方法。");
+
+            ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
+            addressMode = samplerFlags.VAddressMode;
+            if (ComboTextureAddressMode("##VAddressMode"u8, ref addressMode))
+            {
+                samplerFlags.VAddressMode = addressMode;
+                ret                       = true;
+                SetSamplerFlags(sampler.SamplerId, sampler.Flags);
+            }
+
+            ImGui.SameLine();
+            ImUtf8.LabeledHelpMarker("V 地址模式"u8,
+                "用于解析超出 0 到 1 范围的 V 纹理坐标的方法。");
+
+            var lodBias = samplerFlags.LodBias;
+            ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
+            if (ImUtf8.DragScalar("##LoDBias"u8, ref lodBias, -8.0f, 7.984375f, 0.1f))
+            {
+                samplerFlags.LodBias = lodBias;
+                ret                  = true;
+                SetSamplerFlags(sampler.SamplerId, sampler.Flags);
+            }
+
+            ImGui.SameLine();
+            ImUtf8.LabeledHelpMarker("细节层级偏差"u8,
+                "来自计算的 mipmap 层级的偏移量。\n\n更高的值意味着纹理在更近的距离开始失去细节。\n更低的值意味着纹理在更远的距离保持细节。");
+
+            var minLod = samplerFlags.MinLod;
+            ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
+            if (ImUtf8.DragScalar("##MinLoD"u8, ref minLod, 0, 15, 0.1f))
+            {
+                samplerFlags.MinLod = minLod;
+                ret                 = true;
+                SetSamplerFlags(sampler.SamplerId, sampler.Flags);
+            }
+
+            ImGui.SameLine();
+            ImUtf8.LabeledHelpMarker("最小细节层级"u8,
+                "使用的最详细的 mipmap 层级。\n\n0 是全尺寸纹理，1 是半尺寸纹理，2 是四分之一尺寸纹理，以此类推。\n15 将强制将纹理减少到其最小的 mipmap。");
         }
-
-        ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("U 地址模式"u8, "用于解析超出 0 到 1 范围的 U 纹理坐标的方法。");
-
-        ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
-        addressMode = samplerFlags.VAddressMode;
-        if (ComboTextureAddressMode("##VAddressMode"u8, ref addressMode))
+        else
         {
-            samplerFlags.VAddressMode = addressMode;
-            ret                       = true;
-            SetSamplerFlags(sampler.SamplerId, sampler.Flags);
+            ImUtf8.Text("该纹理没有专用的采样器。"u8);
         }
-
-        ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("V 地址模式"u8, "用于解析超出 0 到 1 范围的 V 纹理坐标的方法。");
-
-        var lodBias = samplerFlags.LodBias;
-        ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
-        if (ImUtf8.DragScalar("##LoDBias"u8, ref lodBias, -8.0f, 7.984375f, 0.1f))
-        {
-            samplerFlags.LodBias = lodBias;
-            ret                  = true;
-            SetSamplerFlags(sampler.SamplerId, sampler.Flags);
-        }
-
-        ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("细节层级偏差"u8,
-            "来自计算的 mipmap 层级的偏移量。\n\n更高的值意味着纹理在更近的距离开始失去细节。\n更低的值意味着纹理在更远的距离保持细节。");
-
-        var minLod = samplerFlags.MinLod;
-        ImGui.SetNextItemWidth(UiHelpers.Scale * 100.0f);
-        if (ImUtf8.DragScalar("##MinLoD"u8, ref minLod, 0, 15, 0.1f))
-        {
-            samplerFlags.MinLod = minLod;
-            ret                 = true;
-            SetSamplerFlags(sampler.SamplerId, sampler.Flags);
-        }
-
-        ImGui.SameLine();
-        ImUtf8.LabeledHelpMarker("最小细节层级"u8,
-            "使用的最详细的 mipmap 层级。\n\n0 是全尺寸纹理，1 是半尺寸纹理，2 是四分之一尺寸纹理，以此类推。\n15 将强制将纹理减少到其最小的 mipmap。");
 
         using var t = ImUtf8.TreeNode("高级设置"u8);
         if (!t)

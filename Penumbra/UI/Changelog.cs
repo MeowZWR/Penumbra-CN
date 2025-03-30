@@ -60,9 +60,14 @@ public class PenumbraChangelog : IUiService
         Add1_3_4_0(Changelog);
         Add1_3_5_0(Changelog);
         Add1_3_6_0(Changelog);
+        Add1_3_6_4(Changelog);
     }
 
     #region Changelogs
+
+    private static void Add1_3_6_4(Changelog log)
+        => log.NextVersion("版本 1.3.6.4")
+            .RegisterEntry("材质编辑器现已恢复正常功能。");
 
     private static void Add1_3_6_0(Changelog log)
         => log.NextVersion("版本 1.3.6.0")
@@ -72,8 +77,7 @@ public class PenumbraChangelog : IUiService
                 1)
             .RegisterEntry(
                 "另外由于我个人并不使用 Penumbra 的大部分功能，所以很多问题可能我自己都无法发现。", 1)
-            .RegisterEntry("如您遇到任何问题，请立即在 Discord 上反馈。", 1)
-            .RegisterImportant("由于着色器改动，材质编辑器当前存在已知问题，请暂时不要制作新材质，否则会导致材质损坏！", 1)
+            .RegisterEntry("如您遇到任何问题，请立即在 Discord 上反馈。",                                   1)
             .RegisterHighlight(
                 "纹理编辑器现已支持 Block Compression 1/4/5 的编码格式，并添加了格式使用场景的提示说明。")
             .RegisterEntry("现在支持使用 GPU 加速压缩，特别是 BC7 格式的处理速度显著提升。（感谢 Ny！）", 1)
