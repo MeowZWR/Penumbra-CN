@@ -61,7 +61,7 @@ public class CollectionSelectHeader : IUiService
 
     private void DrawTemporaryCheckbox()
     {
-        var hold = _config.DeleteModModifier.IsActive();
+        var hold = _config.IncognitoModifier.IsActive();
         using (ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImUtf8.GlobalScale))
         {
             var tint = ImGuiCol.Text.Tinted(ColorId.TemporaryModSettingsTint);

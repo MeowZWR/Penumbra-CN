@@ -59,14 +59,14 @@ public partial class MtrlTab
             foreach (var textureId in TextureIds)
             {
                 var shpkTexture = _associatedShpk.GetTextureById(textureId);
-                if (shpkTexture is not { Slot: 2 })
+                if (shpkTexture is not { Slot: 2 } && (shpkTexture is not null || textureId == TableSamplerId))
                     continue;
 
                 var dkData     = TryGetShpkDevkitData<DevkitSampler>("Samplers", textureId, true);
                 var hasDkLabel = !string.IsNullOrEmpty(dkData?.Label);
 
                 var sampler = Mtrl.GetOrAddSampler(textureId, dkData?.DefaultTexture ?? string.Empty, out var samplerIndex);
-                Textures.Add((hasDkLabel ? dkData!.Label : shpkTexture.Value.Name, sampler.TextureIndex, samplerIndex,
+                Textures.Add((hasDkLabel ? dkData!.Label : shpkTexture!.Value.Name, sampler.TextureIndex, samplerIndex,
                     dkData?.Description ?? string.Empty, !hasDkLabel));
             }
 
@@ -161,7 +161,7 @@ public partial class MtrlTab
             }
 
             ImGui.TableNextColumn();
-            using (var font = ImRaii.PushFont(UiBuilder.MonoFont, monoFont))
+            using (ImRaii.PushFont(UiBuilder.MonoFont, monoFont))
             {
                 ImGui.AlignTextToFramePadding();
                 if (description.Length > 0)

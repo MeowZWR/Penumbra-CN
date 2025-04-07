@@ -15,6 +15,9 @@ public sealed unsafe class CharacterDestructor : EventWrapperPtr<Character, Char
 
         /// <seealso cref="PathResolving.IdentifiedCollectionCache"/>
         IdentifiedCollectionCache = 0,
+
+        /// <seealso cref="PathResolving.DrawObjectState.OnCharacterDestructor"/>
+        DrawObjectState = 0,
     }
 
     public CharacterDestructor(HookManager hooks)
@@ -42,7 +45,7 @@ public sealed unsafe class CharacterDestructor : EventWrapperPtr<Character, Char
 
     private void Detour(Character* character)
     {
-        Penumbra.Log.Verbose($"[{Name}] Triggered with 0x{(nint)character:X}.");
+        Penumbra.Log.Excessive($"[{Name}] Triggered with 0x{(nint)character:X}.");
         Invoke(character);
         _task.Result.Original(character);
     }
