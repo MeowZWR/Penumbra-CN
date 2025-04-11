@@ -106,6 +106,7 @@ public class DebugTab : Window, ITab, IUiService
     private readonly SchedulerResourceManagementService _schedulerService;
     private readonly ObjectIdentification               _objectIdentification;
     private readonly RenderTargetDrawer                 _renderTargetDrawer;
+    private readonly ModMigratorDebug                   _modMigratorDebug;
 
     public DebugTab(PerformanceTracker performance, Configuration config, CollectionManager collectionManager, ObjectManager objects,
         IClientState clientState, IDataManager dataManager,
@@ -116,7 +117,8 @@ public class DebugTab : Window, ITab, IUiService
         TextureManager textureManager, ShaderReplacementFixer shaderReplacementFixer, RedrawService redraws, DictEmote emotes,
         Diagnostics diagnostics, IpcTester ipcTester, CrashHandlerPanel crashHandlerPanel, TexHeaderDrawer texHeaderDrawer,
         HookOverrideDrawer hookOverrides, RsfService rsfService, GlobalVariablesDrawer globalVariablesDrawer,
-        SchedulerResourceManagementService schedulerService, ObjectIdentification objectIdentification, RenderTargetDrawer renderTargetDrawer)
+        SchedulerResourceManagementService schedulerService, ObjectIdentification objectIdentification, RenderTargetDrawer renderTargetDrawer,
+        ModMigratorDebug modMigratorDebug)
         : base("Penumbra Debug Window", ImGuiWindowFlags.NoCollapse)
     {
         IsOpen = true;
@@ -158,6 +160,7 @@ public class DebugTab : Window, ITab, IUiService
         _schedulerService          = schedulerService;
         _objectIdentification      = objectIdentification;
         _renderTargetDrawer        = renderTargetDrawer;
+        _modMigratorDebug          = modMigratorDebug;
         _objects                   = objects;
         _clientState               = clientState;
         _dataManager               = dataManager;
@@ -190,6 +193,7 @@ public class DebugTab : Window, ITab, IUiService
         DrawActorsDebug();
         DrawCollectionCaches();
         _texHeaderDrawer.Draw();
+        _modMigratorDebug.Draw();
         DrawShaderReplacementFixer();
         DrawData();
         DrawCrcCache();
@@ -569,29 +573,32 @@ public class DebugTab : Window, ITab, IUiService
         {
             if (drawTree)
             {
-                using var table = Table("###DrawObjectResolverTable", 6, ImGuiTableFlags.SizingFixedFit);
+                using var table = Table("###DrawObjectResolverTable", 8, ImGuiTableFlags.SizingFixedFit);
                 if (table)
-                    foreach (var (drawObject, (gameObjectPtr, child)) in _drawObjectState
-                                 .OrderBy(kvp => ((GameObject*)kvp.Value.Item1)->ObjectIndex)
-                                 .ThenBy(kvp => kvp.Value.Item2)
-                                 .ThenBy(kvp => kvp.Key))
+                    foreach (var (drawObject, (gameObjectPtr, idx, child)) in _drawObjectState
+                                 .OrderBy(kvp => kvp.Value.Item2.Index)
+                                 .ThenBy(kvp => kvp.Value.Item3)
+                                 .ThenBy(kvp => kvp.Key.Address))
                     {
-                        var gameObject = (GameObject*)gameObjectPtr;
                         ImGui.TableNextColumn();
+                        ImUtf8.CopyOnClickSelectable($"{drawObject}");
+                        ImUtf8.DrawTableColumn($"{gameObjectPtr.Index}");
+                        using (ImRaii.PushColor(ImGuiCol.Text, 0xFF0000FF, gameObjectPtr.Index != idx))
+                        {
+                            ImUtf8.DrawTableColumn($"{idx}");
+                        }
 
-                        ImGuiUtil.CopyOnClickSelectable($"0x{drawObject:X}");
+                        ImUtf8.DrawTableColumn(child ? "Child"u8 : "Main"u8);
                         ImGui.TableNextColumn();
-                        ImGui.TextUnformatted(gameObject->ObjectIndex.ToString());
-                        ImGui.TableNextColumn();
-                        ImGui.TextUnformatted(child ? "Child" : "Main");
-                        ImGui.TableNextColumn();
-                        var (address, name) = ($"0x{gameObjectPtr:X}", new ByteString(gameObject->Name).ToString());
-                        ImGuiUtil.CopyOnClickSelectable(address);
-                        ImGui.TableNextColumn();
-                        ImGui.TextUnformatted(name);
-                        ImGui.TableNextColumn();
-                        var collection = _collectionResolver.IdentifyCollection(gameObject, true);
-                        ImGui.TextUnformatted(collection.ModCollection.Identity.Name);
+                        ImUtf8.CopyOnClickSelectable($"{gameObjectPtr}");
+                        using (ImRaii.PushColor(ImGuiCol.Text, 0xFF0000FF, _objects[idx] != gameObjectPtr))
+                        {
+                            ImUtf8.DrawTableColumn($"{_objects[idx]}");
+                        }
+
+                        ImUtf8.DrawTableColumn(gameObjectPtr.Utf8Name.Span);
+                        var collection = _collectionResolver.IdentifyCollection(gameObjectPtr.AsObject, true);
+                        ImUtf8.DrawTableColumn(collection.ModCollection.Identity.Name);
                     }
             }
         }
@@ -749,7 +756,7 @@ public class DebugTab : Window, ITab, IUiService
         DrawChangedItemTest();
     }
 
-    private          string                                     _changedItemPath = string.Empty;
+    private          string                                    _changedItemPath = string.Empty;
     private readonly Dictionary<string, IIdentifiedObjectData> _changedItems    = [];
 
     private void DrawChangedItemTest()

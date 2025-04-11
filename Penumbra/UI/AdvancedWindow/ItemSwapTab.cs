@@ -4,6 +4,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Services;
+using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.Api.Enums;
 using Penumbra.Collections;
@@ -15,6 +16,7 @@ using Penumbra.GameData.Structs;
 using Penumbra.Import.Structs;
 using Penumbra.Meta;
 using Penumbra.Mods;
+using Penumbra.Mods.Editor;
 using Penumbra.Mods.Groups;
 using Penumbra.Mods.ItemSwap;
 using Penumbra.Mods.Manager;
@@ -46,19 +48,20 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         _config            = config;
         _swapData          = new ItemSwapContainer(metaFileManager, identifier);
 
+        var a = collectionManager.Active;
         _selectors = new Dictionary<SwapType, (ItemSelector Source, ItemSelector Target, string TextFrom, string TextTo)>
         {
             // @formatter:off
-            [SwapType.头部装备] = (new ItemSelector(itemService, selector, FullEquipType.Head),    new ItemSelector(itemService, null, FullEquipType.Head),     "头部装备（源）", "头部装备（目标）" ),
-            [SwapType.身体装备] = (new ItemSelector(itemService, selector, FullEquipType.Body),    new ItemSelector(itemService, null, FullEquipType.Body),     "身体装备（源）", "身体装备（目标）" ),
-            [SwapType.手部装备] = (new ItemSelector(itemService, selector, FullEquipType.Hands),   new ItemSelector(itemService, null, FullEquipType.Hands),    "手部装备（源）", "手部装备（目标）" ),
-            [SwapType.腿部装备] = (new ItemSelector(itemService, selector, FullEquipType.Legs),    new ItemSelector(itemService, null, FullEquipType.Legs),     "腿部装备（源）", "腿部装备（目标）" ),
-            [SwapType.脚部装备] = (new ItemSelector(itemService, selector, FullEquipType.Feet),    new ItemSelector(itemService, null, FullEquipType.Feet),     "脚部装备（源）", "脚部装备（目标）" ),
-            [SwapType.耳部装备] = (new ItemSelector(itemService, selector, FullEquipType.Ears),    new ItemSelector(itemService, null, FullEquipType.Ears),     "耳部装备（源）", "耳部装备（目标）" ),
-            [SwapType.颈部装备] = (new ItemSelector(itemService, selector, FullEquipType.Neck),    new ItemSelector(itemService, null, FullEquipType.Neck),     "颈部装备（源）", "颈部装备（目标）" ),
-            [SwapType.腕部装备] = (new ItemSelector(itemService, selector, FullEquipType.Wrists),  new ItemSelector(itemService, null, FullEquipType.Wrists),   "手腕装备（源）", "手腕装备（目标）" ),
-            [SwapType.手指装备] = (new ItemSelector(itemService, selector, FullEquipType.Finger),  new ItemSelector(itemService, null, FullEquipType.Finger),   "手指装备（源）", "手指装备（目标）" ),
-            [SwapType.面部配饰] = (new ItemSelector(itemService, selector, FullEquipType.Glasses), new ItemSelector(itemService, null, FullEquipType.Glasses),  "面部配饰（源）", "面部配饰（目标）" ),
+            [SwapType.头部装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Head),    new ItemSelector(a, itemService, null, FullEquipType.Head),     "头部装备（源）", "头部装备（目标）" ),
+            [SwapType.身体装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Body),    new ItemSelector(a, itemService, null, FullEquipType.Body),     "身体装备（源）", "身体装备（目标）" ),
+            [SwapType.手部装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Hands),   new ItemSelector(a, itemService, null, FullEquipType.Hands),    "手部装备（源）", "手部装备（目标）" ),
+            [SwapType.腿部装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Legs),    new ItemSelector(a, itemService, null, FullEquipType.Legs),     "腿部装备（源）", "腿部装备（目标）" ),
+            [SwapType.脚部装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Feet),    new ItemSelector(a, itemService, null, FullEquipType.Feet),     "脚部装备（源）", "脚部装备（目标）" ),
+            [SwapType.耳部装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Ears),    new ItemSelector(a, itemService, null, FullEquipType.Ears),     "耳部装备（源）", "耳部装备（目标）" ),
+            [SwapType.颈部装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Neck),    new ItemSelector(a, itemService, null, FullEquipType.Neck),     "颈部装备（源）", "颈部装备（目标）" ),
+            [SwapType.腕部装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Wrists),  new ItemSelector(a, itemService, null, FullEquipType.Wrists),   "手腕装备（源）", "手腕装备（目标）" ),
+            [SwapType.手指装备] = (new ItemSelector(a, itemService, selector, FullEquipType.Finger),  new ItemSelector(a, itemService, null, FullEquipType.Finger),   "手指装备（源）", "手指装备（目标）" ),
+            [SwapType.面部配饰] = (new ItemSelector(a, itemService, selector, FullEquipType.Glasses), new ItemSelector(a, itemService, null, FullEquipType.Glasses),  "面部配饰（源）", "面部配饰（目标）" ),
             // @formatter:on
         };
 
@@ -134,23 +137,34 @@ public class ItemSwapTab : IDisposable, ITab, IUiService
         面部配饰,
     }
 
-    private class ItemSelector(ItemData data, ModFileSystemSelector? selector, FullEquipType type)
-        : FilterComboCache<(EquipItem Item, bool InMod)>(() =>
+    private class ItemSelector(ActiveCollections collections, ItemData data, ModFileSystemSelector? selector, FullEquipType type)
+        : FilterComboCache<(EquipItem Item, bool InMod, SingleArray<IMod> InCollection)>(() =>
         {
             var list = data.ByType[type];
-            if (selector?.Selected is { } mod && mod.ChangedItems.Values.Any(o => o is IdentifiedItem i && i.Item.Type == type))
-                return list.Select(i => (i, mod.ChangedItems.ContainsKey(i.Name))).OrderByDescending(p => p.Item2).ToList();
-
-            return list.Select(i => (i, false)).ToList();
+            var enumerable = selector?.Selected is { } mod && mod.ChangedItems.Values.Any(o => o is IdentifiedItem i && i.Item.Type == type)
+                ? list.Select(i => (i, mod.ChangedItems.ContainsKey(i.Name), collections.Current.ChangedItems.TryGetValue(i.Name, out var m) ? m.Item1 : new SingleArray<IMod>()))
+                    .OrderByDescending(p => p.Item2).ThenByDescending(p => p.Item3.Count)
+                : selector is null
+                    ? list.Select(i => (i, false, collections.Current.ChangedItems.TryGetValue(i.Name, out var m) ? m.Item1 : new SingleArray<IMod>())).OrderBy(p => p.Item3.Count)
+                    : list.Select(i => (i, false, collections.Current.ChangedItems.TryGetValue(i.Name, out var m) ? m.Item1 : new SingleArray<IMod>())).OrderByDescending(p => p.Item3.Count);
+            return enumerable.ToList();
         }, MouseWheelType.None, Penumbra.Log)
     {
         protected override bool DrawSelectable(int globalIdx, bool selected)
         {
-            using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.ResTreeLocalPlayer.Value(), Items[globalIdx].InMod);
-            return base.DrawSelectable(globalIdx, selected);
+            var (_, inMod, inCollection) = Items[globalIdx];
+            using var color = inMod
+                ? ImRaii.PushColor(ImGuiCol.Text, ColorId.ResTreeLocalPlayer.Value())
+                : inCollection.Count > 0
+                    ? ImRaii.PushColor(ImGuiCol.Text, ColorId.ResTreeNonNetworked.Value())
+                    : null;
+            var ret = base.DrawSelectable(globalIdx, selected);
+            if (inCollection.Count > 0)
+                ImUtf8.HoverTooltip(string.Join('\n', inCollection.Select(m => m.Name.Text)));
+            return ret;
         }
 
-        protected override string ToString((EquipItem Item, bool InMod) obj)
+        protected override string ToString((EquipItem Item, bool InMod, SingleArray<IMod> InCollection) obj)
             => obj.Item.Name;
     }
 

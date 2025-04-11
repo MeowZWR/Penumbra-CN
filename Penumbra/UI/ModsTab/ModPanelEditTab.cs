@@ -121,32 +121,42 @@ public class ModPanelEditTab(
             : backup.Exists
                 ? $"用当前模组覆盖当前备份：\"{backup.Name}\"。"
                 : $"创建一个备份压缩包到：\"{backup.Name}\"。";
-        if (ImGuiUtil.DrawDisabledButton("创建备份", buttonSize, tt, ModBackup.CreatingBackup))
+        if (ImUtf8.ButtonEx("创建备份"u8, tt, buttonSize, ModBackup.CreatingBackup))
             backup.CreateAsync();
+
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            ImUtf8.OpenPopup("context"u8);
 
         ImGui.SameLine();
         tt = backup.Exists
             ? $"删除存在的备份文件\"{backup.Name}\" (点击时按住{config.DeleteModModifier})"
             : $"备份文件\"{backup.Name}\"不存在。";
-        if (ImGuiUtil.DrawDisabledButton("删除备份", buttonSize, tt, !backup.Exists || !config.DeleteModModifier.IsActive()))
+        if (ImUtf8.ButtonEx("删除备份"u8, tt, buttonSize, !backup.Exists || !config.DeleteModModifier.IsActive()))
             backup.Delete();
 
         tt = backup.Exists
             ? $"从备份文件\"{backup.Name}\"恢复模组(点击时按住{config.DeleteModModifier})。"
             : $"备份文件\"{backup.Name}\"不存在。";
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("从备份恢复", buttonSize, tt, !backup.Exists || !config.DeleteModModifier.IsActive()))
+        if (ImUtf8.ButtonEx("从备份恢复"u8, tt, buttonSize, !backup.Exists || !config.DeleteModModifier.IsActive()))
             backup.Restore(modManager);
         if (backup.Exists)
         {
             ImGui.SameLine();
-            using (var font = ImRaii.PushFont(UiBuilder.IconFont))
+            using (ImRaii.PushFont(UiBuilder.IconFont))
             {
-                ImGui.TextUnformatted(FontAwesomeIcon.CheckCircle.ToIconString());
+                ImUtf8.Text(FontAwesomeIcon.CheckCircle.ToIconString());
             }
 
-            ImGuiUtil.HoverTooltip($"备份已存在于 \"{backup.Name}\".");
+            ImUtf8.HoverTooltip($"备份已存在于 \"{backup.Name}\".");
         }
+
+        using var context = ImUtf8.Popup("context"u8);
+        if (!context)
+            return;
+
+        if (ImUtf8.Selectable("Open Backup Directory"u8))
+            Process.Start(new ProcessStartInfo(modExportManager.ExportDirectory.FullName) { UseShellExecute = true });
     }
 
     /// <summary> Anything about editing the regular meta information about the mod. </summary>
