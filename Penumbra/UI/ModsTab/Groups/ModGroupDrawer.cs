@@ -1,4 +1,4 @@
-using Dalamud.Interface.Components;
+﻿using Dalamud.Interface.Components;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -202,8 +202,8 @@ public sealed class ModGroupDrawer(Configuration config, CollectionManager colle
         {
             var collapseId     = ImUtf8.GetId("Collapse");
             var shown          = ImGui.GetStateStorage().GetBool(collapseId, true);
-            var buttonTextShow = $"Show {options.Count} Options";
-            var buttonTextHide = $"Hide {options.Count} Options";
+            var buttonTextShow = $"显示 {options.Count} 个选项";
+            var buttonTextHide = $"隐藏 {options.Count} 个选项";
             var buttonWidth = Math.Max(ImUtf8.CalcTextSize(buttonTextShow).X, ImUtf8.CalcTextSize(buttonTextHide).X)
               + 2 * ImGui.GetStyle().FramePadding.X;
             minWidth = Math.Max(buttonWidth, minWidth);
