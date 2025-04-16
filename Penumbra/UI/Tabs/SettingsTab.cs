@@ -324,6 +324,9 @@ public class SettingsTab : ITab, IUiService
         DrawHidingSettings();
         UiHelpers.DefaultLineSpace();
 
+        DrawPreviewImagePanelSettings();
+        UiHelpers.DefaultLineSpace();
+
         DrawMiscSettings();
         UiHelpers.DefaultLineSpace();
 
@@ -423,6 +426,120 @@ public class SettingsTab : ITab, IUiService
                 _config.HideUiInGPose                         = v;
                 _pluginInterface.UiBuilder.DisableGposeUiHide = !v;
             });
+    }
+
+    /// <summary> Draw the Preview Image Panel state checkboxes.  </summary>
+    private void DrawPreviewImagePanelSettings()
+    {
+        using var group = ImRaii.Group();
+        using var table = ImRaii.Table("##previewImagePanelSettings", 2,
+            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.NoSavedSettings);
+        if (!table)
+            return;
+
+        // 预览面板开关
+        ImGui.TableNextColumn();
+        var showPreviewPanel = _config.ShowModPreviewPanel;
+        if (ImGui.Checkbox("##显示预览面板", ref showPreviewPanel))
+        {
+            _config.ShowModPreviewPanel = showPreviewPanel;
+            _config.Save();
+        }
+        ImUtf8.LabeledHelpMarker("显示预览面板"u8, "在模组设置面板中显示预览图片面板。"u8);
+
+        if (showPreviewPanel)
+        {
+            // 保存预览面板状态
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var saveState = _config.SavePreviewPanelState;
+            if (ImGui.Checkbox("##保存预览面板显示状态", ref saveState))
+            {
+                _config.SavePreviewPanelState = saveState;
+                _config.Save();
+            }
+            ImUtf8.LabeledHelpMarker("保存预览面板显示状态"u8, "保存预览面板的展开或隐藏状态，不一定有效"u8);
+
+            // 预览面板比例
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var ratio = _config.PreviewPanelRatio;
+            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+            if (ImGui.DragFloat("##预览面板比例", ref ratio, 0.01f, 0.1f, 0.5f, "%.2f"))
+            {
+                _config.PreviewPanelRatio = ratio;
+                _config.Save();
+            }
+            ImUtf8.LabeledHelpMarker("预览面板比例"u8, "预览面板占总宽度的比例。"u8);
+
+            // 预览面板最小宽度
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var minWidth = _config.PreviewPanelMinWidth;
+            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+            if (ImGui.DragFloat("##预览面板最小宽度", ref minWidth, 1f, 100f, 800f, "%.0f"))
+            {
+                _config.PreviewPanelMinWidth = minWidth;
+                _config.Save();
+            }
+            ImUtf8.LabeledHelpMarker("预览面板最小宽度"u8, "预览面板的最小宽度限制。"u8);
+
+            // 预览面板最大宽度
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var maxWidth = _config.PreviewPanelMaxWidth;
+            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+            if (ImGui.DragFloat("##预览面板最大宽度", ref maxWidth, 1f, 200f, 1000f, "%.0f"))
+            {
+                _config.PreviewPanelMaxWidth = maxWidth;
+                _config.Save();
+            }
+            ImUtf8.LabeledHelpMarker("预览面板最大宽度"u8, "预览面板的最大宽度限制。"u8);
+
+            // 预览图片最小宽度
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var imageMinWidth = _config.PreviewImageMinWidth;
+            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+            if (ImGui.DragFloat("##预览图片最小宽度", ref imageMinWidth, 1f, 100f, 800f, "%.0f"))
+            {
+                _config.PreviewImageMinWidth = imageMinWidth;
+                _config.Save();
+            }
+            ImUtf8.LabeledHelpMarker("预览图片最小宽度"u8, "预览图片的最小显示宽度，影响图片的排列方式。"u8);
+
+            // 预览面板最大内存使用量
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var maxMemoryMB = (int)(_config.PreviewPanelMaxMemory / (1024L * 1024L));
+            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+            if (ImGui.DragInt("##图片缓存最大使用内存 (MB)", ref maxMemoryMB, 1, 128, 2048))
+            {
+                _config.PreviewPanelMaxMemory = maxMemoryMB * 1024L * 1024L;
+                _config.Save();
+            }
+            ImUtf8.LabeledHelpMarker("图片缓存最大使用内存 (MB)"u8, "预览面板缓存图片可使用的最大内存量。"u8);
+
+            // 显示当前内存使用量
+            var currentMemoryUsage = UI.ModsTab.ModPreview.ModPreviewImagePanel.GetCurrentMemoryUsage();
+            if (currentMemoryUsage > 0)
+            {
+                ImGui.SameLine();
+                ImGui.TextDisabled($"(当前使用: {currentMemoryUsage / (1024 * 1024):F1} MB)");
+            }
+
+            // 预览面板图片间距
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var imageSpacing = _config.PreviewPanelImageSpacing;
+            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+            if (ImGui.DragFloat("##图片间距", ref imageSpacing, 0.1f, 0f, 10f, "%.1f"))
+            {
+                _config.PreviewPanelImageSpacing = imageSpacing;
+                _config.Save();
+            }
+            ImUtf8.LabeledHelpMarker("图片间距"u8, "预览面板中图片之间的垂直间距。"u8);
+        }
     }
 
     /// <summary> Draw all settings that do not fit into other categories. </summary>
@@ -636,7 +753,7 @@ public class SettingsTab : ITab, IUiService
     private void DrawModHandlingSettings()
     {
         Checkbox("默认使用临时设置",
-            "当您对合集进行任何更改时，首先将其应用为临时更改，如果您希望保留这些更改，则需要点击“转为永久”。",
+            "当您对合集进行任何更改时，首先将其应用为临时更改，如果您希望保留这些更改，则需要点击[转为永久]。",
             _config.DefaultTemporaryMode, v => _config.DefaultTemporaryMode = v);
         Checkbox("导入时替换非标准符号",
             "导入模组时，将模组和选项名称中的所有非ASCII符号替换为下划线。", _config.ReplaceNonAsciiOnImport,
@@ -953,7 +1070,7 @@ public class SettingsTab : ITab, IUiService
         ImGui.SameLine();
         ImUtf8.LabeledHelpMarker("漫反射动态范围"u8,
             "设置材质中漫反射颜色可用的动态范围，以避免产生视觉伪影。\n"u8
-          + "更改此设置需要重启游戏。此设置仅在启用“启动时等待插件”时有效。"u8);
+          + "更改此设置需要重启游戏。此设置仅在启用[启动时等待插件]时有效。"u8);
     }
 
     /// <summary> Draw a checkbox for the HTTP API that creates and destroys the web server when toggled. </summary>
@@ -988,7 +1105,7 @@ public class SettingsTab : ITab, IUiService
 
         ImGui.SameLine();
         ImGuiUtil.LabeledHelpMarker("启用调试模式",
-            "[DEBUG] 启用‘调试’和‘资源管理器’选项卡，操作一些额外数据。在插件加载时也会自动打开设置窗口。");
+            "[DEBUG] 启用'调试'和'资源管理器'选项卡，操作一些额外数据。在插件加载时也会自动打开设置窗口。");
     }
 
     /// <summary> Draw a button that reloads resident resources. </summary>

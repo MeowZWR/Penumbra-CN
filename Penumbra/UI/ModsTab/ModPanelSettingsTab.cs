@@ -11,6 +11,11 @@ using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.Mods.Settings;
 using Penumbra.UI.ModsTab.Groups;
+using Dalamud.Plugin.Services;
+using Dalamud.Interface;
+using Dalamud.Interface.DragDrop;
+using Dalamud.Plugin;
+using Penumbra.UI.ModsTab.ModPreview;
 
 namespace Penumbra.UI.ModsTab;
 
@@ -21,13 +26,19 @@ public class ModPanelSettingsTab(
     TutorialService tutorial,
     CommunicatorService communicator,
     ModGroupDrawer modGroupDrawer,
-    Configuration config)
+    Configuration config,
+    ITextureProvider textureProvider,
+    IDragDropManager dragDrop,
+    IDalamudPluginInterface pluginInterface,
+    INotificationManager notificationManager)
     : ITab, IUiService
 {
     private bool _inherited;
     private bool _temporary;
     private bool _locked;
     private int? _currentPriority;
+    private bool _previewExpanded = true;
+    private readonly ModPreviewImagePanel _imagePanel = new(modManager, pluginInterface, textureProvider, dragDrop, config, notificationManager);
 
     public ReadOnlySpan<byte> Label
         => "模组设置"u8;
@@ -40,7 +51,170 @@ public class ModPanelSettingsTab(
 
     public void DrawContent()
     {
-        using var table = ImUtf8.Table("##settings"u8, 1, ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
+        // 计算可用总宽度
+        var totalAvailableWidth = ImGui.GetContentRegionAvail().X;
+        var buttonWidth = ImGui.GetFrameHeight();
+
+        // 计算最大允许宽度（基于比例）
+        var maxAllowedWidth = (totalAvailableWidth - buttonWidth) * config.PreviewPanelRatio;
+        
+        // 确保最小宽度不超过最大允许宽度
+        var safeMinWidth = Math.Min(config.PreviewPanelMinWidth, maxAllowedWidth);
+        var safeMaxWidth = Math.Min(config.PreviewPanelMaxWidth, maxAllowedWidth);
+
+        // 面板占用比例，最小、最大宽度限制
+        var calculatedPreviewWidth = (totalAvailableWidth - buttonWidth) * config.PreviewPanelRatio;
+        var previewWidth = _previewExpanded && config.ShowModPreviewPanel
+            ? Math.Clamp(calculatedPreviewWidth, 
+                safeMinWidth * UiHelpers.Scale, 
+                safeMaxWidth * UiHelpers.Scale)
+            : 0;
+
+        // 主面板宽度计算
+        var mainWidth = config.ShowModPreviewPanel 
+            ? totalAvailableWidth - buttonWidth - (_previewExpanded ? previewWidth : 0)
+            : totalAvailableWidth;
+
+        // 1. 绘制主面板
+        using (var mainPanel = ImRaii.Child("##MainSettingsPanel", new Vector2(mainWidth, -1), false, ImGuiWindowFlags.NoScrollbar))
+        {
+            if (mainPanel)
+                DrawSettingsPanelContent();
+        }
+
+        // 2. 绘制折叠按钮
+        if (config.ShowModPreviewPanel)
+        {
+            ImGui.SameLine(0, 0); // 确保按钮紧跟主面板
+            DrawPreviewCollapseButton(previewWidth);
+
+            // 3. 绘制预览面板（如果展开）
+            if (_previewExpanded)
+            {
+                ImGui.SameLine(0, 0); // 确保预览面板紧跟按钮
+                DrawPreviewPanel(previewWidth);
+            }
+        }
+    }
+
+    private void DrawPreviewCollapseButton(float previewWidth)
+    {
+        var icon = _previewExpanded ? ">" : "<";
+        var tooltip = _previewExpanded ? "隐藏预览面板" : "显示预览面板";
+
+        // 保存当前光标位置以便之后恢复
+        var originalPos = ImGui.GetCursorPos();
+
+        // 计算按钮X位置
+        var buttonPosX = _previewExpanded
+            ? ImGui.GetWindowWidth() - previewWidth - ImGui.GetFrameHeight() * 1f
+            : ImGui.GetWindowWidth() - ImGui.GetFrameHeight() * 1f;
+
+        // 设置按钮位置（使用当前Y坐标，不是窗口顶部）
+        ImGui.SetCursorPos(new Vector2(buttonPosX, originalPos.Y));
+
+        // 使用合理的按钮高度，而不是整个窗口高度
+        var buttonHeight = ImGui.GetContentRegionAvail().Y;
+        if (ImGui.Button(icon, new Vector2(ImGui.GetFrameHeight() * 0.8f, buttonHeight)))
+        {
+            _previewExpanded = !_previewExpanded;
+            if (config.SavePreviewPanelState)
+            {
+                config.PreviewPanelExpanded = _previewExpanded;
+                config.Save();
+            }
+        }
+
+        // 恢复光标位置以便继续绘制其他内容
+        ImGui.SetCursorPos(originalPos);
+
+        ImGuiUtil.HoverTooltip(tooltip);
+    }
+
+    private void DrawPreviewPanel(float width)
+    {
+        using var previewPanel = ImRaii.Child("##PreviewPanel", new Vector2(width, -1), true);
+        if (!previewPanel)
+            return;
+
+        // 使用表格结构来组织预览面板内容
+        using var table = ImUtf8.Table("##previewTable", 1, ImGuiTableFlags.ScrollY | ImGuiTableFlags.NoBordersInBody, -Vector2.UnitY);
+        if (!table)
+            return;
+
+        // 冻结第一行，用于放置按钮
+        ImGui.TableSetupScrollFreeze(0, 1);
+        ImGui.TableNextColumn();
+
+        // 绘制预览面板按钮
+        if (selection.Mod != null)
+        {
+            // 设置左侧间距
+            var leftPadding = 0 * UiHelpers.Scale;
+            ImGui.SetCursorPosX(leftPadding);
+
+            var coverFolder = Path.Combine(selection.Mod!.ModPath.FullName, "CoverImage");
+            var folderExists = Directory.Exists(coverFolder);
+            var icon = folderExists ? FontAwesomeIcon.FolderOpen : FontAwesomeIcon.Plus;
+            var tooltip = folderExists 
+                ? "在文件资源管理器中打开 CoverImage 文件夹" 
+                : "按住 Ctrl 点击创建 CoverImage 文件夹";
+
+            if (ImGuiUtil.DrawDisabledButton($"{icon.ToIconString()}##openFolder", UiHelpers.IconButtonSize,
+                tooltip, !folderExists && !ImGui.GetIO().KeyCtrl, true))
+            {
+                _imagePanel.OpenCoverImageFolder();
+            }
+
+            ImGui.SameLine();
+            var enabled = config.DeleteModModifier.IsActive();
+            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.CompressArrowsAlt.ToIconString()}##compressImages", UiHelpers.IconButtonSize,
+                enabled 
+                    ? "压缩所有图片，宽或高最大为1024像素（无效了，改着改着就没效果了）"
+                    : $"压缩所有图片，宽或高最大为1024像素\n按住 {config.DeleteModModifier} 以压缩\n（无效了，改着改着就没效果了）",
+                !enabled, true))
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _imagePanel.CompressImages();
+                    }
+                    catch (Exception ex)
+                    {
+                        Penumbra.Log.Warning($"压缩图片失败: {ex.Message}");
+                    }
+                });
+            }
+
+            ImGui.SameLine();
+            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Repeat.ToIconString()}##reloadImages", UiHelpers.IconButtonSize,
+                "重新加载预览图", false, true))
+            {
+                _imagePanel.ReloadImages();
+            }
+
+            ImGui.SameLine();
+            var showHoverPreview = _imagePanel.Config.EnableImageInteraction;
+            if (ImGui.Checkbox("图片交互", ref showHoverPreview))
+            {
+                _imagePanel.Config.EnableImageInteraction = showHoverPreview;
+                _imagePanel.SaveConfig();
+            }
+            ImGuiUtil.HoverTooltip("启用/禁用图片交互功能（点击打开外部工具，右键放大图片）\n图片拖到这里可以直接导入到文件夹\n别问我为什么范围给这么小，我也不知道怎么弄到这上面了。");
+        }
+
+        // 绘制预览图片内容
+        ImGui.TableNextColumn();
+        if (selection.Mod != null)
+            _imagePanel.Draw(selection.Mod, width);
+        else
+            ImGui.TextDisabled("未选择模组。");
+    }
+
+    private void DrawSettingsPanelContent()
+    {
+        using var table = ImUtf8.Table("##settings", 1, ImGuiTableFlags.ScrollY, -Vector2.UnitY);
         if (!table)
             return;
 
@@ -257,5 +431,5 @@ public class ModPanelSettingsTab(
                 collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
                     new TemporaryModSettings(selection.Mod!, actual));
         }
-    }
+    }    
 }
