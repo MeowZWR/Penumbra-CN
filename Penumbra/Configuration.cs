@@ -52,17 +52,7 @@ public class Configuration : IPluginConfiguration, ISavable, IService
     public bool  HideUiWhenUiHidden             { get; set; } = false;
     public bool  UseDalamudUiTextureRedirection { get; set; } = true;
 
-    public bool  ShowModPreviewPanel            { get; set; } = false;
-    public float PreviewPanelImageSpacing       { get; set; } = 0f;
-    public float PreviewPanelRatio              { get; set; } = 0.4f;
-    public long PreviewPanelMaxMemory           { get; set; } = 256 * 1024 * 1024;
-    public bool SavePreviewPanelState           { get; set; } = true;
-    public bool PreviewPanelExpanded            { get; set; } = false;
-    public float PreviewPanelMinWidth           { get; set; } = 200f;
-    public float PreviewPanelMaxWidth           { get; set; } = 600f;
-    public float PreviewImageMinWidth           { get; set; } = 180f;
-
-    public bool AutoSelectCollection            { get; set; } = false;
+    public bool AutoSelectCollection { get; set; } = false;
 
     public bool            ShowModsInLobby                      { get; set; } = true;
     public bool            UseCharacterCollectionInMainWindow   { get; set; } = true;
