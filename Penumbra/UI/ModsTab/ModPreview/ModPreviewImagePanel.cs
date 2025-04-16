@@ -133,6 +133,12 @@ public class ModPreviewImagePanel : IDisposable
                 if (config != null)
                 {
                     _config.EnableImageInteraction = config.EnableImageInteraction;
+                    _config.ThumbnailSize = config.ThumbnailSize;
+                    _config.MaxPreviewWidth = config.MaxPreviewWidth;
+                    _config.MaxPreviewHeight = config.MaxPreviewHeight;
+                    _config.PreviewPanelImageSpacing = config.PreviewPanelImageSpacing;
+                    _config.PreviewPanelLeftMargin = config.PreviewPanelLeftMargin;
+                    _config.EnableExternalViewer = config.EnableExternalViewer;
                 }
             }
         }
@@ -333,7 +339,8 @@ public class ModPreviewImagePanel : IDisposable
         // 设置拖拽目标
         if (_dragDrop.CreateImGuiTarget("PreviewImageDrop", out var files, out _))
         {
-            // 禁用图片交互
+            // 临时禁用图片交互
+            var originalInteractionState = _config.EnableImageInteraction;
             _config.EnableImageInteraction = false;
             
             // 处理拖放的文件
@@ -385,10 +392,9 @@ public class ModPreviewImagePanel : IDisposable
                     }
                 });
             }
-        }
-        else
-        {
-            _config.EnableImageInteraction = true;
+            
+            // 恢复原始状态
+            _config.EnableImageInteraction = originalInteractionState;
         }
 
         if (!Directory.Exists(coverFolder))
@@ -524,60 +530,58 @@ public class ModPreviewImagePanel : IDisposable
                         ImGui.Text("按住Ctrl点击使用外部工具打开图片。\n按住右键放大图片。\n按住Shift+右键置顶/取消置顶图片。");
                         ImGui.EndTooltip();
 
-                        // 处理右键放大图片
-                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                        // 处理Shift+右键点击置顶
+                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyShift)
                         {
-                            if (ImGui.GetIO().KeyShift)
+                            PinImage(path);
+                        }
+                        // 处理按住右键放大
+                        else if (ImGui.IsMouseDown(ImGuiMouseButton.Right) && !ImGui.GetIO().KeyShift)
+                        {
+                            var winSize = ImGui.GetIO().DisplaySize;
+                            var imgSize = new Vector2(cachedTexture.OriginalTexture?.Width ?? cachedTexture.Texture.Width, 
+                                                    cachedTexture.OriginalTexture?.Height ?? cachedTexture.Texture.Height);
+
+                            // 如果图片尺寸大于窗口尺寸，则按比例缩放以适应屏幕
+                            var scale = Math.Min(
+                                (winSize.X * 0.95f) / imgSize.X,  // 留出一些边距
+                                (winSize.Y * 0.95f) / imgSize.Y
+                            );
+
+                            if (scale < 1)
                             {
-                                PinImage(path);
+                                imgSize *= scale;
                             }
-                            else
-                            {
-                                var winSize = ImGui.GetIO().DisplaySize;
-                                var imgSize = new Vector2(cachedTexture.OriginalTexture?.Width ?? cachedTexture.Texture.Width, 
-                                                        cachedTexture.OriginalTexture?.Height ?? cachedTexture.Texture.Height);
 
-                                // 如果图片尺寸大于窗口尺寸，则按比例缩放以适应屏幕
-                                var scale = Math.Min(
-                                    (winSize.X * 0.95f) / imgSize.X,  // 留出一些边距
-                                    (winSize.Y * 0.95f) / imgSize.Y
-                                );
+                            // 计算图片位置，使其居中显示
+                            var min = new Vector2(winSize.X / 2 - imgSize.X / 2, winSize.Y / 2 - imgSize.Y / 2);
+                            var max = min + imgSize;
 
-                                if (scale < 1)
-                                {
-                                    imgSize *= scale;
-                                }
-
-                                // 计算图片位置，使其居中显示
-                                var min = new Vector2(winSize.X / 2 - imgSize.X / 2, winSize.Y / 2 - imgSize.Y / 2);
-                                var max = min + imgSize;
-
-                                // 使用原始尺寸的纹理（如果可用）
-                                var texture = cachedTexture.OriginalTexture ?? cachedTexture.Texture;
-                                
-                                // 使用前景绘制列表，确保图片显示在所有窗口之上
-                                var foregroundDrawList = ImGui.GetForegroundDrawList();
-                                
-                                // 先绘制半透明背景
-                                foregroundDrawList.AddRectFilled(
-                                    Vector2.Zero,
-                                    winSize,
-                                    ImGui.GetColorU32(new Vector4(0, 0, 0, 0.7f))
-                                );
-                                
-                                // 再绘制图片（不受半透明影响）
-                                foregroundDrawList.AddImage(texture.ImGuiHandle, min, max);
-                                
-                                // 显示图片尺寸信息
-                                var sizeText = $"{texture.Width} x {texture.Height}";
-                                var textSize = ImGui.CalcTextSize(sizeText);
-                                var textPos = min + new Vector2(10, 10);
-                                foregroundDrawList.AddText(
-                                    textPos,
-                                    ImGui.GetColorU32(new Vector4(1, 1, 1, 1)),
-                                    sizeText
-                                );
-                            }
+                            // 使用原始尺寸的纹理（如果可用）
+                            var texture = cachedTexture.OriginalTexture ?? cachedTexture.Texture;
+                            
+                            // 使用前景绘制列表，确保图片显示在所有窗口之上
+                            var foregroundDrawList = ImGui.GetForegroundDrawList();
+                            
+                            // 先绘制半透明背景
+                            foregroundDrawList.AddRectFilled(
+                                Vector2.Zero,
+                                winSize,
+                                ImGui.GetColorU32(new Vector4(0, 0, 0, 0.7f))
+                            );
+                            
+                            // 再绘制图片（不受半透明影响）
+                            foregroundDrawList.AddImage(texture.ImGuiHandle, min, max);
+                            
+                            // 显示图片尺寸信息
+                            var sizeText = $"{texture.Width} x {texture.Height}";
+                            var textSize = ImGui.CalcTextSize(sizeText);
+                            var textPos = min + new Vector2(10, 10);
+                            foregroundDrawList.AddText(
+                                textPos,
+                                ImGui.GetColorU32(new Vector4(1, 1, 1, 1)),
+                                sizeText
+                            );
                         }
 
                         // 处理左键点击打开外部工具
