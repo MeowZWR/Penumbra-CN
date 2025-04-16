@@ -67,7 +67,7 @@ public class Penumbra : IDalamudPlugin
                 ? s.ToString()
                 : "Unknown";
             Log.Information(
-                $"Loading Penumbra Version {_validityChecker.Version}, Commit #{_validityChecker.CommitHash} with Waiting For Plugins: {startup}...");
+                $"Loading Penumbra Version {_validityChecker.Version}-cn, Commit #{_validityChecker.CommitHash} with Waiting For Plugins: {startup}...");
             _services.GetService<BackupService>(); // Initialize because not required anywhere else.
             _config            = _services.GetService<Configuration>();
             _characterUtility  = _services.GetService<CharacterUtility>();
@@ -95,7 +95,7 @@ public class Penumbra : IDalamudPlugin
 
             _validityChecker.LogExceptions();
             Log.Information(
-                $"Penumbra Version {_validityChecker.Version}, Commit #{_validityChecker.CommitHash} successfully Loaded from {pluginInterface.SourceRepository}.");
+                $"Penumbra Version {_validityChecker.Version}-cn, Commit #{_validityChecker.CommitHash} successfully Loaded from {pluginInterface.SourceRepository}.");
             OtterTex.NativeDll.Initialize(pluginInterface.AssemblyLocation.DirectoryName);
             Log.Information($"Loading native OtterTex assembly from {OtterTex.NativeDll.Directory}.");
 
