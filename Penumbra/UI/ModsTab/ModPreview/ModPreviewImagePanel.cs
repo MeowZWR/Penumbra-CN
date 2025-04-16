@@ -173,14 +173,14 @@ public class ModPreviewImagePanel : IDisposable
     {
         try
         {
-            var pluginPath = _pluginInterface.ConfigDirectory.Parent!.Parent!.FullName;
-            if (string.IsNullOrEmpty(pluginPath))
-            {
-                Penumbra.Log.Warning("无法获取插件目录路径");
+            if (string.IsNullOrEmpty(CurrentModPath))
                 return;
-            }
 
-            var configPath = Path.Combine(pluginPath, PinnedConfigFileName);
+            var coverFolder = Path.Combine(CurrentModPath, "CoverImage");
+            if (!Directory.Exists(coverFolder))
+                return;
+
+            var configPath = Path.Combine(coverFolder, PinnedConfigFileName);
             if (File.Exists(configPath))
             {
                 var json = File.ReadAllText(configPath);
@@ -201,14 +201,14 @@ public class ModPreviewImagePanel : IDisposable
     {
         try
         {
-            var pluginPath = _pluginInterface.ConfigDirectory.Parent!.Parent!.FullName;
-            if (string.IsNullOrEmpty(pluginPath))
-            {
-                Penumbra.Log.Warning("无法获取插件目录路径");
+            if (string.IsNullOrEmpty(CurrentModPath))
                 return;
-            }
 
-            var configPath = Path.Combine(pluginPath, PinnedConfigFileName);
+            var coverFolder = Path.Combine(CurrentModPath, "CoverImage");
+            if (!Directory.Exists(coverFolder))
+                return;
+
+            var configPath = Path.Combine(coverFolder, PinnedConfigFileName);
             var json = JsonSerializer.Serialize(_pinnedConfig, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(configPath, json);
         }
@@ -325,6 +325,7 @@ public class ModPreviewImagePanel : IDisposable
         {
             CurrentModPath = newModPath;
             _pinnedConfig.CurrentModPath = newModPath;
+            LoadPinnedConfig(); // 切换模组时加载新的置顶配置
             Penumbra.Log.Debug($"当前Mod路径: {CurrentModPath}");
             Penumbra.Log.Debug($"CoverImage文件夹路径: {coverFolder}");
         }
