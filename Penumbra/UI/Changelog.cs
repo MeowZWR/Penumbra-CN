@@ -59,9 +59,15 @@ public class PenumbraChangelog : IUiService
         Add1_3_3_0(Changelog);
         Add1_3_4_0(Changelog);
         Add1_3_5_0(Changelog);
+        Add1_3_5_2(Changelog);
     }
 
     #region Changelogs
+
+    private static void Add1_3_5_2(Changelog log)
+        => log.NextVersion("版本 1.3.5.2-cn")
+        .RegisterImportant(
+                "在模组设置页面中增加图片预览功能——需在常规设置中开启[显示预览面板]选项。");
 
     private static void Add1_3_5_0(Changelog log)
         => log.NextVersion("版本 1.3.5.0")
