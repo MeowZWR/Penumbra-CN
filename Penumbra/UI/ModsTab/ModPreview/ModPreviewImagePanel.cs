@@ -33,7 +33,7 @@ public class ModPreviewImagePanel : IDisposable
     private bool _disposed;
     private const int MaxRetryCount = 3;
     private const int FileOperationDelay = 500; // 毫秒
-    private const int MaxCacheSize = 50;
+    private const int MaxCacheSize = 10;
     private const int CacheCleanupInterval = 300000;
     private const int MemoryStreamPoolSize = 10;
     private float _maxPreviewWidth = 800f;
