@@ -83,6 +83,149 @@ public class ClipboardImageImporter
     }
 
     /// <summary>
+    /// 从剪贴板获取图片数据列表
+    /// </summary>
+    /// <returns>图片数据列表，如果没有图片则返回空列表</returns>
+    private List<byte[]> GetClipboardImageData()
+    {
+        var result = new List<byte[]>();
+        try
+        {
+            if (!OpenClipboard(IntPtr.Zero))
+                return result;
+
+            try
+            {
+                // 1. 首先检查是否有HDROP格式（文件资源管理器复制的文件）
+                IntPtr hDrop = GetClipboardData(CF_HDROP);
+                if (hDrop != IntPtr.Zero)
+                {
+                    // 获取拖放的文件数量
+                    int fileCount = DragQueryFile(hDrop, 0xFFFFFFFF, null, 0);
+                    if (fileCount > 0)
+                    {
+                        // 获取所有文件
+                        StringBuilder filePath = new StringBuilder(260);
+                        for (uint i = 0; i < fileCount; i++)
+                        {
+                            if (DragQueryFile(hDrop, i, filePath, filePath.Capacity) > 0)
+                            {
+                                string path = filePath.ToString();
+                                // 检查是否是支持的图片文件
+                                if (IsImageFile(path))
+                                {
+                                    // 读取文件内容
+                                    result.Add(File.ReadAllBytes(path));
+                                }
+                            }
+                        }
+                    }
+                    DragFinish(hDrop);
+                }
+
+                // 2. 检查剪贴板中是否有DIB格式的图片
+                IntPtr hBitmap = GetClipboardData(CF_DIB);
+                if (hBitmap != IntPtr.Zero)
+                {
+                    // 获取DIB数据
+                    IntPtr pData = GlobalLock(hBitmap);
+                    if (pData != IntPtr.Zero)
+                    {
+                        try
+                        {
+                            // 获取数据大小
+                            IntPtr size = GlobalSize(hBitmap);
+                            byte[] dibData = new byte[size.ToInt64()];
+                            Marshal.Copy(pData, dibData, 0, dibData.Length);
+                            
+                            // 将DIB数据转换为PNG
+                            var pngData = ConvertDibToPng(dibData);
+                            if (pngData != null)
+                            {
+                                result.Add(pngData);
+                            }
+                        }
+                        finally
+                        {
+                            GlobalUnlock(hBitmap);
+                        }
+                    }
+                }
+
+                // 3. 检查是否有文本格式（可能是文件路径）
+                IntPtr hText = GetClipboardData(CF_UNICODETEXT);
+                if (hText != IntPtr.Zero)
+                {
+                    IntPtr pText = GlobalLock(hText);
+                    if (pText != IntPtr.Zero)
+                    {
+                        try
+                        {
+                            int length = 0;
+                            while (Marshal.ReadByte(pText, length) != 0)
+                                length++;
+
+                            byte[] textBytes = new byte[length];
+                            Marshal.Copy(pText, textBytes, 0, length);
+                            string text = Encoding.Unicode.GetString(textBytes).TrimEnd('\0');
+
+                            // 检查是否是支持的图片文件路径
+                            if (IsImageFile(text))
+                            {
+                                // 读取文件内容
+                                result.Add(File.ReadAllBytes(text));
+                            }
+                        }
+                        finally
+                        {
+                            GlobalUnlock(hText);
+                        }
+                    }
+                }
+
+                // 4. 如果没有DIB格式，尝试其他格式
+                uint format = 0;
+                while ((format = EnumClipboardFormats(format)) != 0)
+                {
+                    // 检查是否是图片格式
+                    if (IsImageFormat(format))
+                    {
+                        IntPtr hData = GetClipboardData(format);
+                        if (hData != IntPtr.Zero)
+                        {
+                            IntPtr pData = GlobalLock(hData);
+                            if (pData != IntPtr.Zero)
+                            {
+                                try
+                                {
+                                    IntPtr size = GlobalSize(hData);
+                                    byte[] data = new byte[size.ToInt64()];
+                                    Marshal.Copy(pData, data, 0, data.Length);
+                                    result.Add(data);
+                                }
+                                finally
+                                {
+                                    GlobalUnlock(hData);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                CloseClipboard();
+            }
+        }
+        catch (Exception)
+        {
+            // 发生异常时返回空列表
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// 从剪贴板导入图片到指定Mod的CoverImage文件夹
     /// </summary>
     /// <param name="mod">目标Mod</param>
@@ -113,21 +256,27 @@ public class ClipboardImageImporter
 
             int importedCount = 0;
 
-            // 尝试从剪贴板获取图片数据
-            var clipboardData = GetClipboardImageData();
-            if (clipboardData != null && clipboardData.Length > 0)
+            // 尝试从剪贴板获取图片数据列表
+            var clipboardDataList = GetClipboardImageData();
+            if (clipboardDataList.Count > 0)
             {
-                // 生成唯一的文件名
-                var fileName = $"clipboard_{DateTime.Now:yyyyMMddHHmmss}.png";
-                var filePath = Path.Combine(coverFolder, fileName);
+                foreach (var clipboardData in clipboardDataList)
+                {
+                    if (clipboardData != null && clipboardData.Length > 0)
+                    {
+                        // 生成唯一的文件名
+                        var fileName = $"clipboard_{DateTime.Now:yyyyMMddHHmmss}_{importedCount}.png";
+                        var filePath = Path.Combine(coverFolder, fileName);
 
-                // 将剪贴板数据保存为图片
-                File.WriteAllBytes(filePath, clipboardData);
-                importedCount++;
+                        // 将剪贴板数据保存为图片
+                        File.WriteAllBytes(filePath, clipboardData);
+                        importedCount++;
+                    }
+                }
                 
                 _notificationManager.AddNotification(new Notification
                 {
-                    Content = $"已导入1张图片到 {mod.Name} 的CoverImage文件夹",
+                    Content = $"已导入{importedCount}张图片到 {mod.Name} 的CoverImage文件夹",
                     Title = "图片导入",
                     Type = NotificationType.Success,
                     Minimized = false,
@@ -159,141 +308,6 @@ public class ClipboardImageImporter
                 InitialDuration = TimeSpan.FromSeconds(3)
             });
             return 0;
-        }
-    }
-
-    /// <summary>
-    /// 从剪贴板获取图片数据
-    /// </summary>
-    /// <returns>图片数据，如果没有图片则返回null</returns>
-    private byte[]? GetClipboardImageData()
-    {
-        try
-        {
-            if (!OpenClipboard(IntPtr.Zero))
-                return null;
-
-            try
-            {
-                // 1. 首先检查是否有HDROP格式（文件资源管理器复制的文件）
-                IntPtr hDrop = GetClipboardData(CF_HDROP);
-                if (hDrop != IntPtr.Zero)
-                {
-                    // 获取拖放的文件数量
-                    int fileCount = DragQueryFile(hDrop, 0xFFFFFFFF, null, 0);
-                    if (fileCount > 0)
-                    {
-                        // 获取第一个文件
-                        StringBuilder filePath = new StringBuilder(260);
-                        if (DragQueryFile(hDrop, 0, filePath, filePath.Capacity) > 0)
-                        {
-                            string path = filePath.ToString();
-                            // 检查是否是支持的图片文件
-                            if (IsImageFile(path))
-                            {
-                                // 读取文件内容
-                                return File.ReadAllBytes(path);
-                            }
-                        }
-                    }
-                    DragFinish(hDrop);
-                }
-
-                // 2. 检查剪贴板中是否有DIB格式的图片
-                IntPtr hBitmap = GetClipboardData(CF_DIB);
-                if (hBitmap != IntPtr.Zero)
-                {
-                    // 获取DIB数据
-                    IntPtr pData = GlobalLock(hBitmap);
-                    if (pData != IntPtr.Zero)
-                    {
-                        try
-                        {
-                            // 获取数据大小
-                            IntPtr size = GlobalSize(hBitmap);
-                            byte[] dibData = new byte[size.ToInt64()];
-                            Marshal.Copy(pData, dibData, 0, dibData.Length);
-                            
-                            // 将DIB数据转换为PNG
-                            return ConvertDibToPng(dibData);
-                        }
-                        finally
-                        {
-                            GlobalUnlock(hBitmap);
-                        }
-                    }
-                }
-
-                // 3. 检查是否有文本格式（可能是文件路径）
-                IntPtr hText = GetClipboardData(CF_UNICODETEXT);
-                if (hText != IntPtr.Zero)
-                {
-                    IntPtr pText = GlobalLock(hText);
-                    if (pText != IntPtr.Zero)
-                    {
-                        try
-                        {
-                            int length = 0;
-                            while (Marshal.ReadByte(pText, length) != 0)
-                                length++;
-
-                            byte[] textBytes = new byte[length];
-                            Marshal.Copy(pText, textBytes, 0, length);
-                            string text = Encoding.Unicode.GetString(textBytes).TrimEnd('\0');
-
-                            // 检查是否是支持的图片文件路径
-                            if (IsImageFile(text))
-                            {
-                                // 读取文件内容
-                                return File.ReadAllBytes(text);
-                            }
-                        }
-                        finally
-                        {
-                            GlobalUnlock(hText);
-                        }
-                    }
-                }
-
-                // 4. 如果没有DIB格式，尝试其他格式
-                uint format = 0;
-                while ((format = EnumClipboardFormats(format)) != 0)
-                {
-                    // 检查是否是图片格式
-                    if (IsImageFormat(format))
-                    {
-                        IntPtr hData = GetClipboardData(format);
-                        if (hData != IntPtr.Zero)
-                        {
-                            IntPtr pData = GlobalLock(hData);
-                            if (pData != IntPtr.Zero)
-                            {
-                                try
-                                {
-                                    IntPtr size = GlobalSize(hData);
-                                    byte[] data = new byte[size.ToInt64()];
-                                    Marshal.Copy(pData, data, 0, data.Length);
-                                    return data;
-                                }
-                                finally
-                                {
-                                    GlobalUnlock(hData);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                CloseClipboard();
-            }
-
-            return null;
-        }
-        catch (Exception)
-        {
-            return null;
         }
     }
 
