@@ -190,7 +190,7 @@ public class ModPanelSettingsTab(
 
             ImGui.SameLine();
             if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Clipboard.ToIconString()}##importFromClipboard", UiHelpers.IconButtonSize,
-                "从剪贴板导入图片", false, true))
+                "从剪贴板导入图片\n因Bug暂停使用。请使用拖拽导入。", true, true))
             {
                 Task.Run(() =>
                 {
