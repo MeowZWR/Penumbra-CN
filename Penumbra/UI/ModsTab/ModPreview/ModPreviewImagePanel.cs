@@ -526,22 +526,7 @@ public class ModPreviewImagePanel : IDisposable
                     
                     ImGui.SetCursorPos(new Vector2(posX, posY));
                     
-                    // 绘制图片背景（边距效果）
-                    var bgMin = new Vector2(posX - imageMargin, posY - imageMargin);
-                    var bgMax = new Vector2(posX + newScaledSize.X + imageMargin, posY + newScaledSize.Y + imageMargin);
-                    var drawList = ImGui.GetWindowDrawList();
-                    
-                    // 只在图片周围绘制背景，而不是整个窗口
-                    if (ImGui.IsRectVisible(bgMin, bgMax))
-                    {
-                        drawList.AddRectFilled(
-                            bgMin,
-                            bgMax,
-                            ImGui.GetColorU32(new Vector4(0.1f, 0.1f, 0.1f, 0.5f))
-                        );
-                    }
-                    
-                    // 绘制图片
+                    // 直接绘制图片
                     ImGui.Image(cachedTexture.Texture.ImGuiHandle, cachedTexture.ScaledSize);
 
                     if (ImGui.IsItemHovered() && _config.EnableImageInteraction)
