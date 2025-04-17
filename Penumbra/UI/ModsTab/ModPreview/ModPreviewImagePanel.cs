@@ -336,6 +336,9 @@ public class ModPreviewImagePanel : IDisposable
             ImGui.TextUnformatted($"拖拽图片到预览面板进行导入：\n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
             return true;
         });
+        var y = ImGui.GetCursorPos().Y;
+        ImGui.InvisibleButton("##InvisibleButton", new Vector2(panelWidth, ImGui.GetContentRegionAvail().Y- 4f));
+        ImGui.SetCursorPos(new Vector2(ImGui.GetCursorPos().X, y));
 
         // 设置拖拽目标
         if (_dragDrop.CreateImGuiTarget("PreviewImageDrop", out var files, out _))
@@ -528,7 +531,7 @@ public class ModPreviewImagePanel : IDisposable
                     {
                         // 显示提示信息
                         ImGui.BeginTooltip();
-                        ImGui.Text("按住Ctrl点击使用外部工具打开图片。\n按住右键放大图片。\n按住Shift+右键置顶/取消置顶图片。");
+                        ImGui.Text("按住Ctrl点击使用外部工具打开图片。\n按住Shift+Ctrl点击删除图片。 \n按住右键放大图片。\n按住Shift+右键置顶/取消置顶图片。");
                         ImGui.EndTooltip();
 
                         // 处理Shift+右键点击置顶
@@ -586,7 +589,7 @@ public class ModPreviewImagePanel : IDisposable
                         }
 
                         // 处理左键点击打开外部工具
-                        if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl)
+                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
                         {
                             try
                             {
@@ -599,6 +602,19 @@ public class ModPreviewImagePanel : IDisposable
                             catch (Exception ex)
                             {
                                 Penumbra.Log.Warning($"无法使用外部工具打开图片: {ex.Message}");
+                            }
+                        }
+
+                        //Shift + Ctrl + 左键删除
+                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && ImGui.GetIO().KeyShift)
+                        {
+                            try
+                            {
+                                File.Delete(path);
+                            }
+                            catch (Exception ex)
+                            {
+                                Penumbra.Log.Warning($"无法删除图片: {ex.Message}");
                             }
                         }
                     }
