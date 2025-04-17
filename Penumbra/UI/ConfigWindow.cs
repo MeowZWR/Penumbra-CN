@@ -144,7 +144,7 @@ public sealed class ConfigWindow : Window, IUiService
     private static string GetLabel(ValidityChecker checker)
         => checker.Version.Length == 0
             ? "Penumbra###PenumbraConfigWindow"
-            : $"Penumbra v{checker.Version}###PenumbraConfigWindow";
+            : $"Penumbra v{checker.Version}-cn###PenumbraConfigWindow";
 
     private void DrawProblemWindow(string text)
     {
