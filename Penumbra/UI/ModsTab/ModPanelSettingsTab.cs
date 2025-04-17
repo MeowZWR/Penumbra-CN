@@ -201,7 +201,7 @@ public class ModPanelSettingsTab(
                 _imagePanel.Config.EnableImageInteraction = showHoverPreview;
                 _imagePanel.SaveConfig();
             }
-            ImGuiUtil.HoverTooltip("启用/禁用图片交互功能（点击打开外部工具，右键放大图片）\n图片拖到这里可以直接导入到文件夹\n别问我为什么范围给这么小，我也不知道怎么弄到这上面了。");
+            ImGuiUtil.HoverTooltip("启用/禁用图片交互功能（点击打开外部工具，右键放大图片等）");
         }
 
         // 绘制预览图片内容
