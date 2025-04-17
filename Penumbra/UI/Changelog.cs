@@ -60,14 +60,23 @@ public class PenumbraChangelog : IUiService
         Add1_3_4_0(Changelog);
         Add1_3_5_0(Changelog);
         Add1_3_5_2(Changelog);
+        Add1_3_5_4(Changelog);
     }
 
     #region Changelogs
 
+    private static void Add1_3_5_4(Changelog log)
+        => log.NextVersion("版本 1.3.5.4-cn")
+            .RegisterEntry("修复图片拖拽导入功能（谢谢翼佬！）。")
+            .RegisterEntry("新增剪贴板导入功能。")
+            .RegisterEntry("增加更多图片格式。")
+            .RegisterEntry("优化图片排列逻辑。")
+            .RegisterHighlight("注意：不支持精细管理，请勿用作图片管理工具。");
+
     private static void Add1_3_5_2(Changelog log)
         => log.NextVersion("版本 1.3.5.2-cn")
-        .RegisterImportant(
-                "在模组设置页面中增加图片预览功能——需在常规设置中开启[显示预览面板]选项。");
+            .RegisterImportant(
+                "新增模组设置页面的图片预览功能（需在常规设置中启用[显示预览面板]选项）");
 
     private static void Add1_3_5_0(Changelog log)
         => log.NextVersion("版本 1.3.5.0")
