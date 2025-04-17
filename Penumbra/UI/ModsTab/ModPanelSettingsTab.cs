@@ -39,6 +39,7 @@ public class ModPanelSettingsTab(
     private int? _currentPriority;
     private bool _previewExpanded = true;
     private readonly ModPreviewImagePanel _imagePanel = new(modManager, pluginInterface, textureProvider, dragDrop, config, notificationManager);
+    private readonly ClipboardImageImporter _clipboardImporter = new(notificationManager, pluginInterface, modManager);
 
     public ReadOnlySpan<byte> Label
         => "模组设置"u8;
@@ -183,6 +184,23 @@ public class ModPanelSettingsTab(
                     catch (Exception ex)
                     {
                         Penumbra.Log.Warning($"压缩图片失败: {ex.Message}");
+                    }
+                });
+            }
+
+            ImGui.SameLine();
+            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Clipboard.ToIconString()}##importFromClipboard", UiHelpers.IconButtonSize,
+                "从剪贴板导入图片", false, true))
+            {
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        _clipboardImporter.ImportFromClipboard(selection.Mod);
+                    }
+                    catch (Exception ex)
+                    {
+                        Penumbra.Log.Warning($"从剪贴板导入图片失败: {ex.Message}");
                     }
                 });
             }
