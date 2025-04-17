@@ -1,19 +1,13 @@
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
-using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui.Raii;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats.Png;
-using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using System.Text.Json;
-using System.Numerics;
 
 namespace Penumbra.UI.ModsTab.ModPreview;
 
@@ -39,13 +33,10 @@ public class ModPreviewImagePanel : IDisposable
     private bool _disposed;
     private const int MaxRetryCount = 3;
     private const int FileOperationDelay = 500; // 毫秒
-    private const int MaxConcurrentLoads = 1; // 修改为1，确保一次只加载一张图片
-    private const int ImagesPerRow = 1;
     private const int MaxCacheSize = 50;
     private const int CacheCleanupInterval = 300000;
     private const int MemoryStreamPoolSize = 10;
     private float _maxPreviewWidth = 800f;
-    private const int MaxCompressDimension = 1024;
 
     // 添加一个静态实例引用
     private static ModPreviewImagePanel? _instance;
@@ -76,7 +67,7 @@ public class ModPreviewImagePanel : IDisposable
     private readonly PinnedImageConfig _pinnedConfig = new();
     private readonly List<string> _imagePaths = new();
 
-    private static readonly string[] SupportedExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".webp" };
+    private static readonly string[] SupportedExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".webp", ".gif", ".tiff" };
     private static readonly string ConfigFileName = "preview_config.json";
     private static readonly string PinnedConfigFileName = "pinned_images.json";
 
@@ -456,6 +447,13 @@ public class ModPreviewImagePanel : IDisposable
                     if (imagesPerRow < 1) imagesPerRow = 1;
                 }
 
+                // 如果图片数量少，调整布局以更好地利用空间
+                if (imageFiles.Count <= 3 && imagesPerRow > 1)
+                {
+                    // 对于少量图片，使用更少的列以获得更大的图片尺寸
+                    imagesPerRow = Math.Min(imageFiles.Count, 2);
+                }
+
                 // 计算每张图片的基础宽度（考虑间距和边距）
                 var baseImageWidth = (availableWidth - spacing * (imagesPerRow - 1) - imageMargin * 2) / imagesPerRow;
                 
@@ -504,7 +502,21 @@ public class ModPreviewImagePanel : IDisposable
 
                     // 计算图片的缩放尺寸
                     var newScaledSize = GetScaledSize(_originalSizes[path], columnWidths[shortestColumn]);
-                    cachedTexture.ScaledSize = newScaledSize;
+                    
+                    // 平滑过渡到新的缩放尺寸
+                    if (cachedTexture.ScaledSize.X > 0 && cachedTexture.ScaledSize.Y > 0)
+                    {
+                        // 使用插值平滑过渡
+                        var lerpFactor = 0.3f; // 调整此值以控制过渡速度
+                        cachedTexture.ScaledSize = new Vector2(
+                            cachedTexture.ScaledSize.X + (newScaledSize.X - cachedTexture.ScaledSize.X) * lerpFactor,
+                            cachedTexture.ScaledSize.Y + (newScaledSize.Y - cachedTexture.ScaledSize.Y) * lerpFactor
+                        );
+                    }
+                    else
+                    {
+                        cachedTexture.ScaledSize = newScaledSize;
+                    }
 
                     // 设置图片位置（添加边距）
                     var posX = columnPositions[shortestColumn];
@@ -518,11 +530,16 @@ public class ModPreviewImagePanel : IDisposable
                     var bgMin = new Vector2(posX - imageMargin, posY - imageMargin);
                     var bgMax = new Vector2(posX + newScaledSize.X + imageMargin, posY + newScaledSize.Y + imageMargin);
                     var drawList = ImGui.GetWindowDrawList();
-                    drawList.AddRectFilled(
-                        bgMin,
-                        bgMax,
-                        ImGui.GetColorU32(new Vector4(0.1f, 0.1f, 0.1f, 0.5f))
-                    );
+                    
+                    // 只在图片周围绘制背景，而不是整个窗口
+                    if (ImGui.IsRectVisible(bgMin, bgMax))
+                    {
+                        drawList.AddRectFilled(
+                            bgMin,
+                            bgMax,
+                            ImGui.GetColorU32(new Vector4(0.1f, 0.1f, 0.1f, 0.5f))
+                        );
+                    }
                     
                     // 绘制图片
                     ImGui.Image(cachedTexture.Texture.ImGuiHandle, cachedTexture.ScaledSize);
@@ -798,7 +815,15 @@ public class ModPreviewImagePanel : IDisposable
 
     private Vector2 GetScaledSize(Vector2 originalSize, float maxWidth)
     {
+        // 计算缩放比例
         var scale = maxWidth / originalSize.X;
+        
+        // 如果缩放后的宽度小于最小宽度，则使用最小宽度
+        if (originalSize.X * scale < _configuration.PreviewImageMinWidth)
+        {
+            scale = _configuration.PreviewImageMinWidth / originalSize.X;
+        }
+        
         return new Vector2(originalSize.X * scale, originalSize.Y * scale);
     }
 
