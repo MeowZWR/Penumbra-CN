@@ -307,6 +307,18 @@ public class ModPreviewImagePanel : IDisposable
         }
     }
 
+    private void ShowNotification(string content, NotificationType type)
+    {
+        _notificationManager.AddNotification(new Notification
+        {
+            Content = content,
+            Title = "图片预览",
+            Type = type,
+            Minimized = false,
+            InitialDuration = TimeSpan.FromSeconds(3)
+        });
+    }
+
     public void Draw(Mod mod, float panelWidth)
     {
         var newModPath = mod.ModPath.FullName;
@@ -343,6 +355,8 @@ public class ModPreviewImagePanel : IDisposable
             {
                 Task.Run(async () =>
                 {
+                    int successCount = 0;
+                    int failCount = 0;
                     foreach (var file in files)
                     {
                         if (!SupportedExtensions.Contains(Path.GetExtension(file).ToLower()))
@@ -360,30 +374,23 @@ public class ModPreviewImagePanel : IDisposable
                             }
 
                             File.Copy(file, targetPath, true);
-
                             await LoadImage(targetPath);
-
-                            _notificationManager.AddNotification(new Notification
-                            {
-                                Content = $"成功导入图片: {fileName}",
-                                Title = "图片导入",
-                                Type = NotificationType.Success,
-                                Minimized = false,
-                                InitialDuration = TimeSpan.FromSeconds(3)
-                            });
+                            successCount++;
                         }
                         catch (Exception ex)
                         {
                             Penumbra.Log.Warning($"导入图片失败: {file} - {ex.Message}");
-                            _notificationManager.AddNotification(new Notification
-                            {
-                                Content = $"导入图片失败: {Path.GetFileName(file)} - {ex.Message}",
-                                Title = "图片导入",
-                                Type = NotificationType.Error,
-                                Minimized = false,
-                                InitialDuration = TimeSpan.FromSeconds(3)
-                            });
+                            failCount++;
                         }
+                    }
+
+                    if (successCount > 0)
+                    {
+                        ShowNotification($"成功导入 {successCount} 张图片", NotificationType.Success);
+                    }
+                    if (failCount > 0)
+                    {
+                        ShowNotification($"导入失败 {failCount} 张图片", NotificationType.Error);
                     }
                 });
             }
@@ -533,7 +540,7 @@ public class ModPreviewImagePanel : IDisposable
                     {
                         // 显示提示信息
                         ImGui.BeginTooltip();
-                        ImGui.Text("按住Ctrl点击使用外部工具打开图片。\n按住Shift+Ctrl点击删除图片。 \n按住右键放大图片。\n按住Shift+右键置顶/取消置顶图片。");
+                        ImGui.Text("打开图片：Ctrl+左键\n删除图片：Shift+Ctrl+左键\n放大图片：按住右键\n置顶/取消置顶：Shift+右键");
                         ImGui.EndTooltip();
 
                         // 处理Shift+右键点击置顶
@@ -825,24 +832,12 @@ public class ModPreviewImagePanel : IDisposable
             try
             {
                 Directory.CreateDirectory(coverFolder);
-                _notificationManager.AddNotification(new Notification()
-                {
-                    Content = $"已创建 CoverImage 文件夹",
-                    Title = "文件夹创建",
-                    Type = NotificationType.Success,
-                    InitialDuration = TimeSpan.FromSeconds(3)
-                });
+                ShowNotification("已创建 CoverImage 文件夹", NotificationType.Success);
             }
             catch (Exception ex)
             {
                 Penumbra.Log.Warning($"创建 CoverImage 文件夹失败: {ex.Message}");
-                _notificationManager.AddNotification(new Notification()
-                {
-                    Content = $"创建 CoverImage 文件夹失败: {ex.Message}",
-                    Title = "文件夹创建",
-                    Type = NotificationType.Error,
-                    InitialDuration = TimeSpan.FromSeconds(3)
-                });
+                ShowNotification($"创建 CoverImage 文件夹失败: {ex.Message}", NotificationType.Error);
                 return;
             }
         }
@@ -856,13 +851,7 @@ public class ModPreviewImagePanel : IDisposable
             catch (Exception ex)
             {
                 Penumbra.Log.Warning($"无法打开文件夹: {ex.Message}");
-                _notificationManager.AddNotification(new Notification()
-                {
-                    Content = $"无法打开文件夹: {ex.Message}",
-                    Title = "打开文件夹",
-                    Type = NotificationType.Error,
-                    InitialDuration = TimeSpan.FromSeconds(3)
-                });
+                ShowNotification($"无法打开文件夹: {ex.Message}", NotificationType.Error);
             }
         }
     }

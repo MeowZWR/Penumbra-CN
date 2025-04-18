@@ -40,14 +40,7 @@ public class ClipboardImageImporter
     {
         if (mod == null)
         {
-            _notificationManager.AddNotification(new Notification
-            {
-                Content = "无法导入图片：未选择模组",
-                Title = "图片导入",
-                Type = NotificationType.Error,
-                Minimized = false,
-                InitialDuration = TimeSpan.FromSeconds(3)
-            });
+            ShowNotification("无法导入图片：未选择模组", NotificationType.Error);
             return 0;
         }
 
@@ -77,7 +70,6 @@ public class ClipboardImageImporter
                         importedCount++;
                     }
                 }
-
             }
             else if (Clipboard.ContainsImage())
             {
@@ -87,34 +79,38 @@ public class ClipboardImageImporter
                 if (image != null)
                 {
                     image.Save(filePath);
+                    importedCount++;
                 }
+            }
+
+            if (importedCount > 0)
+            {
+                ShowNotification($"成功导入 {importedCount} 张图片", NotificationType.Success);
             }
             else
             {
-                _notificationManager.AddNotification(new Notification
-                {
-                    Content = "剪贴板中没有图片",
-                    Title = "图片导入",
-                    Type = NotificationType.Warning,
-                    Minimized = false,
-                    InitialDuration = TimeSpan.FromSeconds(3)
-                });
+                ShowNotification("剪贴板中没有图片或图片格式不支持", NotificationType.Warning);
             }
 
             return importedCount;
         }
         catch (Exception ex)
         {
-            _notificationManager.AddNotification(new Notification
-            {
-                Content = $"导入图片失败: {ex.Message}",
-                Title = "图片导入",
-                Type = NotificationType.Error,
-                Minimized = false,
-                InitialDuration = TimeSpan.FromSeconds(3)
-            });
+            ShowNotification($"导入图片失败: {ex.Message}", NotificationType.Error);
             return 0;
         }
+    }
+
+    private void ShowNotification(string content, NotificationType type)
+    {
+        _notificationManager.AddNotification(new Notification
+        {
+            Content = content,
+            Title = "图片预览",
+            Type = type,
+            Minimized = false,
+            InitialDuration = TimeSpan.FromSeconds(3)
+        });
     }
 
     /// <summary>
