@@ -190,9 +190,9 @@ public class ModPanelSettingsTab(
 
             ImGui.SameLine();
             if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Clipboard.ToIconString()}##importFromClipboard", UiHelpers.IconButtonSize,
-                "从剪贴板导入图片\n因Bug暂停使用。请使用拖拽导入。", true, true))
+                "从剪贴板导入图片", false, true))
             {
-                Task.Run(() =>
+                var staThread = new System.Threading.Thread(() =>
                 {
                     try
                     {
@@ -203,6 +203,9 @@ public class ModPanelSettingsTab(
                         Penumbra.Log.Warning($"从剪贴板导入图片失败: {ex.Message}");
                     }
                 });
+                staThread.SetApartmentState(System.Threading.ApartmentState.STA);
+                // 启动线程
+                staThread.Start();
             }
 
             ImGui.SameLine();
