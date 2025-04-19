@@ -115,14 +115,7 @@ public class ModPreviewImagePanel : IDisposable
     {
         try
         {
-            var pluginPath = _pluginInterface.ConfigDirectory.Parent!.Parent!.FullName;
-            if (string.IsNullOrEmpty(pluginPath))
-            {
-                Penumbra.Log.Warning("无法获取插件目录路径");
-                return;
-            }
-
-            var configPath = Path.Combine(pluginPath, ConfigFileName);
+            var configPath = Path.Combine(_pluginInterface.ConfigDirectory.FullName, ConfigFileName);
             if (File.Exists(configPath))
             {
                 var json = File.ReadAllText(configPath);
@@ -148,14 +141,7 @@ public class ModPreviewImagePanel : IDisposable
     {
         try
         {
-            var pluginPath = _pluginInterface.ConfigDirectory.Parent!.Parent!.FullName;
-            if (string.IsNullOrEmpty(pluginPath))
-            {
-                Penumbra.Log.Warning("无法获取插件目录路径");
-                return;
-            }
-
-            var configPath = Path.Combine(pluginPath, ConfigFileName);
+            var configPath = Path.Combine(_pluginInterface.ConfigDirectory.FullName, ConfigFileName);
             var json = JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(configPath, json);
         }

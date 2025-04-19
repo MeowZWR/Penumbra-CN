@@ -37,7 +37,7 @@ public class ModPanelSettingsTab(
     private bool _temporary;
     private bool _locked;
     private int? _currentPriority;
-    private bool _previewExpanded = true;
+    private bool _previewExpanded = config.SavePreviewPanelState ? config.PreviewPanelExpanded : false;
     private readonly ModPreviewImagePanel _imagePanel = new(modManager, pluginInterface, textureProvider, dragDrop, config, notificationManager);
     private readonly ClipboardImageImporter _clipboardImporter = new(notificationManager, pluginInterface, modManager);
 
