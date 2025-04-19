@@ -190,42 +190,24 @@ public class ModPanelSettingsTab(
             
             ImGui.SameLine();
             // 绘制下载按钮
-            var websiteUrl = selection.Mod != null ? _previewDownloader.GetModWebsiteUrl(selection.Mod) : string.Empty;
-            var isXivModArchive = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("xivmodarchive.com");
+            var websiteUrl = selection.Mod != null ? ModPreviewDownloader.GetModWebsiteUrl(selection.Mod) : string.Empty;
             var isHeliosphere = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("heliosphere.app");
-            var forceDownload = ImGui.GetIO().KeyCtrl;
             
-            // 按钮可用条件
-            bool buttonDisabled = string.IsNullOrEmpty(websiteUrl) || 
-                                 (isXivModArchive && !forceDownload) || 
-                                 (!isXivModArchive && !isHeliosphere);
+            var buttonDisabled = string.IsNullOrEmpty(websiteUrl) || !isHeliosphere;
             
-            // 设置tooltip信息
             var downloadTooltip = string.Empty;
             
             if (string.IsNullOrEmpty(websiteUrl))
                 downloadTooltip = "模组中未找到网址相关字段，无法下载预览图";
-            else if (isXivModArchive)
-                downloadTooltip = forceDownload 
-                    ? "尝试从XMA下载预览图（该站点受CF保护，不太可能下载成功）" 
-                    : "按住Ctrl尝试从XMA下载预览图（该站点受CF保护，不太可能下载成功）";
             else if (isHeliosphere)
-                downloadTooltip = "从Heliosphere下载预览图（目前可以）";
+                downloadTooltip = "从Heliosphere下载预览图";
             else
-                downloadTooltip = $"不支持从 {new Uri(websiteUrl).Host} 下载预览图";
+                downloadTooltip = "只支持从Heliosphere下载预览图";
             
-            // 强制下载警告色
-            var buttonColor = isXivModArchive && forceDownload 
-                ? new Vector4(1.0f, 0.7f, 0.0f, 1.0f)  // 橙色
-                : default;
-            
-            using (isXivModArchive && forceDownload ? ImRaii.PushColor(ImGuiCol.Button, buttonColor) : null)
+            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Download.ToIconString()}##downloadImages", UiHelpers.IconButtonSize,
+                downloadTooltip, buttonDisabled, true))
             {
-                if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Download.ToIconString()}##downloadImages", UiHelpers.IconButtonSize,
-                    downloadTooltip, buttonDisabled, true))
-                {
-                    Task.Run(async () => await _previewDownloader.TryDownloadPreviewImage(selection.Mod!, forceDownload));
-                }
+                Task.Run(async () => await _previewDownloader.TryDownloadPreviewImage(selection.Mod!));
             }
 
             ImGui.SameLine();
