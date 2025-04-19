@@ -162,7 +162,9 @@ public class ImageCompressor : IDisposable
             // 计算实际占用的内存大小
             long totalMemorySize = memoryStream.Length + originalMemorySize;
             
+#if DEBUG
             Penumbra.Log.Debug($"[图片压缩] 加载图片 {Path.GetFileName(imagePath)}, 分辨率: {requestedResolution}, 原始: {originalSize.X}x{originalSize.Y}, 压缩后: {scaledSize.X}x{scaledSize.Y}, 内存: {totalMemorySize/1024}KB");
+#endif
             
             return (previewTexture, originalTexture, scaledSize, originalSize, totalMemorySize);
         }
