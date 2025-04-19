@@ -31,7 +31,7 @@ public class ModPanelSettingsTab(
     IDragDropManager dragDrop,
     IDalamudPluginInterface pluginInterface,
     INotificationManager notificationManager)
-    : ITab, IUiService
+    : ITab, IUiService, IDisposable
 {
     private bool _inherited;
     private bool _temporary;
@@ -40,6 +40,7 @@ public class ModPanelSettingsTab(
     private bool _previewExpanded = config.SavePreviewPanelState ? config.PreviewPanelExpanded : false;
     private readonly ModPreviewImagePanel _imagePanel = new(modManager, pluginInterface, textureProvider, dragDrop, config, notificationManager);
     private readonly ClipboardImageImporter _clipboardImporter = new(notificationManager, pluginInterface, modManager);
+    private readonly ModPreviewDownloader _previewDownloader = new(notificationManager, config);
 
     public ReadOnlySpan<byte> Label
         => "模组设置"u8;
@@ -183,8 +184,48 @@ public class ModPanelSettingsTab(
                     }
                 });
                 staThread.SetApartmentState(System.Threading.ApartmentState.STA);
-                // 启动线程
+                
                 staThread.Start();
+            }
+            
+            ImGui.SameLine();
+            // 绘制下载按钮
+            var websiteUrl = selection.Mod != null ? _previewDownloader.GetModWebsiteUrl(selection.Mod) : string.Empty;
+            var isXivModArchive = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("xivmodarchive.com");
+            var isHeliosphere = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("heliosphere.app");
+            var forceDownload = ImGui.GetIO().KeyCtrl;
+            
+            // 按钮可用条件
+            bool buttonDisabled = string.IsNullOrEmpty(websiteUrl) || 
+                                 (isXivModArchive && !forceDownload) || 
+                                 (!isXivModArchive && !isHeliosphere);
+            
+            // 设置tooltip信息
+            var downloadTooltip = string.Empty;
+            
+            if (string.IsNullOrEmpty(websiteUrl))
+                downloadTooltip = "模组中未找到网址相关字段，无法下载预览图";
+            else if (isXivModArchive)
+                downloadTooltip = forceDownload 
+                    ? "尝试从XMA下载预览图（该站点受CF保护，不太可能下载成功）" 
+                    : "按住Ctrl尝试从XMA下载预览图（该站点受CF保护，不太可能下载成功）";
+            else if (isHeliosphere)
+                downloadTooltip = "从Heliosphere下载预览图（目前可以）";
+            else
+                downloadTooltip = $"不支持从 {new Uri(websiteUrl).Host} 下载预览图";
+            
+            // 强制下载警告色
+            var buttonColor = isXivModArchive && forceDownload 
+                ? new Vector4(1.0f, 0.7f, 0.0f, 1.0f)  // 橙色
+                : default;
+            
+            using (isXivModArchive && forceDownload ? ImRaii.PushColor(ImGuiCol.Button, buttonColor) : null)
+            {
+                if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Download.ToIconString()}##downloadImages", UiHelpers.IconButtonSize,
+                    downloadTooltip, buttonDisabled, true))
+                {
+                    Task.Run(async () => await _previewDownloader.TryDownloadPreviewImage(selection.Mod!, forceDownload));
+                }
             }
 
             ImGui.SameLine();
@@ -432,4 +473,9 @@ public class ModPanelSettingsTab(
                     new TemporaryModSettings(selection.Mod!, actual));
         }
     }    
+
+    public void Dispose()
+    {
+        _previewDownloader.Dispose();
+    }
 }

@@ -723,8 +723,9 @@ public class ModPreviewImagePanel : IDisposable
                                             oldTexture.Dispose();
                                         if (oldOriginalTexture != null && oldOriginalTexture != newOriginalTexture)
                                             oldOriginalTexture.Dispose();
-                                        
+#if DEBUG
                                         Penumbra.Log.Debug($"[分辨率提升] 图片 {Path.GetFileName(path)} 已提升到 {neededResolution}，内存: {newMemorySize/1024}KB");
+#endif
                                     }
                                 }
                             }
@@ -921,7 +922,7 @@ public class ModPreviewImagePanel : IDisposable
                     ImGui.SetCursorPos(new Vector2(posX, posY));
                     
                     var hiddenCount = totalImageCount - imageFilesToDisplay.Count;
-                    var infoText = $"只支持10张预览图\n还有 {hiddenCount} 张图片未显示...";
+                    var infoText = $"只支持 10 张预览图\n还有 {hiddenCount} 张图片未显示...";
                     var textSize = ImGui.CalcTextSize(infoText);
                     
                     var padding = 10 * UiHelpers.Scale;
