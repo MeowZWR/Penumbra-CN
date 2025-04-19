@@ -712,8 +712,10 @@ public class ModPreviewImagePanel : IDisposable
                         {
                             try
                             {
+#if DEBUG
                                 Penumbra.Log.Debug($"[分辨率提升] 为图片 {Path.GetFileName(path)} 加载更高分辨率: {cachedTexture.Resolution} -> {neededResolution}");
                                 _loadingImages.Add(path);
+#endif
                                 
                                 var (newTexture, newOriginalTexture, newScaledSize, originalSize, newMemorySize) = 
                                     await _imageCompressor.CompressImageAsync(path, neededResolution);
@@ -802,7 +804,9 @@ public class ModPreviewImagePanel : IDisposable
                                     try
                                     {
                                         _loadingImages.Add(path);
+#if DEBUG
                                         Penumbra.Log.Debug($"[全屏预览] 为图片 {Path.GetFileName(path)} 提升分辨率至原始分辨率");
+#endif
                                         var (newTexture, newOriginalTexture, newScaledSize, originalSize, newMemorySize) = 
                                             await _imageCompressor.CompressImageAsync(path, ImageCompressor.ResolutionType.Original);
                                         
