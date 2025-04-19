@@ -42,6 +42,11 @@ public class Configuration : IPluginConfiguration, ISavable, IService
         set => SetField(ref _enableMods, value, ModsEnabled);
     }
 
+    public bool UseManualProxy { get; set; } = false;
+    public string ProxyProtocol { get; set; } = "http";
+    public string ProxyHost { get; set; } = "127.0.0.1";
+    public int ProxyPort { get; set; } = 7890;
+
     public string ModDirectory    { get; set; } = string.Empty;
     public string ExportDirectory { get; set; } = string.Empty;
 

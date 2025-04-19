@@ -19,6 +19,7 @@ using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
 using Penumbra.UI.ModsTab;
+using Penumbra.UI.ModsTab.ModPreview;
 
 namespace Penumbra.UI.Tabs;
 
@@ -50,18 +51,24 @@ public class SettingsTab : ITab, IUiService
     private readonly MigrationSectionDrawer      _migrationDrawer;
     private readonly CollectionAutoSelector      _autoSelector;
     private readonly CleanupService              _cleanupService;
+    private readonly INotificationManager        _notificationManager;
 
     private int _minimumX = int.MaxValue;
     private int _minimumY = int.MaxValue;
 
     private readonly TagButtons _sharedTags = new();
 
+    private readonly string[] _proxyProtocols = { "http", "https", "socks4", "socks5" };
+    private int _proxyProtocolIndex = 0;
+    private string _proxyStatus = "未测试";
+
     public SettingsTab(IDalamudPluginInterface pluginInterface, Configuration config, FontReloader fontReloader, TutorialService tutorial,
         Penumbra penumbra, FileDialogService fileDialog, ModManager modManager, ModFileSystemSelector selector,
         CharacterUtility characterUtility, ResidentResourceManager residentResources, ModExportManager modExportManager, HttpApi httpApi,
         DalamudSubstitutionProvider dalamudSubstitutionProvider, FileCompactor compactor, DalamudConfigService dalamudConfig,
         IDataManager gameData, PredefinedTagManager predefinedTagConfig, CrashHandlerService crashService,
-        MigrationSectionDrawer migrationDrawer, CollectionAutoSelector autoSelector, CleanupService cleanupService)
+        MigrationSectionDrawer migrationDrawer, CollectionAutoSelector autoSelector, CleanupService cleanupService,
+        INotificationManager notificationManager)
     {
         _pluginInterface             = pluginInterface;
         _config                      = config;
@@ -86,6 +93,7 @@ public class SettingsTab : ITab, IUiService
         _migrationDrawer      = migrationDrawer;
         _autoSelector         = autoSelector;
         _cleanupService       = cleanupService;
+        _notificationManager    = notificationManager;
     }
 
     public void DrawHeader()
@@ -510,6 +518,91 @@ public class SettingsTab : ITab, IUiService
             ImGui.TableNextColumn();
             UI.ModsTab.ModPreview.ModPreviewImagePanel.GetInstance()?.Config.DrawSpacingSelector(_config);
             ImUtf8.LabeledHelpMarker("图片间距"u8, "预览面板中图片之间的垂直间距。"u8);
+            
+            // 添加代理设置部分
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+            var useManualProxy = _config.UseManualProxy;
+            if (ImGui.Checkbox("##使用代理下载", ref useManualProxy))
+            {
+                _config.UseManualProxy = useManualProxy;
+                _config.Save();
+                // 更改代理设置后自动应用
+                ModPreviewDownloader.ApplyProxySettings(_config);
+            }
+            ImUtf8.LabeledHelpMarker("通过代理下载预览图"u8, "为预览图下载启用网络代理，解决某些网站访问问题"u8);
+            
+            if (useManualProxy)
+            {
+                // 代理协议
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                _proxyProtocolIndex = Array.IndexOf(_proxyProtocols, _config.ProxyProtocol);
+                if (_proxyProtocolIndex < 0) _proxyProtocolIndex = 0;
+                
+                ImGui.SetNextItemWidth(150);
+                if (ImGui.Combo("##代理协议", ref _proxyProtocolIndex, _proxyProtocols, _proxyProtocols.Length))
+                {
+                    _config.ProxyProtocol = _proxyProtocols[_proxyProtocolIndex];
+                    _config.Save();
+                }
+                ImUtf8.LabeledHelpMarker("代理协议"u8, "代理服务器使用的协议类型"u8);
+                
+                // 代理地址
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                var proxyHost = _config.ProxyHost;
+                ImGui.SetNextItemWidth(150);
+                if (ImGui.InputText("##proxyHost", ref proxyHost, 100))
+                {
+                    _config.ProxyHost = proxyHost;
+                    _config.Save();
+                }
+                ImUtf8.LabeledHelpMarker("代理服务器地址"u8, "代理服务器的IP地址或域名"u8);
+                
+                // 代理端口
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                var proxyPort = _config.ProxyPort;
+                ImGui.SetNextItemWidth(150);
+                if (ImGui.InputInt("##proxyPort", ref proxyPort))
+                {
+                    _config.ProxyPort = Math.Max(1, Math.Min(65535, proxyPort));
+                    _config.Save();
+                }
+                ImUtf8.LabeledHelpMarker("代理服务器端口"u8, "代理服务器的端口号"u8);
+                
+                // 测试和应用按钮
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                
+                if (ImGui.Button("测试代理连接"))
+                {
+                    _proxyStatus = "测试中";
+                    _ = Task.Run(async () =>
+                    {
+                        var result = await ModPreviewDownloader.TestProxyConnection(_config);
+                        _proxyStatus = result.success ? "连接成功" : $"连接失败: {result.message}";
+                    });
+                }
+                
+                ImGui.SameLine();
+                if (ImGui.Button("应用设置"))
+                {
+                    ModPreviewDownloader.ApplyProxySettings(_config);
+                }
+                
+                // 显示测试结果状态
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                var statusColor = _proxyStatus switch
+                {
+                    "测试中" => new Vector4(1, 1, 0, 1),
+                    "连接成功" => new Vector4(0, 1, 0, 1),
+                    _ => new Vector4(1, 0, 0, 1)
+                };
+                ImGui.TextColored(statusColor, $"代理状态: {_proxyStatus}");
+            }
         }
     }
 
