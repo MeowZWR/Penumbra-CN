@@ -460,52 +460,29 @@ public class SettingsTab : ITab, IUiService
             }
             ImUtf8.LabeledHelpMarker("保存预览面板显示状态"u8, "保存预览面板的展开或隐藏状态，不一定有效"u8);
 
+            // 使用预览配置中的绘制方法
             // 预览面板比例
             ImGui.TableNextColumn();
             ImGui.TableNextColumn();
-            var ratio = _config.PreviewPanelRatio;
-            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-            if (ImGui.DragFloat("##预览面板比例", ref ratio, 0.01f, 0.1f, 0.5f, "%.2f"))
-            {
-                _config.PreviewPanelRatio = ratio;
-                _config.Save();
-            }
+            UI.ModsTab.ModPreview.ModPreviewImagePanel.GetInstance()?.Config.DrawRatioSelector(_config);
             ImUtf8.LabeledHelpMarker("预览面板比例"u8, "预览面板占总宽度的比例。"u8);
 
             // 预览面板最小宽度
             ImGui.TableNextColumn();
             ImGui.TableNextColumn();
-            var minWidth = _config.PreviewPanelMinWidth;
-            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-            if (ImGui.DragFloat("##预览面板最小宽度", ref minWidth, 1f, 100f, 800f, "%.0f"))
-            {
-                _config.PreviewPanelMinWidth = minWidth;
-                _config.Save();
-            }
+            UI.ModsTab.ModPreview.ModPreviewImagePanel.GetInstance()?.Config.DrawMinWidthSelector(_config);
             ImUtf8.LabeledHelpMarker("预览面板最小宽度"u8, "预览面板的最小宽度限制。"u8);
 
             // 预览面板最大宽度
             ImGui.TableNextColumn();
             ImGui.TableNextColumn();
-            var maxWidth = _config.PreviewPanelMaxWidth;
-            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-            if (ImGui.DragFloat("##预览面板最大宽度", ref maxWidth, 1f, 200f, 1000f, "%.0f"))
-            {
-                _config.PreviewPanelMaxWidth = maxWidth;
-                _config.Save();
-            }
+            UI.ModsTab.ModPreview.ModPreviewImagePanel.GetInstance()?.Config.DrawMaxWidthSelector(_config);
             ImUtf8.LabeledHelpMarker("预览面板最大宽度"u8, "预览面板的最大宽度限制。"u8);
 
             // 预览图片最小宽度
             ImGui.TableNextColumn();
             ImGui.TableNextColumn();
-            var imageMinWidth = _config.PreviewImageMinWidth;
-            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-            if (ImGui.DragFloat("##预览图片最小宽度", ref imageMinWidth, 1f, 100f, 800f, "%.0f"))
-            {
-                _config.PreviewImageMinWidth = imageMinWidth;
-                _config.Save();
-            }
+            UI.ModsTab.ModPreview.ModPreviewImagePanel.GetInstance()?.Config.DrawImageMinWidthSelector(_config);
             ImUtf8.LabeledHelpMarker("预览图片最小宽度"u8, "预览图片的最小显示宽度，影响图片的排列方式。"u8);
 
             // 预览面板最大内存使用量
@@ -531,13 +508,7 @@ public class SettingsTab : ITab, IUiService
             // 预览面板图片间距
             ImGui.TableNextColumn();
             ImGui.TableNextColumn();
-            var imageSpacing = _config.PreviewPanelImageSpacing;
-            ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-            if (ImGui.DragFloat("##图片间距", ref imageSpacing, 0.1f, 0f, 10f, "%.1f"))
-            {
-                _config.PreviewPanelImageSpacing = imageSpacing;
-                _config.Save();
-            }
+            UI.ModsTab.ModPreview.ModPreviewImagePanel.GetInstance()?.Config.DrawSpacingSelector(_config);
             ImUtf8.LabeledHelpMarker("图片间距"u8, "预览面板中图片之间的垂直间距。"u8);
         }
     }
