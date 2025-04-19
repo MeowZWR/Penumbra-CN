@@ -98,7 +98,8 @@ public class ModPreviewImagePanel : IDisposable
         LoadPinnedConfig();
     }
 
-    // 获取当前内存使用量
+    public static ModPreviewImagePanel? GetInstance() => _instance;
+
     public static long GetCurrentMemoryUsage()
     {
         if (_instance == null)
@@ -132,7 +133,6 @@ public class ModPreviewImagePanel : IDisposable
                     _config.ThumbnailSize = config.ThumbnailSize;
                     _config.MaxPreviewWidth = config.MaxPreviewWidth;
                     _config.MaxPreviewHeight = config.MaxPreviewHeight;
-                    _config.PreviewPanelImageSpacing = config.PreviewPanelImageSpacing;
                     _config.PreviewPanelLeftMargin = config.PreviewPanelLeftMargin;
                     _config.EnableExternalViewer = config.EnableExternalViewer;
                 }
