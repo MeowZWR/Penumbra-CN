@@ -61,9 +61,15 @@ public class PenumbraChangelog : IUiService
         Add1_3_5_0(Changelog);
         Add1_3_5_2(Changelog);
         Add1_3_5_4(Changelog);
+        Add1_3_5_6(Changelog);
     }
 
     #region Changelogs
+        private static void Add1_3_5_6(Changelog log)
+        => log.NextVersion("版本 1.3.5.6-cn")
+            .RegisterEntry("修复剪贴板导入功能（谢谢翼佬！）。")
+            .RegisterEntry("改善图片缓存消耗。")
+            .RegisterHighlight("注意：不支持精细管理，请勿用作图片管理工具。");
 
     private static void Add1_3_5_4(Changelog log)
         => log.NextVersion("版本 1.3.5.4-cn")
