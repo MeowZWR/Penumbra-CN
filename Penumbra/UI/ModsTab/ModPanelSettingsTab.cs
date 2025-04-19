@@ -168,27 +168,6 @@ public class ModPanelSettingsTab(
             }
 
             ImGui.SameLine();
-            var enabled = config.DeleteModModifier.IsActive();
-            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.CompressArrowsAlt.ToIconString()}##compressImages", UiHelpers.IconButtonSize,
-                enabled 
-                    ? "压缩所有图片，宽或高最大为1024像素（无效了，改着改着就没效果了）"
-                    : $"压缩所有图片，宽或高最大为1024像素\n按住 {config.DeleteModModifier} 以压缩\n（无效了，改着改着就没效果了）",
-                !enabled, true))
-            {
-                Task.Run(async () =>
-                {
-                    try
-                    {
-                        await _imagePanel.CompressImages();
-                    }
-                    catch (Exception ex)
-                    {
-                        Penumbra.Log.Warning($"压缩图片失败: {ex.Message}");
-                    }
-                });
-            }
-
-            ImGui.SameLine();
             if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Clipboard.ToIconString()}##importFromClipboard", UiHelpers.IconButtonSize,
                 "从剪贴板导入图片", false, true))
             {

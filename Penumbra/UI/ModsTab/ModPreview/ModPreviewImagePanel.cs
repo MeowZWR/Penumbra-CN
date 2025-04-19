@@ -978,7 +978,7 @@ public class ModPreviewImagePanel : IDisposable
         }
     }
 
-    internal async Task<bool> ProcessFileWithLock(string filePath, Func<Task> action, bool isCompress = false)
+    public async Task<bool> ProcessFileWithLock(string filePath, Func<Task> action, bool isCompress = false)
     {
         var retryCount = 0;
         while (retryCount < MaxRetryCount)
@@ -1133,48 +1133,10 @@ public class ModPreviewImagePanel : IDisposable
         }
     }
 
-    public async Task CompressImages()
-    {
-        if (CurrentModPath == null)
-            return;
-
-        var coverFolder = Path.Combine(CurrentModPath, "CoverImage");
-        if (!Directory.Exists(coverFolder))
-            return;
-
-        var imageFiles = Directory.GetFiles(coverFolder)
-            .Where(f => SupportedExtensions.Contains(Path.GetExtension(f).ToLower()))
-            .ToList();
-
-        // 先清除缓存
-        ClearCache();
-
-        // 逐个压缩图片
-        foreach (var imagePath in imageFiles)
-        {
-            try
-            {
-                // 使用ImageCompressor加载图片（它会自动处理压缩）
-                await LoadImage(imagePath);
-            }
-            catch (Exception ex)
-            {
-                Penumbra.Log.Warning($"压缩图片失败: {imagePath} - {ex.Message}");
-            }
-        }
-    }
-
     private Vector2 GetScaledSize(Vector2 originalSize, float maxWidth)
     {
-        // 计算缩放比例
-        var scale = maxWidth / originalSize.X;
-        
-        // 如果缩放后的宽度小于最小宽度，则使用最小宽度
-        if (originalSize.X * scale < _configuration.PreviewImageMinWidth)
-        {
-            scale = _configuration.PreviewImageMinWidth / originalSize.X;
-        }
-        
+        // 计算缩放比例，保持宽高比
+        float scale = Math.Min(1.0f, maxWidth / originalSize.X);
         return new Vector2(originalSize.X * scale, originalSize.Y * scale);
     }
 
