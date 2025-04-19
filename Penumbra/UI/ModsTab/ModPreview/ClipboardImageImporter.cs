@@ -6,9 +6,6 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Formats.Png;
 
 namespace Penumbra.UI.ModsTab.ModPreview;
 

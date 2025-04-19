@@ -32,13 +32,18 @@ public class ModPreviewImagePanel : IDisposable
     private readonly INotificationManager _notificationManager;
     private bool _disposed;
     private const int MaxRetryCount = 3;
-    private const int FileOperationDelay = 500; // 毫秒
-    private const int MaxCacheSize = 10;
+    private const int FileOperationDelay = 500;
+    private const int MaxCacheSize = 30;
     private const int CacheCleanupInterval = 300000;
     private const int MemoryStreamPoolSize = 10;
     private float _maxPreviewWidth = 800f;
+    
+    // 日志控制变量
+    private DateTime _lastLogTime = DateTime.MinValue;
+    private const int LogIntervalMs = 1000;
+    private int _lastTotalImageCount = 0;
+    private int _lastDrawnImageCount = 0;
 
-    // 添加一个静态实例引用
     private static ModPreviewImagePanel? _instance;
 
     public float MaxPreviewWidth
@@ -93,7 +98,7 @@ public class ModPreviewImagePanel : IDisposable
         LoadPinnedConfig();
     }
 
-    // 添加静态方法获取当前内存使用量
+    // 获取当前内存使用量
     public static long GetCurrentMemoryUsage()
     {
         if (_instance == null)
@@ -243,15 +248,26 @@ public class ModPreviewImagePanel : IDisposable
             var itemsToRemove = _textureCache
                 .Where(kvp => 
                     !kvp.Value.IsVisible && 
-                    (now - kvp.Value.LastAccessTime).TotalMinutes > 5)
+                    (now - kvp.Value.LastAccessTime).TotalMinutes > 5 &&
+                    !_loadingImages.Contains(kvp.Key))
                 .ToList();
 
-            foreach (var item in itemsToRemove)
+            if (itemsToRemove.Count > 0)
             {
-                _textureCache.Remove(item.Key);
-                _lruList.Remove(item.Key);
-                item.Value.Texture?.Dispose();
-                item.Value.OriginalTexture?.Dispose();
+#if DEBUG
+                Penumbra.Log.Debug($"[缓存清理] 定时清理 {itemsToRemove.Count} 张图片，当前缓存总数: {_textureCache.Count}，内存使用: {CurrentMemoryUsage / 1024 / 1024}MB");
+                foreach (var item in itemsToRemove)
+                {
+                    Penumbra.Log.Debug($"[缓存清理] 清理图片: {Path.GetFileName(item.Key)}，上次访问: {(now - item.Value.LastAccessTime).TotalMinutes:F1}分钟前，是否可见: {item.Value.IsVisible}");
+                }
+#endif
+                foreach (var item in itemsToRemove)
+                {
+                    _textureCache.Remove(item.Key);
+                    _lruList.Remove(item.Key);
+                    item.Value.Texture?.Dispose();
+                    item.Value.OriginalTexture?.Dispose();
+                }
             }
         }
     }
@@ -260,6 +276,9 @@ public class ModPreviewImagePanel : IDisposable
     {
         lock (_cacheLock)
         {
+#if DEBUG
+            Penumbra.Log.Debug($"[缓存管理] 执行完全清理，当前缓存: {_textureCache.Count}张，内存使用: {CurrentMemoryUsage / 1024 / 1024}MB");
+#endif
             foreach (var texture in _textureCache.Values)
             {
                 texture.Texture?.Dispose();
@@ -269,6 +288,10 @@ public class ModPreviewImagePanel : IDisposable
             _lruList.Clear();
             _originalSizes.Clear();
             _scaledSizes.Clear();
+            
+#if DEBUG
+            Penumbra.Log.Debug("[缓存管理] 完全清理完成");
+#endif
         }
     }
 
@@ -278,10 +301,36 @@ public class ModPreviewImagePanel : IDisposable
         {
             if (_textureCache.TryGetValue(path, out var texture))
             {
+                bool visibilityChanged = texture.IsVisible != isVisible;
                 _lruList.Remove(path);
                 _lruList.AddFirst(path);
                 texture.LastAccessTime = DateTime.Now;
+                
+                // 更新可见状态 - 确保不会保留过多可见图片
+                if (isVisible)
+                {
+                    // 统计当前可见图片数量，如果过多，将此图片标记为不可见
+                    int visibleCount = _textureCache.Values.Count(t => t.IsVisible);
+                    if (visibleCount > MaxCacheSize && !texture.IsVisible)
+                    {
+#if DEBUG
+                        if (path.Contains("screenshot"))
+                        {
+                            Penumbra.Log.Debug($"[LRU更新] 图片:{Path.GetFileName(path)} 不标记为可见，当前可见图片数过多: {visibleCount}/{MaxCacheSize}");
+                        }
+#endif
+                        return;
+                    }
+                }
+                
                 texture.IsVisible = isVisible;
+                
+#if DEBUG
+                if (visibilityChanged && path.Contains("screenshot"))
+                {
+                    Penumbra.Log.Debug($"[LRU更新] 图片:{Path.GetFileName(path)} 可见状态变更: {isVisible}");
+                }
+#endif
             }
         }
     }
@@ -290,19 +339,88 @@ public class ModPreviewImagePanel : IDisposable
     {
         lock (_cacheLock)
         {
-            while (_textureCache.Count > MaxCacheSize || 
-                   CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory)
+            bool isOverCount = _textureCache.Count > MaxCacheSize * 1.5;
+            bool isOverMemory = CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.9;
+            
+            if (isOverCount || isOverMemory)
             {
-                if (_lruList.Last == null) break;
+#if DEBUG
+                Penumbra.Log.Debug($"[缓存管理] 准备清理缓存，当前数量: {_textureCache.Count}，最大允许: {MaxCacheSize}，当前内存: {CurrentMemoryUsage / 1024 / 1024}MB，最大允许: {_configuration.PreviewPanelMaxMemory / 1024 / 1024}MB");
+#endif
+            }
+            else
+            {
+                return;
+            }
 
-                var lastPath = _lruList.Last.Value;
+            // 首先尝试清理非可见图片且不是新加载的图片
+            var nonVisibleCandidates = _lruList
+                .Where(path => 
+                    _textureCache.TryGetValue(path, out var tex) && 
+                    !tex.IsVisible && 
+                    !tex.IsNew &&
+                    !_loadingImages.Contains(path))
+                .ToList();
+
+            // 循环直到大小符合要求或没有可清理的非可见图片
+            while ((isOverCount || isOverMemory) && nonVisibleCandidates.Count > 0)
+            {
+                var lastPath = nonVisibleCandidates.Last();
+                nonVisibleCandidates.RemoveAt(nonVisibleCandidates.Count - 1);
+
                 if (_textureCache.TryGetValue(lastPath, out var texture))
                 {
+#if DEBUG
+                    Penumbra.Log.Debug($"[缓存管理] 清理非可见图片: {Path.GetFileName(lastPath)}，上次访问: {(DateTime.Now - texture.LastAccessTime).TotalSeconds:F1}秒前，内存占用: {texture.MemorySize / 1024}KB");
+#endif
                     _textureCache.Remove(lastPath);
-                    _lruList.RemoveLast();
+                    _lruList.Remove(lastPath);
                     texture.Texture?.Dispose();
                     texture.OriginalTexture?.Dispose();
                 }
+
+                isOverCount = _textureCache.Count > MaxCacheSize * 1.5;
+                isOverMemory = CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.9;
+            }
+
+            if (isOverMemory && CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.95)
+            {
+#if DEBUG
+                Penumbra.Log.Warning($"[缓存管理] 非可见图片已全部清理，但内存仍严重超出限制。开始清理可见图片。当前: {_textureCache.Count}张，{CurrentMemoryUsage / 1024 / 1024}MB");
+#endif
+                
+                // 对内存超限，采取更激进的清理策略
+                var visibleCandidates = _lruList
+                    .Where(path => 
+                        _textureCache.TryGetValue(path, out var tex) && 
+                        tex.IsVisible && 
+                        !_loadingImages.Contains(path))
+                    .ToList();
+                
+                // 清理最不常用的可见图片，直到内存使用符合要求或没有更多图片可清理
+                while (isOverMemory && visibleCandidates.Count > 0)
+                {
+                    var lastPath = visibleCandidates.Last();
+                    visibleCandidates.RemoveAt(visibleCandidates.Count - 1);
+
+                    if (_textureCache.TryGetValue(lastPath, out var texture))
+                    {
+#if DEBUG
+                        Penumbra.Log.Warning($"[缓存管理] 强制清理可见图片: {Path.GetFileName(lastPath)}，上次访问: {(DateTime.Now - texture.LastAccessTime).TotalSeconds:F1}秒前，内存占用: {texture.MemorySize / 1024}KB");
+#endif
+                        _textureCache.Remove(lastPath);
+                        _lruList.Remove(lastPath);
+                        texture.Texture?.Dispose();
+                        texture.OriginalTexture?.Dispose();
+                    }
+
+                    isOverMemory = CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.95;
+                }
+            }
+
+            if (isOverMemory && CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.95)
+            {
+                Penumbra.Log.Error($"[缓存管理] 严重警告：清理后仍超出限制。当前: {_textureCache.Count}张，{CurrentMemoryUsage / 1024 / 1024}MB，加载中: {_loadingImages.Count}张");
             }
         }
     }
@@ -329,8 +447,10 @@ public class ModPreviewImagePanel : IDisposable
             CurrentModPath = newModPath;
             _pinnedConfig.CurrentModPath = newModPath;
             LoadPinnedConfig(); // 切换模组时加载新的置顶配置
+#if DEBUG
             Penumbra.Log.Debug($"当前Mod路径: {CurrentModPath}");
             Penumbra.Log.Debug($"CoverImage文件夹路径: {coverFolder}");
+#endif
         }
 
         // 创建拖拽源
@@ -405,39 +525,111 @@ public class ModPreviewImagePanel : IDisposable
             return;
         }
 
-        var imageFiles = Directory.GetFiles(coverFolder)
+        // 获取所有图片文件
+        var allImageFiles = Directory.GetFiles(coverFolder)
             .Where(f => SupportedExtensions.Contains(Path.GetExtension(f).ToLower()))
             .ToList();
 
-        // 如果有置顶图片，将其移到列表最前面
-        if (_pinnedConfig.PinnedImagePath != null && imageFiles.Contains(_pinnedConfig.PinnedImagePath))
+        // 根据创建时间排序（最新的排在前面）
+        var sortedByDate = allImageFiles
+            .Select(path => new { Path = path, CreationTime = File.GetCreationTime(path) })
+            .OrderByDescending(item => item.CreationTime)
+            .ToList();
+
+        // 准备实际要显示的图片列表（最多10张）
+        const int maxImagesPerMod = 10;
+        var imageFilesToDisplay = new List<string>(maxImagesPerMod);
+        int totalImageCount = allImageFiles.Count;
+        
+        // 首先添加置顶图片（如果有）
+        if (_pinnedConfig.PinnedImagePath != null && allImageFiles.Contains(_pinnedConfig.PinnedImagePath))
         {
-            imageFiles.Remove(_pinnedConfig.PinnedImagePath);
-            imageFiles.Insert(0, _pinnedConfig.PinnedImagePath);
+            imageFilesToDisplay.Add(_pinnedConfig.PinnedImagePath);
+        }
+        
+        // 然后添加最新的图片，直到达到上限
+        foreach (var item in sortedByDate)
+        {
+            // 跳过已经添加的置顶图片
+            if (imageFilesToDisplay.Contains(item.Path))
+                continue;
+                
+            imageFilesToDisplay.Add(item.Path);
+            
+            // 达到10张上限后停止
+            if (imageFilesToDisplay.Count >= maxImagesPerMod)
+                break;
         }
 
-        if (imageFiles.Count == 0)
+        if (imageFilesToDisplay.Count == 0)
         {
             ImGui.TextDisabled("没有支持格式的图片。");
             return;
         }
 
+        // 使用最终选择的图片列表
+        var imageFiles = imageFilesToDisplay;
+
+        // 减少日志输出频率: 只在数量变化或者超过日志间隔时才记录
+        var now = DateTime.Now;
+        var shouldLog = (totalImageCount != _lastTotalImageCount || 
+                         (now - _lastLogTime).TotalMilliseconds > LogIntervalMs);
+        
+        if (shouldLog)
+        {
+#if DEBUG
+            Penumbra.Log.Debug($"[预览面板] 开始加载，筛选后图片数: {imageFiles.Count}/{totalImageCount}，当前缓存: {_textureCache.Count}，加载队列: {_loadingImages.Count}，内存使用: {CurrentMemoryUsage / 1024 / 1024}MB");
+#endif
+            _lastTotalImageCount = totalImageCount;
+            _lastLogTime = now;
+        }
+
+        // 确保缓存不超过限制
+        EnsureCacheSize();
+
+        // 计算允许的平均每张图片内存
+        long averageMemoryPerImage = Math.Max(
+            _configuration.PreviewPanelMaxMemory / Math.Max(imageFiles.Count, 1), 
+            1024 * 1024 * 2); // 最小2MB每张图
+
+        // 记录未缓存图片数量
+        int uncachedCount = 0;
         // 检查并启动图片加载，减少日志输出
         foreach (var path in imageFiles)
         {
             if (!_textureCache.ContainsKey(path) && !_loadingImages.Contains(path))
             {
+                uncachedCount++;
                 _loadingImages.Add(path);
                 Task.Run(async () => await LoadImage(path));
             }
         }
+        
+        if (uncachedCount > 0 && shouldLog)
+        {
+#if DEBUG
+            Penumbra.Log.Debug($"[预览面板] 发起加载 {uncachedCount} 张新图片，每张图允许平均内存: {averageMemoryPerImage / 1024}KB");
+#endif
+        }
 
+        // 计算当前滑动窗口中实际可见的图片数量（现在我们每次都重置所有图片的可见状态）
+        int actualVisibleCount = 0;
+        
         // 创建一个子窗口来包含所有图片，并设置滚动条位置
         using (var child = ImRaii.Child("##PreviewContent", new Vector2(panelWidth, -1), false, ImGuiWindowFlags.NoScrollbar))
         {
             if (child)
             {
                 ImGui.SetCursorPosY(0);
+                
+                // 重置所有图片的可见状态为false
+                lock (_cacheLock)
+                {
+                    foreach (var texture in _textureCache.Values)
+                    {
+                        texture.IsVisible = false;
+                    }
+                }
                 
                 var scrollbarWidth = ImGui.GetStyle().ScrollbarSize;
                 var leftPadding = 0 * UiHelpers.Scale; // 减小左侧间距
@@ -493,8 +685,6 @@ public class ModPreviewImagePanel : IDisposable
                     if (cachedTexture.Texture == null)
                         continue;
 
-                    UpdateLRU(path, true);
-
                     // 找到当前最短的列
                     var shortestColumn = 0;
                     var minHeight = columnHeights[0];
@@ -510,54 +700,147 @@ public class ModPreviewImagePanel : IDisposable
                     // 计算图片的缩放尺寸
                     var newScaledSize = GetScaledSize(_originalSizes[path], columnWidths[shortestColumn]);
                     
-                    // 平滑过渡到新的缩放尺寸
-                    if (cachedTexture.ScaledSize.X > 0 && cachedTexture.ScaledSize.Y > 0)
+                    // 检查图片是否需要更高分辨率
+                    var displaySize = new Vector2(columnWidths[shortestColumn], newScaledSize.Y);
+                    var neededResolution = _imageCompressor.DetermineRequiredResolution(displaySize, _originalSizes[path]);
+                    
+                    if (neededResolution > cachedTexture.Resolution && 
+                        !_loadingImages.Contains(path) && 
+                        CurrentMemoryUsage < _configuration.PreviewPanelMaxMemory * 0.9)
                     {
-                        // 使用插值平滑过渡
-                        var lerpFactor = 0.3f; // 调整此值以控制过渡速度
-                        cachedTexture.ScaledSize = new Vector2(
-                            cachedTexture.ScaledSize.X + (newScaledSize.X - cachedTexture.ScaledSize.X) * lerpFactor,
-                            cachedTexture.ScaledSize.Y + (newScaledSize.Y - cachedTexture.ScaledSize.Y) * lerpFactor
-                        );
+                        Task.Run(async () => 
+                        {
+                            try
+                            {
+                                Penumbra.Log.Debug($"[分辨率提升] 为图片 {Path.GetFileName(path)} 加载更高分辨率: {cachedTexture.Resolution} -> {neededResolution}");
+                                _loadingImages.Add(path);
+                                
+                                var (newTexture, newOriginalTexture, newScaledSize, originalSize, newMemorySize) = 
+                                    await _imageCompressor.CompressImageAsync(path, neededResolution);
+                                
+                                if (newTexture != null && newOriginalTexture != null)
+                                {
+                                    lock (_cacheLock)
+                                    {
+                                        var oldTexture = cachedTexture.Texture;
+                                        var oldOriginalTexture = cachedTexture.OriginalTexture;
+                                        
+                                        cachedTexture.Texture = newTexture;
+                                        cachedTexture.OriginalTexture = newOriginalTexture;
+                                        cachedTexture.MemorySize = newMemorySize;
+                                        cachedTexture.ScaledSize = newScaledSize;
+                                        cachedTexture.Resolution = neededResolution;
+                                        
+                                        if (oldTexture != null && oldTexture != oldOriginalTexture)
+                                            oldTexture.Dispose();
+                                        if (oldOriginalTexture != null && oldOriginalTexture != newOriginalTexture)
+                                            oldOriginalTexture.Dispose();
+                                        
+                                        Penumbra.Log.Debug($"[分辨率提升] 图片 {Path.GetFileName(path)} 已提升到 {neededResolution}，内存: {newMemorySize/1024}KB");
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Penumbra.Log.Warning($"[分辨率提升] 提升图片分辨率失败: {Path.GetFileName(path)} - {ex.Message}");
+                            }
+                            finally
+                            {
+                                _loadingImages.Remove(path);
+                            }
+                        });
                     }
-                    else
-                    {
-                        cachedTexture.ScaledSize = newScaledSize;
-                    }
+                    
+                    cachedTexture.ScaledSize = newScaledSize;
 
-                    // 设置图片位置（添加边距）
                     var posX = columnPositions[shortestColumn];
                     var posY = 0f;
-                    if (columnHeights[shortestColumn] > 0) // 如果不是第一行，添加间距
+                    if (columnHeights[shortestColumn] > 0)
                         posY = columnHeights[shortestColumn] + spacing;
                     
                     ImGui.SetCursorPos(new Vector2(posX, posY));
-                    
-                    // 直接绘制图片
                     ImGui.Image(cachedTexture.Texture.ImGuiHandle, cachedTexture.ScaledSize);
+
+                    UpdateLRU(path, true);
+                    actualVisibleCount++;
+
+#if DEBUG
+                    if (imageFiles.IndexOf(path) == 0 && shouldLog)
+                    {
+                        Penumbra.Log.Debug($"[可见状态] 图片:{Path.GetFileName(path)} 可见状态已更新，总可见图片数: {_textureCache.Values.Count(t => t.IsVisible)}，当前实际绘制: {actualVisibleCount}");
+                    }
+#endif
 
                     if (ImGui.IsItemHovered() && _config.EnableImageInteraction)
                     {
-                        // 显示提示信息
                         ImGui.BeginTooltip();
-                        ImGui.Text("打开图片：Ctrl+左键\n删除图片：Shift+Ctrl+左键\n放大图片：按住右键\n置顶/取消置顶：Shift+右键");
+                        ImGui.Text("图片操作说明：");
+                        ImGui.BulletText("放大图片：按住右键");
+                        ImGui.BulletText("删除图片：Shift + Ctrl + 左键");
+                        ImGui.BulletText("置顶/取消置顶：Shift + 右键");
+                        ImGui.BulletText("使用外部工具打开：Ctrl + 左键");
+
+                        ImGui.TextColored(new Vector4(1, 0.5f, 0, 1), "注意："); 
+                        ImGui.SameLine(0, 0);
+                        ImGui.TextWrapped("点击后若未及时松开Ctrl键，外部工具会在后台打开");
                         ImGui.EndTooltip();
 
-                        // 处理Shift+右键点击置顶
+                        // Shift + 右键点击置顶
                         if (ImGui.IsMouseClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyShift)
                         {
                             PinImage(path);
                         }
-                        // 处理按住右键放大
                         else if (ImGui.IsMouseDown(ImGuiMouseButton.Right) && !ImGui.GetIO().KeyShift)
                         {
                             var winSize = ImGui.GetIO().DisplaySize;
+                            
+                            if (cachedTexture.Resolution < ImageCompressor.ResolutionType.Original && 
+                                !_loadingImages.Contains(path))
+                            {
+                                Task.Run(async () => 
+                                {
+                                    try
+                                    {
+                                        _loadingImages.Add(path);
+                                        Penumbra.Log.Debug($"[全屏预览] 为图片 {Path.GetFileName(path)} 提升分辨率至原始分辨率");
+                                        var (newTexture, newOriginalTexture, newScaledSize, originalSize, newMemorySize) = 
+                                            await _imageCompressor.CompressImageAsync(path, ImageCompressor.ResolutionType.Original);
+                                        
+                                        if (newTexture != null && newOriginalTexture != null)
+                                        {
+                                            lock (_cacheLock)
+                                            {
+                                                var oldTexture = cachedTexture.Texture;
+                                                var oldOriginalTexture = cachedTexture.OriginalTexture;
+                                                
+                                                cachedTexture.Texture = newTexture;
+                                                cachedTexture.OriginalTexture = newOriginalTexture;
+                                                cachedTexture.MemorySize = newMemorySize;
+                                                cachedTexture.Resolution = ImageCompressor.ResolutionType.Original;
+                                                
+                                                if (oldTexture != null && oldTexture != oldOriginalTexture)
+                                                    oldTexture.Dispose();
+                                                if (oldOriginalTexture != null && oldOriginalTexture != newOriginalTexture)
+                                                    oldOriginalTexture.Dispose();
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Penumbra.Log.Warning($"[全屏预览] 提升图片分辨率失败: {Path.GetFileName(path)} - {ex.Message}");
+                                    }
+                                    finally
+                                    {
+                                        _loadingImages.Remove(path);
+                                    }
+                                });
+                            }
+                            
                             var imgSize = new Vector2(cachedTexture.OriginalTexture?.Width ?? cachedTexture.Texture.Width, 
                                                     cachedTexture.OriginalTexture?.Height ?? cachedTexture.Texture.Height);
 
-                            // 如果图片尺寸大于窗口尺寸，则按比例缩放以适应屏幕
                             var scale = Math.Min(
-                                (winSize.X * 0.95f) / imgSize.X,  // 留出一些边距
+                                (winSize.X * 0.95f) / imgSize.X,
                                 (winSize.Y * 0.95f) / imgSize.Y
                             );
 
@@ -566,28 +849,24 @@ public class ModPreviewImagePanel : IDisposable
                                 imgSize *= scale;
                             }
 
-                            // 计算图片位置，使其居中显示
                             var min = new Vector2(winSize.X / 2 - imgSize.X / 2, winSize.Y / 2 - imgSize.Y / 2);
                             var max = min + imgSize;
 
-                            // 使用原始尺寸的纹理（如果可用）
                             var texture = cachedTexture.OriginalTexture ?? cachedTexture.Texture;
-                            
-                            // 使用前景绘制列表，确保图片显示在所有窗口之上
                             var foregroundDrawList = ImGui.GetForegroundDrawList();
                             
-                            // 先绘制半透明背景
                             foregroundDrawList.AddRectFilled(
                                 Vector2.Zero,
                                 winSize,
                                 ImGui.GetColorU32(new Vector4(0, 0, 0, 0.7f))
                             );
                             
-                            // 再绘制图片（不受半透明影响）
                             foregroundDrawList.AddImage(texture.ImGuiHandle, min, max);
                             
-                            // 显示图片尺寸信息
-                            var sizeText = $"{texture.Width} x {texture.Height}";
+                            var sizeText = $"{texture.Width} x {texture.Height} - {cachedTexture.Resolution}";
+                            if (cachedTexture.Resolution != ImageCompressor.ResolutionType.Original)
+                                sizeText += " (加载中...)";
+                                
                             var textSize = ImGui.CalcTextSize(sizeText);
                             var textPos = min + new Vector2(10, 10);
                             foregroundDrawList.AddText(
@@ -597,7 +876,7 @@ public class ModPreviewImagePanel : IDisposable
                             );
                         }
 
-                        // 处理左键点击打开外部工具
+                        // Ctrl + 左键点击打开外部工具
                         if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
                         {
                             try
@@ -614,7 +893,7 @@ public class ModPreviewImagePanel : IDisposable
                             }
                         }
 
-                        //Shift + Ctrl + 左键删除
+                        // Shift + Ctrl + 左键删除
                         if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && ImGui.GetIO().KeyShift)
                         {
                             try
@@ -628,29 +907,74 @@ public class ModPreviewImagePanel : IDisposable
                         }
                     }
 
-                    // 更新列的高度（考虑边距）
                     columnHeights[shortestColumn] = posY + newScaledSize.Y + imageMargin * 2;
                 }
 
-                // 计算实际内容高度（考虑所有列的最大高度）
+                if (totalImageCount > maxImagesPerMod)
+                {
+                    var shortestColumn = 0;
+                    var minHeight = columnHeights[0];
+                    for (var i = 1; i < imagesPerRow; i++)
+                    {
+                        if (columnHeights[i] < minHeight)
+                        {
+                            minHeight = columnHeights[i];
+                            shortestColumn = i;
+                        }
+                    }
+                    
+                    var posX = columnPositions[shortestColumn];
+                    var posY = 0f;
+                    if (columnHeights[shortestColumn] > 0)
+                        posY = columnHeights[shortestColumn] + spacing;
+                    
+                    ImGui.SetCursorPos(new Vector2(posX, posY));
+                    
+                    var hiddenCount = totalImageCount - imageFilesToDisplay.Count;
+                    var infoText = $"只支持10张预览图\n还有 {hiddenCount} 张图片未显示...";
+                    var textSize = ImGui.CalcTextSize(infoText);
+                    
+                    var padding = 10 * UiHelpers.Scale;
+                    var rectMin = ImGui.GetCursorScreenPos();
+                    var rectMax = new Vector2(
+                        rectMin.X + columnWidths[shortestColumn],
+                        rectMin.Y + textSize.Y + padding * 2
+                    );
+                    
+                    ImGui.GetWindowDrawList().AddRectFilled(
+                        rectMin,
+                        rectMax,
+                        ImGui.GetColorU32(new Vector4(0.1f, 0.1f, 0.1f, 0.7f)),
+                        4.0f
+                    );
+                    
+                    ImGui.SetCursorPos(new Vector2(
+                        posX + (columnWidths[shortestColumn] - textSize.X) / 2,
+                        posY + padding
+                    ));
+                    ImGui.TextColored(new Vector4(1, 1, 1, 0.9f), infoText);
+                    
+                    columnHeights[shortestColumn] = posY + textSize.Y + padding * 2 + imageMargin * 2;
+                }
+
                 var maxHeight = columnHeights.Max();
                 if (maxHeight > 0)
                 {
-                    // 添加底部边距
                     maxHeight += imageMargin;
-                    
-                    // 设置内容区域大小，确保没有多余空间
                     var contentHeight = maxHeight;
                     var availableHeight = ImGui.GetContentRegionAvail().Y;
-                    
-                    // 如果内容高度小于可用高度，则使用内容高度
-                    // 如果内容高度大于可用高度，则使用可用高度（允许滚动）
                     var finalHeight = Math.Min(contentHeight, availableHeight);
-                    
-                    // 设置内容区域大小
                     ImGui.Dummy(new Vector2(0, finalHeight));
                 }
             }
+        }
+        
+        if (shouldLog || actualVisibleCount != _lastDrawnImageCount)
+        {
+#if DEBUG
+            Penumbra.Log.Debug($"[预览面板] 绘制完成，实际绘制图片数: {actualVisibleCount}/{totalImageCount}，缓存中被标记为可见的图片: {_textureCache.Values.Count(t => t.IsVisible)}");
+#endif
+            _lastDrawnImageCount = actualVisibleCount;
         }
     }
 
@@ -665,7 +989,13 @@ public class ModPreviewImagePanel : IDisposable
                 {
                     if (_processingFiles.Contains(filePath))
                     {
-                        Penumbra.Log.Debug($"文件正在被处理中，等待重试: {filePath}");
+#if DEBUG
+                        // 避免对临时文件产生太多日志
+                        if (!filePath.Contains("temp_"))
+                        {
+                            Penumbra.Log.Debug($"文件正在被处理中，等待重试: {filePath}");
+                        }
+#endif
                         return false;
                     }
                     _processingFiles.Add(filePath);
@@ -691,7 +1021,9 @@ public class ModPreviewImagePanel : IDisposable
                 {
                     if (retryCount == MaxRetryCount - 1)
                     {
+#if DEBUG
                         Penumbra.Log.Debug($"文件被占用，等待重试 ({retryCount}/{MaxRetryCount}): {filePath}");
+#endif
                     }
                     await Task.Delay(FileOperationDelay * retryCount);
                     continue;
@@ -713,23 +1045,30 @@ public class ModPreviewImagePanel : IDisposable
 
     internal async Task LoadImage(string imagePath)
     {
+#if DEBUG
+        Penumbra.Log.Debug($"[图片加载] 开始加载图片: {Path.GetFileName(imagePath)}");
+#endif
+        
         if (!await ProcessFileWithLock(imagePath, async () =>
         {
             try
             {
+                var resolutionType = ImageCompressor.ResolutionType.Thumbnail;
+                
                 var (previewTexture, originalTexture, scaledSize, originalSize, memorySize) = 
-                    await _imageCompressor.CompressImageAsync(imagePath);
+                    await _imageCompressor.CompressImageAsync(imagePath, resolutionType);
 
                 if (previewTexture == null || originalTexture == null)
                 {
                     throw new Exception("创建纹理失败");
                 }
 
-                // 更新缓存
+                CachedTexture cachedTexture;
                 lock (_cacheLock)
                 {
                     EnsureCacheSize();
-                    _textureCache[imagePath] = new CachedTexture
+                    
+                    cachedTexture = new CachedTexture
                     {
                         Texture = previewTexture,
                         OriginalTexture = originalTexture,
@@ -739,10 +1078,28 @@ public class ModPreviewImagePanel : IDisposable
                         IsVisible = false,
                         ScaledSize = scaledSize,
                         HoveredSize = scaledSize,
-                        OriginalSize = originalSize
+                        OriginalSize = originalSize,
+                        Resolution = resolutionType,
+                        IsNew = true
                     };
+                    
+                    _textureCache[imagePath] = cachedTexture;
                     _originalSizes[imagePath] = originalSize;
                     _lruList.AddFirst(imagePath);
+                    
+#if DEBUG
+                    Penumbra.Log.Debug($"[图片加载] 成功加载图片: {Path.GetFileName(imagePath)}，大小: {originalSize.X}x{originalSize.Y}，内存占用: {memorySize / 1024}KB，分辨率级别: {resolutionType}");
+#endif
+                }
+                
+                await Task.Delay(2000);
+                
+                lock (_cacheLock)
+                {
+                    if (_textureCache.TryGetValue(imagePath, out var existingTexture))
+                    {
+                        existingTexture.IsNew = false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -767,10 +1124,12 @@ public class ModPreviewImagePanel : IDisposable
             }
         }))
         {
+#if DEBUG
             if (!imagePath.Contains("temp_"))
             {
                 Penumbra.Log.Debug($"文件正在被处理中，跳过加载: {imagePath}");
             }
+#endif
         }
     }
 
