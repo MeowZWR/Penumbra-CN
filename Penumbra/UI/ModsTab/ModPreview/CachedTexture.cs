@@ -1,5 +1,4 @@
 using Dalamud.Interface.Textures.TextureWraps;
-using System.Numerics;
 
 namespace Penumbra.UI.ModsTab.ModPreview;
 
@@ -14,4 +13,7 @@ public class CachedTexture
     public Vector2 ScaledSize { get; set; }
     public Vector2 HoveredSize { get; set; }
     public Vector2 OriginalSize { get; set; }
+    public ImageCompressor.ResolutionType Resolution { get; set; } = ImageCompressor.ResolutionType.Thumbnail;
+    
+    public bool IsNew { get; set; } = false;
 } 
