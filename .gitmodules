@@ -13,4 +13,4 @@
 [submodule "Penumbra.GameData"]
 	path = Penumbra.GameData
 	url = https://github.com/MeowZWR/Penumbra.GameData.git
-	branch = cn-pen
+	branch = cn-pen-7.1
