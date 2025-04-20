@@ -42,11 +42,6 @@ public class Configuration : IPluginConfiguration, ISavable, IService
         set => SetField(ref _enableMods, value, ModsEnabled);
     }
 
-    public bool UseManualProxy { get; set; } = false;
-    public string ProxyProtocol { get; set; } = "http";
-    public string ProxyHost { get; set; } = "127.0.0.1";
-    public int ProxyPort { get; set; } = 7890;
-
     public string ModDirectory    { get; set; } = string.Empty;
     public string ExportDirectory { get; set; } = string.Empty;
 
@@ -161,8 +156,8 @@ public class Configuration : IPluginConfiguration, ISavable, IService
             catch (Exception ex)
             {
                 Penumbra.Messager.NotificationMessage(ex,
-                    "Error reading Configuration, reverting to default.\nYou may be able to restore your configuration using the rolling backups in the XIVLauncher/backups/Penumbra directory.",
-                    "Error reading Configuration", NotificationType.Error);
+                    "读取配置时出错，正在恢复为默认配置。\n您可以通过 XIVLauncherCN/backups/Penumbra 目录中的循环备份来恢复您的配置。",
+                    "读取配置时出错", NotificationType.Error);
             }
 
         migrator.Migrate(utility, this);
