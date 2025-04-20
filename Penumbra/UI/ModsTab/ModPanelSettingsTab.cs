@@ -229,8 +229,27 @@ public class ModPanelSettingsTab(
 
         // 绘制预览图片内容
         ImGui.TableNextColumn();
+        
+        // 计算滚动条宽度
+        var scrollbarWidth = ImGui.GetStyle().ScrollbarSize;
+        // 预留右侧间距，减少与滚动条的间距
+        var rightPadding = 2 * UiHelpers.Scale;
+        // 使用统一的图片间距参数
+        var imageSpacing = config.PreviewPanelImageSpacing * UiHelpers.Scale;
+        
+        // 估算可能的最大列数（基于最小图片宽度）
+        var minImageWidth = config.PreviewImageMinWidth * UiHelpers.Scale;
+        var effectiveWidth = width - scrollbarWidth - rightPadding;
+        var possibleColumns = Math.Max(1, (int)(effectiveWidth / minImageWidth));
+        
+        // 为每列预留右侧安全边距，防止被剪切
+        var reservedSpace = scrollbarWidth + rightPadding + imageSpacing;
+        
+        // 最终可用宽度
+        var availableWidth = Math.Max(0, width - reservedSpace);
+        
         if (selection.Mod != null)
-            _imagePanel.Draw(selection.Mod, width);
+            _imagePanel.Draw(selection.Mod, availableWidth);
         else
             ImGui.TextDisabled("未选择模组。");
     }
