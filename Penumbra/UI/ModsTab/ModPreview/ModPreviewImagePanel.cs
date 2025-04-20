@@ -623,13 +623,12 @@ public class ModPreviewImagePanel : IDisposable
                 var leftPadding = 0 * UiHelpers.Scale; // 减小左侧间距
                 var availableWidth = panelWidth - leftPadding - scrollbarWidth;
                 var spacing = _configuration.PreviewPanelImageSpacing * UiHelpers.Scale;
-                var imageMargin = 2 * UiHelpers.Scale; // 图片边距
                 
                 // 计算每行可以显示的图片数量
                 var imagesPerRow = 1;
                 if (availableWidth >= _configuration.PreviewPanelMinWidth)
                 {
-                    var effectiveWidth = availableWidth - spacing * (imagesPerRow - 1) - imageMargin * 2;
+                    var effectiveWidth = availableWidth - spacing * (imagesPerRow - 1);
                     imagesPerRow = (int)(effectiveWidth / _configuration.PreviewImageMinWidth);
                     if (imagesPerRow < 1) imagesPerRow = 1;
                 }
@@ -641,8 +640,8 @@ public class ModPreviewImagePanel : IDisposable
                     imagesPerRow = Math.Min(imageFiles.Count, 2);
                 }
 
-                // 计算每张图片的基础宽度（考虑间距和边距）
-                var baseImageWidth = (availableWidth - spacing * (imagesPerRow - 1) - imageMargin * 2) / imagesPerRow;
+                // 计算每张图片的基础宽度（只考虑间距）
+                var baseImageWidth = (availableWidth - spacing * (imagesPerRow - 1)) / imagesPerRow;
                 
                 // 准备瀑布流布局
                 var columnHeights = new float[imagesPerRow];
@@ -652,7 +651,7 @@ public class ModPreviewImagePanel : IDisposable
                 // 初始化列的位置和宽度
                 for (var i = 0; i < imagesPerRow; i++)
                 {
-                    columnPositions[i] = leftPadding + imageMargin + i * (baseImageWidth + spacing + imageMargin * 2);
+                    columnPositions[i] = leftPadding + i * (baseImageWidth + spacing);
                     columnWidths[i] = baseImageWidth;
                 }
 
@@ -900,7 +899,7 @@ public class ModPreviewImagePanel : IDisposable
                         }
                     }
 
-                    columnHeights[shortestColumn] = posY + newScaledSize.Y + imageMargin * 2;
+                    columnHeights[shortestColumn] = posY + newScaledSize.Y;
                 }
 
                 if (totalImageCount > maxImagesPerMod)
@@ -947,13 +946,12 @@ public class ModPreviewImagePanel : IDisposable
                     ));
                     ImGui.TextColored(new Vector4(1, 1, 1, 0.9f), infoText);
                     
-                    columnHeights[shortestColumn] = posY + textSize.Y + padding * 2 + imageMargin * 2;
+                    columnHeights[shortestColumn] = posY + textSize.Y + padding * 2;
                 }
 
                 var maxHeight = columnHeights.Max();
                 if (maxHeight > 0)
                 {
-                    maxHeight += imageMargin;
                     var contentHeight = maxHeight;
                     var availableHeight = ImGui.GetContentRegionAvail().Y;
                     var finalHeight = Math.Min(contentHeight, availableHeight);
