@@ -6,6 +6,7 @@
         <Copyright>Copyright © 2025</Copyright>
         <FileVersion>9.0.0.1</FileVersion>
         <AssemblyVersion>9.0.0.1</AssemblyVersion>
+        <UseWindowsForms>true</UseWindowsForms>
         <OutputPath>bin\$(Configuration)\</OutputPath>
     </PropertyGroup>
 
