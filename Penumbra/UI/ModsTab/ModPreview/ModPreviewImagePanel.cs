@@ -446,7 +446,9 @@ public class ModPreviewImagePanel : IDisposable
             return true;
         });
         var y = ImGui.GetCursorPos().Y;
-        ImGui.InvisibleButton("##InvisibleButton", new Vector2(panelWidth, ImGui.GetContentRegionAvail().Y- 4f));
+        
+        using (var _ = ImRaii.Child("##DragDropTarget", new Vector2(panelWidth, ImGui.GetContentRegionAvail().Y - 4f), false, ImGuiWindowFlags.NoMouseInputs)){}
+
         ImGui.SetCursorPos(new Vector2(ImGui.GetCursorPos().X, y));
 
         // 设置拖拽目标
