@@ -62,9 +62,15 @@ public class PenumbraChangelog : IUiService
         Add1_3_5_2(Changelog);
         Add1_3_5_4(Changelog);
         Add1_3_5_6(Changelog);
+        Add1_3_5_7(Changelog);
     }
 
     #region Changelogs
+        private static void Add1_3_5_7(Changelog log)
+        => log.NextVersion("版本 1.3.5.7-cn")
+            .RegisterEntry("增加下载预览图的功能，只支持包含Heliosphere网址的模组。")
+            .RegisterEntry("优化预览图显示布局，修复图片剪切问题。")
+            .RegisterEntry("图片间距在插件设置-常规设置-图片间距中设置，值为4时较佳。", 1);
         private static void Add1_3_5_6(Changelog log)
         => log.NextVersion("版本 1.3.5.6-cn")
             .RegisterEntry("修复剪贴板导入功能（谢谢翼佬！）。")
