@@ -582,14 +582,24 @@ public class ModPreviewImagePanel : IDisposable
 
         // 记录未缓存图片数量
         int uncachedCount = 0;
-        // 检查并启动图片加载，减少日志输出
+        
+        // 线程安全操作：创建加载图片的列表副本
+        var loadingImagesSnapshot = new HashSet<string>(_loadingImages);
+        
         foreach (var path in imageFiles)
         {
-            if (!_textureCache.ContainsKey(path) && !_loadingImages.Contains(path))
+            if (!_textureCache.ContainsKey(path) && !loadingImagesSnapshot.Contains(path))
             {
                 uncachedCount++;
-                _loadingImages.Add(path);
-                Task.Run(async () => await LoadImage(path));
+                
+                lock (_cacheLock)
+                {
+                    if (!_loadingImages.Contains(path))
+                    {
+                        _loadingImages.Add(path);
+                        Task.Run(async () => await LoadImage(path));
+                    }
+                }
             }
         }
         
@@ -624,13 +634,12 @@ public class ModPreviewImagePanel : IDisposable
                 var availableWidth = panelWidth - leftPadding - scrollbarWidth;
                 var spacing = _configuration.PreviewPanelImageSpacing * UiHelpers.Scale;
                 
-                // 计算每行可以显示的图片数量
+                // 计算每行可以显示的图片数量，确保至少为1
                 var imagesPerRow = 1;
                 if (availableWidth >= _configuration.PreviewPanelMinWidth)
                 {
                     var effectiveWidth = availableWidth - spacing * (imagesPerRow - 1);
-                    imagesPerRow = (int)(effectiveWidth / _configuration.PreviewImageMinWidth);
-                    if (imagesPerRow < 1) imagesPerRow = 1;
+                    imagesPerRow = Math.Max(1, (int)(effectiveWidth / _configuration.PreviewImageMinWidth));
                 }
 
                 // 如果图片数量少，调整布局以更好地利用空间
@@ -639,6 +648,8 @@ public class ModPreviewImagePanel : IDisposable
                     // 对于少量图片，使用更少的列以获得更大的图片尺寸
                     imagesPerRow = Math.Min(imageFiles.Count, 2);
                 }
+
+                imagesPerRow = Math.Max(1, imagesPerRow);
 
                 // 计算每张图片的基础宽度（只考虑间距）
                 var baseImageWidth = (availableWidth - spacing * (imagesPerRow - 1)) / imagesPerRow;
