@@ -7,7 +7,7 @@ using Penumbra.Mods;
 using Penumbra.Mods.Manager;
 using SixLabors.ImageSharp;
 using Dalamud.Plugin.Services;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace Penumbra.UI.ModsTab.ModPreview;
 
@@ -119,7 +119,7 @@ public class ModPreviewImagePanel : IDisposable
             if (File.Exists(configPath))
             {
                 var json = File.ReadAllText(configPath);
-                var config = JsonSerializer.Deserialize<PreviewConfig>(json);
+                var config = JsonConvert.DeserializeObject<PreviewConfig>(json);
                 if (config != null)
                 {
                     _config.EnableImageInteraction = config.EnableImageInteraction;
@@ -128,6 +128,7 @@ public class ModPreviewImagePanel : IDisposable
                     _config.MaxPreviewHeight = config.MaxPreviewHeight;
                     _config.PreviewPanelLeftMargin = config.PreviewPanelLeftMargin;
                     _config.EnableExternalViewer = config.EnableExternalViewer;
+                    _config.Expanded = config.Expanded;
                 }
             }
         }
@@ -142,8 +143,16 @@ public class ModPreviewImagePanel : IDisposable
         try
         {
             var configPath = Path.Combine(_pluginInterface.ConfigDirectory.FullName, ConfigFileName);
-            var json = JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(configPath, json);
+            var secureWrite = File.Exists(configPath);
+            var tempPath = secureWrite ? configPath + ".tmp" : configPath;
+            
+            Penumbra.Log.Debug($"正在保存预览配置 {Path.GetFileName(configPath)} {(secureWrite ? "，使用安全写入" : "，首次创建")}...");
+            
+            var json = JsonConvert.SerializeObject(_config, Formatting.Indented);
+            File.WriteAllText(tempPath, json);
+            
+            if (secureWrite)
+                File.Move(tempPath, configPath, true);
         }
         catch (Exception ex)
         {
@@ -166,7 +175,7 @@ public class ModPreviewImagePanel : IDisposable
             if (File.Exists(configPath))
             {
                 var json = File.ReadAllText(configPath);
-                var config = JsonSerializer.Deserialize<PinnedImageConfig>(json);
+                var config = JsonConvert.DeserializeObject<PinnedImageConfig>(json);
                 if (config != null)
                 {
                     _pinnedConfig.PinnedImagePath = config.PinnedImagePath;
@@ -191,8 +200,16 @@ public class ModPreviewImagePanel : IDisposable
                 return;
 
             var configPath = Path.Combine(coverFolder, PinnedConfigFileName);
-            var json = JsonSerializer.Serialize(_pinnedConfig, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(configPath, json);
+            var secureWrite = File.Exists(configPath);
+            var tempPath = secureWrite ? configPath + ".tmp" : configPath;
+            
+            Penumbra.Log.Debug($"正在保存置顶图片配置 {Path.GetFileName(configPath)} {(secureWrite ? "，使用安全写入" : "，首次创建")}...");
+            
+            var json = JsonConvert.SerializeObject(_pinnedConfig, Formatting.Indented);
+            File.WriteAllText(tempPath, json);
+            
+            if (secureWrite)
+                File.Move(tempPath, configPath, true);
         }
         catch (Exception ex)
         {
@@ -431,7 +448,6 @@ public class ModPreviewImagePanel : IDisposable
         if (CurrentModPath != newModPath)
         {
             CurrentModPath = newModPath;
-            _pinnedConfig.CurrentModPath = newModPath;
             LoadPinnedConfig(); // 切换模组时加载新的置顶配置
 #if DEBUG
             Penumbra.Log.Debug($"当前Mod路径: {CurrentModPath}");

@@ -100,13 +100,15 @@ public class ModPreviewDownloader : IDisposable
             Directory.CreateDirectory(coverFolder);
 
             List<string> previewUrls;
+            var originalCount = 0;
             try
             {
                 previewUrls = await site.GetPreviewImageUrls(websiteUrl, _httpClient!);
                 
+                originalCount = previewUrls.Count;
                 if (previewUrls.Count > MaxPreviewImageCount)
                 {
-                    Penumbra.Log.Information($"限制下载数量从 {previewUrls.Count} 到 {MaxPreviewImageCount} 张图片");
+                    Penumbra.Log.Information($"检测到 {previewUrls.Count} 张，限制为下载 {MaxPreviewImageCount} 张图片");
                     previewUrls = [.. previewUrls.Take(MaxPreviewImageCount)];
                 }
             }
@@ -129,7 +131,7 @@ public class ModPreviewDownloader : IDisposable
             var successCount = results.Count(r => r);
             ShowNotification(
                 successCount > 0
-                    ? $"成功下载 {successCount} 张预览图"
+                    ? $"成功下载 {successCount} / {originalCount} 张预览图"
                     : "所有预览图下载失败", 
                 successCount > 0 ? NotificationType.Success : NotificationType.Error);
             

@@ -57,7 +57,6 @@ public class Configuration : IPluginConfiguration, ISavable, IService
     public float PreviewPanelRatio              { get; set; } = 0.4f;
     public long PreviewPanelMaxMemory           { get; set; } = 256 * 1024 * 1024;
     public bool SavePreviewPanelState           { get; set; } = true;
-    public bool PreviewPanelExpanded            { get; set; } = false;
     public float PreviewPanelMinWidth           { get; set; } = 200f;
     public float PreviewPanelMaxWidth           { get; set; } = 600f;
     public float PreviewImageMinWidth           { get; set; } = 180f;

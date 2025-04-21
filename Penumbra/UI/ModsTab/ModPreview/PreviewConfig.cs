@@ -12,6 +12,7 @@ public class PreviewConfig
     public int MaxPreviewHeight { get; set; } = 600;
     public float PreviewPanelLeftMargin { get; set; } = 0f;
     public bool EnableExternalViewer { get; set; } = false;
+    public bool Expanded { get; set; } = false;
 
     // 用于在UI中使用的临时值存储，处理配置保存，只有在完成编辑后才更新配置
     [JsonIgnore] private float _tempRatio = float.NaN;
@@ -114,22 +115,9 @@ public class PreviewConfig
         
         return false;
     }
-
-    // 重置所有临时值，例如在开关标签页时调用
-    public void ResetTempValues()
-    {
-        _tempRatio = float.NaN;
-        _tempMinWidth = float.NaN;
-        _tempMaxWidth = float.NaN;
-        _tempImageMinWidth = float.NaN;
-        _tempSpacing = float.NaN;
-    }
 }
 
 public class PinnedImageConfig
 {
-    [JsonIgnore]
-    public string? CurrentModPath { get; set; }
-    
     public string? PinnedImagePath { get; set; }
 } 

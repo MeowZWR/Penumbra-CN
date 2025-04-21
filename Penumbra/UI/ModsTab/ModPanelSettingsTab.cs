@@ -37,8 +37,8 @@ public class ModPanelSettingsTab(
     private bool _temporary;
     private bool _locked;
     private int? _currentPriority;
-    private bool _previewExpanded = config.SavePreviewPanelState ? config.PreviewPanelExpanded : false;
     private readonly ModPreviewImagePanel _imagePanel = new(modManager, pluginInterface, textureProvider, dragDrop, config, notificationManager);
+    private bool _previewExpanded;
     private readonly ClipboardImageImporter _clipboardImporter = new(notificationManager, pluginInterface, modManager);
     private readonly ModPreviewDownloader _previewDownloader = new(notificationManager, config);
 
@@ -53,6 +53,10 @@ public class ModPanelSettingsTab(
 
     public void DrawContent()
     {
+        static bool IsEqual(bool a, bool b) => a == b;
+        if (config.SavePreviewPanelState && !IsEqual(_previewExpanded, _imagePanel.Config.Expanded))
+            _previewExpanded = _imagePanel.Config.Expanded;
+            
         // 计算可用总宽度
         var totalAvailableWidth = ImGui.GetContentRegionAvail().X;
         var buttonWidth = ImGui.GetFrameHeight();
@@ -122,8 +126,8 @@ public class ModPanelSettingsTab(
             _previewExpanded = !_previewExpanded;
             if (config.SavePreviewPanelState)
             {
-                config.PreviewPanelExpanded = _previewExpanded;
-                config.Save();
+                _imagePanel.Config.Expanded = _previewExpanded;
+                _imagePanel.SaveConfig();
             }
         }
 
@@ -200,7 +204,7 @@ public class ModPanelSettingsTab(
             if (string.IsNullOrEmpty(websiteUrl))
                 downloadTooltip = "模组中未找到网址相关字段，无法下载预览图";
             else if (isHeliosphere)
-                downloadTooltip = "从Heliosphere下载预览图";
+                downloadTooltip = "从Heliosphere下载预览图（最多3张）";
             else
                 downloadTooltip = "只支持从Heliosphere下载预览图";
             
