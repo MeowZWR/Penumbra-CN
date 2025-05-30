@@ -53,14 +53,14 @@ public class ModsTab(
     {
         try
         {
-            selector.Draw(GetModSelectorSize(config));
+            selector.Draw();
             ImGui.SameLine();
+            ImGui.SetCursorPosX(MathF.Round(ImGui.GetCursorPosX()));
             using var group = ImRaii.Group();
             collectionHeader.Draw(false);
 
             using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
-
-            using (var child = ImRaii.Child("##ModsTabMod", new Vector2(-1, config.HideRedrawBar ? 0 : -ImGui.GetFrameHeight()),
+            using (var child = ImRaii.Child("##ModsTabMod", new Vector2(ImGui.GetContentRegionAvail().X, config.HideRedrawBar ? 0 : -ImGui.GetFrameHeight()),
                        true, ImGuiWindowFlags.HorizontalScrollbar))
             {
                 style.Pop();
@@ -84,19 +84,6 @@ public class ModsTab(
               + $"{selector.Selected?.Name ?? "NULL"} Selected Mod\n"
               + $"{string.Join(", ", _activeCollections.Current.Inheritance.DirectlyInheritsFrom.Select(c => c.Identity.AnonymizedName))} Inheritances\n");
         }
-    }
-
-    /// <summary> Get the correct size for the mod selector based on current config. </summary>
-    public static float GetModSelectorSize(Configuration config)
-    {
-        var absoluteSize = Math.Clamp(config.ModSelectorAbsoluteSize, Configuration.Constants.MinAbsoluteSize,
-            Math.Min(Configuration.Constants.MaxAbsoluteSize, ImGui.GetContentRegionAvail().X - 100));
-        var relativeSize = config.ScaleModSelector
-            ? Math.Clamp(config.ModSelectorScaledSize, Configuration.Constants.MinScaledSize, Configuration.Constants.MaxScaledSize)
-            : 0;
-        return !config.ScaleModSelector
-            ? absoluteSize
-            : Math.Max(absoluteSize, relativeSize * ImGui.GetContentRegionAvail().X / 100);
     }
 
     private void DrawRedrawLine()

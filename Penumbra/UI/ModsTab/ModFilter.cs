@@ -22,12 +22,14 @@ public enum ModFilter
     NotNew                 = 1 << 16,
     Inherited              = 1 << 17,
     Uninherited            = 1 << 18,
-    Undefined              = 1 << 19,
+    Temporary              = 1 << 19,
+    NotTemporary           = 1 << 20,
+    Undefined              = 1 << 21,
 };
 
 public static class ModFilterExtensions
 {
-    public const ModFilter UnfilteredStateMods = (ModFilter)((1 << 20) - 1);
+    public const ModFilter UnfilteredStateMods = (ModFilter)((1 << 22) - 1);
 
     public static IReadOnlyList<(ModFilter On, ModFilter Off, string Name)> TriStatePairs =
     [
@@ -35,9 +37,10 @@ public static class ModFilterExtensions
         (ModFilter.IsNew, ModFilter.NotNew, "新导入"),
         (ModFilter.Favorite, ModFilter.NotFavorite, "已收藏"),
         (ModFilter.HasConfig, ModFilter.HasNoConfig, "有选项"),
-        (ModFilter.HasFiles, ModFilter.HasNoFiles, "有文件"),
+        (ModFilter.HasFiles, ModFilter.HasNoFiles, "有重定向"),
         (ModFilter.HasMetaManipulations, ModFilter.HasNoMetaManipulations, "有元数据操作"),
         (ModFilter.HasFileSwaps, ModFilter.HasNoFileSwaps, "有文件替换"),
+        (ModFilter.Temporary, ModFilter.NotTemporary, "临时"),
     ];
 
     public static IReadOnlyList<IReadOnlyList<(ModFilter Filter, string Name)>> Groups =

@@ -11,6 +11,7 @@ using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.Mods.Settings;
 using Penumbra.UI.ModsTab.Groups;
+using OtterGui.Extensions;
 using Dalamud.Plugin.Services;
 using Dalamud.Interface;
 using Dalamud.Interface.DragDrop;
@@ -404,7 +405,7 @@ public class ModPanelSettingsTab(
     /// </summary>
     private void DrawRemoveSettings()
     {
-        var drawInherited = !_inherited && selection.Settings != ModSettings.Empty;
+        var drawInherited = !_inherited && selection.Settings.IsEmpty;
         var scroll        = ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ScrollbarSize + ImGui.GetStyle().ItemInnerSpacing.X : 0;
         var buttonSize    = ImUtf8.CalcTextSize("设为永久_"u8).X;
         var offset = drawInherited

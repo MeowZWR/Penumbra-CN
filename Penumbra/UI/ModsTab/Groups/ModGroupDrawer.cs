@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Components;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Services;
 using OtterGui.Text;
@@ -48,7 +49,7 @@ public sealed class ModGroupDrawer(Configuration config, CollectionManager colle
                 case GroupDrawBehaviour.SingleSelection:
                     ImGuiUtil.Dummy(UiHelpers.DefaultSpace, useDummy);
                     useDummy = false;
-                    DrawSingleGroupCombo(group, idx, settings == ModSettings.Empty ? group.DefaultSettings : settings.Settings[idx]);
+                    DrawSingleGroupCombo(group, idx, settings.IsEmpty ? group.DefaultSettings : settings.Settings[idx]);
                     break;
             }
         }
@@ -58,7 +59,7 @@ public sealed class ModGroupDrawer(Configuration config, CollectionManager colle
         {
             ImGuiUtil.Dummy(UiHelpers.DefaultSpace, useDummy);
             useDummy = false;
-            var option = settings == ModSettings.Empty ? group.DefaultSettings : settings.Settings[idx];
+            var option = settings.IsEmpty ? group.DefaultSettings : settings.Settings[idx];
             if (group.Behaviour is GroupDrawBehaviour.MultiSelection)
                 DrawMultiGroup(group, idx, option);
             else

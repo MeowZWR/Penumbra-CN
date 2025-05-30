@@ -61,6 +61,8 @@ public partial class ModEditWindow
         DrawEditHeader(MetaManipulationType.Gmp);
         DrawEditHeader(MetaManipulationType.Rsp);
         DrawEditHeader(MetaManipulationType.Atch);
+        DrawEditHeader(MetaManipulationType.Shp);
+        DrawEditHeader(MetaManipulationType.Atr);
         DrawEditHeader(MetaManipulationType.GlobalEqp);
     }
 
@@ -163,7 +165,7 @@ public partial class ModEditWindow
 
     private void AddFromClipboardButton()
     {
-        if (ImGui.Button("添加剪贴板中的设置"))
+        if (ImUtf8.Button("添加剪贴板中的设置"u8))
         {
             var clipboard = ImGuiUtil.GetClipboardText();
 
@@ -174,13 +176,13 @@ public partial class ModEditWindow
             }
         }
 
-        ImGuiUtil.HoverTooltip(
-            "尝试将存储在剪贴板中的元数据操作添加到当前设置。\n会覆盖已存在的操作，不会移除此模组中做过的其他操作。");
+        ImUtf8.HoverTooltip(
+            "尝试将存储在剪贴板中的元数据操作添加到当前设置。\n会覆盖已存在的操作，不会移除此模组中做过的其他操作。"u8);
     }
 
     private void SetFromClipboardButton()
     {
-        if (ImGui.Button("应用剪贴板中的设置"))
+        if (ImUtf8.Button("应用剪贴板中的设置"u8))
         {
             var clipboard = ImGuiUtil.GetClipboardText();
             if (MetaApi.ConvertManips(clipboard, out var manips, out _))
@@ -190,7 +192,7 @@ public partial class ModEditWindow
             }
         }
 
-        ImGuiUtil.HoverTooltip(
-            "尝试将剪贴板中存储的元数据操作应用到当前的设置中。\n会移除此模组中做过的其他元数据操作。");
+        ImUtf8.HoverTooltip(
+            "尝试将剪贴板中存储的元数据操作应用到当前的设置中。\n会移除此模组中做过的其他元数据操作。"u8);
     }
 }

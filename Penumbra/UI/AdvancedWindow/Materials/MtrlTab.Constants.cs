@@ -2,6 +2,7 @@
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Text.Widget.Editors;

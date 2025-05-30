@@ -14,6 +14,7 @@ using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.Api;
 using Penumbra.Collections;
+using Penumbra.Interop.Hooks.PostProcessing;
 using Penumbra.Interop.Services;
 using Penumbra.Mods.Manager;
 using Penumbra.Services;
@@ -50,6 +51,7 @@ public class SettingsTab : ITab, IUiService
     private readonly MigrationSectionDrawer      _migrationDrawer;
     private readonly CollectionAutoSelector      _autoSelector;
     private readonly CleanupService              _cleanupService;
+    private readonly AttributeHook               _attributeHook;
 
     private int _minimumX = int.MaxValue;
     private int _minimumY = int.MaxValue;
@@ -61,7 +63,8 @@ public class SettingsTab : ITab, IUiService
         CharacterUtility characterUtility, ResidentResourceManager residentResources, ModExportManager modExportManager, HttpApi httpApi,
         DalamudSubstitutionProvider dalamudSubstitutionProvider, FileCompactor compactor, DalamudConfigService dalamudConfig,
         IDataManager gameData, PredefinedTagManager predefinedTagConfig, CrashHandlerService crashService,
-        MigrationSectionDrawer migrationDrawer, CollectionAutoSelector autoSelector, CleanupService cleanupService)
+        MigrationSectionDrawer migrationDrawer, CollectionAutoSelector autoSelector, CleanupService cleanupService,
+        AttributeHook attributeHook)
     {
         _pluginInterface             = pluginInterface;
         _config                      = config;
@@ -86,6 +89,7 @@ public class SettingsTab : ITab, IUiService
         _migrationDrawer      = migrationDrawer;
         _autoSelector         = autoSelector;
         _cleanupService       = cleanupService;
+        _attributeHook        = attributeHook;
     }
 
     public void DrawHeader()
@@ -610,55 +614,6 @@ public class SettingsTab : ITab, IUiService
         ImGuiUtil.LabeledHelpMarker("模组排序", "选择模组选项卡中模组选择器的默认排序方式。");
     }
 
-    private float _absoluteSelectorSize = float.NaN;
-
-    /// <summary> Draw a selector for the absolute size of the mod selector in pixels. </summary>
-    private void DrawAbsoluteSizeSelector()
-    {
-        if (float.IsNaN(_absoluteSelectorSize))
-            _absoluteSelectorSize = _config.ModSelectorAbsoluteSize;
-
-        if (ImGuiUtil.DragFloat("##absoluteSize", ref _absoluteSelectorSize, UiHelpers.InputTextWidth.X, 1,
-                Configuration.Constants.MinAbsoluteSize, Configuration.Constants.MaxAbsoluteSize, "%.0f")
-         && _absoluteSelectorSize != _config.ModSelectorAbsoluteSize)
-        {
-            _config.ModSelectorAbsoluteSize = _absoluteSelectorSize;
-            _config.Save();
-        }
-
-        ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker("模组选择器的绝对尺寸",
-            "模组选项卡中模组选择器的最小绝对尺寸（以像素为单位）。");
-    }
-
-    private int _relativeSelectorSize = int.MaxValue;
-
-    /// <summary> Draw a selector for the relative size of the mod selector as a percentage and a toggle to enable relative sizing. </summary>
-    private void DrawRelativeSizeSelector()
-    {
-        var scaleModSelector = _config.ScaleModSelector;
-        if (ImGui.Checkbox("模组选择器随主窗口大小缩放", ref scaleModSelector))
-        {
-            _config.ScaleModSelector = scaleModSelector;
-            _config.Save();
-        }
-
-        ImGui.SameLine();
-        if (_relativeSelectorSize == int.MaxValue)
-            _relativeSelectorSize = _config.ModSelectorScaledSize;
-        if (ImGuiUtil.DragInt("##relativeSize", ref _relativeSelectorSize, UiHelpers.InputTextWidth.X - ImGui.GetCursorPosX(), 0.1f,
-                Configuration.Constants.MinScaledSize, Configuration.Constants.MaxScaledSize, "%i%%")
-         && _relativeSelectorSize != _config.ModSelectorScaledSize)
-        {
-            _config.ModSelectorScaledSize = _relativeSelectorSize;
-            _config.Save();
-        }
-
-        ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker("模组选择器尺寸占比",
-            "这将使模组选择器的宽度与主窗口宽度成比例，而不是保持固定宽度。");
-    }
-
     private void DrawRenameSettings()
     {
         ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
@@ -692,8 +647,6 @@ public class SettingsTab : ITab, IUiService
     private void DrawModSelectorSettings()
     {
         DrawFolderSortType();
-        DrawAbsoluteSizeSelector();
-        DrawRelativeSizeSelector();
         DrawRenameSettings();
         Checkbox("默认展开折叠组", "打开模组选择器时，默认展开全部折叠组，否则最小化全部折叠组。",
             _config.OpenFoldersByDefault,   v =>
@@ -710,8 +663,9 @@ public class SettingsTab : ITab, IUiService
                 _config.DeleteModModifier = v;
                 _config.Save();
             });
-        Widget.DoubleModifierSelector("Incognito Modifier",
-            "A modifier you need to hold while clicking the Incognito or Temporary Settings Mode button for it to take effect.", UiHelpers.InputTextWidth.X,
+        Widget.DoubleModifierSelector("匿名模式组合键",
+            "点击匿名模式或临时设置模式按钮时需要按住的组合键，防止误操作。",
+            UiHelpers.InputTextWidth.X,
             _config.IncognitoModifier,
             v =>
             {
@@ -896,6 +850,8 @@ public class SettingsTab : ITab, IUiService
             "在正常情况下，元数据修改的值（有时是由TexTools导出的）与游戏默认的值相同时，将被抛弃。"
           + "切换此选项以保留它们 - 假如你认为某个模组中的某个选项在先前的选项中被禁用了元数据的修改。",
             _config.KeepDefaultMetaChanges, v => _config.KeepDefaultMetaChanges = v);
+        Checkbox("Enable Custom Shape and Attribute Support", "Penumbra will allow for custom shape keys and attributes for modded models to be considered and combined.",
+            _config.EnableCustomShapes,         _attributeHook.SetState);
         DrawWaitForPluginsReflection();
         DrawEnableHttpApiBox();
         DrawEnableDebugModeBox();

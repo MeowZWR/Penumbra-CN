@@ -1,5 +1,4 @@
 using Dalamud.Interface.ImGuiNotification;
-using OtterGui;
 using OtterGui.Classes;
 using Penumbra.Meta.Manipulations;
 using Penumbra.Mods;
@@ -8,6 +7,7 @@ using Penumbra.Mods.Editor;
 using Penumbra.String.Classes;
 using Penumbra.Util;
 using Penumbra.GameData.Data;
+using OtterGui.Extensions;
 
 namespace Penumbra.Collections.Cache;
 
@@ -244,6 +244,10 @@ public sealed class CollectionCache : IDisposable
             foreach (var (identifier, entry) in files.Manipulations.Imc)
                 AddManipulation(mod, identifier, entry);
             foreach (var (identifier, entry) in files.Manipulations.Atch)
+                AddManipulation(mod, identifier, entry);
+            foreach (var (identifier, entry) in files.Manipulations.Shp)
+                AddManipulation(mod, identifier, entry);
+            foreach (var (identifier, entry) in files.Manipulations.Atr)
                 AddManipulation(mod, identifier, entry);
             foreach (var identifier in files.Manipulations.GlobalEqp)
                 AddManipulation(mod, identifier, null!);
