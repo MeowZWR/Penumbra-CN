@@ -396,7 +396,7 @@ public partial class MtrlTab
         ret |= CtTileIndexPicker("###TileIndex"u8, default, row.TileIndex, false,
             v => table[rowIdx].TileIndex = v);
         ImUtf8.SameLineInner();
-        ImUtf8.Text("瓦片"u8);
+        ImUtf8.Text("平铺"u8);
 
         ImGui.SameLine(subColWidth);
         ImGui.SetCursorScreenPos(ImGui.GetCursorScreenPos() with { Y = cursorPos.Y + (lineHeight - rightLineHeight) * 0.5f });
@@ -406,7 +406,7 @@ public partial class MtrlTab
             ImGui.Dummy(new Vector2(scalarSize, 0.0f));
             ImUtf8.SameLineInner();
             ImGui.SetNextItemWidth(scalarSize);
-            ret |= CtDragScalar("瓦片透明度"u8, default, (float)row.TileAlpha * 100.0f, "%.0f%%"u8, 0.0f, HalfMaxValue * 100.0f, 1.0f,
+            ret |= CtDragScalar("平铺透明度"u8, default, (float)row.TileAlpha * 100.0f, "%.0f%%"u8, 0.0f, HalfMaxValue * 100.0f, 1.0f,
                 v => table[rowIdx].TileAlpha = (Half)(v * 0.01f));
 
             ret |= CtTileTransformMatrix(row.TileTransform, scalarSize, true,
@@ -414,7 +414,7 @@ public partial class MtrlTab
             ImUtf8.SameLineInner();
             ImGui.SetCursorScreenPos(ImGui.GetCursorScreenPos()
               - new Vector2(0.0f, (ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y) * 0.5f));
-            ImUtf8.Text("瓦片变换"u8);
+            ImUtf8.Text("平铺变换"u8);
         }
 
         return ret;

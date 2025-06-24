@@ -79,7 +79,7 @@ public partial class MtrlTab
         ImGui.TableNextColumn();
         ImUtf8.TableHeader("光泽"u8);
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader("瓷砖"u8);
+        ImUtf8.TableHeader("平铺"u8);
         ImGui.TableNextColumn();
         ImUtf8.TableHeader("重复/偏斜"u8);
         if (hasDyeTable)
@@ -171,7 +171,7 @@ public partial class MtrlTab
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(intSize);
-        ret |= CtTileIndexPicker("##TileIndex"u8, "瓷砖索引"u8, row.TileIndex, true,
+        ret |= CtTileIndexPicker("##TileIndex"u8, "平铺索引"u8, row.TileIndex, true,
             value => table[rowIdx].TileIndex = value);
 
         ImGui.TableNextColumn();
@@ -277,7 +277,7 @@ public partial class MtrlTab
 
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(intSize);
-        ret |= CtTileIndexPicker("##TileIndex"u8, "瓷砖索引"u8, row.TileIndex, true,
+        ret |= CtTileIndexPicker("##TileIndex"u8, "平铺索引"u8, row.TileIndex, true,
             value => table[rowIdx].TileIndex = value);
         ImUtf8.SameLineInner();
         ImGui.SetNextItemWidth(pctSize);

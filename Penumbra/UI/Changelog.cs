@@ -67,42 +67,42 @@ public class PenumbraChangelog : IUiService
     #region Changelogs
 
     private static void Add1_4_0_0(Changelog log)
-        => log.NextVersion("Version 1.4.0.0")
-            .RegisterHighlight("Added two types of new Meta Changes, SHP and ATR (Thanks Karou!).")
-            .RegisterEntry("Those allow mod creators to toggle custom shape keys and attributes for models on and off, respectively.", 1)
-            .RegisterEntry("Custom shape keys need to have the format 'shpx_*' and custom attributes need 'atrx_*'.",                  1)
+        => log.NextVersion("版本 1.4.0.0")
+            .RegisterHighlight("添加了两种新的元数据变更类型：SHP和ATR（感谢Karou！）")
+            .RegisterEntry("这些允许模组创作者分别开启或关闭模型的自定义形态键和属性。", 1)
+            .RegisterEntry("自定义形态键需要遵循'shpx_*'格式，自定义属性需要遵循'atrx_*'格式。", 1)
             .RegisterHighlight(
-                "Shapes of the following formats will automatically be toggled on if both relevant slots contain the same shape key:", 1)
-            .RegisterEntry("'shpx_wa_*', for the waist seam between the body and leg slot,",    2)
-            .RegisterEntry("'shpx_wr_*', for the wrist seams between the body and hands slot,", 2)
-            .RegisterEntry("'shpx_an_*', for the ankle seams between the leg and feet slot.",   2)
+                "以下格式的形态键会在相关槽位包含相同形态键时自动开启：", 1)
+            .RegisterEntry("'shpx_wa_*'，用于身体和腿部槽位之间的腰部接缝，", 2)
+            .RegisterEntry("'shpx_wr_*'，用于身体和手部槽位之间的手腕接缝，", 2)
+            .RegisterEntry("'shpx_an_*'，用于腿部和脚部槽位之间的脚踝接缝。", 2)
             .RegisterEntry(
-                "Custom shape key and attributes can be turned off in the advanced settings section for the moment, but this is not recommended.",
+                "自定义形态键和属性可以在高级设置部分关闭，但不建议这样做。",
                 1)
-            .RegisterHighlight("The mod selector width is now draggable within certain restrictions that depend on the total window width.")
-            .RegisterEntry("The current behavior may not be final, let me know if you have any comments.", 1)
-            .RegisterEntry("Improved the naming of NPCs for identifiers by using Haselnussbombers new naming functionality (Thanks Hasel!).")
-            .RegisterEntry("Added global EQP entries to always hide Au Ra horns, Viera ears, or Miqo'te ears, respectively.")
-            .RegisterEntry("This will leave holes in the heads of the respective race if not modded in some way.", 1)
-            .RegisterEntry("Added a filter for mods that have temporary settings in the mod selector panel (Thanks Caraxi).")
-            .RegisterEntry("Made the checkbox for toggling Temporary Settings Mode in the mod tab more visible.")
-            .RegisterEntry("Improved the option select combo in advanced editing.")
-            .RegisterEntry("Fixed some issues with item identification for EST changes.")
-            .RegisterEntry("Fixed the sizing of the mod panel being off by 1 pixel sometimes.")
-            .RegisterEntry("Fixed an issue with redrawing while in GPose when other plugins broke some assumptions about the game state.")
-            .RegisterEntry("Fixed a clipping issue within the Meta Manipulations tab in advanced editing.")
-            .RegisterEntry("Fixed an issue with empty and temporary settings.")
+            .RegisterHighlight("模组选择器宽度现在可以在特定限制范围内拖动（限制取决于总窗口宽度）。")
+            .RegisterEntry("当前的效果可能不是最终版本，如果您有任何意见请告诉我。", 1)
+            .RegisterEntry("改进了NPC标识符的命名，使用了Haselnussbomber的新命名功能（感谢Hasel！）。")
+            .RegisterEntry("添加了全局EQP条目，可以始终隐藏敖龙族角、维埃拉族耳朵或猫魅族耳朵。")
+            .RegisterEntry("如果相应种族没有进行模组修改，这会在头部留下空洞。", 1)
+            .RegisterEntry("在模组选择器面板中添加了临时设置筛选功能（感谢Caraxi）。")
+            .RegisterEntry("使模组标签页中的临时设置模式切换复选框更加醒目。")
+            .RegisterEntry("改进了高级编辑中的选项选择组合框。")
+            .RegisterEntry("修复了EST变更中的物品识别问题。")
+            .RegisterEntry("修复了模组面板有时会偏差1像素的尺寸问题。")
+            .RegisterEntry("修复了在GPose中其他插件破坏游戏状态假设时的重绘问题。")
+            .RegisterEntry("修复了高级编辑中元操作标签页的裁剪问题。")
+            .RegisterEntry("修复了空设置和临时设置的问题。")
             .RegisterHighlight(
-                "In the Item Swap tab, items changed by this mod are now sorted and highlighted before items changed in the current collection before other items for the source, and inversely for the target. (1.3.6.8)")
+                "在物品交换标签页中，现在会优先排序和突出显示由当前模组更改的物品，然后是当前集合中更改的物品，最后是其他物品。（1.3.6.8）")
             .RegisterHighlight(
-                "Default-valued meta edits should now be kept on import and only removed when the option to keep them is not set AND no other options in the mod edit the same entry. (1.3.6.8)")
-            .RegisterEntry("Added a right-click context menu on file redirections to copy the full file path. (1.3.6.8)")
+                "默认值的元编辑现在会在导入时保留，除非未设置保留选项且没有其他选项编辑相同条目。（1.3.6.8）")
+            .RegisterEntry("添加了文件重定向的右键菜单，可以复制完整文件路径。（1.3.6.8）")
             .RegisterEntry(
-                "Added a right-click context menu on the mod export button to open the backup directory in your file explorer. (1.3.6.8)")
-            .RegisterEntry("Fixed some issues when redrawing characters from other plugins. (1.3.6.8)")
+                "添加了模组导出按钮的右键菜单，可以在文件资源管理器中打开备份目录。（1.3.6.8）")
+            .RegisterEntry("修复了从其他插件重绘角色时的一些问题。（1.3.6.8）")
             .RegisterEntry(
-                "Added a modifier key separate from the delete modifier key that is used for less important key-checks, specifically toggling incognito mode. (1.3.6.7)")
-            .RegisterEntry("Fixed some issues with the Material Editor (Thanks Ny). (1.3.6.6)");
+                "添加了一个与删除组合键分开的组合键，用于不太重要的按键检查，特别是切换匿名模式。（1.3.6.7）")
+            .RegisterEntry("修复了材质编辑器的一些问题（感谢Ny）。（1.3.6.6）");
 
     private static void Add1_3_6_4(Changelog log)
         => log.NextVersion("版本 1.3.6.4")
