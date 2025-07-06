@@ -12,6 +12,7 @@ using OtterGui.Raii;
 using OtterGui.Services;
 using OtterGui.Text;
 using OtterGui.Widgets;
+using OtterGuiInternal.Enums;
 using Penumbra.Api;
 using Penumbra.Collections;
 using Penumbra.Interop.Hooks.PostProcessing;
@@ -20,6 +21,7 @@ using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
 using Penumbra.UI.ModsTab;
+using ImGuiId = OtterGuiInternal.Enums.ImGuiId;
 
 namespace Penumbra.UI.Tabs;
 
@@ -850,8 +852,9 @@ public class SettingsTab : ITab, IUiService
             "在正常情况下，元数据修改的值（有时是由TexTools导出的）与游戏默认的值相同时，将被抛弃。"
           + "切换此选项以保留它们 - 假如你认为某个模组中的某个选项在先前的选项中被禁用了元数据的修改。",
             _config.KeepDefaultMetaChanges, v => _config.KeepDefaultMetaChanges = v);
-        Checkbox("Enable Custom Shape and Attribute Support", "Penumbra will allow for custom shape keys and attributes for modded models to be considered and combined.",
-            _config.EnableCustomShapes,         _attributeHook.SetState);
+        Checkbox("Enable Custom Shape and Attribute Support",
+            "Penumbra will allow for custom shape keys and attributes for modded models to be considered and combined.",
+            _config.EnableCustomShapes, _attributeHook.SetState);
         DrawWaitForPluginsReflection();
         DrawEnableHttpApiBox();
         DrawEnableDebugModeBox();
@@ -1142,6 +1145,9 @@ public class SettingsTab : ITab, IUiService
         ImGui.SetCursorPos(new Vector2(xPos, 5 * ImGui.GetFrameHeightWithSpacing()));
         if (ImGui.Button("查看更新日志", new Vector2(width, 0)))
             _penumbra.ForceChangelogOpen();
+
+        ImGui.SetCursorPos(new Vector2(xPos, 5 * ImGui.GetFrameHeightWithSpacing()));
+        CustomGui.DrawKofiPatreonButton(Penumbra.Messager, new Vector2(width, 0));
     }
 
     private void DrawPredefinedTagsSection()

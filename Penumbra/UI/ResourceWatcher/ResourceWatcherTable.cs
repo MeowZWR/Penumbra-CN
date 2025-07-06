@@ -30,7 +30,8 @@ internal sealed class ResourceWatcherTable : Table<Record>
             new LoadStateColumn { Label                = "状态" },
             new RefCountColumn { Label                 = "#Ref" },
             new DateColumn { Label                     = "时间" },
-            new Crc64Column { Label                    = "Crc64" }
+            new Crc64Column { Label                    = "Crc64" },
+            new OsThreadColumn { Label                 = "线程ID" }
         )
     { }
 
@@ -452,5 +453,20 @@ internal sealed class ResourceWatcherTable : Table<Record>
 
         public override int Compare(Record lhs, Record rhs)
             => lhs.RefCount.CompareTo(rhs.RefCount);
+    }
+
+    private sealed class OsThreadColumn : ColumnString<Record>
+    {
+        public override float Width
+            => 60 * UiHelpers.Scale;
+
+        public override string ToName(Record item)
+            => item.OsThreadId.ToString();
+
+        public override void DrawColumn(Record item, int _)
+            => ImGuiUtil.RightAlign(ToName(item));
+
+        public override int Compare(Record lhs, Record rhs)
+            => lhs.OsThreadId.CompareTo(rhs.OsThreadId);
     }
 }
