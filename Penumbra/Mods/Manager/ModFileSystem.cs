@@ -37,11 +37,11 @@ public sealed class ModFileSystem : FileSystem<Mod>, IDisposable, ISavable, ISer
 
     public struct ImportDate : ISortMode<Mod>
     {
-        public string Name
-            => "导入日期 (旧的优先)";
+        public ReadOnlySpan<byte> Name
+            => "导入日期 (旧的优先)"u8;
 
-        public string Description
-            => "统一将所有折叠组按字典顺序排序，然后将其中的模组按导入日期由旧向新排序。";
+        public ReadOnlySpan<byte> Description
+            => "统一将所有折叠组按字典顺序排序，然后将其中的模组按导入日期由旧向新排序。"u8;
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.ImportDate));
@@ -49,11 +49,11 @@ public sealed class ModFileSystem : FileSystem<Mod>, IDisposable, ISavable, ISer
 
     public struct InverseImportDate : ISortMode<Mod>
     {
-        public string Name
-            => "导入日期 (新的优先)";
+        public ReadOnlySpan<byte> Name
+            => "导入日期 (新的优先)"u8;
 
-        public string Description
-            => "统一将所有折叠组按字典顺序排序，然后将其中的模组按导入日期由新向旧排序。";
+        public ReadOnlySpan<byte> Description
+            => "统一将所有折叠组按字典顺序排序，然后将其中的模组按导入日期由新向旧排序。"u8;
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.ImportDate));
