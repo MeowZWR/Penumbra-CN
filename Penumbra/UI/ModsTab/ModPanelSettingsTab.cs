@@ -122,7 +122,7 @@ public class ModPanelSettingsTab(
 
         // 使用合理的按钮高度，而不是整个窗口高度
         var buttonHeight = ImGui.GetContentRegionAvail().Y;
-        if (ImGui.Button(icon, new Vector2(ImGui.GetFrameHeight() * 0.8f, buttonHeight)))
+        if (ImGui.Button(icon, new Vector2(ImGui.GetFrameHeight() * 0.75f, buttonHeight)))
         {
             _previewExpanded = !_previewExpanded;
             if (config.SavePreviewPanelState)
