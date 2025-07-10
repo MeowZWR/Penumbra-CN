@@ -34,6 +34,52 @@ public partial class ModEditWindow
     private bool CheckFilter((FileRegistry, int) p)
         => CheckFilter(p.Item1);
 
+    /// <summary>
+    /// 检查文件是否应该被隐藏（基于文件类型过滤设置）
+    /// </summary>
+    /// <param name="registry">文件注册信息</param>
+    /// <returns>如果文件应该被隐藏则返回true</returns>
+    private bool ShouldHideFile(FileRegistry registry)
+    {
+        var extension = Path.GetExtension(registry.File.FullName).ToLowerInvariant();
+        return extension switch
+        {
+            ".dds" => _config.HideDdsFiles,
+            ".png" => _config.HidePngFiles,
+            ".jpg" or ".jpeg" => _config.HideJpegFiles,
+            ".json" => _config.HideJsonFiles,
+            ".tga" => _config.HideTgaFiles,
+            ".bmp" => _config.HideBmpFiles,
+            ".gif" => _config.HideGifFiles,
+            ".tiff" or ".tif" => _config.HideTiffFiles,
+            ".webp" => _config.HideWebpFiles,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// 检查文件是否应该被隐藏（基于文件类型过滤设置）- 用于总览模式
+    /// </summary>
+    /// <param name="fileName">文件名</param>
+    /// <returns>如果文件应该被隐藏则返回true</returns>
+    private bool ShouldHideFile(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".dds" => _config.HideDdsFiles,
+            ".png" => _config.HidePngFiles,
+            ".jpg" or ".jpeg" => _config.HideJpegFiles,
+            ".json" => _config.HideJsonFiles,
+            ".tga" => _config.HideTgaFiles,
+            ".bmp" => _config.HideBmpFiles,
+            ".gif" => _config.HideGifFiles,
+            ".tiff" or ".tif" => _config.HideTiffFiles,
+            ".webp" => _config.HideWebpFiles,
+            _ => false
+        };
+    }
+
     private void DrawFileTab()
     {
         using var tab = ImRaii.TabItem("文件重定向");
@@ -76,14 +122,16 @@ public partial class ModEditWindow
 
         var idx = 0;
 
-        var files = _editor.Files.Available.SelectMany(f =>
-        {
-            var file = f.RelPath.ToString();
-            return f.SubModUsage.Count == 0
-                ? Enumerable.Repeat((file, "Unused", string.Empty, 0x40000080u), 1)
-                : f.SubModUsage.Select(s => (file, s.Item2.ToString(), s.Item1.GetFullName(),
-                    _editor.Option! == s.Item1 && Mod!.HasOptions ? 0x40008000u : 0u));
-        });
+        var files = _editor.Files.Available
+            .Where(f => !ShouldHideFile(f)) // 应用文件类型过滤
+            .SelectMany(f =>
+            {
+                var file = f.RelPath.ToString();
+                return f.SubModUsage.Count == 0
+                    ? Enumerable.Repeat((file, "Unused", string.Empty, 0x40000080u), 1)
+                    : f.SubModUsage.Select(s => (file, s.Item2.ToString(), s.Item1.GetFullName(),
+                        _editor.Option! == s.Item1 && Mod!.HasOptions ? 0x40008000u : 0u));
+            });
 
         void DrawLine((string, string, string, uint) data)
         {
@@ -121,7 +169,7 @@ public partial class ModEditWindow
         if (!list)
             return;
 
-        foreach (var (registry, i) in _editor.Files.Available.WithIndex().Where(CheckFilter))
+        foreach (var (registry, i) in _editor.Files.Available.WithIndex().Where(CheckFilter).Where(p => !ShouldHideFile(p.Item1)))
         {
             using var id = ImRaii.PushId(i);
             ImGui.TableNextColumn();
@@ -382,6 +430,18 @@ public partial class ModEditWindow
 
     private void DrawFileManagementNormal()
     {
+        // 1. 先绘制计数文本（右上角）
+        var countText = $"已选中{_selectedFiles.Count} / {_editor.Files.Available.Count}个文件。";
+        var textWidth = ImGui.CalcTextSize(countText).X;
+        var windowWidth = ImGui.GetWindowWidth();
+        var style = ImGui.GetStyle();
+        var textX = windowWidth - textWidth - style.WindowPadding.X;
+        var originalPos = ImGui.GetCursorPos();
+        ImGui.SetCursorPosX(textX);
+        ImGui.Text(countText);
+        ImGui.SetCursorPos(originalPos);
+
+        // 2. 再绘制按钮和弹窗
         ImGui.SetNextItemWidth(250 * UiHelpers.Scale);
         LowerString.InputWithHint("##filter", "筛选路径...", ref _fileFilter, Utf8GamePath.MaxGamePathLength);
         ImGui.SameLine();
@@ -392,19 +452,28 @@ public partial class ModEditWindow
 
         ImGui.SameLine();
         if (ImGui.Button("选择可见项"))
-            _selectedFiles.UnionWith(_editor.Files.Available.Where(CheckFilter));
+            _selectedFiles.UnionWith(_editor.Files.Available.Where(CheckFilter).Where(f => !ShouldHideFile(f)));
 
         ImGui.SameLine();
         if (ImGui.Button("选择未使用项"))
-            _selectedFiles.UnionWith(_editor.Files.Available.Where(f => f.SubModUsage.Count == 0));
+            _selectedFiles.UnionWith(_editor.Files.Available.Where(f => f.SubModUsage.Count == 0).Where(f => !ShouldHideFile(f)));
 
         ImGui.SameLine();
         if (ImGui.Button("选择已使用项"))
-            _selectedFiles.UnionWith(_editor.Files.Available.Where(f => f.CurrentUsage > 0));
+            _selectedFiles.UnionWith(_editor.Files.Available.Where(f => f.CurrentUsage > 0).Where(f => !ShouldHideFile(f)));
 
         ImGui.SameLine();
+        if (ImGui.Button("文件类型过滤"))
+            ImGui.OpenPopup("fileTypeFilterPopupNormal");
 
-        ImGuiUtil.RightAlign($"已选中{_selectedFiles.Count} / {_editor.Files.Available.Count}个文件。");
+        ImGuiUtil.HoverTooltip("设置要隐藏的文件类型");
+
+        // 文件类型过滤弹出窗口（普通模式）
+        using var popup = ImRaii.Popup("fileTypeFilterPopupNormal");
+        if (popup)
+        {
+            DrawFileTypeFilterOptions();
+        }
     }
 
     private void DrawFileManagementOverview()
@@ -423,5 +492,47 @@ public partial class ModEditWindow
         ImGui.SameLine();
         ImGui.SetNextItemWidth(width * 2);
         LowerString.InputWithHint( "##optionFilter", "筛选选项...", ref _fileOverviewFilter3, Utf8GamePath.MaxGamePathLength );
+    }
+
+    /// <summary>
+    /// 绘制文件类型过滤选项
+    /// </summary>
+    private void DrawFileTypeFilterOptions()
+    {
+        var changed = false;
+        
+        var hideDds = _config.HideDdsFiles;
+        var hidePng = _config.HidePngFiles;
+        var hideJpeg = _config.HideJpegFiles;
+        var hideJson = _config.HideJsonFiles;
+        var hideTga = _config.HideTgaFiles;
+        var hideBmp = _config.HideBmpFiles;
+        var hideGif = _config.HideGifFiles;
+        var hideTiff = _config.HideTiffFiles;
+        var hideWebp = _config.HideWebpFiles;
+        
+        changed |= ImGui.Checkbox("隐藏 DDS 文件", ref hideDds);
+        changed |= ImGui.Checkbox("隐藏 PNG 文件", ref hidePng);
+        changed |= ImGui.Checkbox("隐藏 JPEG 文件", ref hideJpeg);
+        changed |= ImGui.Checkbox("隐藏 JSON 文件", ref hideJson);
+        changed |= ImGui.Checkbox("隐藏 TGA 文件", ref hideTga);
+        changed |= ImGui.Checkbox("隐藏 BMP 文件", ref hideBmp);
+        changed |= ImGui.Checkbox("隐藏 GIF 文件", ref hideGif);
+        changed |= ImGui.Checkbox("隐藏 TIFF 文件", ref hideTiff);
+        changed |= ImGui.Checkbox("隐藏 WebP 文件", ref hideWebp);
+
+        if (changed)
+        {
+            _config.HideDdsFiles = hideDds;
+            _config.HidePngFiles = hidePng;
+            _config.HideJpegFiles = hideJpeg;
+            _config.HideJsonFiles = hideJson;
+            _config.HideTgaFiles = hideTga;
+            _config.HideBmpFiles = hideBmp;
+            _config.HideGifFiles = hideGif;
+            _config.HideTiffFiles = hideTiff;
+            _config.HideWebpFiles = hideWebp;
+            _config.Save();
+        }
     }
 }

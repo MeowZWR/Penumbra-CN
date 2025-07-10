@@ -118,6 +118,17 @@ public class Configuration : IPluginConfiguration, ISavable, IService
     public bool   EditRawTileTransforms   { get; set; } = false;
     public bool   HdrRenderTargets        { get; set; } = true;
 
+    // 文件重定向窗口的文件类型过滤配置
+    public bool   HideDdsFiles            { get; set; } = true;
+    public bool   HidePngFiles            { get; set; } = true;
+    public bool   HideJpegFiles           { get; set; } = true;
+    public bool   HideJsonFiles            { get; set; } = true;
+    public bool   HideTgaFiles             { get; set; } = true;
+    public bool   HideBmpFiles             { get; set; } = true;
+    public bool   HideGifFiles             { get; set; } = true;
+    public bool   HideTiffFiles            { get; set; } = true;
+    public bool   HideWebpFiles            { get; set; } = true;
+
     public Dictionary<ColorId, uint> Colors { get; set; }
         = Enum.GetValues<ColorId>().ToDictionary(c => c, c => c.Data().DefaultColor);
 
