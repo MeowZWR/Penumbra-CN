@@ -1123,26 +1123,23 @@ public class SettingsTab : ITab, IUiService
         if (ImGui.GetScrollMaxY() > 0)
             xPos -= ImGui.GetStyle().ScrollbarSize + ImGui.GetStyle().FramePadding.X;
 
-        ImGui.SetCursorPos(new Vector2(xPos, ImGui.GetFrameHeightWithSpacing()));
-        UiHelpers.DrawSupportButton(_penumbra);
-
         ImGui.SetCursorPos(new Vector2(xPos, 0));
-        CustomGui.DrawDiscordButton(Penumbra.Messager, width);
+        CustomGui.DrawDiscordSplitButton(Penumbra.Messager, new Vector2(width, 0));
+
+        ImGui.SetCursorPos(new Vector2(xPos, 1 * ImGui.GetFrameHeightWithSpacing()));
+        CustomGui.DrawModSitesSplitButton(Penumbra.Messager, new Vector2(width, 0));
 
         ImGui.SetCursorPos(new Vector2(xPos, 2 * ImGui.GetFrameHeightWithSpacing()));
-        CustomGui.DrawGuideButton(Penumbra.Messager, width);
-
-        ImGui.SetCursorPos(new Vector2(xPos, 3 * ImGui.GetFrameHeightWithSpacing()));
-        CustomGui.DrawCNDiscordButton( Penumbra.Messager, width );
-
-        ImGui.SetCursorPos(new Vector2(xPos, 4 * ImGui.GetFrameHeightWithSpacing()));
-        if (ImGui.Button("重新启动教程", new Vector2(width, 0)))
+        CustomGui.DrawGuideTutorialSplitButton(Penumbra.Messager, new Vector2(width, 0), () =>
         {
             _config.Ephemeral.TutorialStep = 0;
             _config.Ephemeral.Save();
-        }
+        });
 
-        ImGui.SetCursorPos(new Vector2(xPos, 5 * ImGui.GetFrameHeightWithSpacing()));
+        ImGui.SetCursorPos(new Vector2(xPos, 3 * ImGui.GetFrameHeightWithSpacing()));
+        UiHelpers.DrawSupportButton(_penumbra);
+
+        ImGui.SetCursorPos(new Vector2(xPos, 4 * ImGui.GetFrameHeightWithSpacing()));
         if (ImGui.Button("查看更新日志", new Vector2(width, 0)))
             _penumbra.ForceChangelogOpen();
 

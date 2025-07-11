@@ -156,7 +156,7 @@ public sealed class ConfigWindow : Window, IUiService
 
         ImGui.NewLine();
         ImGui.NewLine();
-        CustomGui.DrawDiscordButton(Penumbra.Messager, 0);
+        CustomGui.DrawDiscordSplitButton(Penumbra.Messager, new Vector2(200, 0));
         ImGui.SameLine();
         UiHelpers.DrawSupportButton(_penumbra!);
         ImGui.NewLine();
