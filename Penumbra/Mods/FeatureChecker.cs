@@ -37,7 +37,7 @@ public static class FeatureChecker
         if (missingFeatures.Count > 0)
         {
             Penumbra.Messager.AddMessage(new Notification(
-                $"Please update Penumbra to use the mod {modName}{(modDirectory != modName ? $" at {modDirectory}" : string.Empty)}!\n\nLoading failed because it requires the unsupported feature{(missingFeatures.Count > 1 ? $"s\n\n\t[{string.Join("], [", missingFeatures)}]." : $" [{missingFeatures.First()}].")}",
+                $"请更新Penumbra以使用模组 {modName}{(modDirectory != modName ? $"，位于 {modDirectory}" : string.Empty)}！\n\n加载失败，因为该模组需要以下不支持的特性{(missingFeatures.Count > 1 ? $"：\n\n\t[{string.Join("], [", missingFeatures)}]。" : $" [{missingFeatures.First()}]。")}",
                 NotificationType.Warning));
             return FeatureFlags.Invalid;
         }
@@ -82,14 +82,14 @@ public static class FeatureChecker
             }
         }
 
-        if (ImUtf8.ButtonEx("Compute"u8, "Compute the required features automatically from the used features."u8, size))
+        if (ImUtf8.ButtonEx("自动计算"u8, "根据已使用的特性自动计算所需特性。"u8, size))
             editor.ChangeRequiredFeatures(mod, mod.ComputeRequiredFeatures());
 
         ImGui.SameLine();
-        if (ImUtf8.ButtonEx("Clear"u8, "Clear all required features."u8, size))
+        if (ImUtf8.ButtonEx("清除"u8, "清除所有所需特性。"u8, size))
             editor.ChangeRequiredFeatures(mod, FeatureFlags.None);
 
         ImGui.SameLine();
-        ImUtf8.Text("Required Features"u8);
+        ImUtf8.Text("所需特性"u8);
     }
 }

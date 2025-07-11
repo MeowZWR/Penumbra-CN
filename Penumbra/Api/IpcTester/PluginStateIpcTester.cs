@@ -55,57 +55,57 @@ public class PluginStateIpcTester : IUiService, IDisposable
 
     public void Draw()
     {
-        using var _ = ImRaii.TreeNode("Plugin State");
+        using var _ = ImRaii.TreeNode("插件状态");
         if (!_)
             return;
 
-        if (ImUtf8.InputText("Required Features"u8, ref _requiredFeatureString))
+        if (ImUtf8.InputText("所需特性"u8, ref _requiredFeatureString))
             _requiredFeatures = _requiredFeatureString.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         using var table = ImRaii.Table(string.Empty, 3, ImGuiTableFlags.SizingFixedFit);
         if (!table)
             return;
 
-        DrawList(IpcSubscribers.Initialized.Label, "Last Initialized", _initializedList);
-        DrawList(IpcSubscribers.Disposed.Label,    "Last Disposed",    _disposedList);
+        DrawList(IpcSubscribers.Initialized.Label, "上次初始化", _initializedList);
+        DrawList(IpcSubscribers.Disposed.Label,    "上次释放",    _disposedList);
 
-        IpcTester.DrawIntro(ApiVersion.Label, "Current Version");
+        IpcTester.DrawIntro(ApiVersion.Label, "当前版本");
         var (breaking, features) = new ApiVersion(_pi).Invoke();
         ImGui.TextUnformatted($"{breaking}.{features:D4}");
 
-        IpcTester.DrawIntro(GetEnabledState.Label, "Current State");
+        IpcTester.DrawIntro(GetEnabledState.Label, "当前状态");
         ImGui.TextUnformatted($"{new GetEnabledState(_pi).Invoke()}");
 
-        IpcTester.DrawIntro(IpcSubscribers.EnabledChange.Label, "Last Change");
-        ImGui.TextUnformatted(_lastEnabledValue is { } v ? $"{_lastEnabledChange} (to {v})" : "Never");
+        IpcTester.DrawIntro(IpcSubscribers.EnabledChange.Label, "上次变更");
+        ImGui.TextUnformatted(_lastEnabledValue is { } v ? $"{_lastEnabledChange} (变为 {v})" : "从未");
 
-        IpcTester.DrawIntro(SupportedFeatures.Label, "Supported Features");
+        IpcTester.DrawIntro(SupportedFeatures.Label, "支持的特性");
         ImUtf8.Text(string.Join(", ", new SupportedFeatures(_pi).Invoke()));
 
-        IpcTester.DrawIntro(CheckSupportedFeatures.Label, "Missing Features");
+        IpcTester.DrawIntro(CheckSupportedFeatures.Label, "缺失的特性");
         ImUtf8.Text(string.Join(", ", new CheckSupportedFeatures(_pi).Invoke(_requiredFeatures)));
 
         DrawConfigPopup();
-        IpcTester.DrawIntro(GetConfiguration.Label, "Configuration");
-        if (ImGui.Button("Get"))
+        IpcTester.DrawIntro(GetConfiguration.Label, "配置信息");
+        if (ImGui.Button("获取"))
         {
             _currentConfiguration = new GetConfiguration(_pi).Invoke();
-            ImGui.OpenPopup("Config Popup");
+            ImGui.OpenPopup("配置弹窗");
         }
 
-        IpcTester.DrawIntro(GetModDirectory.Label, "Current Mod Directory");
+        IpcTester.DrawIntro(GetModDirectory.Label, "当前模组目录");
         ImGui.TextUnformatted(new GetModDirectory(_pi).Invoke());
 
-        IpcTester.DrawIntro(IpcSubscribers.ModDirectoryChanged.Label, "Last Mod Directory Change");
+        IpcTester.DrawIntro(IpcSubscribers.ModDirectoryChanged.Label, "上次模组目录变更");
         ImGui.TextUnformatted(_lastModDirectoryTime > DateTimeOffset.MinValue
-            ? $"{_lastModDirectory} ({(_lastModDirectoryValid ? "Valid" : "Invalid")}) at {_lastModDirectoryTime}"
-            : "None");
+            ? $"{_lastModDirectory} ({(_lastModDirectoryValid ? "有效" : "无效")}) 于 {_lastModDirectoryTime}"
+            : "无");
 
         void DrawList(string label, string text, List<DateTimeOffset> list)
         {
             IpcTester.DrawIntro(label, text);
             if (list.Count == 0)
             {
-                ImGui.TextUnformatted("Never");
+                ImGui.TextUnformatted("从未");
             }
             else
             {
@@ -120,7 +120,7 @@ public class PluginStateIpcTester : IUiService, IDisposable
     private void DrawConfigPopup()
     {
         ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(500, 500));
-        using var popup = ImRaii.Popup("Config Popup");
+        using var popup = ImRaii.Popup("配置弹窗");
         if (!popup)
             return;
 
@@ -129,7 +129,7 @@ public class PluginStateIpcTester : IUiService, IDisposable
             ImGuiUtil.TextWrapped(_currentConfiguration);
         }
 
-        if (ImGui.Button("Close", -Vector2.UnitX) || !ImGui.IsWindowFocused())
+        if (ImGui.Button("关闭", -Vector2.UnitX) || !ImGui.IsWindowFocused())
             ImGui.CloseCurrentPopup();
     }
 

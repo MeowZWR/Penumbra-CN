@@ -19,7 +19,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<ShpIdentifier, ShpEntry>(editor, metaFiles), IService
 {
     public override ReadOnlySpan<byte> Label
-        => "Shape Keys (SHP)###SHP"u8;
+        => "形状键 (SHP)###SHP"u8;
 
     private ShapeAttributeString _buffer = ShapeAttributeString.TryRead("shpx_"u8, out var s) ? s : ShapeAttributeString.Empty;
     private bool                 _identifierValid;
@@ -38,16 +38,16 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     protected override void DrawNew()
     {
         ImGui.TableNextColumn();
-        CopyToClipboardButton("Copy all current SHP manipulations to clipboard."u8,
+        CopyToClipboardButton("将当前所有SHP操作复制到剪贴板。"u8,
             new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Shp)));
 
         ImGui.TableNextColumn();
         var canAdd = !Editor.Contains(Identifier) && _identifierValid;
         var tt = canAdd
-            ? "Stage this edit."u8
+            ? "暂存此更改。"u8
             : _identifierValid
-                ? "This entry does not contain a valid shape key."u8
-                : "This entry is already edited."u8;
+                ? "该条目不包含有效的形状键。"u8
+                : "该条目已被编辑。"u8;
         if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, disabled: !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, ShpEntry.True);
 
@@ -99,25 +99,25 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         ImGui.TableNextColumn();
 
         ImUtf8.TextFramed(SlotName(identifier.Slot), FrameColor);
-        ImUtf8.HoverTooltip("Model Slot"u8);
+        ImUtf8.HoverTooltip("模型部位"u8);
 
         ImGui.TableNextColumn();
         if (identifier.GenderRaceCondition is not GenderRace.Unknown)
         {
             ImUtf8.TextFramed($"{identifier.GenderRaceCondition.ToName()} ({identifier.GenderRaceCondition.ToRaceCode()})", FrameColor);
-            ImUtf8.HoverTooltip("Gender & Race Code for this shape key to be set.");
+            ImUtf8.HoverTooltip("此形状键生效的性别与种族代码。");
         }
         else
         {
-            ImUtf8.TextFramed("Any Gender & Race"u8, FrameColor);
+            ImUtf8.TextFramed("任意性别与种族"u8, FrameColor);
         }
 
         ImGui.TableNextColumn();
         if (identifier.Id.HasValue)
             ImUtf8.TextFramed($"{identifier.Id.Value.Id}", FrameColor);
         else
-            ImUtf8.TextFramed("All IDs"u8, FrameColor);
-        ImUtf8.HoverTooltip("Primary ID"u8);
+            ImUtf8.TextFramed("全部ID"u8, FrameColor);
+        ImUtf8.HoverTooltip("主ID"u8);
 
         ImGui.TableNextColumn();
         ImUtf8.TextFramed(identifier.Shape.AsSpan, FrameColor);
@@ -126,7 +126,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         if (identifier.ConnectorCondition is not ShapeConnectorCondition.None)
         {
             ImUtf8.TextFramed($"{identifier.ConnectorCondition}", FrameColor);
-            ImUtf8.HoverTooltip("Connector condition for this shape to be activated.");
+            ImUtf8.HoverTooltip("激活此形状所需的连接条件。");
         }
     }
 
@@ -138,7 +138,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         var changes = ImUtf8.Checkbox("##shpEntry"u8, ref value);
         if (changes)
             entry = new ShpEntry(value);
-        ImUtf8.HoverTooltip("Whether to enable or disable this shape key for the selected items.");
+        ImUtf8.HoverTooltip("是否为所选项目启用或禁用此形状键。");
         return changes;
     }
 
@@ -156,13 +156,13 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             }
         }
 
-        ImUtf8.HoverTooltip(allSlots ? "When using all slots, you also need to use all IDs."u8 : "Enable this shape key for all model IDs."u8);
+        ImUtf8.HoverTooltip(allSlots ? "使用全部部位时，必须同时使用全部ID。"u8 : "为所有模型ID启用此形状键。"u8);
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         if (all)
         {
             using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.05f, 0.5f));
-            ImUtf8.TextFramed("All IDs"u8, ImGui.GetColorU32(ImGuiCol.FrameBg, all || allSlots ? ImGui.GetStyle().DisabledAlpha : 1f),
+            ImUtf8.TextFramed("全部ID"u8, ImGui.GetColorU32(ImGuiCol.FrameBg, all || allSlots ? ImGui.GetStyle().DisabledAlpha : 1f),
                 new Vector2(unscaledWidth, 0), ImGui.GetColorU32(ImGuiCol.TextDisabled));
         }
         else
@@ -175,7 +175,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             }
         }
 
-        ImUtf8.HoverTooltip("Primary ID - You can usually find this as the 'e####' part of an item path or similar for customizations."u8);
+        ImUtf8.HoverTooltip("主ID - 通常可在物品路径中的 'e####' 部分或自定义内容中找到。"u8);
 
         return ret;
     }
@@ -223,7 +223,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
                 }
         }
 
-        ImUtf8.HoverTooltip("Model Slot"u8);
+        ImUtf8.HoverTooltip("模型部位"u8);
         return ret;
     }
 
@@ -236,7 +236,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         using (new ImRaii.ColorStyle().Push(ImGuiCol.Border, Colors.RegexWarningBorder, !valid).Push(ImGuiStyleVar.FrameBorderSize, 1f, !valid))
         {
             ImGui.SetNextItemWidth(unscaledWidth * ImUtf8.GlobalScale);
-            if (ImUtf8.InputText("##shpShape"u8, span, out int newLength, "Shape Key..."u8))
+            if (ImUtf8.InputText("##shpShape"u8, span, out int newLength, "形状键..."u8))
             {
                 buffer.ForceLength((byte)newLength);
                 valid = buffer.ValidateCustomShapeString();
@@ -246,7 +246,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             }
         }
 
-        ImUtf8.HoverTooltip("Supported shape keys need to have the format `shpx_*` and a maximum length of 30 characters."u8);
+        ImUtf8.HoverTooltip("支持的形状键需以 `shpx_*` 格式命名，且最大长度为30个字符。"u8);
         return ret;
     }
 
@@ -268,22 +268,22 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         {
             if (combo)
             {
-                if (ImUtf8.Selectable("None"u8, identifier.ConnectorCondition is ShapeConnectorCondition.None))
+                if (ImUtf8.Selectable("无"u8, identifier.ConnectorCondition is ShapeConnectorCondition.None))
                     identifier = identifier with { ConnectorCondition = ShapeConnectorCondition.None };
 
-                if (showWrists && ImUtf8.Selectable("Wrists"u8, identifier.ConnectorCondition is ShapeConnectorCondition.Wrists))
+                if (showWrists && ImUtf8.Selectable("手腕"u8, identifier.ConnectorCondition is ShapeConnectorCondition.Wrists))
                     identifier = identifier with { ConnectorCondition = ShapeConnectorCondition.Wrists };
 
-                if (showWaist && ImUtf8.Selectable("Waist"u8, identifier.ConnectorCondition is ShapeConnectorCondition.Waist))
+                if (showWaist && ImUtf8.Selectable("腰部"u8, identifier.ConnectorCondition is ShapeConnectorCondition.Waist))
                     identifier = identifier with { ConnectorCondition = ShapeConnectorCondition.Waist };
 
-                if (showAnkles && ImUtf8.Selectable("Ankles"u8, identifier.ConnectorCondition is ShapeConnectorCondition.Ankles))
+                if (showAnkles && ImUtf8.Selectable("脚踝"u8, identifier.ConnectorCondition is ShapeConnectorCondition.Ankles))
                     identifier = identifier with { ConnectorCondition = ShapeConnectorCondition.Ankles };
             }
         }
 
         ImUtf8.HoverTooltip(
-            "Only activate this shape key if any custom connector shape keys (shpx_[wr|wa|an]_*) are also enabled through matching attributes."u8);
+            "仅当有自定义连接器形状键（shpx_[wr|wa|an]_*) 通过匹配属性被启用时，才激活此形状键。"u8);
         return ret;
     }
 
@@ -293,12 +293,12 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         ImGui.SetNextItemWidth(unscaledWidth * ImUtf8.GlobalScale);
 
         using (var combo = ImUtf8.Combo("##shpGenderRace"u8, identifier.GenderRaceCondition is GenderRace.Unknown
-                   ? "Any Gender & Race"
+                   ? "任意性别与种族"
                    : $"{identifier.GenderRaceCondition.ToName()} ({identifier.GenderRaceCondition.ToRaceCode()})"))
         {
             if (combo)
             {
-                if (ImUtf8.Selectable("Any Gender & Race"u8, identifier.GenderRaceCondition is GenderRace.Unknown)
+                if (ImUtf8.Selectable("任意性别与种族"u8, identifier.GenderRaceCondition is GenderRace.Unknown)
                  && identifier.GenderRaceCondition is not GenderRace.Unknown)
                 {
                     identifier = identifier with { GenderRaceCondition = GenderRace.Unknown };
@@ -318,7 +318,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         }
 
         ImUtf8.HoverTooltip(
-            "Only activate this shape key for this gender & race code."u8);
+            "仅为指定的性别与种族代码激活此形状键。"u8);
 
         return ret;
     }
@@ -346,21 +346,21 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     public static ReadOnlySpan<byte> SlotName(HumanSlot slot)
         => slot switch
         {
-            HumanSlot.Unknown => "All Slots"u8,
-            HumanSlot.Head    => "Equipment: Head"u8,
-            HumanSlot.Body    => "Equipment: Body"u8,
-            HumanSlot.Hands   => "Equipment: Hands"u8,
-            HumanSlot.Legs    => "Equipment: Legs"u8,
-            HumanSlot.Feet    => "Equipment: Feet"u8,
-            HumanSlot.Ears    => "Equipment: Ears"u8,
-            HumanSlot.Neck    => "Equipment: Neck"u8,
-            HumanSlot.Wrists  => "Equipment: Wrists"u8,
-            HumanSlot.RFinger => "Equipment: Right Finger"u8,
-            HumanSlot.LFinger => "Equipment: Left Finger"u8,
-            HumanSlot.Glasses => "Equipment: Glasses"u8,
-            HumanSlot.Hair    => "Customization: Hair"u8,
-            HumanSlot.Face    => "Customization: Face"u8,
-            HumanSlot.Ear     => "Customization: Ears"u8,
-            _                 => "Unknown"u8,
+            HumanSlot.Unknown => "全部部位"u8,
+            HumanSlot.Head    => "装备：头部"u8,
+            HumanSlot.Body    => "装备：身体"u8,
+            HumanSlot.Hands   => "装备：手部"u8,
+            HumanSlot.Legs    => "装备：腿部"u8,
+            HumanSlot.Feet    => "装备：足部"u8,
+            HumanSlot.Ears    => "装备：耳饰"u8,
+            HumanSlot.Neck    => "装备：项链"u8,
+            HumanSlot.Wrists  => "装备：手腕"u8,
+            HumanSlot.RFinger => "装备：右手指"u8,
+            HumanSlot.LFinger => "装备：左手指"u8,
+            HumanSlot.Glasses => "装备：眼镜"u8,
+            HumanSlot.Hair    => "自定义：发型"u8,
+            HumanSlot.Face    => "自定义：脸部"u8,
+            HumanSlot.Ear     => "自定义：耳朵"u8,
+            _                 => "未知"u8,
         };
 }

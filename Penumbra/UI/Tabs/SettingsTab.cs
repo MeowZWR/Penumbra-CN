@@ -852,8 +852,8 @@ public class SettingsTab : ITab, IUiService
             "在正常情况下，元数据修改的值（有时是由TexTools导出的）与游戏默认的值相同时，将被抛弃。"
           + "切换此选项以保留它们 - 假如你认为某个模组中的某个选项在先前的选项中被禁用了元数据的修改。",
             _config.KeepDefaultMetaChanges, v => _config.KeepDefaultMetaChanges = v);
-        Checkbox("Enable Custom Shape and Attribute Support",
-            "Penumbra will allow for custom shape keys and attributes for modded models to be considered and combined.",
+        Checkbox("启用自定义形状与属性支持",
+            "Penumbra将允许对模组模型的自定义形状键和属性进行识别与合并。",
             _config.EnableCustomShapes, _attributeHook.SetState);
         DrawWaitForPluginsReflection();
         DrawEnableHttpApiBox();
