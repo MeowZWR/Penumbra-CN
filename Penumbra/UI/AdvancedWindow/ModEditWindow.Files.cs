@@ -431,7 +431,9 @@ public partial class ModEditWindow
     private void DrawFileManagementNormal()
     {
         // 1. 先绘制计数文本（右上角）
-        var countText = $"已选中{_selectedFiles.Count} / {_editor.Files.Available.Count}个文件。";
+        int totalCount = _editor.Files.Available.Count;
+        int hiddenCount = _editor.Files.Available.Count(f => ShouldHideFile(f));
+        var countText = $"已选中{_selectedFiles.Count} / {totalCount}个文件" + (hiddenCount > 0 ? $"（{hiddenCount}隐藏）" : "");
         var textWidth = ImGui.CalcTextSize(countText).X;
         var windowWidth = ImGui.GetWindowWidth();
         var style = ImGui.GetStyle();
