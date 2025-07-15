@@ -91,7 +91,25 @@ public sealed class ModGroupDrawer : IUiService
                 case GroupDrawBehaviour.SingleSelection:
                     ImGuiUtil.Dummy(UiHelpers.DefaultSpace, useDummy);
                     useDummy = false;
-                    DrawSingleGroupCombo(group, idx, settings.IsEmpty ? group.DefaultSettings : settings.Settings[idx]);
+                    
+                    // 添加边界检查，防止数组越界
+                    Setting setting;
+                    if (settings.IsEmpty)
+                    {
+                        setting = group.DefaultSettings;
+                    }
+                    else if (idx >= 0 && idx < settings.Settings.Count)
+                    {
+                        setting = settings.Settings[idx];
+                    }
+                    else
+                    {
+                        // 如果索引超出范围，使用默认设置并记录错误
+                        Penumbra.Log.Warning($"模组 {mod.Name} 的设置索引 {idx} 超出范围 (0-{settings.Settings.Count - 1})，使用默认设置");
+                        setting = group.DefaultSettings;
+                    }
+                    
+                    DrawSingleGroupCombo(group, idx, setting);
                     break;
             }
         }
@@ -101,7 +119,24 @@ public sealed class ModGroupDrawer : IUiService
         {
             ImGuiUtil.Dummy(UiHelpers.DefaultSpace, useDummy);
             useDummy = false;
-            var option = settings.IsEmpty ? group.DefaultSettings : settings.Settings[idx];
+            
+            // 添加边界检查，防止数组越界
+            Setting option;
+            if (settings.IsEmpty)
+            {
+                option = group.DefaultSettings;
+            }
+            else if (idx >= 0 && idx < settings.Settings.Count)
+            {
+                option = settings.Settings[idx];
+            }
+            else
+            {
+                // 如果索引超出范围，使用默认设置并记录错误
+                Penumbra.Log.Warning($"模组 {mod.Name} 的设置索引 {idx} 超出范围 (0-{settings.Settings.Count - 1})，使用默认设置");
+                option = group.DefaultSettings;
+            }
+            
             if (group.Behaviour is GroupDrawBehaviour.MultiSelection)
                 DrawMultiGroup(group, idx, option);
             else
@@ -210,10 +245,10 @@ public sealed class ModGroupDrawer : IUiService
         ImGui.TextUnformatted(group.Name);
         using var disabled = ImRaii.Disabled(_locked);
         ImGui.Separator();
-        if (ImUtf8.Selectable("Enable All"u8))
+        if (ImUtf8.Selectable("启用全部"u8))
             SetModSetting(group, groupIdx, Setting.AllBits(group.Options.Count));
 
-        if (ImUtf8.Selectable("Disable All"u8))
+        if (ImUtf8.Selectable("禁用全部"u8))
             SetModSetting(group, groupIdx, Setting.Zero);
     }
 
