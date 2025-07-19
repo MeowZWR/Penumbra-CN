@@ -128,6 +128,7 @@ public class Configuration : IPluginConfiguration, ISavable, IService
     public bool   HideGifFiles             { get; set; } = true;
     public bool   HideTiffFiles            { get; set; } = true;
     public bool   HideWebpFiles            { get; set; } = true;
+    public bool   HideXcpFiles             { get; set; } = true;
 
     public Dictionary<ColorId, uint> Colors { get; set; }
         = Enum.GetValues<ColorId>().ToDictionary(c => c, c => c.Data().DefaultColor);

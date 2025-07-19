@@ -53,6 +53,7 @@ public partial class ModEditWindow
             ".gif" => _config.HideGifFiles,
             ".tiff" or ".tif" => _config.HideTiffFiles,
             ".webp" => _config.HideWebpFiles,
+            ".xcp" => _config.HideXcpFiles,
             _ => false
         };
     }
@@ -76,6 +77,7 @@ public partial class ModEditWindow
             ".gif" => _config.HideGifFiles,
             ".tiff" or ".tif" => _config.HideTiffFiles,
             ".webp" => _config.HideWebpFiles,
+            ".xcp" => _config.HideXcpFiles,
             _ => false
         };
     }
@@ -512,6 +514,7 @@ public partial class ModEditWindow
         var hideGif = _config.HideGifFiles;
         var hideTiff = _config.HideTiffFiles;
         var hideWebp = _config.HideWebpFiles;
+        var hideXcp = _config.HideXcpFiles;
         
         changed |= ImGui.Checkbox("隐藏 DDS 文件", ref hideDds);
         changed |= ImGui.Checkbox("隐藏 PNG 文件", ref hidePng);
@@ -522,6 +525,7 @@ public partial class ModEditWindow
         changed |= ImGui.Checkbox("隐藏 GIF 文件", ref hideGif);
         changed |= ImGui.Checkbox("隐藏 TIFF 文件", ref hideTiff);
         changed |= ImGui.Checkbox("隐藏 WebP 文件", ref hideWebp);
+        changed |= ImGui.Checkbox("隐藏 XCP 文件", ref hideXcp);
 
         if (changed)
         {
@@ -534,6 +538,7 @@ public partial class ModEditWindow
             _config.HideGifFiles = hideGif;
             _config.HideTiffFiles = hideTiff;
             _config.HideWebpFiles = hideWebp;
+            _config.HideXcpFiles = hideXcp;
             _config.Save();
         }
     }
