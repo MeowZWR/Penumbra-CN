@@ -1,10 +1,10 @@
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
-using ImGuiNET;
 using OtterGui;
 using OtterGui.Compression;
 using OtterGui.Custom;
@@ -597,7 +597,7 @@ public class SettingsTab : ITab, IUiService
     {
         var sortMode = _config.SortMode;
         ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-        using (var combo = ImUtf8.Combo("##sortMode"u8, sortMode.Name))
+        using (var combo = ImUtf8.Combo("##sortMode", sortMode.Name))
         {
             if (combo)
                 foreach (var val in Configuration.Constants.ValidSortModes)

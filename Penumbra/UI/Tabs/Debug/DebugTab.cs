@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.Resource;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui;
 using OtterGui.Classes;
@@ -726,6 +726,9 @@ public class DebugTab : Window, ITab, IUiService
                 if (agent->Data == null)
                     agent = &AgentBannerMIP.Instance()->AgentBannerInterface;
 
+                ImUtf8.Text("Agent: ");
+                ImGui.SameLine(0, 0);
+                Penumbra.Dynamis.DrawPointer((nint)agent);
                 if (agent->Data != null)
                 {
                     using var table = Table("###PBannerTable", 2, ImGuiTableFlags.SizingFixedFit);
@@ -1045,7 +1048,7 @@ public class DebugTab : Window, ITab, IUiService
             if (t1)
             {
                 ImGuiUtil.DrawTableColumn("Flags");
-                ImGuiUtil.DrawTableColumn($"{model->UnkFlags_01:X2}");
+                ImGuiUtil.DrawTableColumn($"{model->StateFlags}");
                 ImGuiUtil.DrawTableColumn("Has Model In Slot Loaded");
                 ImGuiUtil.DrawTableColumn($"{model->HasModelInSlotLoaded:X8}");
                 ImGuiUtil.DrawTableColumn("Has Model Files In Slot Loaded");

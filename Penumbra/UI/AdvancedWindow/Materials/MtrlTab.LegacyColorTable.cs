@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Text;
 using Penumbra.GameData.Files.MaterialStructs;
@@ -67,7 +67,7 @@ public partial class MtrlTab
     private static void DrawLegacyColorTableHeader(bool hasDyeTable)
     {
         ImGui.TableNextColumn();
-        ImUtf8.TableHeader(default(ReadOnlySpan<byte>));
+        ImUtf8.TableHeader(""u8);
         ImGui.TableNextColumn();
         ImUtf8.TableHeader("行"u8);
         ImGui.TableNextColumn();
