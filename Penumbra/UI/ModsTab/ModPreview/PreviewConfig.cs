@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 using Penumbra.UI;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 namespace Penumbra.UI.ModsTab.ModPreview;
 

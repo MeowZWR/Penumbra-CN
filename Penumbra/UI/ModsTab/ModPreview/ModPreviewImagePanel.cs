@@ -1,7 +1,7 @@
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Raii;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
@@ -776,7 +776,7 @@ public class ModPreviewImagePanel : IDisposable
                         posY = columnHeights[shortestColumn] + spacing;
                     
                     ImGui.SetCursorPos(new Vector2(posX, posY));
-                    ImGui.Image(cachedTexture.Texture.ImGuiHandle, cachedTexture.ScaledSize);
+                    ImGui.Image(cachedTexture.Texture.Handle, cachedTexture.ScaledSize);
 
                     UpdateLRU(path, true);
                     actualVisibleCount++;
@@ -880,7 +880,7 @@ public class ModPreviewImagePanel : IDisposable
                                 ImGui.GetColorU32(new Vector4(0, 0, 0, 0.7f))
                             );
                             
-                            foregroundDrawList.AddImage(texture.ImGuiHandle, min, max);
+                            foregroundDrawList.AddImage(texture.Handle, min, max);
                             
                             var sizeText = $"{texture.Width} x {texture.Height} - {cachedTexture.Resolution}";
                             if (cachedTexture.Resolution != ImageCompressor.ResolutionType.Original)
