@@ -69,7 +69,7 @@ public class ModPanelEditTab(
         FeatureChecker.DrawFeatureFlagInput(modManager.DataEditor, _mod, UiHelpers.InputTextWidth.X);
 
         UiHelpers.DefaultLineSpace();
-        var sharedTagsEnabled     = predefinedTagManager.Count > 0;
+        var sharedTagsEnabled     = predefinedTagManager.Enabled;
         var sharedTagButtonOffset = sharedTagsEnabled ? ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X : 0;
         var tagIdx = _modTags.Draw("模组标签：", "点击修改，或添加新标签。空白标签会被移除。", _mod.ModTags,
             out var editedTag, rightEndOffset: sharedTagButtonOffset);

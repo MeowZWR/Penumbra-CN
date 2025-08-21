@@ -2,6 +2,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using OtterGui.Extensions;
+using OtterGui.Filesystem;
 using OtterGui.Raii;
 using OtterGui.Services;
 using OtterGui.Text;
@@ -10,7 +11,7 @@ using Penumbra.Mods.Manager;
 
 namespace Penumbra.UI.ModsTab;
 
-public class MultiModPanel(ModFileSystemSelector selector, ModDataEditor editor) : IUiService
+public class MultiModPanel(ModFileSystemSelector selector, ModDataEditor editor, PredefinedTagManager tagManager) : IUiService
 {
     public void Draw()
     {
@@ -97,7 +98,12 @@ public class MultiModPanel(ModFileSystemSelector selector, ModDataEditor editor)
         var width = ImGuiHelpers.ScaledVector2(150, 0);
         ImUtf8.TextFrameAligned("批量标签："u8);
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemSpacing.X));
+
+        var predefinedTagsEnabled = tagManager.Enabled;
+        var inputWidth = predefinedTagsEnabled
+            ? ImGui.GetContentRegionAvail().X - 2 * width.X - 3 * ImGui.GetStyle().ItemInnerSpacing.X - ImGui.GetFrameHeight()
+            : ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.SetNextItemWidth(inputWidth);
         ImUtf8.InputText("##tag"u8, ref _tag, "本地标签名称..."u8);
 
         UpdateTagCache();
@@ -109,7 +115,7 @@ public class MultiModPanel(ModFileSystemSelector selector, ModDataEditor editor)
                 ? "未指定标签。"
                 : $"所有选中的模组已包含标签 \"{_tag}\"，无论是本地还是作为模组数据。"
             : $"将\"{_tag}\"作为本地标签添加到{_addMods.Count}个模组：\n\n\t{string.Join("\n\t", _addMods.Select(m => m.Name.Text))}";
-        ImGui.SameLine();
+        ImUtf8.SameLineInner();
         if (ImUtf8.ButtonEx(label, tooltip, width, _addMods.Count == 0))
             foreach (var mod in _addMods)
                 editor.ChangeLocalTag(mod, mod.LocalTags.Count, _tag);
@@ -122,10 +128,18 @@ public class MultiModPanel(ModFileSystemSelector selector, ModDataEditor editor)
                 ? "未指定标签。"
                 : $"选中的模组不包含\"{_tag}\"这个本地标签。"
             : $"从{_removeMods.Count}个模组移除本地标签\"{_tag}\" ：\n\n\t{string.Join("\n\t", _removeMods.Select(m => m.Item1.Name.Text))}";
-        ImGui.SameLine();
+        ImUtf8.SameLineInner();
         if (ImUtf8.ButtonEx(label, tooltip, width, _removeMods.Count == 0))
             foreach (var (mod, index) in _removeMods)
                 editor.ChangeLocalTag(mod, index, string.Empty);
+        
+        if (predefinedTagsEnabled)
+        {
+            ImUtf8.SameLineInner();
+            tagManager.DrawToggleButton();
+            tagManager.DrawListMulti(selector.SelectedPaths.OfType<ModFileSystem.Leaf>().Select(l => l.Value));
+        }
+
         ImGui.Separator();
     }
 
