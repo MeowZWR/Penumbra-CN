@@ -12,7 +12,6 @@ using OtterGui.Raii;
 using OtterGui.Services;
 using OtterGui.Text;
 using OtterGui.Widgets;
-using OtterGuiInternal.Enums;
 using Penumbra.Api;
 using Penumbra.Collections;
 using Penumbra.Interop.Hooks.PostProcessing;
@@ -21,7 +20,6 @@ using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
 using Penumbra.UI.ModsTab;
-using ImGuiId = OtterGuiInternal.Enums.ImGuiId;
 
 namespace Penumbra.UI.Tabs;
 
@@ -54,6 +52,7 @@ public class SettingsTab : ITab, IUiService
     private readonly CollectionAutoSelector      _autoSelector;
     private readonly CleanupService              _cleanupService;
     private readonly AttributeHook               _attributeHook;
+    private readonly PcpService                  _pcpService;
 
     private int _minimumX = int.MaxValue;
     private int _minimumY = int.MaxValue;
@@ -66,7 +65,7 @@ public class SettingsTab : ITab, IUiService
         DalamudSubstitutionProvider dalamudSubstitutionProvider, FileCompactor compactor, DalamudConfigService dalamudConfig,
         IDataManager gameData, PredefinedTagManager predefinedTagConfig, CrashHandlerService crashService,
         MigrationSectionDrawer migrationDrawer, CollectionAutoSelector autoSelector, CleanupService cleanupService,
-        AttributeHook attributeHook)
+        AttributeHook attributeHook, PcpService pcpService)
     {
         _pluginInterface             = pluginInterface;
         _config                      = config;
@@ -92,6 +91,7 @@ public class SettingsTab : ITab, IUiService
         _autoSelector         = autoSelector;
         _cleanupService       = cleanupService;
         _attributeHook        = attributeHook;
+        _pcpService           = pcpService;
     }
 
     public void DrawHeader()
@@ -688,9 +688,39 @@ public class SettingsTab : ITab, IUiService
         Checkbox("打开导入窗口时始终使用默认目录",
             "每次都在此处指定的目录位置打开导入窗口，不使用上一次的路径。",
             _config.AlwaysOpenDefaultImport, v => _config.AlwaysOpenDefaultImport = v);
+        Checkbox("Handle PCP Files",
+            "When encountering specific mods, usually but not necessarily denoted by a .pcp file ending, Penumbra will automatically try to create an associated collection and assign it to a specific character for this mod package. This can turn this behaviour off if unwanted.",
+            !_config.PcpSettings.DisableHandling, v => _config.PcpSettings.DisableHandling = !v);
+
+        var active = _config.DeleteModModifier.IsActive();
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Delete all PCP Mods"u8, "Deletes all mods tagged with 'PCP' from the mod list."u8, disabled: !active))
+            _pcpService.CleanPcpMods();
+        if (!active)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking.");
+
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Delete all PCP Collections"u8, "Deletes all collections whose name starts with 'PCP/' from the collection list."u8,
+                disabled: !active))
+            _pcpService.CleanPcpCollections();
+        if (!active)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking.");
+
+        Checkbox("Allow Other Plugins Access to PCP Handling",
+            "When creating or importing PCP files, other plugins can add and interpret their own data to the character.json file.",
+            _config.PcpSettings.AllowIpc, v => _config.PcpSettings.AllowIpc = v);
+
+        Checkbox("Create PCP Collections",
+            "When importing PCP files, create the associated collection.",
+            _config.PcpSettings.CreateCollection, v => _config.PcpSettings.CreateCollection = v);
+
+        Checkbox("Assign PCP Collections",
+            "When importing PCP files and creating the associated collection, assign it to the associated character.",
+            _config.PcpSettings.AssignCollection, v => _config.PcpSettings.AssignCollection = v);
         DrawDefaultModImportPath();
         DrawDefaultModAuthor();
         DrawDefaultModImportFolder();
+        DrawPcpFolder();
         DrawDefaultModExportPath();
     }
 
@@ -798,6 +828,21 @@ public class SettingsTab : ITab, IUiService
 
         ImGuiUtil.LabeledHelpMarker("默认模组导入折叠组",
             "导入新模组后，模组默认进入以此名称命名的折叠组。\n留空则导入到根目录。");
+    }
+
+    /// <summary> Draw input for the default folder to sort put newly imported mods into. </summary>
+    private void DrawPcpFolder()
+    {
+        var tmp = _config.PcpSettings.FolderName;
+        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
+        if (ImUtf8.InputText("##pcpFolder"u8, ref tmp))
+            _config.PcpSettings.FolderName = tmp;
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            _config.Save();
+
+        ImGuiUtil.LabeledHelpMarker("Default PCP Organizational Folder",
+            "The folder any penumbra character packs are moved to on import.\nLeave blank to import into Root.");
     }
 
 
@@ -1143,7 +1188,7 @@ public class SettingsTab : ITab, IUiService
         if (ImGui.Button("查看更新日志", new Vector2(width, 0)))
             _penumbra.ForceChangelogOpen();
 
-        ImGui.SetCursorPos(new Vector2(xPos, 5 * ImGui.GetFrameHeightWithSpacing()));
+        ImGui.SetCursorPos(new Vector2(xPos,                                  5 * ImGui.GetFrameHeightWithSpacing()));
         CustomGui.DrawKofiPatreonButton(Penumbra.Messager, new Vector2(width, 0));
     }
 

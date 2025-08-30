@@ -1,15 +1,20 @@
-using Dalamud.Interface;
-using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
+using Dalamud.Interface;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Utility;
+using Dalamud.Plugin.Services;
 using OtterGui;
+using OtterGui.Classes;
+using OtterGui.Extensions;
+using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.Api.Enums;
+using Penumbra.GameData.Structs;
 using Penumbra.Interop.ResourceTree;
 using Penumbra.Services;
-using Penumbra.UI.Classes;
 using Penumbra.String;
-using OtterGui.Extensions;
+using Penumbra.UI.Classes;
 
 namespace Penumbra.UI.AdvancedWindow;
 
@@ -21,12 +26,14 @@ public class ResourceTreeViewer(
     int actionCapacity,
     Action onRefresh,
     Action<ResourceNode, Vector2> drawActions,
-    CommunicatorService communicator)
+    CommunicatorService communicator,
+    PcpService pcpService,
+    IDataManager gameData)
 {
     private const ResourceTreeFactory.Flags ResourceTreeFactoryFlags =
         ResourceTreeFactory.Flags.RedactExternalPaths | ResourceTreeFactory.Flags.WithUiData | ResourceTreeFactory.Flags.WithOwnership;
 
-    private readonly HashSet<nint>       _unfolded     = [];
+    private readonly HashSet<nint> _unfolded = [];
 
     private readonly Dictionary<nint, NodeVisibility> _filterCache = [];
 
@@ -34,11 +41,13 @@ public class ResourceTreeViewer(
     private ChangedItemIconFlag _typeFilter     = ChangedItemFlagExtensions.AllFlags;
     private string              _nameFilter     = string.Empty;
     private string              _nodeFilter     = string.Empty;
+    private string              _note           = string.Empty;
 
     private Task<ResourceTree[]>? _task;
 
     public void Draw()
     {
+        DrawModifiedGameFilesWarning();
         DrawControls();
         _task ??= RefreshCharacterList();
 
@@ -83,7 +92,28 @@ public class ResourceTreeViewer(
 
                 using var id = ImRaii.PushId(index);
 
-                ImGui.TextUnformatted($"合集：{(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
+                ImUtf8.TextFrameAligned($"合集：{(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
+                ImGui.SameLine();
+                if (ImUtf8.ButtonEx("导出角色包"u8,
+                        "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
+                {
+                    pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, _note).ContinueWith(t =>
+                    {
+
+                        var (success, text) = t.Result;
+
+                        if (success)
+                            Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
+                        else
+                            Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
+                    });
+                    _note = string.Empty;
+                }
+
+                ImUtf8.SameLineInner();
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                ImUtf8.InputText("##note"u8, ref _note, "导出备注..."u8);
+
 
                 using var table = ImRaii.Table("##ResourceTree", actionCapacity > 0 ? 4 : 3,
                     ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
@@ -101,6 +131,24 @@ public class ResourceTreeViewer(
                 DrawNodes(tree.Nodes, 0, unchecked(tree.DrawObjectAddress * 31), 0);
             }
         }
+    }
+
+    private void DrawModifiedGameFilesWarning()
+    {
+        if (!gameData.HasModifiedGameDataFiles)
+            return;
+
+        using var style = ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudOrange);
+
+        ImUtf8.TextWrapped(
+            "Dalamud is reporting your FFXIV installation has modified game files. Any mods installed through TexTools will produce this message."u8);
+        ImUtf8.TextWrapped("Penumbra and some other plugins assume your FFXIV installation is unmodified in order to work."u8);
+        ImUtf8.TextWrapped(
+            "Data displayed here may be inaccurate because of this, which, in turn, can break functionality relying on it, such as Character Pack exports/imports, or mod synchronization functions provided by other plugins."u8);
+        ImUtf8.TextWrapped(
+            "Exit the game, open XIVLauncher, click the arrow next to Log In and select \"repair game files\" to resolve this issue. Afterwards, do not install any mods with TexTools. Your plugin configurations will remain, as will mods enabled in Penumbra."u8);
+
+        ImGui.Separator();
     }
 
     private void DrawControls()
@@ -263,7 +311,8 @@ public class ResourceTreeViewer(
                     using var group   = ImUtf8.Group();
                     using (var color = ImRaii.PushColor(ImGuiCol.Text, (hasMod ? ColorId.NewMod : ColorId.DisabledMod).Value()))
                     {
-                        ImUtf8.Selectable(modName, false, ImGuiSelectableFlags.AllowItemOverlap, new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
+                        ImUtf8.Selectable(modName, false, ImGuiSelectableFlags.AllowItemOverlap,
+                            new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
                     }
 
                     ImGui.SameLine();
@@ -272,7 +321,8 @@ public class ResourceTreeViewer(
                 }
                 else
                 {
-                    ImGui.Selectable(resourceNode.FullPath.ToPath(), false, ImGuiSelectableFlags.AllowItemOverlap, new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
+                    ImGui.Selectable(resourceNode.FullPath.ToPath(), false, ImGuiSelectableFlags.AllowItemOverlap,
+                        new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
                 }
 
                 if (ImGui.IsItemClicked())
@@ -365,9 +415,10 @@ public class ResourceTreeViewer(
     private static string GetPathStatusDescription(ResourceNode.PathStatus status)
         => status switch
         {
-            ResourceNode.PathStatus.External    => "该文件的实际路径不可用，因为它由外部工具管理。",
-            ResourceNode.PathStatus.NonExistent => "该文件的实际路径不可用，因为它在加载后可能已被移动或删除。",
-            _                                   => "该文件的实际路径不可用。",
+            ResourceNode.PathStatus.External => "该文件的实际路径不可用，因为它由外部工具管理。",
+            ResourceNode.PathStatus.NonExistent =>
+                "该文件的实际路径不可用，因为它在加载后可能已被移动或删除。",
+            _ => "该文件的实际路径不可用。",
         };
 
     [Flags]

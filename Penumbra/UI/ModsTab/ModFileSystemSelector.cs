@@ -126,6 +126,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
         ".ttmp",
         ".ttmp2",
         ".pmp",
+        ".pcp",
         ".zip",
         ".rar",
         ".7z",
@@ -380,7 +381,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
                 : null;
 
         _fileDialog.OpenFilePicker("导入模组文件",
-            "模组文件{.ttmp,.ttmp2,.pmp},TexTools模组文件{.ttmp,.ttmp2},Penumbra模组文件{.pmp},压缩文件{.zip,.7z,.rar}", (s, f) =>
+            "模组文件{.ttmp,.ttmp2,.pmp,.pcp},TexTools模组文件{.ttmp,.ttmp2},Penumbra模组文件{.pmp,.pcp},压缩文件{.zip,.7z,.rar},Penumbra角色包{.pcp}", (s, f) =>
             {
                 if (!s)
                     return;
@@ -445,7 +446,7 @@ public sealed class ModFileSystemSelector : FileSystemSelector<Mod, ModFileSyste
             ImUtf8.Text("模组管理"u8);
             ImUtf8.BulletText("你可以通过使用此行按钮来创建一个空白模组或导入模组。"u8);
             using var indent = ImRaii.PushIndent();
-            ImUtf8.BulletText("支持导入的格式为：.ttmp, .ttmp2, .pmp。"u8);
+            ImUtf8.BulletText("支持导入的格式为：.ttmp, .ttmp2, .pmp, .pcp."u8);
             ImUtf8.BulletText(
                 "也支持.zip, .7z 或 .rar压缩包, 但必须是Penumbra类型的含有正确元数据的模组压缩包。"u8);
             indent.Pop(1);
