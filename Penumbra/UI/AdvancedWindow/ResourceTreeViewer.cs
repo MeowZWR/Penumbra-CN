@@ -4,16 +4,20 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
+using Lumina.Data;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Compression;
 using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.Api.Enums;
+using Penumbra.GameData.Files;
 using Penumbra.GameData.Structs;
 using Penumbra.Interop.ResourceTree;
 using Penumbra.Services;
 using Penumbra.String;
+using Penumbra.String.Classes;
 using Penumbra.UI.Classes;
 
 namespace Penumbra.UI.AdvancedWindow;
@@ -25,17 +29,20 @@ public class ResourceTreeViewer(
     IncognitoService incognito,
     int actionCapacity,
     Action onRefresh,
-    Action<ResourceNode, Vector2> drawActions,
+    Action<ResourceNode, IWritable?, Vector2> drawActions,
     CommunicatorService communicator,
     PcpService pcpService,
-    IDataManager gameData)
+    IDataManager gameData,
+    FileDialogService fileDialog,
+    FileCompactor compactor)
 {
     private const ResourceTreeFactory.Flags ResourceTreeFactoryFlags =
-        ResourceTreeFactory.Flags.RedactExternalPaths | ResourceTreeFactory.Flags.WithUiData | ResourceTreeFactory.Flags.WithOwnership;
+        ResourceTreeFactory.Flags.WithUiData | ResourceTreeFactory.Flags.WithOwnership;
 
     private readonly HashSet<nint> _unfolded = [];
 
-    private readonly Dictionary<nint, NodeVisibility> _filterCache = [];
+    private readonly Dictionary<nint, NodeVisibility> _filterCache   = [];
+    private readonly Dictionary<FullPath, IWritable?> _writableCache = [];
 
     private TreeCategory        _categoryFilter = AllCategories;
     private ChangedItemIconFlag _typeFilter     = ChangedItemFlagExtensions.AllFlags;
@@ -115,7 +122,7 @@ public class ResourceTreeViewer(
                 ImUtf8.InputText("##note"u8, ref _note, "导出备注..."u8);
 
 
-                using var table = ImRaii.Table("##ResourceTree", actionCapacity > 0 ? 4 : 3,
+                using var table = ImRaii.Table("##ResourceTree", 4,
                     ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
                 if (!table)
                     continue;
@@ -123,9 +130,8 @@ public class ResourceTreeViewer(
                 ImGui.TableSetupColumn(string.Empty,  ImGuiTableColumnFlags.WidthStretch, 0.2f);
                 ImGui.TableSetupColumn("游戏路径",   ImGuiTableColumnFlags.WidthStretch, 0.3f);
                 ImGui.TableSetupColumn("实际路径", ImGuiTableColumnFlags.WidthStretch, 0.5f);
-                if (actionCapacity > 0)
-                    ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed,
-                        (actionCapacity - 1) * 3 * ImGuiHelpers.GlobalScale + actionCapacity * ImGui.GetFrameHeight());
+                ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed,
+                    actionCapacity * 3 * ImGuiHelpers.GlobalScale + (actionCapacity + 1) * ImGui.GetFrameHeight());
                 ImGui.TableHeadersRow();
 
                 DrawNodes(tree.Nodes, 0, unchecked(tree.DrawObjectAddress * 31), 0);
@@ -141,12 +147,12 @@ public class ResourceTreeViewer(
         using var style = ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudOrange);
 
         ImUtf8.TextWrapped(
-            "Dalamud is reporting your FFXIV installation has modified game files. Any mods installed through TexTools will produce this message."u8);
-        ImUtf8.TextWrapped("Penumbra and some other plugins assume your FFXIV installation is unmodified in order to work."u8);
+            "Dalamud 检测到您的 FFXIV 安装目录存在被修改的游戏文件。任何通过 TexTools 安装的模组都会导致此提示。"u8);
+        ImUtf8.TextWrapped("Penumbra 及部分其他插件假定您的 FFXIV 安装目录为未修改状态以正常工作。"u8);
         ImUtf8.TextWrapped(
-            "Data displayed here may be inaccurate because of this, which, in turn, can break functionality relying on it, such as Character Pack exports/imports, or mod synchronization functions provided by other plugins."u8);
+            "由于该情况，当前显示的数据可能不准确，这可能会影响依赖这些数据的功能，例如角色包的导入/导出，或其他插件提供的模组同步功能。"u8);
         ImUtf8.TextWrapped(
-            "Exit the game, open XIVLauncher, click the arrow next to Log In and select \"repair game files\" to resolve this issue. Afterwards, do not install any mods with TexTools. Your plugin configurations will remain, as will mods enabled in Penumbra."u8);
+            "请退出游戏，打开 XIVLauncher，点击登录旁的箭头并选择“修复游戏文件”以解决此问题。修复后，请勿再使用 TexTools 安装模组。您的插件配置和 Penumbra 启用的模组不会丢失。"u8);
 
         ImGui.Separator();
     }
@@ -211,6 +217,7 @@ public class ResourceTreeViewer(
             finally
             {
                 _filterCache.Clear();
+                _writableCache.Clear();
                 _unfolded.Clear();
                 onRefresh();
             }
@@ -221,7 +228,6 @@ public class ResourceTreeViewer(
     {
         var debugMode   = config.DebugMode;
         var frameHeight = ImGui.GetFrameHeight();
-        var cellHeight  = actionCapacity > 0 ? frameHeight : 0.0f;
 
         foreach (var (resourceNode, index) in resourceNodes.WithIndex())
         {
@@ -291,7 +297,7 @@ public class ResourceTreeViewer(
                 0 => "(none)",
                 1 => resourceNode.GamePath.ToString(),
                 _ => "(multiple)",
-            }, false, hasGamePaths ? 0 : ImGuiSelectableFlags.Disabled, new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
+            }, false, hasGamePaths ? 0 : ImGuiSelectableFlags.Disabled, new Vector2(ImGui.GetContentRegionAvail().X, frameHeight));
             if (hasGamePaths)
             {
                 var allPaths = string.Join('\n', resourceNode.PossibleGamePaths);
@@ -312,17 +318,29 @@ public class ResourceTreeViewer(
                     using (var color = ImRaii.PushColor(ImGuiCol.Text, (hasMod ? ColorId.NewMod : ColorId.DisabledMod).Value()))
                     {
                         ImUtf8.Selectable(modName, false, ImGuiSelectableFlags.AllowItemOverlap,
-                            new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
+                            new Vector2(ImGui.GetContentRegionAvail().X, frameHeight));
                     }
 
                     ImGui.SameLine();
                     ImGui.SetCursorPosX(textPos);
                     ImUtf8.Text(resourceNode.ModRelativePath);
                 }
+                else if (resourceNode.FullPath.IsRooted)
+                {
+                    var path                   = resourceNode.FullPath.FullName;
+                    var lastDirectorySeparator = path.LastIndexOf('\\');
+                    var secondLastDirectorySeparator = lastDirectorySeparator > 0
+                        ? path.LastIndexOf('\\', lastDirectorySeparator - 1)
+                        : -1;
+                    if (secondLastDirectorySeparator >= 0)
+                        path = $"…{path.AsSpan(secondLastDirectorySeparator)}";
+                    ImGui.Selectable(path.AsSpan(), false, ImGuiSelectableFlags.AllowItemOverlap,
+                        new Vector2(ImGui.GetContentRegionAvail().X, frameHeight));
+                }
                 else
                 {
                     ImGui.Selectable(resourceNode.FullPath.ToPath(), false, ImGuiSelectableFlags.AllowItemOverlap,
-                        new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
+                        new Vector2(ImGui.GetContentRegionAvail().X, frameHeight));
                 }
 
                 if (ImGui.IsItemClicked())
@@ -336,20 +354,17 @@ public class ResourceTreeViewer(
             else
             {
                 ImUtf8.Selectable(GetPathStatusLabel(resourceNode.FullPathStatus), false, ImGuiSelectableFlags.Disabled,
-                    new Vector2(ImGui.GetContentRegionAvail().X, cellHeight));
+                    new Vector2(ImGui.GetContentRegionAvail().X, frameHeight));
                 ImGuiUtil.HoverTooltip(
                     $"{GetPathStatusDescription(resourceNode.FullPathStatus)}{GetAdditionalDataSuffix(resourceNode.AdditionalData)}");
             }
 
             mutedColor.Dispose();
 
-            if (actionCapacity > 0)
-            {
-                ImGui.TableNextColumn();
-                using var spacing = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
-                    ImGui.GetStyle().ItemSpacing with { X = 3 * ImGuiHelpers.GlobalScale });
-                drawActions(resourceNode, new Vector2(frameHeight));
-            }
+            ImGui.TableNextColumn();
+            using var spacing = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
+                ImGui.GetStyle().ItemSpacing with { X = 3 * ImGuiHelpers.GlobalScale });
+            DrawActions(resourceNode, new Vector2(frameHeight));
 
             if (unfolded)
                 DrawNodes(resourceNode.Children, level + 1, unchecked(nodePathHash * 31), filterIcon);
@@ -401,6 +416,51 @@ public class ResourceTreeViewer(
              || node.FullPath.FullName.Contains(_nodeFilter, StringComparison.OrdinalIgnoreCase)
              || node.FullPath.InternalName.ToString().Contains(_nodeFilter, StringComparison.OrdinalIgnoreCase)
              || Array.Exists(node.PossibleGamePaths, path => path.Path.ToString().Contains(_nodeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        void DrawActions(ResourceNode resourceNode, Vector2 buttonSize)
+        {
+            if (!_writableCache!.TryGetValue(resourceNode.FullPath, out var writable))
+            {
+                var path = resourceNode.FullPath.ToPath();
+                if (resourceNode.FullPath.IsRooted)
+                {
+                    writable = new RawFileWritable(path);
+                }
+                else
+                {
+                    var file = gameData.GetFile(path);
+                    writable = file is null ? null : new RawGameFileWritable(file);
+                }
+
+                _writableCache.Add(resourceNode.FullPath, writable);
+            }
+            
+            if (ImUtf8.IconButton(FontAwesomeIcon.Save, "Export this file."u8, buttonSize,
+                    resourceNode.FullPath.FullName.Length is 0 || writable is null))
+            {
+                var fullPathStr = resourceNode.FullPath.FullName;
+                var ext = resourceNode.PossibleGamePaths.Length == 1
+                    ? Path.GetExtension(resourceNode.GamePath.ToString())
+                    : Path.GetExtension(fullPathStr);
+                fileDialog.OpenSavePicker($"Export {Path.GetFileName(fullPathStr)} to...", ext, Path.GetFileNameWithoutExtension(fullPathStr), ext,
+                    (success, name) =>
+                    {
+                        if (!success)
+                            return;
+
+                        try
+                        {
+                            compactor.WriteAllBytes(name, writable!.Write());
+                        }
+                        catch (Exception e)
+                        {
+                            Penumbra.Log.Error($"Could not export {fullPathStr}:\n{e}");
+                        }
+                    }, null, false);
+            }
+            
+            drawActions(resourceNode, writable, new Vector2(frameHeight));
         }
     }
 
@@ -464,5 +524,23 @@ public class ResourceTreeViewer(
         Hidden          = 0,
         Visible         = 1,
         DescendentsOnly = 2,
+    }
+    
+    private record RawFileWritable(string Path) : IWritable
+    {
+        public bool Valid
+            => true;
+
+        public byte[] Write()
+            => File.ReadAllBytes(Path);
+    }
+
+    private record RawGameFileWritable(FileResource FileResource) : IWritable
+    {
+        public bool Valid
+            => true;
+
+        public byte[] Write()
+            => FileResource.Data;
     }
 }
