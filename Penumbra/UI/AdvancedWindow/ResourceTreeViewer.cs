@@ -97,6 +97,12 @@ public class ResourceTreeViewer(
                         continue;
                 }
 
+                if (tree.CollectionName.Contains("Mare", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImUtf8.TextFrameAligned("该角色数据由Mare创建和管理, 如需修改请关闭后再试...");
+                    continue;
+                }
+
                 using var id = ImRaii.PushId(index);
 
                 ImUtf8.TextFrameAligned($"合集：{(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
