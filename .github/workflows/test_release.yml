@@ -25,7 +25,7 @@ jobs:
       - name: Build
         run: |
           $ver = '${{ github.ref_name }}' -replace '^testing_' -replace '-cn-7.31$'
-          invoke-expression 'dotnet build --no-restore --configuration Debug --nologo -p:Version=$ver -p:FileVersion=$ver -p:AssemblyVersion=$ver'
+          invoke-expression 'dotnet build --no-restore --configuration Release --nologo -p:Version=$ver -p:FileVersion=$ver -p:AssemblyVersion=$ver'
       - name: write version into json
         run: |
           $ver = '${{ github.ref_name }}' -replace '^testing_' -replace '-cn-7.31$'
