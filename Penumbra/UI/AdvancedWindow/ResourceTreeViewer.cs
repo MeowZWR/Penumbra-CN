@@ -100,6 +100,7 @@ public class ResourceTreeViewer(
                 using var id = ImRaii.PushId(index);
 
                 ImUtf8.TextFrameAligned($"合集：{(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
+#if DEBUG
                 ImGui.SameLine();
                 if (ImUtf8.ButtonEx("导出角色包"u8,
                         "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
@@ -120,6 +121,7 @@ public class ResourceTreeViewer(
                 ImUtf8.SameLineInner();
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                 ImUtf8.InputText("##note"u8, ref _note, "导出备注..."u8);
+#endif
 
 
                 using var table = ImRaii.Table("##ResourceTree", 4,
