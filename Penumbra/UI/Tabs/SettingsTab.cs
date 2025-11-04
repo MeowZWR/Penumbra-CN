@@ -704,45 +704,45 @@ public class SettingsTab : ITab, IUiService
         Checkbox("打开导入窗口时始终使用默认目录",
             "每次都在此处指定的目录位置打开导入窗口，不使用上一次的路径。",
             _config.AlwaysOpenDefaultImport, v => _config.AlwaysOpenDefaultImport = v);
-        Checkbox("Handle PCP Files",
-            "When encountering specific mods, usually but not necessarily denoted by a .pcp file ending, Penumbra will automatically try to create an associated collection and assign it to a specific character for this mod package. This can turn this behaviour off if unwanted.",
+        Checkbox("处理PCP文件",
+            "当检测到特定模组（通常以.pcp结尾，但不一定）时，Penumbra会自动尝试为该模组包创建对应角色的合集，并分配给特定角色。如果不需要自动处理可关闭此功能。",
             !_config.PcpSettings.DisableHandling, v => _config.PcpSettings.DisableHandling = !v);
 
         var active = _config.DeleteModModifier.IsActive();
         ImGui.SameLine();
-        if (ImUtf8.ButtonEx("Delete all PCP Mods"u8, "Deletes all mods tagged with 'PCP' from the mod list."u8, disabled: !active))
+        if (ImUtf8.ButtonEx("删除所有PCP模组"u8, "从模组列表中删除所有带有'PCP'标签的模组。"u8, disabled: !active))
             _pcpService.CleanPcpMods();
         if (!active)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking.");
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"请在点击时按住{_config.DeleteModModifier}。");
 
         ImGui.SameLine();
-        if (ImUtf8.ButtonEx("Delete all PCP Collections"u8, "Deletes all collections whose name starts with 'PCP/' from the collection list."u8,
+        if (ImUtf8.ButtonEx("删除所有PCP合集"u8, "从合集列表中删除所有名称以'PCP/'开头的合集。"u8,
                 disabled: !active))
             _pcpService.CleanPcpCollections();
         if (!active)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteModModifier} while clicking.");
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"请在点击时按住{_config.DeleteModModifier}。");
 
-        Checkbox("Allow Other Plugins Access to PCP Handling",
-            "When creating or importing PCP files, other plugins can add and interpret their own data to the character.json file.",
+        Checkbox("允许其他插件访问PCP处理功能",
+            "在创建或导入PCP文件时，允许其他插件向character.json文件添加或读取自定义数据。",
             _config.PcpSettings.AllowIpc, v => _config.PcpSettings.AllowIpc = v);
 
-        Checkbox("Create PCP Collections",
-            "When importing PCP files, create the associated collection.",
+        Checkbox("导入PCP文件时创建合集",
+            "导入PCP文件时自动创建对应的合集。",
             _config.PcpSettings.CreateCollection, v => _config.PcpSettings.CreateCollection = v);
 
-        Checkbox("Assign PCP Collections",
-            "When importing PCP files and creating the associated collection, assign it to the associated character.",
+        Checkbox("导入PCP文件时分配合集",
+            "导入PCP文件并创建合集时，自动将该合集分配给关联角色。",
             _config.PcpSettings.AssignCollection, v => _config.PcpSettings.AssignCollection = v);
         DrawDefaultModImportPath();
         DrawDefaultModAuthor();
         DrawDefaultModImportFolder();
         DrawPcpFolder();
         DrawDefaultModExportPath();
-        Checkbox("Enable Directory Watcher",
-            "Enables a File Watcher that automatically listens for Mod files that enter a specified directory, causing Penumbra to open a popup to import these mods.",
+        Checkbox("启用目录监听器",
+            "启用文件监听器后，Penumbra会自动监听指定目录中新出现的模组文件，并在检测到新模组时弹出导入这些模组的询问弹窗。",
             _config.EnableDirectoryWatch, _fileWatcher.Toggle);
-        Checkbox("Enable Fully Automatic Import",
-            "Uses the File Watcher in order to skip the query popup and automatically import any new mods.",
+        Checkbox("启用全自动导入",
+            "配合文件监听器，自动跳过询问弹窗并导入检测到的所有新模组。",
             _config.EnableAutomaticModImport, v => _config.EnableAutomaticModImport = v);
         DrawFileWatcherPath();
     }
@@ -845,14 +845,14 @@ public class SettingsTab : ITab, IUiService
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Folder.ToIconString()}##fileWatch", UiHelpers.IconButtonSize,
-                "Select a directory via dialog.", false, true))
+                "点击打开选择目录对话框。", false, true))
         {
             var startDir = _config.WatchDirectory.Length > 0 && Directory.Exists(_config.WatchDirectory)
                 ? _config.WatchDirectory
                 : Directory.Exists(_config.ModDirectory)
                     ? _config.ModDirectory
                     : null;
-            _fileDialog.OpenFolderPicker("Choose Automatic Import Directory", (b, s) =>
+            _fileDialog.OpenFolderPicker("选择自动导入目录", (b, s) =>
             {
                 if (b)
                     _fileWatcher.UpdateDirectory(s);
@@ -860,8 +860,8 @@ public class SettingsTab : ITab, IUiService
         }
 
         style.Pop();
-        ImGuiUtil.LabeledHelpMarker("Automatic Import Director",
-            "Choose the Directory the File Watcher listens to.");
+        ImGuiUtil.LabeledHelpMarker("自动导入目录",
+            "选择文件监听器监控的目录。");
     }
 
     /// <summary> Draw input for the default name to input as author into newly generated mods. </summary>
@@ -904,8 +904,8 @@ public class SettingsTab : ITab, IUiService
         if (ImGui.IsItemDeactivatedAfterEdit())
             _config.Save();
 
-        ImGuiUtil.LabeledHelpMarker("Default PCP Organizational Folder",
-            "The folder any penumbra character packs are moved to on import.\nLeave blank to import into Root.");
+        ImGuiUtil.LabeledHelpMarker("默认PCP折叠组",
+            "导入PCP角色包时，会将其移动到该折叠组中。\n留空则导入到根目录。");
     }
 
 

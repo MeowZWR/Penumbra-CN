@@ -244,7 +244,7 @@ public sealed class CollectionPanel(
             }
         }
         if (_collections.DefaultNamed == collection)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "The Default collection can not be renamed."u8);
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "默认合集无法重命名。"u8);
 
         var identifier = collection.Identity.Identifier;
         var fileName   = saveService.FileNames.CollectionFile(collection);
