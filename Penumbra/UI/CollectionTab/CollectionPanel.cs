@@ -1,4 +1,3 @@
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.GameFonts;
@@ -6,6 +5,7 @@ using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Classes;
