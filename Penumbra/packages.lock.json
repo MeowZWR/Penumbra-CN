@@ -140,6 +140,11 @@
           "SharpGLTF.Core": "1.0.5"
         }
       },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "Transitive",
+        "resolved": "8.0.1",
+        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+      },
       "Unosquare.Swan.Lite": {
         "type": "Transitive",
         "resolved": "3.1.0",
@@ -169,7 +174,7 @@
           "FlatSharp.Compiler": "[7.9.0, )",
           "FlatSharp.Runtime": "[7.9.0, )",
           "OtterGui": "[1.0.0, )",
-          "Penumbra.Api": "[5.12.0, )",
+          "Penumbra.Api": "[5.13.0, )",
           "Penumbra.String": "[1.0.6, )"
         }
       },
