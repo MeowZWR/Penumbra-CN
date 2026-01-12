@@ -97,35 +97,34 @@ public class ResourceTreeViewer(
                         continue;
                 }
 
-                if (tree.CollectionName.StartsWith("Mare_", StringComparison.Ordinal))
-                {
-                    ImUtf8.TextFrameAligned("该角色数据由Mare创建和管理, 如需修改请关闭后再试...");
-                    continue;
-                }
-
                 using var id = ImRaii.PushId(index);
 
                 ImUtf8.TextFrameAligned($"合集：{(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
-                ImGui.SameLine();
-                if (ImUtf8.ButtonEx("导出角色包"u8,
-                        "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
+                
+                var isOtherPlayer = tree.PlayerRelated && !tree.LocalPlayerRelated;
+                if (!isOtherPlayer)
                 {
-                    pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, _note).ContinueWith(t =>
+                    ImGui.SameLine();
+                    if (ImUtf8.ButtonEx("导出角色包"u8,
+                            "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
                     {
+                        pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, _note).ContinueWith(t =>
+                        {
 
-                        var (success, text) = t.Result;
+                            var (success, text) = t.Result;
 
-                        if (success)
-                            Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
-                        else
-                            Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
-                    });
-                    _note = string.Empty;
+                            if (success)
+                                Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
+                            else
+                                Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
+                        });
+                        _note = string.Empty;
+                    }
+
+                    ImUtf8.SameLineInner();
+                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                    ImUtf8.InputText("##note"u8, ref _note, "导出备注..."u8);
                 }
-
-                ImUtf8.SameLineInner();
-                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                ImUtf8.InputText("##note"u8, ref _note, "导出备注..."u8);
 
 
                 using var table = ImRaii.Table("##ResourceTree", 4,
