@@ -20,7 +20,7 @@ public sealed class ChangedItemsTab(
     : ITab<TabType>, IDisposable
 {
     public ReadOnlySpan<byte> Label
-        => "Changed Items"u8;
+        => "更改项目"u8;
 
     public TabType Identifier
         => TabType.ChangedItems;

@@ -102,7 +102,7 @@ public partial class MaterialEditor
             }
         }
 
-        DrawHeader("  Colors"u8);
+        DrawHeader("  颜色"u8);
         using (var columns = Im.Columns(2, "ColorTable"u8))
         {
             using var dis = Im.Disabled(disabled);
@@ -118,7 +118,7 @@ public partial class MaterialEditor
             }
         }
 
-        DrawHeader("  Physical Parameters"u8);
+        DrawHeader("  物理参数"u8);
         using (var columns = Im.Columns(2, "ColorTable"u8))
         {
             using var dis = Im.Disabled(disabled);
@@ -134,7 +134,7 @@ public partial class MaterialEditor
             }
         }
 
-        DrawHeader("  Sheen Layer Parameters"u8);
+        DrawHeader("  光泽层参数"u8);
         using (var columns = Im.Columns(2, "ColorTable"u8))
         {
             using var dis = Im.Disabled(disabled);
@@ -150,7 +150,7 @@ public partial class MaterialEditor
             }
         }
 
-        DrawHeader("  Pair Blending"u8);
+        DrawHeader("  混合模式"u8);
         using (var columns = Im.Columns(2, "ColorTable"u8))
         {
             using var dis = Im.Disabled(disabled);
@@ -166,7 +166,7 @@ public partial class MaterialEditor
             }
         }
 
-        DrawHeader("  Material Template"u8);
+        DrawHeader("  材质模板"u8);
         using (var columns = Im.Columns(2, "ColorTable"u8))
         {
             using var dis = Im.Disabled(disabled);
@@ -184,7 +184,7 @@ public partial class MaterialEditor
 
         if (dyeTable != null)
         {
-            DrawHeader("  Dye Properties"u8);
+            DrawHeader("  染色属性"u8);
             using var columns = Im.Columns(2, "ColorTable"u8);
             using var dis     = Im.Disabled(disabled);
             using (Im.Id.Push("DyeA"u8))
@@ -199,7 +199,7 @@ public partial class MaterialEditor
             }
         }
 
-        DrawHeader("  Further Content"u8);
+        DrawHeader("  其他内容"u8);
         using (var columns = Im.Columns(2, "ColorTable"u8))
         {
             using var dis = Im.Disabled(disabled);

@@ -20,7 +20,7 @@ public sealed class EffectiveTab(
     : ITab<TabType>
 {
     public ReadOnlySpan<byte> Label
-        => "Effective Changes"u8;
+        => "生效更改"u8;
 
     public void DrawContent()
     {

@@ -11,7 +11,7 @@ public sealed class ModTab : TwoPanelLayout, ITab<TabType>
     private readonly UiConfig _uiConfig;
 
     public override ReadOnlySpan<byte> Label
-        => "Mods"u8;
+        => "模组列表"u8;
 
     public ModTab(ModFileSystemDrawer drawer, ModPanel panel, CollectionSelectHeader collectionHeader, RedrawFooter redrawFooter,
         UiConfig uiConfig)

@@ -814,7 +814,8 @@ public class ModPreviewImagePanel : IDisposable
                             Im.Text("- 置顶/取消置顶：Shift + 右键"u8);
                             Im.Text("- 使用外部工具打开：Ctrl + 左键"u8);
                             Im.Text("注意："u8);
-                            Im.TextWrapped("点击后若未及时松开Ctrl键，外部工具会在后台打开"u8);
+                            Im.Text("- 点击后请及时松开Ctrl键"u8);
+                            Im.Text("- 否则外部工具会在后台打开"u8);
                         }
 
                         // Shift + 右键点击置顶

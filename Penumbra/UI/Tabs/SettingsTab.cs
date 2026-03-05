@@ -415,23 +415,23 @@ public sealed class SettingsTab : ITab<TabType>
             });
 
         Im.Separator();
-        Checkbox("Remember Mod Filters Across Sessions"u8,
-            "Whether filters in the Mods tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        Checkbox("跨会话保留模组筛选"u8,
+            "是否让“模组列表”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
             _config.RememberModFilters, v => _config.RememberModFilters = v);
-        Checkbox("Remember Collection Filters Across Sessions"u8,
-            "Whether filters in the Collections tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        Checkbox("跨会话保留合集筛选"u8,
+            "是否让“合集设置”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
             _config.RememberCollectionFilters, v => _config.RememberCollectionFilters = v);
-        Checkbox("Remember Changed Items Filters Across Sessions"u8,
-            "Whether filters in the Changed Items tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        Checkbox("跨会话保留更改项目筛选"u8,
+            "是否让“更改项目”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
             _config.RememberChangedItemFilters, v => _config.RememberChangedItemFilters = v);
-        Checkbox("Remember Effective Changes Filters Across Sessions"u8,
-            "Whether filters in the Effective Changes tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        Checkbox("跨会话保留有效更改筛选"u8,
+            "是否让“有效更改”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
             _config.RememberEffectiveChangesFilters, v => _config.RememberEffectiveChangesFilters = v);
-        Checkbox("Remember On-Screen Filters Across Sessions"u8,
-            "Whether filters in the On-Screen tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        Checkbox("跨会话保留屏幕角色筛选"u8,
+            "是否让“屏幕角色”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
             _config.RememberOnScreenFilters, v => _config.RememberOnScreenFilters = v);
-        Checkbox("Remember Resource Manager Filters Across Sessions"u8,
-            "Whether filters in the Resource Manager tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        Checkbox("跨会话保留资源管理器筛选"u8,
+            "是否让“资源管理器”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
             _config.RememberResourceManagerFilters, v => _config.RememberResourceManagerFilters = v);
     }
 
@@ -901,8 +901,8 @@ public sealed class SettingsTab : ITab<TabType>
             "编辑Tile UV变换的原始矩阵组件，而不是将它们分解为缩放、旋转和剪切。"u8,
             _config.EditRawTileTransforms, v => _config.EditRawTileTransforms = v);
 
-        Checkbox("Advanced Editing: Always Highlight Color Row Pair when Hovering Selection Button"u8,
-            "Make the whole color row pair selection button highlight the pair in game, instead of just the crosshair, even without holding Control."u8,
+        Checkbox("高级编辑：悬停选择按钮时始终高亮颜色组"u8,
+            "使整个颜色组选择按钮都能触发游戏内高亮反馈，而不仅限于悬停在拾取图标上。开启此项后，无需按住 Ctrl 键即可生效。"u8,
             _config.WholePairSelectorAlwaysHighlights, v => _config.WholePairSelectorAlwaysHighlights = v);
     }
 

@@ -230,7 +230,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         DrawQuickImportTab();
         _modelTab.Draw();
         _materialTab.Draw();
-        using (var tab = tabBar.Item("Textures"u8))
+        using (var tab = tabBar.Item("纹理"u8))
         {
             if (tab)
                 _textureEditor.DrawPanel(false);

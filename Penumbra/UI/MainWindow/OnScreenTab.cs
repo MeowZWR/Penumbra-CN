@@ -18,7 +18,7 @@ public sealed class OnScreenTab : ITab<TabType>
     }
 
     public ReadOnlySpan<byte> Label
-        => "On-Screen"u8;
+        => "画面角色"u8;
 
     public void DrawContent()
         => _viewer.Draw();

@@ -94,7 +94,7 @@ public sealed class ResourceWatcher : IDisposable, ITab<TabType>
     }
 
     public ReadOnlySpan<byte> Label
-        => "资源日志记录器"u8;
+        => "资源日志"u8;
 
     public TabType Identifier
         => TabType.ResourceWatcher;

@@ -14,7 +14,7 @@ public abstract class PathSelectCombo(IDataManager dataManager) : FilterComboBas
     {
         _skipPrefix = skipPrefix;
         _selected   = current;
-        if (!base.Draw(label, current.Length > 0 ? current : "Choose a modded texture from this mod here..."u8, tooltip,
+        if (!base.Draw(label, current.Length > 0 ? current : "从该模组中选择一个纹理..."u8, tooltip,
                 Im.ContentRegion.Available.X, out var ret))
         {
             newPath = string.Empty;
@@ -61,8 +61,8 @@ public abstract class PathSelectCombo(IDataManager dataManager) : FilterComboBas
         }
 
         Im.Tooltip.OnHover(item.IsGame
-            ? "This is a game path and refers to an unmanipulated file from your game data."u8
-            : "This is a path to a modded file on your file system."u8);
+            ? "这是一个游戏路径，指的是游戏数据中的未修改文件。"u8
+            : "这是一个模组文件路径，指的是您文件系统中的模组文件。"u8);
         return ret;
     }
 

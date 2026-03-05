@@ -11,7 +11,7 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
     : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
-        => "Duplicate Mods"u8;
+        => "重复模组"u8;
 
     public ManagementTabType Identifier
         => ManagementTabType.DuplicateMods;
@@ -19,7 +19,7 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
     public void PostTabButton()
     {
         Im.Tooltip.OnHover(
-            "This tab shows mods with identical names and some additional data to discern which to keep if they are indeed identical."u8);
+            "这里列出了所有重名的模组。你可以通过显示的详细信息来对比，决定在内容重复时留下哪一个。"u8);
     }
 
     public void DrawContent()
