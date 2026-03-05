@@ -28,7 +28,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
             => true;
 
         public override void DrawTooltip()
-            => Im.Text("Add a new, empty collection."u8);
+            => Im.Text("新建一个空合集。"u8);
 
         public override void OnClick()
             => Im.Popup.Open("NewCollection"u8);
@@ -57,11 +57,11 @@ public sealed class CollectionButtonFooter : ButtonFooter
 
         public override void DrawTooltip()
         {
-            Im.Text("Delete the current collection."u8);
+            Im.Text("删除当前合集。"u8);
             if (collections.DefaultNamed == active.Current)
-                Im.Text("The default collection cannot be deleted."u8);
+                Im.Text("默认合集不能被删除。"u8);
             else if (!config.DeleteModModifier.IsActive())
-                Im.Text($"Hold {config.DeleteModModifier} to delete the current collection.");
+                Im.Text($"按住 {config.DeleteModModifier} 点击删除当前合集。");
         }
 
         public override void OnClick()
@@ -77,7 +77,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
             => true;
 
         public override void DrawTooltip()
-            => Im.Text("Duplicate the currently selected collection to a new one."u8);
+            => Im.Text("复制当前选中的合集到新的合集。"u8);
 
         public override void OnClick()
             => Im.Popup.Open("DuplicateCollection"u8);

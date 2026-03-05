@@ -39,7 +39,7 @@ public sealed class KnowledgeWindow : Window, IUiService
         using (ImStyleSingle.FrameRounding.Push(0).Push(ImStyleDouble.ItemSpacing, Vector2.Zero))
         {
             Im.Item.SetNextWidthScaled(200);
-            if (Im.Input.Text("##Filter"u8, _filterStore, out ulong length, "Filter..."u8))
+            if (Im.Input.Text("##Filter"u8, _filterStore, out ulong length, "筛选..."u8))
                 _lower = ByteString.FromSpanUnsafe(_filterStore.AsSpan(0, (int)length), true, null, null).AsciiToLowerClone();
         }
 
@@ -62,7 +62,7 @@ public sealed class KnowledgeWindow : Window, IUiService
         using var group = Im.Group();
         using (ImStyleSingle.FrameRounding.Push(0).Push(ImStyleDouble.ItemSpacing, Vector2.Zero))
         {
-            ImEx.TextFramed(_selected == null ? "No Selection"u8 : _selected.Name, Im.ContentRegion.Available with { Y = 0 });
+            ImEx.TextFramed(_selected == null ? "未选择"u8 : _selected.Name, Im.ContentRegion.Available with { Y = 0 });
         }
 
         using var child = Im.Child.Begin("KnowledgeMain"u8, Im.ContentRegion.Available, true);

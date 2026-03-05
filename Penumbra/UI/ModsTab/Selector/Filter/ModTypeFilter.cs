@@ -35,27 +35,27 @@ public static class ModTypeFilterExtensions
 
     public static readonly IReadOnlyList<(ModTypeFilter On, ModTypeFilter Off, StringU8 Name)> TriStatePairs =
     [
-        (ModTypeFilter.Enabled, ModTypeFilter.Disabled, new StringU8("Enabled"u8)),
-        (ModTypeFilter.IsNew, ModTypeFilter.NotNew, new StringU8("Newly Imported"u8)),
-        (ModTypeFilter.Favorite, ModTypeFilter.NotFavorite, new StringU8("Favorite"u8)),
-        (ModTypeFilter.HasConfig, ModTypeFilter.HasNoConfig, new StringU8("Has Options"u8)),
-        (ModTypeFilter.HasFiles, ModTypeFilter.HasNoFiles, new StringU8("Has Redirections"u8)),
-        (ModTypeFilter.HasMetaManipulations, ModTypeFilter.HasNoMetaManipulations, new StringU8("Has Meta Manipulations"u8)),
-        (ModTypeFilter.HasFileSwaps, ModTypeFilter.HasNoFileSwaps, new StringU8("Has File Swaps"u8)),
-        (ModTypeFilter.Temporary, ModTypeFilter.NotTemporary, new StringU8("Temporary"u8)),
+        (ModTypeFilter.Enabled, ModTypeFilter.Disabled, new StringU8("已启用"u8)),
+        (ModTypeFilter.IsNew, ModTypeFilter.NotNew, new StringU8("新导入"u8)),
+        (ModTypeFilter.Favorite, ModTypeFilter.NotFavorite, new StringU8("收藏"u8)),
+        (ModTypeFilter.HasConfig, ModTypeFilter.HasNoConfig, new StringU8("有选项"u8)),
+        (ModTypeFilter.HasFiles, ModTypeFilter.HasNoFiles, new StringU8("有重定向"u8)),
+        (ModTypeFilter.HasMetaManipulations, ModTypeFilter.HasNoMetaManipulations, new StringU8("有元数据操作"u8)),
+        (ModTypeFilter.HasFileSwaps, ModTypeFilter.HasNoFileSwaps, new StringU8("有文件替换"u8)),
+        (ModTypeFilter.Temporary, ModTypeFilter.NotTemporary, new StringU8("临时"u8)),
     ];
 
     public static readonly IReadOnlyList<IReadOnlyList<(ModTypeFilter Filter, StringU8 Name)>> Groups =
     [
         [
-            (ModTypeFilter.NoConflict, new StringU8("Has No Conflicts"u8)),
-            (ModTypeFilter.SolvedConflict, new StringU8("Has Solved Conflicts"u8)),
-            (ModTypeFilter.UnsolvedConflict, new StringU8("Has Unsolved Conflicts"u8)),
+            (ModTypeFilter.NoConflict, new StringU8("没有冲突"u8)),
+            (ModTypeFilter.SolvedConflict, new StringU8("已解决冲突"u8)),
+            (ModTypeFilter.UnsolvedConflict, new StringU8("未解决冲突"u8)),
         ],
         [
-            (ModTypeFilter.Undefined, new StringU8("Not Configured"u8)),
-            (ModTypeFilter.Inherited, new StringU8("Inherited Configuration"u8)),
-            (ModTypeFilter.Uninherited, new StringU8("Own Configuration"u8)),
+            (ModTypeFilter.Undefined, new StringU8("未配置"u8)),
+            (ModTypeFilter.Inherited, new StringU8("继承配置"u8)),
+            (ModTypeFilter.Uninherited, new StringU8("未继承配置"u8)),
         ],
     ];
 }

@@ -30,7 +30,7 @@ public sealed class IntegrationSettingsRegistry : IService, IDisposable
     {
         foreach (var (internalName, name, draw) in _sections)
         {
-            if (!Im.Tree.Header($"Integration with {name}###ISH.{internalName}"))
+            if (!Im.Tree.Header($"来自 {name} 的集成设置###ISH.{internalName}"))
                 continue;
 
             using var id = Im.Id.Push($"IS.{internalName}");

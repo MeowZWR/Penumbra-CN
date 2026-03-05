@@ -14,7 +14,7 @@ public class IncognitoService(TutorialService tutorial, Configuration config) : 
         var color = ColorId.FolderExpanded.Value();
         using (ImStyleBorder.Frame.Push(color))
         {
-            var       tt    = IncognitoMode ? "Toggle incognito mode off."u8 : "Toggle incognito mode on."u8;
+            var       tt    = IncognitoMode ? "开启隐身模式。"u8 : "关闭隐身模式。"u8;
             var       icon  = IncognitoMode ? LunaStyle.IncognitoOn : LunaStyle.IncognitoOff;
             if (ImEx.Icon.Button(icon, tt, size: new Vector2(width, Im.Style.FrameHeight), textColor: color) && hold)
             {
@@ -24,7 +24,7 @@ public class IncognitoService(TutorialService tutorial, Configuration config) : 
         }
 
         if (!hold)
-            Im.Tooltip.OnHover($"\nHold {config.IncognitoModifier} while clicking to toggle.", HoveredFlags.AllowWhenDisabled, true);
+            Im.Tooltip.OnHover($"\n按住 {config.IncognitoModifier} 键点击切换。", HoveredFlags.AllowWhenDisabled, true);
 
         tutorial.OpenTutorial(BasicTutorialSteps.Incognito);
     }

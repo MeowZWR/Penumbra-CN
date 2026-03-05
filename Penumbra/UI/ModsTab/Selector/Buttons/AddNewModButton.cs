@@ -17,7 +17,7 @@ public sealed class AddNewModButton(ModFileSystemDrawer drawer) : BaseIconButton
 
     /// <inheritdoc/>
     public override void DrawTooltip()
-        => Im.Text("Create a new, empty mod of a given name."u8);
+        => Im.Text("新建一个指定名称的空模组。"u8);
 
     /// <inheritdoc/>
     public override void OnClick()

@@ -34,28 +34,28 @@ public sealed class CollectionModeHeader(Configuration config, TutorialService t
 
         var       tabSelectedColor = Im.Style[ImGuiColor.TabSelected];
         using var color            = ImGuiColor.Button.Push(tabSelectedColor, Mode is CollectionPanelMode.SimpleAssignment);
-        if (Im.Button("Simple Assignments"u8, buttonSize))
+        if (Im.Button("简单分配"u8, buttonSize))
             Mode = CollectionPanelMode.SimpleAssignment;
         color.Pop();
         tutorial.OpenTutorial(BasicTutorialSteps.SimpleAssignments);
         Im.Line.NoSpacing();
 
         color.Push(ImGuiColor.Button, tabSelectedColor, Mode is CollectionPanelMode.IndividualAssignment);
-        if (Im.Button("Individual Assignments"u8, buttonSize))
+        if (Im.Button("独立分配"u8, buttonSize))
             Mode = CollectionPanelMode.IndividualAssignment;
         color.Pop();
         tutorial.OpenTutorial(BasicTutorialSteps.IndividualAssignments);
         Im.Line.NoSpacing();
 
         color.Push(ImGuiColor.Button, tabSelectedColor, Mode is CollectionPanelMode.GroupAssignment);
-        if (Im.Button("Group Assignments"u8, buttonSize))
+        if (Im.Button("群组分配"u8, buttonSize))
             Mode = CollectionPanelMode.GroupAssignment;
         color.Pop();
         tutorial.OpenTutorial(BasicTutorialSteps.GroupAssignments);
         Im.Line.NoSpacing();
 
         color.Push(ImGuiColor.Button, tabSelectedColor, Mode is CollectionPanelMode.Details);
-        if (Im.Button("Collection Details"u8, buttonSize))
+        if (Im.Button("合集详情"u8, buttonSize))
             Mode = CollectionPanelMode.Details;
         color.Pop();
         tutorial.OpenTutorial(BasicTutorialSteps.CollectionDetails);

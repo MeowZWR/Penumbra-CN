@@ -12,7 +12,7 @@ public class PenumbraChangelog : IUiService
     public PenumbraChangelog(Configuration config)
     {
         _config   = config;
-        Changelog = new Changelog("Penumbra Changelog", ConfigData, Save);
+        Changelog = new Changelog("Penumbra 更新日志", ConfigData, Save);
 
         Add5_7_0(Changelog);
         Add5_7_1(Changelog);
@@ -71,7 +71,7 @@ public class PenumbraChangelog : IUiService
     private static void Add1_6_0_0(Changelog log)
         => log.NextVersion("版本 1.6.0.0"u8)
             .RegisterImportant(
-                "本次更新更换了整套 UI 后端——这是过去数月一直在做的工作。\n希望不会给用户带来明显差异，但由于所有涉及 ImGui 的代码都已修改，可能会出现新的或旧有的问题。"u8)
+                "本次更新更换了整套 UI 后端——这是过去数月一直在做的工作。\n希望不会给用户带来明显差异，但由于所有涉及 ImGui 的代码都已修改，可能会出现新的或旧有的问题。\n如果发现配置丢失，您可以在 %AppData%\\XIVLauncherCN\\backups\\Penumbra 中找到备份设置进行恢复。"u8)
             .RegisterEntry("Penumbra 现在会记住 mod 的完整选择状态以及哪些文件夹已展开、哪些未展开。"u8, 1)
             .RegisterEntry(
                 "Penumbra 现在会记住大部分您输入的筛选状态——若希望筛选在每次重置，也可在设置中关闭此功能。"u8,

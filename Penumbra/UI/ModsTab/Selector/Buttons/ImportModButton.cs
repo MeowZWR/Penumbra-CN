@@ -17,7 +17,7 @@ public sealed class ImportModButton(ModFileSystemDrawer drawer) : BaseIconButton
 
     /// <inheritdoc/>
     public override void DrawTooltip()
-        => Im.Text("Import one or multiple mods from Tex Tools Mod Pack Files or Penumbra Mod Pack Files."u8);
+        => Im.Text("从TexTools模组包或Penumbra模组包导入一个或多个模组。"u8);
 
     /// <inheritdoc/>
     public override void OnClick()
@@ -28,8 +28,8 @@ public sealed class ImportModButton(ModFileSystemDrawer drawer) : BaseIconButton
                 ? drawer.Config.ModDirectory
                 : null;
 
-        drawer.FileService.OpenFilePicker("Import Mod Pack",
-            "Mod Packs{.ttmp,.ttmp2,.pmp,.pcp},TexTools Mod Packs{.ttmp,.ttmp2},Penumbra Mod Packs{.pmp,.pcp},Archives{.zip,.7z,.rar},Penumbra Character Packs{.pcp}",
+        drawer.FileService.OpenFilePicker("导入模组包",
+            "模组包{.ttmp,.ttmp2,.pmp,.pcp},TexTools模组包{.ttmp,.ttmp2},Penumbra模组包{.pmp,.pcp},压缩文件{.zip,.7z,.rar},Penumbra角色包{.pcp}",
             (s, f) =>
             {
                 if (!s)

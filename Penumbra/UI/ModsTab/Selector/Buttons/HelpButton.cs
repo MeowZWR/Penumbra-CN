@@ -17,11 +17,11 @@ public sealed class HelpButton(ModFileSystemDrawer drawer) : BaseIconButton<Awes
 
     /// <inheritdoc/>
     public override void DrawTooltip()
-        => Im.Text("Open extended help."u8);
+        => Im.Text("查看详细帮助。"u8);
 
     /// <inheritdoc/>
     public override void OnClick()
-        => Im.Popup.Open("ExHelp"u8);
+        => Im.Popup.Open("ExtendedHelp"u8);
 
     /// <inheritdoc/>
     protected override void PostDraw()
@@ -33,59 +33,59 @@ public sealed class HelpButton(ModFileSystemDrawer drawer) : BaseIconButton<Awes
     private void PopupContent()
     {
         Im.Line.New();
-        Im.Text("Mod Management"u8);
-        Im.BulletText("You can create empty mods or import mods with the buttons in this row."u8);
+        Im.Text("模组管理"u8);
+        Im.BulletText("本行按钮可用于新建空模组或导入现有模组。"u8);
         using var indent = Im.Indent();
-        Im.BulletText("Supported formats for import are: .ttmp, .ttmp2, .pmp, .pcp."u8);
+        Im.BulletText("支持导入的格式：.ttmp、.ttmp2、.pmp、.pcp。"u8);
         Im.BulletText(
-            "You can also support .zip, .7z or .rar archives, but only if they already contain Penumbra-styled mods with appropriate metadata."u8);
+            "也可以导入 .zip、.7z 或 .rar 压缩包，但前提是其中已包含符合 Penumbra 规范、带有完整元数据的模组。"u8);
         indent.Unindent();
-        Im.BulletText("You can also create empty mod folders and delete mods."u8);
+        Im.BulletText("你也可以创建空模组文件夹或删除模组。"u8);
         Im.BulletText(
-            "For further editing of mods, select them and use the Edit Mod tab in the panel or the Advanced Editing popup."u8);
+            "如需进一步编辑模组，先选中模组，然后在右侧面板使用“编辑模组”标签页，或打开“高级编辑”弹窗。"u8);
         Im.Line.New();
-        Im.Text("Mod Selector"u8);
-        Im.BulletText("Select a mod to obtain more information or change settings."u8);
-        Im.BulletText("Names are colored according to your config and their current state in the collection:"u8);
+        Im.Text("模组列表"u8);
+        Im.BulletText("选择一个模组以查看详细信息或调整设置。"u8);
+        Im.BulletText("模组名称的颜色取决于你的配色设置以及它在当前集合中的状态："u8);
         indent.Indent();
-        Im.BulletText("enabled in the current collection."u8,                   ColorId.EnabledMod.Value());
-        Im.BulletText("disabled in the current collection."u8,                  ColorId.DisabledMod.Value());
-        Im.BulletText("enabled due to inheritance from another collection."u8,  ColorId.InheritedMod.Value());
-        Im.BulletText("disabled due to inheritance from another collection."u8, ColorId.InheritedDisabledMod.Value());
-        Im.BulletText("unconfigured in all inherited collections."u8,           ColorId.UndefinedMod.Value());
-        Im.BulletText("enabled and conflicting with another enabled Mod, but on different priorities (i.e. the conflict is solved)."u8,
+        Im.BulletText("在当前集合中已启用。"u8,                   ColorId.EnabledMod.Value());
+        Im.BulletText("在当前集合中已禁用。"u8,                  ColorId.DisabledMod.Value());
+        Im.BulletText("因从其他集合继承而被启用。"u8,            ColorId.InheritedMod.Value());
+        Im.BulletText("因从其他集合继承而被禁用。"u8,            ColorId.InheritedDisabledMod.Value());
+        Im.BulletText("在所有继承的集合中均为未配置状态。"u8,    ColorId.UndefinedMod.Value());
+        Im.BulletText("已启用且与另一个已启用模组存在冲突，但优先级不同（即冲突已被解决）。"u8,
             ColorId.HandledConflictMod.Value());
-        Im.BulletText("enabled and conflicting with another enabled Mod on the same priority."u8, ColorId.ConflictingMod.Value());
-        Im.BulletText("expanded mod folder."u8,                                                   ColorId.FolderExpanded.Value());
-        Im.BulletText("collapsed mod folder"u8,                                                   ColorId.FolderCollapsed.Value());
+        Im.BulletText("已启用且与另一个已启用模组在同一优先级上冲突。"u8, ColorId.ConflictingMod.Value());
+        Im.BulletText("展开的模组文件夹。"u8,                                  ColorId.FolderExpanded.Value());
+        Im.BulletText("折叠的模组文件夹。"u8,                                  ColorId.FolderCollapsed.Value());
         indent.Unindent();
-        Im.BulletText("Middle-click a mod to disable it if it is enabled or enable it if it is disabled."u8);
+        Im.BulletText("中键点击模组：若当前启用则将其禁用，若当前禁用则将其启用。"u8);
         indent.Indent();
         Im.BulletText(
-            $"Holding {drawer.Config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))} while middle-clicking lets it inherit, discarding settings.");
+            $"在中键点击时按住 {drawer.Config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))} 可改为继承上级设置，并丢弃当前集合中的配置。");
         indent.Unindent();
-        Im.BulletText("Right-click a mod to enter its sort order, which is its name by default, possibly with a duplicate number."u8);
+        Im.BulletText("右键点击模组可设置自定义排序键，默认为模组名称（必要时会附加编号）。"u8);
         indent.Indent();
-        Im.BulletText("A sort order differing from the mods name will not be displayed, it will just be used for ordering."u8);
+        Im.BulletText("与模组名称不同的排序键不会单独显示，仅用于排序逻辑。"u8);
         Im.BulletText(
-            "If the sort order string contains Forward-Slashes ('/'), the preceding substring will be turned into folders automatically."u8);
+            "如果排序键中包含正斜杠（'/'），其前缀会被自动解释为文件夹层级。"u8);
         indent.Unindent();
         Im.BulletText(
-            "You can drag and drop mods and subfolders into existing folders. Dropping them onto mods is the same as dropping them onto the parent of the mod."u8);
+            "你可以将模组或子文件夹拖放到已有文件夹中；拖到某个模组上与拖到其父文件夹效果相同。"u8);
         indent.Indent();
         Im.BulletText(
-            "You can select multiple mods and folders by holding Control while clicking them, and then drag all of them at once."u8);
+            "按住 Ctrl 点选可多选多个模组或文件夹，然后一次性拖动它们。"u8);
         Im.BulletText(
-            "Selected mods inside an also selected folder will be ignored when dragging and move inside their folder instead of directly into the target."u8);
+            "当一个文件夹被选中时，其中已选中的模组在拖动时会被忽略，它们会保持在该文件夹内，而不是直接移动到目标位置。"u8);
         indent.Unindent();
-        Im.BulletText("Right-clicking a folder opens a context menu."u8);
-        Im.BulletText("Right-clicking empty space allows you to expand or collapse all folders at once."u8);
-        Im.BulletText("Use the Filter Mods... input at the top to filter the list for mods whose name or path contain the text."u8);
+        Im.BulletText("右键点击文件夹会打开上下文菜单。"u8);
+        Im.BulletText("右键点击空白区域可以一次性展开或折叠所有文件夹。"u8);
+        Im.BulletText("顶部的“筛选模组...”输入框可根据名称或路径中包含的文本筛选模组列表。"u8);
         indent.Indent();
-        Im.BulletText("You can enter n:[string] to filter only for names, without path."u8);
-        Im.BulletText("You can enter c:[string] to filter for Changed Items instead."u8);
-        Im.BulletText("You can enter a:[string] to filter for Mod Authors instead."u8);
+        Im.BulletText("输入 n:[字符串] 只按模组名称筛选，不考虑路径。"u8);
+        Im.BulletText("输入 c:[字符串] 按更改的物品内容进行筛选。"u8);
+        Im.BulletText("输入 a:[字符串] 按模组作者进行筛选。"u8);
         indent.Unindent();
-        Im.BulletText("Use the expandable menu beside the input to filter for mods fulfilling specific criteria."u8);
+        Im.BulletText("使用输入框旁的下拉菜单，可以按更细的条件筛选模组。"u8);
     }
 }

@@ -65,13 +65,13 @@ public sealed class ChangedItemsTab(
               - Im.Style.ItemSpacing.X;
             Im.Item.SetNextWidth(450 * Im.Style.GlobalScale);
             var filter = _filterConfig.ChangedItemItemFilter;
-            var ret    = Im.Input.Text("##changedItemsFilter"u8, ref filter, "Filter Item..."u8);
+            var ret    = Im.Input.Text("##changedItemsFilter"u8, ref filter, "筛选项目..."u8);
             if (ret)
                 _filterConfig.ChangedItemItemFilter = filter;
             Im.Line.Same();
             Im.Item.SetNextWidth(varWidth);
             filter = _filterConfig.ChangedItemModFilter;
-            if (Im.Input.Text("##changedItemsModFilter"u8, ref filter, "Filter Mods..."u8))
+            if (Im.Input.Text("##changedItemsModFilter"u8, ref filter, "筛选模组..."u8))
             {
                 ret                                = true;
                 _filterConfig.ChangedItemModFilter = filter;

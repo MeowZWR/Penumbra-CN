@@ -153,7 +153,7 @@ public unsafe class GlobalVariablesDrawer(
         if (scheduler.Address is null || scheduler.Scheduler is null)
             return;
 
-        Im.Input.Text("##SchedulerMapFilter"u8, ref _schedulerFilterMap, "Filter..."u8);
+        Im.Input.Text("##SchedulerMapFilter"u8, ref _schedulerFilterMap, "筛选..."u8);
         Im.Text($"{_shownResourcesMap} / {scheduler.Scheduler->Resources.LongCount}");
         using var table = Im.Table.Begin("##SchedulerMapResources"u8, 10, TableFlags.RowBackground | TableFlags.SizingFixedFit,
             -Vector2.UnitX);
@@ -201,7 +201,7 @@ public unsafe class GlobalVariablesDrawer(
         if (scheduler.Address is null || scheduler.Scheduler is null)
             return;
 
-        Im.Input.Text("##SchedulerListFilter"u8, ref _schedulerFilterList, "Filter..."u8);
+        Im.Input.Text("##SchedulerListFilter"u8, ref _schedulerFilterList, "筛选..."u8);
         Im.Text($"{_shownResourcesList} / {scheduler.Scheduler->Resources.LongCount}");
         using var table = Im.Table.Begin("##SchedulerListResources"u8, 10, TableFlags.RowBackground | TableFlags.SizingFixedFit,
             -Vector2.UnitX);

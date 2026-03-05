@@ -23,7 +23,7 @@ public partial class ModEditWindow
 
         var setsEqual = !_editor.MetaEditor.Changes;
         var tt        = setsEqual ? "没有进行任何更改。"u8 : "应用当前暂存的更改。"u8;
-        Im.Line.New();
+        Im.Line.Same();
         if (ImEx.Button("应用更改"u8, Vector2.Zero, tt, setsEqual))
             _editor.MetaEditor.Apply(_editor.Option!);
 

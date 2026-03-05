@@ -14,7 +14,7 @@ public partial class ModEditWindow
         if (!tab)
             return;
 
-        Im.Line.New();
+        Im.Line.Same();
         MaterialSuffix.Draw(_editor, ImEx.ScaledVector(175, 0));
 
         Im.Line.New();

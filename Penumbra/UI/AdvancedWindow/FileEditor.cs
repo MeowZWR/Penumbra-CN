@@ -275,13 +275,13 @@ public sealed class FileEditor(
             {
                 Im.Line.New();
                 Im.Line.New();
-                Im.Text($"Preview of {_defaultPath}:");
+                Im.Text($"预览 {_defaultPath}:");
                 Im.Separator();
             }
 
             if (_defaultFile == null)
             {
-                Im.Text($"Could not parse provided {fileType} game file:\n");
+                Im.Text($"无法解析提供的 {fileType} 游戏文件:\n");
                 if (_defaultException is not null)
                 {
                     using var tab = Im.Indent();
