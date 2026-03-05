@@ -1,25 +1,17 @@
 using Dalamud.Interface;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Widgets;
-using OtterGui.Classes;
-using OtterGui.Services;
-using OtterGui.Text;
+using ImSharp;
+using Luna;
 using Penumbra.Mods;
 using Penumbra.Mods.Editor;
 using Penumbra.Mods.Manager;
 using Penumbra.Services;
-using Penumbra.Mods.Settings;
 using Penumbra.UI.ModsTab.Groups;
 
 namespace Penumbra.UI.ModsTab;
 
 public class ModPanelEditTab(
     ModManager modManager,
-    ModFileSystemSelector selector,
     ModFileSystem fileSystem,
     Services.MessageService messager,
     FilenameService filenames,
@@ -29,24 +21,25 @@ public class ModPanelEditTab(
     ModGroupEditDrawer groupEditDrawer,
     DescriptionEditPopup descriptionPopup,
     AddGroupDrawer addGroupDrawer)
-    : ITab, IUiService
+    : ITab<ModPanelTab>
 {
-    private readonly TagButtons _modTags = new();
-
-    private ModFileSystem.Leaf _leaf = null!;
-    private Mod                _mod  = null!;
+    private IFileSystemData<Mod> _leaf = null!;
+    private Mod                  _mod  = null!;
 
     public ReadOnlySpan<byte> Label
         => "编辑模组"u8;
 
+    public ModPanelTab Identifier
+        => ModPanelTab.Edit;
+
     public void DrawContent()
     {
-        using var child = ImRaii.Child("##editChild", -Vector2.One);
+        using var child = Im.Child.Begin("##editChild"u8, Im.ContentRegion.Available);
         if (!child)
             return;
 
-        _leaf = selector.SelectedLeaf!;
-        _mod  = selector.Selected!;
+        _leaf = (IFileSystemData<Mod>)fileSystem.Selection.Selection!;
+        _mod  = _leaf.Value;
 
         EditButtons();
         EditRegularMeta();
@@ -54,7 +47,7 @@ public class ModPanelEditTab(
         EditLocalData();
         UiHelpers.DefaultLineSpace();
 
-        if (Input.Text("模组路径（用于排序）", Input.Path, Input.None, _leaf.FullName(), out var newPath, 256, UiHelpers.InputTextWidth.X))
+        if (Input.Text("模组路径（用于排序）", Input.Path, Input.None, _leaf.FullPath, out var newPath, UiHelpers.InputTextWidth.X))
             try
             {
                 fileSystem.RenameAndMove(_leaf, newPath);
@@ -70,22 +63,25 @@ public class ModPanelEditTab(
 
         UiHelpers.DefaultLineSpace();
         var sharedTagsEnabled     = predefinedTagManager.Enabled;
-        var sharedTagButtonOffset = sharedTagsEnabled ? ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X : 0;
-        var tagIdx = _modTags.Draw("模组标签：", "点击修改，或添加新标签。空白标签会被移除。", _mod.ModTags,
+        var sharedTagButtonOffset = sharedTagsEnabled ? Im.Style.FrameHeight + Im.Style.FramePadding.X : 0;
+        var tagIdx = TagButtons.Draw("模组标签："u8, "点击修改，或添加新标签。空白标签会被移除。"u8, _mod.ModTags,
             out var editedTag, rightEndOffset: sharedTagButtonOffset);
         if (tagIdx >= 0)
             modManager.DataEditor.ChangeModTag(_mod, tagIdx, editedTag);
 
         if (sharedTagsEnabled)
-            predefinedTagManager.DrawAddFromSharedTagsAndUpdateTags(selector.Selected!.LocalTags, selector.Selected!.ModTags, false,
-                selector.Selected!);
-
+            predefinedTagManager.DrawAddFromSharedTagsAndUpdateTags(_mod, false);
 
         UiHelpers.DefaultLineSpace();
-        addGroupDrawer.Draw(_mod, UiHelpers.InputTextWidth.X);
-        UiHelpers.DefaultLineSpace();
+        if (Im.Tree.Header("组编辑"u8))
+        {
+            UiHelpers.DefaultLineSpace();
+            addGroupDrawer.Draw(_mod, UiHelpers.InputTextWidth.X);
+            UiHelpers.DefaultLineSpace();
 
-        groupEditDrawer.Draw(_mod);
+            groupEditDrawer.Draw(_mod);
+        }
+
         descriptionPopup.Draw();
     }
 
@@ -98,17 +94,16 @@ public class ModPanelEditTab(
     /// <summary> The general edit row for non-detailed mod edits. </summary>
     private void EditButtons()
     {
-        var buttonSize   = new Vector2(150 * UiHelpers.Scale, 0);
+        var buttonSize   = new Vector2(150 * Im.Style.GlobalScale, 0);
         var folderExists = Directory.Exists(_mod.ModPath.FullName);
-        var tt = folderExists
-            ? $"在操作系统指定的文件浏览器中打开目录：\"{_mod.ModPath.FullName}\" 。"
-            : $"模组目录：\"{_mod.ModPath.FullName}\" 不存在。";
-        if (ImGuiUtil.DrawDisabledButton("打开模组目录", buttonSize, tt, !folderExists))
+        if (ImEx.Button("打开模组目录"u8, buttonSize, folderExists
+                ? $"在操作系统指定的文件浏览器中打开目录：\"{_mod.ModPath.FullName}\" 。"
+                : $"模组目录：\"{_mod.ModPath.FullName}\" 不存在。", !folderExists))
             Process.Start(new ProcessStartInfo(_mod.ModPath.FullName) { UseShellExecute = true });
 
-        ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("重新加载模组", buttonSize, "从文件中重新加载当前模组。\n"
-              + "如果模组目录或元文件不再存在，或者如果新的模组名称为空，则会删除模组。",
+        Im.Line.Same();
+        if (ImEx.Button("重新加载模组"u8, buttonSize, "重新加载当前模组从其文件。\n"u8
+              + "如果模组目录或元数据文件不存在，或者新模组名称为空，则模组会被删除。"u8,
                 false))
             modManager.ReloadMod(_mod);
 
@@ -121,81 +116,76 @@ public class ModPanelEditTab(
     private void BackupButtons(Vector2 buttonSize)
     {
         var backup = new ModBackup(modExportManager, _mod);
-        var tt = ModBackup.CreatingBackup
-            ? "已经创建了一个备份。"
-            : backup.Exists
-                ? $"用当前模组覆盖当前备份：\"{backup.Name}\"。"
-                : $"创建一个备份压缩包到：\"{backup.Name}\"。";
-        if (ImUtf8.ButtonEx("创建备份"u8, tt, buttonSize, ModBackup.CreatingBackup))
-            backup.CreateAsync();
+        if (ImEx.Button("备份模组"u8, buttonSize, ModBackup.CreatingBackup
+                ? "模组正在备份中。"
+                : backup.Exists
+                    ? $"用当前模组覆盖当前备份：\"{backup.Name}\"。"
+                    : $"创建一个备份压缩包到：\"{backup.Name}\"。", ModBackup.CreatingBackup))
+            _ = backup.CreateAsync();
 
-        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-            ImUtf8.OpenPopup("context"u8);
+        if (Im.Item.RightClicked())
+            Im.Popup.Open("context"u8);
 
-        ImGui.SameLine();
-        tt = backup.Exists
-            ? $"删除存在的备份文件\"{backup.Name}\" (点击时按住{config.DeleteModModifier})"
-            : $"备份文件\"{backup.Name}\"不存在。";
-        if (ImUtf8.ButtonEx("删除备份"u8, tt, buttonSize, !backup.Exists || !config.DeleteModModifier.IsActive()))
+        Im.Line.Same();
+        if (ImEx.Button("删除备份"u8, buttonSize, backup.Exists
+                ? $"删除存在的备份文件：\"{backup.Name}\" (点击时按住{config.DeleteModModifier})。"
+                : $"备份文件\"{backup.Name}\"不存在。", !backup.Exists || !config.DeleteModModifier.IsActive()))
             backup.Delete();
 
-        tt = backup.Exists
-            ? $"从备份文件\"{backup.Name}\"恢复模组(点击时按住{config.DeleteModModifier})。"
-            : $"备份文件\"{backup.Name}\"不存在。";
-        ImGui.SameLine();
-        if (ImUtf8.ButtonEx("从备份恢复"u8, tt, buttonSize, !backup.Exists || !config.DeleteModModifier.IsActive()))
+        Im.Line.Same();
+        if (ImEx.Button("从备份恢复"u8, buttonSize, backup.Exists
+                ? $"从备份文件：\"{backup.Name}\" 恢复模组 (点击时按住{config.DeleteModModifier})。"
+                : $"备份文件\"{backup.Name}\"不存在。", !backup.Exists || !config.DeleteModModifier.IsActive()))
             backup.Restore(modManager);
         if (backup.Exists)
         {
-            ImGui.SameLine();
-            using (ImRaii.PushFont(UiBuilder.IconFont))
-            {
-                ImUtf8.Text(FontAwesomeIcon.CheckCircle.ToIconString());
-            }
-
-            ImUtf8.HoverTooltip($"备份已存在于 \"{backup.Name}\".");
+            Im.Line.Same();
+            ImEx.Icon.Draw(FontAwesomeIcon.CheckCircle.Icon());
+            Im.Tooltip.OnHover($"备份已存在于 \"{backup.Name}\"。");
         }
 
-        using var context = ImUtf8.Popup("context"u8);
+        using var context = Im.Popup.Begin("context"u8);
         if (!context)
             return;
 
-        if (ImUtf8.Selectable("Open Backup Directory"u8))
+        if (Im.Selectable("打开备份目录"u8))
             Process.Start(new ProcessStartInfo(modExportManager.ExportDirectory.FullName) { UseShellExecute = true });
     }
 
     /// <summary> Anything about editing the regular meta information about the mod. </summary>
     private void EditRegularMeta()
     {
-        if (Input.Text("模组名称", Input.Name, Input.None, _mod.Name, out var newName, 256, UiHelpers.InputTextWidth.X))
+        if (Input.Text("模组名称", Input.Name, Input.None, _mod.Name, out var newName, UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModName(_mod, newName);
 
-        if (Input.Text("作者", Input.Author, Input.None, _mod.Author, out var newAuthor, 256, UiHelpers.InputTextWidth.X))
+        if (Input.Text("作者", Input.Author, Input.None, _mod.Author, out var newAuthor, UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModAuthor(_mod, newAuthor);
 
-        if (Input.Text("版本", Input.Version, Input.None, _mod.Version, out var newVersion, 32,
+        if (Input.Text("版本", Input.Version, Input.None, _mod.Version, out var newVersion,
                 UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModVersion(_mod, newVersion);
 
-        if (Input.Text("网址", Input.Website, Input.None, _mod.Website, out var newWebsite, 256,
+        if (Input.Text("网址", Input.Website, Input.None, _mod.Website, out var newWebsite,
                 UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModWebsite(_mod, newWebsite);
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(UiHelpers.ScaleX3));
+        using var style = ImStyleDouble.ItemSpacing.Push(new Vector2(Im.Style.GlobalScale * 3));
 
         var reducedSize = new Vector2(UiHelpers.InputTextMinusButton3, 0);
-        if (ImGui.Button("编辑描述", reducedSize))
+        if (Im.Button("编辑描述"u8, reducedSize))
             descriptionPopup.Open(_mod);
 
 
-        ImGui.SameLine();
+        Im.Line.Same();
         var fileExists = File.Exists(filenames.ModMetaPath(_mod));
         var tt = fileExists
-            ? "在指定的文本编辑器中打开元数据json文件。"
-            : "元数据json文件不存在。";
-        if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.FileExport.ToIconString()}##metaFile", UiHelpers.IconButtonSize, tt,
-                !fileExists, true))
-            Process.Start(new ProcessStartInfo(filenames.ModMetaPath(_mod)) { UseShellExecute = true });
+            ? "在您选择的文本编辑器中打开元数据json文件。"u8
+            : "元数据json文件不存在。"u8;
+        using (Im.Id.Push("meta"u8))
+        {
+            if (ImEx.Icon.Button(LunaStyle.FileExportIcon, tt, !fileExists))
+                Process.Start(new ProcessStartInfo(filenames.ModMetaPath(_mod)) { UseShellExecute = true });
+        }
 
         DrawOpenDefaultMod();
     }
@@ -208,19 +198,18 @@ public class ModPanelEditTab(
 
     private void DrawImportDate()
     {
-        ImUtf8.TextFramed($"{DateTimeOffset.FromUnixTimeMilliseconds(_mod.ImportDate).ToLocalTime():yyyy/MM/dd HH:mm}",
-            ImGui.GetColorU32(ImGuiCol.FrameBg, 0.5f), new Vector2(UiHelpers.InputTextMinusButton3, 0));
-        ImGui.SameLine(0, 3 * ImUtf8.GlobalScale);
+        ImEx.TextFramed($"{DateTimeOffset.FromUnixTimeMilliseconds(_mod.ImportDate).ToLocalTime():yyyy/MM/dd HH:mm}",
+            new Vector2(UiHelpers.InputTextMinusButton3, 0), ImGuiColor.FrameBackground.Get(0.5f));
+        Im.Line.Same(0, 3 * Im.Style.GlobalScale);
 
         var canRefresh = config.DeleteModModifier.IsActive();
-        var tt = canRefresh
-            ? "将导入日期重置为当前日期和时间。"
-            : $"将导入日期重置为当前日期和时间。\n点击时按住 {config.DeleteModModifier} 以刷新。";
-
-        if (ImUtf8.IconButton(FontAwesomeIcon.Sync, tt, disabled: !canRefresh))
+        if (ImEx.Icon.Button(LunaStyle.RefreshIcon, canRefresh
+                    ? "将导入日期重置为当前日期和时间。"u8
+                    : $"将导入日期重置为当前日期和时间。\n点击时按住{config.DeleteModModifier}以刷新。",
+                !canRefresh))
             modManager.DataEditor.ResetModImportDate(_mod);
-        ImUtf8.SameLineInner();
-        ImUtf8.Text("导入日期"u8);
+        Im.Line.SameInner();
+        Im.Text("导入日期"u8);
     }
 
     private void DrawOpenLocalData()
@@ -228,9 +217,9 @@ public class ModPanelEditTab(
         var file       = filenames.LocalDataFile(_mod);
         var fileExists = File.Exists(file);
         var tt = fileExists
-            ? "在你选择的文本编辑器中打开本地模组数据文件。"u8
+            ? "在您选择的文本编辑器中打开本地模组数据文件。"u8
             : "本地模组数据文件不存在。"u8;
-        if (ImUtf8.ButtonEx("打开本地数据"u8, tt, UiHelpers.InputTextWidth, !fileExists))
+        if (ImEx.Button("打开本地数据"u8, UiHelpers.InputTextWidth, tt, !fileExists))
             Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
     }
 
@@ -239,9 +228,9 @@ public class ModPanelEditTab(
         var file       = filenames.OptionGroupFile(_mod, -1, false);
         var fileExists = File.Exists(file);
         var tt = fileExists
-            ? "在你选择的文本编辑器中打开模组默认数据文件。"
-            : "模组默认数据文件不存在。";
-        if (ImGuiUtil.DrawDisabledButton("打开默认数据", UiHelpers.InputTextWidth, tt, !fileExists))
+            ? "在您选择的文本编辑器中打开默认模组数据文件。"u8
+            : "默认模组数据文件不存在。"u8;
+        if (ImEx.Button("打开默认数据"u8, UiHelpers.InputTextWidth, tt, !fileExists))
             Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
     }
 
@@ -260,9 +249,9 @@ public class ModPanelEditTab(
 
         public static void Draw(ModManager modManager, Mod mod, Vector2 buttonSize)
         {
-            ImGui.SetNextItemWidth(buttonSize.X * 2 + ImGui.GetStyle().ItemSpacing.X);
+            Im.Item.SetNextWidth(buttonSize.X * 2 + Im.Style.ItemSpacing.X);
             var tmp = _currentModDirectory ?? mod.ModPath.Name;
-            if (ImGui.InputText("##newModMove", ref tmp, 64))
+            if (Im.Input.Text("##newModMove"u8, ref tmp))
             {
                 _currentModDirectory = tmp;
                 _state               = modManager.NewDirectoryValid(mod.ModPath.Name, _currentModDirectory, out _);
@@ -271,26 +260,26 @@ public class ModPanelEditTab(
             var (disabled, tt) = _state switch
             {
                 NewDirectoryState.Identical      => (true, "当前目录名称与新目录名称相同。"),
-                NewDirectoryState.Empty          => (true, "请先输入一个目录名称。"),
-                NewDirectoryState.NonExisting    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}."),
-                NewDirectoryState.ExistsEmpty    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}."),
+                NewDirectoryState.Empty          => (true, "请先输入新目录名称。"),
+                NewDirectoryState.NonExisting    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}。"),
+                NewDirectoryState.ExistsEmpty    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}。"),
                 NewDirectoryState.ExistsNonEmpty => (true, $"{_currentModDirectory} 已存在并且不是空目录。"),
                 NewDirectoryState.ExistsAsFile   => (true, $"{_currentModDirectory} 已经以文件形式存在。"),
                 NewDirectoryState.ContainsInvalidSymbols => (true,
                     $"{_currentModDirectory} 包含不被游戏接受的非法字符。"),
                 _ => (true, "未知错误。"),
             };
-            ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton("重命名模组目录", buttonSize, tt, disabled) && _currentModDirectory != null)
+            Im.Line.Same();
+            if (ImEx.Button("重命名模组目录"u8, buttonSize, tt, disabled) && _currentModDirectory is not null)
             {
                 modManager.MoveModDirectory(mod, _currentModDirectory);
                 Reset();
             }
 
-            ImGui.SameLine();
-            ImGuiComponents.HelpMarker(
-                "模组目录名称用于对应存储的设置和排序顺序，它不会影响任何显示内容。\n"
-              + "目前，这不能用于预先存在的文件夹，并且不支持合并或覆盖。");
+            Im.Line.SameInner();
+            LunaStyle.DrawAlignedHelpMarker(StringU8.Empty,
+                "模组目录名称用于对应存储的设置和排序顺序，它不会影响任何显示内容。\n"u8
+              + "目前，这不能用于预先存在的文件夹，并且不支持合并或覆盖。"u8);
         }
     }
 
@@ -298,41 +287,38 @@ public class ModPanelEditTab(
     private static class Input
     {
         // Special field indices to reuse the same string buffer.
-        public const int None        = -1;
-        public const int Name        = -2;
-        public const int Author      = -3;
-        public const int Version     = -4;
-        public const int Website     = -5;
-        public const int Path        = -6;
-        public const int Description = -7;
+        public const int None    = -1;
+        public const int Name    = -2;
+        public const int Author  = -3;
+        public const int Version = -4;
+        public const int Website = -5;
+        public const int Path    = -6;
 
         // Temporary strings
-        private static string?      _currentEdit;
-        private static ModPriority? _currentGroupPriority;
-        private static int          _currentField = None;
-        private static int          _optionIndex  = None;
+        private static string? _currentEdit;
+        private static int     _currentField = None;
+        private static int     _optionIndex  = None;
 
         public static void Reset()
         {
-            _currentEdit          = null;
-            _currentGroupPriority = null;
-            _currentField         = None;
-            _optionIndex          = None;
+            _currentEdit  = null;
+            _currentField = None;
+            _optionIndex  = None;
         }
 
-        public static bool Text(string label, int field, int option, string oldValue, out string value, uint maxLength, float width)
+        public static bool Text(ReadOnlySpan<byte> label, int field, int option, string oldValue, out string value, float width)
         {
             var tmp = field == _currentField && option == _optionIndex ? _currentEdit ?? oldValue : oldValue;
-            ImGui.SetNextItemWidth(width);
+            Im.Item.SetNextWidth(width);
 
-            if (ImGui.InputText(label, ref tmp))
+            if (Im.Input.Text(label, ref tmp))
             {
                 _currentEdit  = tmp;
                 _optionIndex  = option;
                 _currentField = field;
             }
 
-            if (ImGui.IsItemDeactivatedAfterEdit() && _currentEdit != null)
+            if (Im.Item.DeactivatedAfterEdit && _currentEdit is not null)
             {
                 var ret = _currentEdit != oldValue;
                 value = _currentEdit;
@@ -341,29 +327,6 @@ public class ModPanelEditTab(
             }
 
             value = string.Empty;
-            return false;
-        }
-
-        public static bool Priority(string label, int field, int option, ModPriority oldValue, out ModPriority value, float width)
-        {
-            var tmp = (field == _currentField && option == _optionIndex ? _currentGroupPriority ?? oldValue : oldValue).Value;
-            ImGui.SetNextItemWidth(width);
-            if (ImGui.InputInt(label, ref tmp, 0, 0))
-            {
-                _currentGroupPriority = new ModPriority(tmp);
-                _optionIndex          = option;
-                _currentField         = field;
-            }
-
-            if (ImGui.IsItemDeactivatedAfterEdit() && _currentGroupPriority != null)
-            {
-                var ret = _currentGroupPriority != oldValue;
-                value = _currentGroupPriority.Value;
-                Reset();
-                return ret;
-            }
-
-            value = ModPriority.Default;
             return false;
         }
     }

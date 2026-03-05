@@ -1,21 +1,17 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Utility.Raii;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Services;
-using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.Interop.Structs;
 using Penumbra.Meta;
 using Penumbra.Meta.Files;
 using Penumbra.Meta.Manipulations;
 using Penumbra.Mods.Editor;
-using Penumbra.UI.Classes;
 
 namespace Penumbra.UI.AdvancedWindow.Meta;
 
 public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFiles)
-    : MetaDrawer<EqdpIdentifier, EqdpEntryInternal>(editor, metaFiles), IService
+    : MetaDrawer<EqdpIdentifier, EqdpEntryInternal>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
         => "种族模型编辑(EQDP)###EQDP"u8;
@@ -34,15 +30,15 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
 
     protected override void DrawNew()
     {
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         CopyToClipboardButton("将当前所有EQDP操作复制到剪贴板。"u8, new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Eqdp)));
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         var validRaceCode = CharacterUtilityData.EqdpIdx(Identifier.GenderRace, false) >= 0;
         var canAdd        = validRaceCode && !Editor.Contains(Identifier);
         var tt = canAdd   ? "编辑此项。"u8 :
             validRaceCode ? "此项已被编辑。"u8 : "此种族和性别的组合不可用。"u8;
-        if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, disabled: !canAdd))
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, Entry);
 
         if (DrawIdentifierInput(ref Identifier))
@@ -72,51 +68,51 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
 
     private static bool DrawIdentifierInput(ref EqdpIdentifier identifier)
     {
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         var changes = DrawPrimaryId(ref identifier);
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         changes |= DrawRace(ref identifier);
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         changes |= DrawGender(ref identifier);
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         changes |= DrawEquipSlot(ref identifier);
         return changes;
     }
 
     private static void DrawIdentifier(EqdpIdentifier identifier)
     {
-        ImGui.TableNextColumn();
-        ImUtf8.TextFramed($"{identifier.SetId.Id}", FrameColor);
-        ImUtf8.HoverTooltip("模型集合ID"u8);
+        Im.Table.NextColumn();
+        ImEx.TextFramed($"{identifier.SetId.Id}", default, FrameColor);
+        Im.Tooltip.OnHover("模型集合ID"u8);
 
-        ImGui.TableNextColumn();
-        ImUtf8.TextFramed(identifier.Race.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("模型种族"u8);
+        Im.Table.NextColumn();
+        ImEx.TextFramed(identifier.Race.ToNameU8(), default, FrameColor);
+        Im.Tooltip.OnHover("模型种族"u8);
 
-        ImGui.TableNextColumn();
-        ImUtf8.TextFramed(identifier.Gender.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("性别"u8);
+        Im.Table.NextColumn();
+        ImEx.TextFramed(identifier.Gender.ToNameU8(), default, FrameColor);
+        Im.Tooltip.OnHover("性别"u8);
 
-        ImGui.TableNextColumn();
-        ImUtf8.TextFramed(identifier.Slot.ToName(), FrameColor);
-        ImUtf8.HoverTooltip("装备位置"u8);
+        Im.Table.NextColumn();
+        ImEx.TextFramed(identifier.Slot.ToNameU8(), default, FrameColor);
+        Im.Tooltip.OnHover("装备位置"u8);
     }
 
     private static bool DrawEntry(EqdpEntryInternal defaultEntry, ref EqdpEntryInternal entry, bool disabled)
     {
         var       changes = false;
-        using var dis     = ImRaii.Disabled(disabled);
-        ImGui.TableNextColumn();
+        using var dis     = Im.Disabled(disabled);
+        Im.Table.NextColumn();
         if (Checkmark("材质##eqdp"u8, "\0"u8, entry.Material, defaultEntry.Material, out var newMaterial))
         {
             entry   = entry with { Material = newMaterial };
             changes = true;
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (Checkmark("模型##eqdp"u8, "\0"u8, entry.Model, defaultEntry.Model, out var newModel))
         {
             entry   = entry with { Model = newModel };
@@ -130,7 +126,7 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
     {
         var ret = IdInput("##eqdpPrimaryId"u8, unscaledWidth, identifier.SetId.Id, out var setId, 0, ExpandedEqpGmpBase.Count - 1,
             identifier.SetId.Id <= 1);
-        ImUtf8.HoverTooltip(
+        Im.Tooltip.OnHover(
             "模型集合ID - 通常可以在物品路径的'e####'部分找到。也可以在更改项目中查看。\n除非你明确需要，否则通常不应将此值设置为小于等于1。"u8);
         if (ret)
             identifier = identifier with { SetId = setId };
@@ -139,8 +135,7 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
 
     public static bool DrawRace(ref EqdpIdentifier identifier, float unscaledWidth = 100)
     {
-        var ret = Combos.Race("##eqdpRace", identifier.Race, out var race, unscaledWidth);
-        ImUtf8.HoverTooltip("模型种族"u8);
+        var ret = Combos.ModelRace.Draw("##eqdpRace"u8, identifier.Race, "模型种族"u8, unscaledWidth * Im.Style.GlobalScale, out var race);
         if (ret)
             identifier = identifier with { GenderRace = Names.CombinedRace(identifier.Gender, race) };
         return ret;
@@ -148,8 +143,7 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
 
     public static bool DrawGender(ref EqdpIdentifier identifier, float unscaledWidth = 120)
     {
-        var ret = Combos.Gender("##eqdpGender", identifier.Gender, out var gender, unscaledWidth);
-        ImUtf8.HoverTooltip("性别"u8);
+        var ret = Combos.Gender.Draw("##eqdpGender"u8, identifier.Gender, "性别"u8, unscaledWidth * Im.Style.GlobalScale, out var gender);
         if (ret)
             identifier = identifier with { GenderRace = Names.CombinedRace(gender, identifier.Race) };
         return ret;
@@ -157,8 +151,7 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
 
     public static bool DrawEquipSlot(ref EqdpIdentifier identifier, float unscaledWidth = 100)
     {
-        var ret = Combos.EqdpEquipSlot("##eqdpSlot", identifier.Slot, out var slot, unscaledWidth);
-        ImUtf8.HoverTooltip("装备位置"u8);
+        var ret = Combos.EqdpEquipSlot.Draw("##eqdpSlot"u8, identifier.Slot, "装备位置"u8, unscaledWidth, out var slot);
         if (ret)
             identifier = identifier with { Slot = slot };
         return ret;

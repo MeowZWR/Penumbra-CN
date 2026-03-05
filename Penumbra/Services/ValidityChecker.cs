@@ -1,12 +1,11 @@
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using OtterGui.Classes;
-using OtterGui.Services;
+using Luna;
 
 namespace Penumbra.Services;
 
-public class ValidityChecker : IService
+public class ValidityChecker : Luna.IService
 {
     public const string Repository              = "https://plogon.meowrs.com/cn";
     public const string RepositoryOtter3rd      = "https://dalamud_cn_3rd.otters.cloud/plugins/all";

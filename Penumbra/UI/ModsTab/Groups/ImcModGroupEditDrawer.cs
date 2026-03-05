@@ -1,10 +1,5 @@
-using Dalamud.Interface;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Extensions;
-using OtterGui.Raii;
-using OtterGui.Text;
-using OtterGui.Text.Widget;
-using OtterGuiInternal.Utility;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Structs;
 using Penumbra.Meta;
 using Penumbra.Mods.Groups;
@@ -23,79 +18,85 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         var entry        = group.DefaultEntry;
         var changes      = false;
 
-        var width = editor.AvailableWidth.X - 3 * ImUtf8.ItemInnerSpacing.X - ImUtf8.ItemSpacing.X - ImUtf8.CalcTextSize("所有变体"u8).X - ImUtf8.CalcTextSize("仅属性"u8).X - 2 * ImUtf8.FrameHeight;
-        ImUtf8.TextFramed(identifier.ToString(), 0, new Vector2(width, 0), borderColor: ImGui.GetColorU32(ImGuiCol.Border));
+        var width = editor.AvailableWidth.X
+          - 3 * Im.Style.ItemInnerSpacing.X
+          - Im.Style.ItemSpacing.X
+          - Im.Font.CalculateSize("所有变体"u8).X
+          - Im.Font.CalculateSize("仅属性"u8).X
+          - 2 * Im.Style.FrameHeight;
+        ImEx.TextFramed($"{identifier}", new Vector2(width, 0), Rgba32.Transparent);
 
-        ImUtf8.SameLineInner();
+        Im.Line.SameInner();
         var allVariants = group.AllVariants;
-        if (ImUtf8.Checkbox("所有变体"u8, ref allVariants))
+        if (Im.Checkbox("所有变体"u8, ref allVariants))
             editor.ModManager.OptionEditor.ImcEditor.ChangeAllVariants(group, allVariants);
-        ImUtf8.HoverTooltip("使此组覆盖所有对应的变体，而不仅仅是指定的一个。"u8);
+        Im.Tooltip.OnHover("使此组覆盖所有对应的变体，而不仅仅是指定的一个。"u8);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         var onlyAttributes = group.OnlyAttributes;
-        if (ImUtf8.Checkbox("仅属性"u8, ref onlyAttributes))
+        if (Im.Checkbox("仅属性"u8, ref onlyAttributes))
             editor.ModManager.OptionEditor.ImcEditor.ChangeOnlyAttributes(group, onlyAttributes);
-        ImUtf8.HoverTooltip("仅覆盖属性标志，其他值则使用游戏的默认项，而不是此处配置的项。\n\n主要在与所有变体一起使用时有用，以保持每个变体的材质 ID。"u8);
+        Im.Tooltip.OnHover(
+            "仅覆盖属性标志，其他值则使用游戏的默认项，而不是此处配置的项。\n\n主要在与所有变体一起使用时有用，以保持每个变体的材质 ID。"u8);
 
-        using (ImUtf8.Group())
+        using (Im.Group())
         {
-            ImUtf8.TextFrameAligned("材质 ID"u8);
-            ImUtf8.TextFrameAligned("视效 ID"u8);
-            ImUtf8.TextFrameAligned("贴花 ID"u8);
+            ImEx.TextFrameAligned("材质 ID"u8);
+            ImEx.TextFrameAligned("视效 ID"u8);
+            ImEx.TextFrameAligned("贴花 ID"u8);
         }
 
-        ImGui.SameLine();
-        using (ImUtf8.Group())
+        Im.Line.Same();
+        using (Im.Group())
         {
             changes |= ImcMetaDrawer.DrawMaterialId(defaultEntry, ref entry, true);
             changes |= ImcMetaDrawer.DrawVfxId(defaultEntry, ref entry, true);
             changes |= ImcMetaDrawer.DrawDecalId(defaultEntry, ref entry, true);
         }
 
-        ImGui.SameLine(0, editor.PriorityWidth);
-        using (ImUtf8.Group())
+        Im.Line.Same(0, editor.PriorityWidth);
+        using (Im.Group())
         {
-            ImUtf8.TextFrameAligned("材质动画 ID"u8);
-            ImUtf8.TextFrameAligned("声音 ID"u8);
-            ImUtf8.TextFrameAligned("可被禁用"u8);
+            ImEx.TextFrameAligned("材质动画 ID"u8);
+            ImEx.TextFrameAligned("声音 ID"u8);
+            ImEx.TextFrameAligned("可被禁用"u8);
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
 
-        using (ImUtf8.Group())
+        using (Im.Group())
         {
             changes |= ImcMetaDrawer.DrawMaterialAnimationId(defaultEntry, ref entry, true);
             changes |= ImcMetaDrawer.DrawSoundId(defaultEntry, ref entry, true);
             var canBeDisabled = group.CanBeDisabled;
-            if (ImUtf8.Checkbox("##disabled"u8, ref canBeDisabled))
+            if (Im.Checkbox("##disabled"u8, ref canBeDisabled))
                 editor.ModManager.OptionEditor.ImcEditor.ChangeCanBeDisabled(group, canBeDisabled);
         }
 
         if (changes)
             editor.ModManager.OptionEditor.ImcEditor.ChangeDefaultEntry(group, entry);
 
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
         DrawOptions();
         var attributeCache = new ImcAttributeCache(group);
         DrawNewOption(attributeCache);
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
 
 
-        using (ImUtf8.Group())
+        using (Im.Group())
         {
-            ImUtf8.TextFrameAligned("默认属性"u8);
+            ImEx.TextFrameAligned("默认属性"u8);
             foreach (var option in group.OptionData.Where(o => !o.IsDisableSubMod))
-                ImUtf8.TextFrameAligned(option.Name);
+                ImEx.TextFrameAligned(option.Name);
         }
 
-        ImUtf8.SameLineInner();
-        using (ImUtf8.Group())
+        Im.Line.SameInner();
+        using (Im.Group())
         {
             DrawAttributes(editor.ModManager.OptionEditor.ImcEditor, attributeCache, group.DefaultEntry.AttributeMask, group);
-            foreach (var (option, idx) in group.OptionData.WithIndex().Where(o => !o.Value.IsDisableSubMod))
+            foreach (var (idx, option) in group.OptionData.Index().Where(o => !o.Item.IsDisableSubMod))
             {
-                using var id = ImUtf8.PushId(idx);
+                using var id = Im.Id.Push(idx);
                 DrawAttributes(editor.ModManager.OptionEditor.ImcEditor, attributeCache, option.AttributeMask, option,
                     group.DefaultEntry.AttributeMask);
             }
@@ -104,23 +105,23 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
 
     private void DrawOptions()
     {
-        foreach (var (option, optionIdx) in group.OptionData.WithIndex())
+        foreach (var (optionIdx, option) in group.OptionData.Index())
         {
-            using var id = ImRaii.PushId(optionIdx);
+            using var id = Im.Id.Push(optionIdx);
             editor.DrawOptionPosition(group, option, optionIdx);
 
-            ImUtf8.SameLineInner();
+            Im.Line.SameInner();
             editor.DrawOptionDefaultMultiBehaviour(group, option, optionIdx);
 
-            ImUtf8.SameLineInner();
+            Im.Line.SameInner();
             editor.DrawOptionName(option);
 
-            ImUtf8.SameLineInner();
+            Im.Line.SameInner();
             editor.DrawOptionDescription(option);
 
             if (!option.IsDisableSubMod)
             {
-                ImUtf8.SameLineInner();
+                Im.Line.SameInner();
                 editor.DrawOptionDelete(option);
             }
         }
@@ -128,15 +129,15 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
 
     private void DrawNewOption(in ImcAttributeCache cache)
     {
-        var dis       = cache.LowestUnsetMask == 0;
+        var dis       = cache.LowestUnsetMask is 0;
         var name      = editor.DrawNewOptionBase(group, group.Options.Count);
         var validName = name.Length > 0;
         var tt = dis
             ? "新选项没有空闲属性插槽..."u8
             : validName
-                ? "向该组添加一个新选项。"u8
+                ? "向此组添加一个新选项。"u8
                 : "请为新选项输入一个名称。"u8;
-        if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, default, !validName || dis))
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, !validName || dis))
         {
             editor.ModManager.OptionEditor.ImcEditor.AddOption(group, cache, name);
             editor.NewOptionName = null;
@@ -148,13 +149,13 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
     {
         for (var i = 0; i < ImcEntry.NumAttributes; ++i)
         {
-            using var id        = ImRaii.PushId(i);
+            using var id        = Im.Id.Push(i);
             var       flag      = 1 << i;
-            var       value     = (mask & flag) != 0;
-            var       inDefault = defaultMask.HasValue && (defaultMask & flag) != 0;
-            using (ImRaii.Disabled(defaultMask != null && !cache.CanChange(i)))
+            var       value     = (mask & flag) is not 0;
+            var       inDefault = defaultMask.HasValue && (defaultMask & flag) is not 0;
+            using (Im.Disabled(defaultMask is not null && !cache.CanChange(i)))
             {
-                if (inDefault ? NegativeCheckbox.Instance.Draw(""u8, ref value) : ImUtf8.Checkbox(""u8, ref value))
+                if (inDefault ? ImEx.XCheckbox(""u8, ref value) : Im.Checkbox(""u8, ref value))
                 {
                     if (data is ImcModGroup g)
                         editor.ChangeDefaultAttribute(g, cache, i, value);
@@ -163,26 +164,9 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
                 }
             }
 
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "ABCDEFGHIJ"u8.Slice(i, 1));
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "ABCDEFGHIJ"u8.Slice(i, 1));
             if (i != 9)
-                ImUtf8.SameLineInner();
+                Im.Line.SameInner();
         }
-    }
-
-    private sealed class NegativeCheckbox : MultiStateCheckbox<bool>
-    {
-        public static readonly NegativeCheckbox Instance = new();
-
-        protected override void RenderSymbol(bool value, Vector2 position, float size)
-        {
-            if (value)
-                SymbolHelpers.RenderCross(ImGui.GetWindowDrawList(), position, ImGui.GetColorU32(ImGuiCol.CheckMark), size);
-        }
-
-        protected override bool NextValue(bool value)
-            => !value;
-
-        protected override bool PreviousValue(bool value)
-            => !value;
     }
 }

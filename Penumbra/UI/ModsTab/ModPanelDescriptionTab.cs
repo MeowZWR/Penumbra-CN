@@ -1,58 +1,53 @@
-using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Utility;
-using OtterGui.Raii;
-using OtterGui;
-using OtterGui.Services;
-using OtterGui.Widgets;
+using ImSharp;
+using Luna;
+using Penumbra.Mods;
 using Penumbra.Mods.Manager;
+using Penumbra.UI.Classes;
 
 namespace Penumbra.UI.ModsTab;
 
 public class ModPanelDescriptionTab(
-    ModFileSystemSelector selector,
+    ModSelection selection,
     TutorialService tutorial,
     ModManager modManager,
     PredefinedTagManager predefinedTagsConfig)
-    : ITab, IUiService
+    : ITab<ModPanelTab>
 {
-    private readonly TagButtons _localTags = new();
-    private readonly TagButtons _modTags   = new();
-
     public ReadOnlySpan<byte> Label
         => "模组描述"u8;
 
+    public ModPanelTab Identifier
+        => ModPanelTab.Description;
+
     public void DrawContent()
     {
-        using var child = ImRaii.Child("##description");
+        using var child = Im.Child.Begin("##description"u8);
         if (!child)
             return;
 
-        ImGui.Dummy(ImGuiHelpers.ScaledVector2(2));
-
-        ImGui.Dummy(ImGuiHelpers.ScaledVector2(2));
+        Im.ScaledDummy(2, 2);
+        Im.ScaledDummy(2, 2);
         var (predefinedTagsEnabled, predefinedTagButtonOffset) = predefinedTagsConfig.Enabled
-            ? (true, ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X + (ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ScrollbarSize : 0))
+            ? (true, Im.Style.FrameHeight + Im.Style.WindowPadding.X + (Im.Scroll.MaximumY > 0 ? Im.Style.ScrollbarSize : 0))
             : (false, 0);
-        var tagIdx = _localTags.Draw("本地标签：",
-            "个人设置的自定义标签，不会导出到模组。\n"
-          + "如果模组已经有与本地标签相同的标签，此本地标签会被忽略。", selector.Selected!.LocalTags,
+        var tagIdx = TagButtons.Draw("本地标签："u8,
+            "个人设置的自定义标签，不会导出到模组数据。\n"u8
+          + "如果模组已经有与本地标签相同的标签，此本地标签会被忽略。"u8, selection.Mod!.LocalTags,
             out var editedTag, rightEndOffset: predefinedTagButtonOffset);
         tutorial.OpenTutorial(BasicTutorialSteps.Tags);
         if (tagIdx >= 0)
-            modManager.DataEditor.ChangeLocalTag(selector.Selected!, tagIdx, editedTag);
+            modManager.DataEditor.ChangeLocalTag(selection.Mod!, tagIdx, editedTag);
 
         if (predefinedTagsEnabled)
-            predefinedTagsConfig.DrawAddFromSharedTagsAndUpdateTags(selector.Selected!.LocalTags, selector.Selected!.ModTags, true,
-                selector.Selected!);
+            predefinedTagsConfig.DrawAddFromSharedTagsAndUpdateTags(selection.Mod, true);
 
-        if (selector.Selected!.ModTags.Count > 0)
-            _modTags.Draw("模组标签：", "由模组作者创建的标签，随模组数据保存，通过编辑选项卡来修改。",
-                selector.Selected!.ModTags, out _, false,
-                ImGui.CalcTextSize("Local ").X - ImGui.CalcTextSize("Mod ").X);
+        if (selection.Mod!.ModTags.Count > 0)
+            TagButtons.Draw("模组标签："u8, "由模组作者创建的标签，随模组数据保存，通过编辑选项卡来修改。"u8,
+                selection.Mod!.ModTags, out _, false, Im.Font.CalculateSize("Local "u8).X - Im.Font.CalculateSize("Mod "u8).X);
 
-        ImGui.Dummy(ImGuiHelpers.ScaledVector2(2));
-        ImGui.Separator();
+        Im.ScaledDummy(2, 2);
+        Im.Separator();
 
-        ImGuiUtil.TextWrapped(selector.Selected!.Description);
+        Im.TextWrapped(selection.Mod!.Description);
     }
 }

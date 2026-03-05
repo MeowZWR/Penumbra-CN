@@ -1,22 +1,19 @@
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
-using OtterGui.Widgets;
+using Dalamud.Interface;
+using Dalamud.Interface.DragDrop;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
+using ImSharp;
+using Luna;
 using Penumbra.UI.Classes;
 using Penumbra.Collections.Manager;
+using Penumbra.Communication;
+using Penumbra.UI.ModsTab.ModPreview;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.Mods.Settings;
 using Penumbra.UI.ModsTab.Groups;
-using OtterGui.Extensions;
-using Dalamud.Plugin.Services;
-using Dalamud.Interface;
-using Dalamud.Interface.DragDrop;
-using Dalamud.Plugin;
-using Penumbra.UI.ModsTab.ModPreview;
 
 namespace Penumbra.UI.ModsTab;
 
@@ -32,7 +29,7 @@ public class ModPanelSettingsTab(
     IDragDropManager dragDrop,
     IDalamudPluginInterface pluginInterface,
     INotificationManager notificationManager)
-    : ITab, IUiService, IDisposable
+    : ITab<ModPanelTab>
 {
     private bool _inherited;
     private bool _temporary;
@@ -46,7 +43,10 @@ public class ModPanelSettingsTab(
     public ReadOnlySpan<byte> Label
         => "模组设置"u8;
 
-    public void DrawHeader()
+    public ModPanelTab Identifier
+        => ModPanelTab.Settings;
+
+    public void PostTabButton()
         => tutorial.OpenTutorial(BasicTutorialSteps.ModOptions);
 
     public void Reset()
@@ -83,7 +83,7 @@ public class ModPanelSettingsTab(
             : totalAvailableWidth;
 
         // 1. 绘制主面板
-        using (var mainPanel = ImRaii.Child("##MainSettingsPanel", new Vector2(mainWidth, -1), false, ImGuiWindowFlags.NoScrollbar))
+        using (var mainPanel = Im.Child.Begin("##MainSettingsPanel"u8, new Vector2(mainWidth, -1), false, WindowFlags.NoScrollbar))
         {
             if (mainPanel)
                 DrawSettingsPanelContent();
@@ -92,13 +92,13 @@ public class ModPanelSettingsTab(
         // 2. 绘制折叠按钮
         if (config.ShowModPreviewPanel)
         {
-            ImGui.SameLine(0, 0); // 确保按钮紧跟主面板
+            Im.Line.Same(0, 0); // 确保按钮紧跟主面板
             DrawPreviewCollapseButton(previewWidth);
 
             // 3. 绘制预览面板（如果展开）
             if (_previewExpanded)
             {
-                ImGui.SameLine(0, 0); // 确保预览面板紧跟按钮
+                Im.Line.Same(0, 0); // 确保预览面板紧跟按钮
                 DrawPreviewPanel(previewWidth);
             }
         }
@@ -110,19 +110,19 @@ public class ModPanelSettingsTab(
         var tooltip = _previewExpanded ? "隐藏预览面板" : "显示预览面板";
 
         // 保存当前光标位置以便之后恢复
-        var originalPos = ImGui.GetCursorPos();
+        var originalPos = Im.Cursor.Position;
 
         // 计算按钮X位置
         var buttonPosX = _previewExpanded
-            ? ImGui.GetWindowWidth() - previewWidth - ImGui.GetFrameHeight() * 1f
-            : ImGui.GetWindowWidth() - ImGui.GetFrameHeight() * 1f;
+            ? Im.Window.Width - previewWidth - Im.Style.FrameHeight
+            : Im.Window.Width - Im.Style.FrameHeight;
 
         // 设置按钮位置（使用当前Y坐标，不是窗口顶部）
-        ImGui.SetCursorPos(new Vector2(buttonPosX, originalPos.Y));
+        Im.Cursor.Position = new Vector2(buttonPosX, originalPos.Y);
 
         // 使用合理的按钮高度，而不是整个窗口高度
-        var buttonHeight = ImGui.GetContentRegionAvail().Y;
-        if (ImGui.Button(icon, new Vector2(ImGui.GetFrameHeight() * 0.75f, buttonHeight)))
+        var buttonHeight = Im.ContentRegion.Available.Y;
+        if (Im.Button(icon, new Vector2(Im.Style.FrameHeight * 0.75f, buttonHeight)))
         {
             _previewExpanded = !_previewExpanded;
             if (config.SavePreviewPanelState)
@@ -133,32 +133,31 @@ public class ModPanelSettingsTab(
         }
 
         // 恢复光标位置以便继续绘制其他内容
-        ImGui.SetCursorPos(originalPos);
-
-        ImGuiUtil.HoverTooltip(tooltip);
+        Im.Cursor.Position = originalPos;
+        Im.Tooltip.OnHover(tooltip);
     }
 
     private void DrawPreviewPanel(float width)
     {
-        using var previewPanel = ImRaii.Child("##PreviewPanel", new Vector2(width, -1), true);
+        using var previewPanel = Im.Child.Begin("##PreviewPanel"u8, new Vector2(width, -1), true);
         if (!previewPanel)
             return;
 
         // 使用表格结构来组织预览面板内容
-        using var table = ImUtf8.Table("##previewTable", 1, ImGuiTableFlags.ScrollY | ImGuiTableFlags.NoBordersInBody, -Vector2.UnitY);
+        using var table = Im.Table.Begin("##previewTable"u8, 1, TableFlags.ScrollY | TableFlags.NoBordersInBody, -Vector2.UnitY);
         if (!table)
             return;
 
         // 冻结第一行，用于放置按钮
-        ImGui.TableSetupScrollFreeze(0, 1);
-        ImGui.TableNextColumn();
+        table.SetupScrollFreeze(0, 1);
+        table.NextColumn();
 
         // 绘制预览面板按钮
         if (selection.Mod != null)
         {
             // 设置左侧间距
             var leftPadding = 0 * UiHelpers.Scale;
-            ImGui.SetCursorPosX(leftPadding);
+            Im.Cursor.PositionX = leftPadding;
 
             var coverFolder = Path.Combine(selection.Mod!.ModPath.FullName, "CoverImage");
             var folderExists = Directory.Exists(coverFolder);
@@ -167,15 +166,13 @@ public class ModPanelSettingsTab(
                 ? "在文件资源管理器中打开 CoverImage 文件夹" 
                 : "按住 Ctrl 点击创建 CoverImage 文件夹";
 
-            if (ImGuiUtil.DrawDisabledButton($"{icon.ToIconString()}##openFolder", UiHelpers.IconButtonSize,
-                tooltip, !folderExists && !ImGui.GetIO().KeyCtrl, true))
+            if (ImEx.Icon.Button(icon.Icon(), tooltip, !folderExists && !Im.Io.KeyControl, UiHelpers.IconButtonSize))
             {
                 _imagePanel.OpenCoverImageFolder();
             }
 
-            ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Clipboard.ToIconString()}##importFromClipboard", UiHelpers.IconButtonSize,
-                "从剪贴板导入图片", false, true))
+            Im.Line.Same();
+            if (ImEx.Icon.Button(FontAwesomeIcon.Clipboard.Icon(), "从剪贴板导入图片", false, UiHelpers.IconButtonSize))
             {
                 var staThread = new System.Threading.Thread(() =>
                 {
@@ -193,7 +190,7 @@ public class ModPanelSettingsTab(
                 staThread.Start();
             }
             
-            ImGui.SameLine();
+            Im.Line.Same();
             // 绘制下载按钮
             var websiteUrl = selection.Mod != null ? ModPreviewDownloader.GetModWebsiteUrl(selection.Mod) : string.Empty;
             var isHeliosphere = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("heliosphere.app");
@@ -209,34 +206,32 @@ public class ModPanelSettingsTab(
             else
                 downloadTooltip = "只支持从Heliosphere下载预览图";
             
-            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Download.ToIconString()}##downloadImages", UiHelpers.IconButtonSize,
-                downloadTooltip, buttonDisabled, true))
+            if (ImEx.Icon.Button(FontAwesomeIcon.Download.Icon(), downloadTooltip, buttonDisabled, UiHelpers.IconButtonSize))
             {
                 Task.Run(async () => await _previewDownloader.TryDownloadPreviewImage(selection.Mod!));
             }
 
-            ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Repeat.ToIconString()}##reloadImages", UiHelpers.IconButtonSize,
-                "重新加载预览图", false, true))
+            Im.Line.Same();
+            if (ImEx.Icon.Button(FontAwesomeIcon.Repeat.Icon(), "重新加载预览图", false, UiHelpers.IconButtonSize))
             {
                 _imagePanel.ReloadImages();
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
             var showHoverPreview = _imagePanel.Config.EnableImageInteraction;
-            if (ImGui.Checkbox("图片交互", ref showHoverPreview))
+            if (Im.Checkbox("图片交互"u8, ref showHoverPreview))
             {
                 _imagePanel.Config.EnableImageInteraction = showHoverPreview;
                 _imagePanel.SaveConfig();
             }
-            ImGuiUtil.HoverTooltip("启用/禁用图片交互功能（点击打开外部工具，右键放大图片等）");
+            Im.Tooltip.OnHover("启用/禁用图片交互功能（点击打开外部工具，右键放大图片等）");
         }
 
         // 绘制预览图片内容
-        ImGui.TableNextColumn();
+        table.NextColumn();
         
         // 计算滚动条宽度
-        var scrollbarWidth = ImGui.GetStyle().ScrollbarSize;
+        var scrollbarWidth = Im.Style.ScrollbarSize;
         // 预留右侧间距，减少与滚动条的间距
         var rightPadding = 2 * UiHelpers.Scale;
         // 使用统一的图片间距参数
@@ -256,12 +251,12 @@ public class ModPanelSettingsTab(
         if (selection.Mod != null)
             _imagePanel.Draw(selection.Mod, availableWidth);
         else
-            ImGui.TextDisabled("未选择模组。");
+            Im.TextDisabled("未选择模组。");
     }
 
     private void DrawSettingsPanelContent()
     {
-        using var table = ImUtf8.Table("##settings", 1, ImGuiTableFlags.ScrollY, -Vector2.UnitY);
+        using var table = Im.Table.Begin("##settings"u8, 1, TableFlags.ScrollY, Im.ContentRegion.Available);
         if (!table)
             return;
 
@@ -269,25 +264,25 @@ public class ModPanelSettingsTab(
         _temporary = selection.TemporarySettings != null;
         _locked    = (selection.TemporarySettings?.Lock ?? 0) > 0;
 
-        ImGui.TableSetupScrollFreeze(0, 1);
-        ImGui.TableNextColumn();
+        table.SetupScrollFreeze(0, 1);
+        table.NextColumn();
         DrawTemporaryWarning();
         DrawInheritedWarning();
-        ImGui.Dummy(Vector2.Zero);
-        communicator.PreSettingsPanelDraw.Invoke(selection.Mod!.Identifier);
+        Im.Dummy(Vector2.Zero);
+        communicator.PreSettingsPanelDraw.Invoke(new PreSettingsPanelDraw.Arguments(selection.Mod!));
         DrawEnabledInput();
         tutorial.OpenTutorial(BasicTutorialSteps.EnablingMods);
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawPriorityInput();
         tutorial.OpenTutorial(BasicTutorialSteps.Priority);
         DrawRemoveSettings();
 
-        ImGui.TableNextColumn();
-        communicator.PostEnabledDraw.Invoke(selection.Mod!.Identifier);
+        table.NextColumn();
+        communicator.PostEnabledDraw.Invoke(new PostEnabledDraw.Arguments(selection.Mod!));
 
         modGroupDrawer.Draw(selection.Mod!, selection.Settings, selection.TemporarySettings);
         UiHelpers.DefaultLineSpace();
-        communicator.PostSettingsPanelDraw.Invoke(selection.Mod!.Identifier);
+        communicator.PostSettingsPanelDraw.Invoke(new PostSettingsPanelDraw.Arguments(selection.Mod!));
     }
 
     /// <summary> Draw a big tinted bar if the current setting is temporary. </summary>
@@ -296,14 +291,14 @@ public class ModPanelSettingsTab(
         if (!_temporary)
             return;
 
-        using var color = ImRaii.PushColor(ImGuiCol.Button, ImGuiCol.Button.Tinted(ColorId.TemporaryModSettingsTint));
-        var       width = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-        if (ImUtf8.ButtonEx($"这些设置是由 {selection.TemporarySettings!.Source} 临时设置的{(_locked ? "，并且已锁定。" : "。")}",
-                width,
-                _locked))
+        using var color =
+            ImGuiColor.Button.Push(Rgba32.TintColor(Im.Style[ImGuiColor.Button], ColorId.TemporaryModSettingsTint.Value().ToVector()));
+        var width = Im.ContentRegion.Available with { Y = 0 };
+        if (ImEx.Button($"这些设置由 {selection.TemporarySettings!.Source} 临时设置{(_locked ? "，并且已锁定。" : "。")}",
+                width, _locked))
             collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!, null);
 
-        ImUtf8.HoverTooltip("更改临时设置中的设置不会在会话之间保存。\n"u8
+        Im.Tooltip.OnHover("更改临时设置中的设置不会在会话之间保存。\n"u8
           + "你可以点击此按钮来移除临时设置并返回到常规设置。"u8);
     }
 
@@ -313,10 +308,9 @@ public class ModPanelSettingsTab(
         if (!_inherited)
             return;
 
-        var inheritanceBorderColor = ImGui.GetColorU32(ImGuiCol.Border);
-        using var color = ImRaii.PushColor(ImGuiCol.Border, inheritanceBorderColor);
-        var       width = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-        if (ImUtf8.ButtonEx($"此模组设置继承自合集：{selection.Collection.Identity.Name}.", width, _locked))
+        using var color = ImGuiColor.Button.Push(Colors.PressEnterWarningBg);
+        var       width = Im.ContentRegion.Available with { Y = 0 };
+        if (ImEx.Button($"此模组设置继承自合集：{selection.Collection.Identity.Name}。", width, _locked))
         {
             if (_temporary)
             {
@@ -329,7 +323,7 @@ public class ModPanelSettingsTab(
             }
         }
 
-        ImUtf8.HoverTooltip("你可以点击这个按钮将当前设置独立到此合集。\n"u8
+        Im.Tooltip.OnHover("你可以点击这个按钮将当前设置独立到此合集。\n"u8
           + "你也可以在下面随意修改设置，修改后此模组的设置也会独立到此合集。"u8);
     }
 
@@ -337,8 +331,8 @@ public class ModPanelSettingsTab(
     private void DrawEnabledInput()
     {
         var       enabled  = selection.Settings.Enabled;
-        using var disabled = ImRaii.Disabled(_locked);
-        if (!ImUtf8.Checkbox("启用"u8, ref enabled))
+        using var disabled = Im.Disabled(_locked);
+        if (!Im.Checkbox("启用"u8, ref enabled))
             return;
 
         modManager.SetKnown(selection.Mod!);
@@ -361,19 +355,19 @@ public class ModPanelSettingsTab(
     /// </summary>
     private void DrawPriorityInput()
     {
-        using var group    = ImUtf8.Group();
+        using var group    = Im.Group();
         var       settings = selection.Settings;
         var       priority = _currentPriority ?? settings.Priority.Value;
-        ImGui.SetNextItemWidth(50 * UiHelpers.Scale);
-        using var disabled = ImRaii.Disabled(_locked);
-        if (ImUtf8.InputScalar("##Priority"u8, ref priority))
+        Im.Item.SetNextWidth(50 * Im.Style.GlobalScale);
+        using var disabled = Im.Disabled(_locked);
+        if (Im.Input.Scalar("##Priority"u8, ref priority))
             _currentPriority = priority;
         if (new ModPriority(priority).IsHidden)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled,
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
                 $"此优先级特殊处理以在冲突标签中隐藏此模组（{ModPriority.HiddenMin}, {ModPriority.HiddenMax}）。");
 
 
-        if (ImGui.IsItemDeactivatedAfterEdit() && _currentPriority.HasValue)
+        if (Im.Item.DeactivatedAfterEdit && _currentPriority.HasValue)
         {
             if (_currentPriority != settings.Priority.Value)
             {
@@ -395,7 +389,7 @@ public class ModPanelSettingsTab(
             _currentPriority = null;
         }
 
-        ImUtf8.LabeledHelpMarker("优先级"u8, "优先级更高的模组文件将优先使用。\n"u8
+        LunaStyle.DrawAlignedHelpMarkerLabel("优先级"u8, "优先级更高的模组文件将优先使用。\n"u8
           + "如果要用模组A覆盖模组B，则模组A的优先级应高于模组B。"u8);
     }
 
@@ -406,26 +400,26 @@ public class ModPanelSettingsTab(
     private void DrawRemoveSettings()
     {
         var drawInherited = !_inherited && !selection.Settings.IsEmpty;
-        var scroll        = ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ScrollbarSize + ImGui.GetStyle().ItemInnerSpacing.X : 0;
-        var buttonSize    = ImUtf8.CalcTextSize("设为永久_"u8).X;
+        var scroll        = Im.Scroll.MaximumY > 0 ? Im.Style.ScrollbarSize + Im.Style.ItemInnerSpacing.X : 0;
+        var buttonSize    = Im.Font.CalculateSize("设为永久_"u8).X;
         var offset = drawInherited
-            ? buttonSize + ImUtf8.CalcTextSize("继承设置"u8).X + ImGui.GetStyle().FramePadding.X * 4 + ImGui.GetStyle().ItemSpacing.X
-            : buttonSize + ImGui.GetStyle().FramePadding.X * 2;
-        ImGui.SameLine(ImGui.GetWindowWidth() - offset - scroll);
+            ? buttonSize + Im.Font.CalculateSize("继承设置"u8).X + Im.Style.FramePadding.X * 4 + Im.Style.ItemSpacing.X
+            : buttonSize + Im.Style.FramePadding.X * 2;
+        Im.Line.Same(Im.Window.Width - offset - scroll);
         var enabled = config.DeleteModModifier.IsActive();
         if (drawInherited)
         {
             var inherit = (enabled, _locked) switch
             {
-                (true, false) => ImUtf8.ButtonEx("继承设置"u8,
+                (true, false) => ImEx.Button("继承设置"u8,
                     "从此合集移除当前设置，以便它可以继承设置。\n"u8
-                  + "如果没有继承的合集为此模组设置了设置，它将被禁用。"u8, default, false),
-                (false, false) => ImUtf8.ButtonEx("继承设置"u8,
+                  + "如果没有继承的合集为此模组设置了设置，它将被禁用。"u8),
+                (false, false) => ImEx.Button("继承设置"u8, default,
                     $"从此合集移除当前设置，以便它可以继承设置。\n按住 {config.DeleteModModifier} 以进行继承。",
-                    default, true),
-                (_, true) => ImUtf8.ButtonEx("继承设置"u8,
+                    true),
+                (_, true) => ImEx.Button("继承设置"u8, default,
                     "从此合集移除当前设置，以便它可以继承设置。\n设置当前被锁定，无法更改。"u8,
-                    default, true),
+                    true),
             };
             if (inherit)
             {
@@ -441,18 +435,18 @@ public class ModPanelSettingsTab(
                     collectionManager.Editor.SetModInheritance(collectionManager.Active.Current, selection.Mod!, true);
                 }
             }
-        ImGui.SameLine();
+
+            Im.Line.Same();
         }
 
         if (_temporary)
         {
             var overwrite = enabled
-                ? ImUtf8.ButtonEx("设为永久"u8,
-                    "使用当前的临时设置覆盖此合集中的该模组的实际设置。"u8,
-                    new Vector2(buttonSize, 0))
-                : ImUtf8.ButtonEx("设为永久"u8,
+                ? ImEx.Button("设为永久"u8, new Vector2(buttonSize, 0),
+                    "使用当前的临时设置覆盖此合集中的该模组的实际设置。"u8)
+                : ImEx.Button("设为永久"u8, new Vector2(buttonSize, 0),
                     $"使用当前的临时设置覆盖该模组在此合集中的实际设置。\n按住 {config.DeleteModModifier} 以覆盖。",
-                    new Vector2(buttonSize, 0), true);
+                    true);
             if (overwrite)
             {
                 var settings = collectionManager.Active.Current.GetTempSettings(selection.Mod!.Index)!;
@@ -464,7 +458,7 @@ public class ModPanelSettingsTab(
                 {
                     collectionManager.Editor.SetModState(collectionManager.Active.Current, selection.Mod, settings.Enabled);
                     collectionManager.Editor.SetModPriority(collectionManager.Active.Current, selection.Mod, settings.Priority);
-                    foreach (var (setting, index) in settings.Settings.WithIndex())
+                    foreach (var (index, setting) in settings.Settings.Index())
                         collectionManager.Editor.SetModSetting(collectionManager.Active.Current, selection.Mod, index, setting);
                 }
 
@@ -474,14 +468,15 @@ public class ModPanelSettingsTab(
         else
         {
             var actual = collectionManager.Active.Current.GetActualSettings(selection.Mod!.Index).Settings;
-            if (ImUtf8.ButtonEx("设为临时"u8, "将当前设置复制到临时设置中以进行实验。"u8))
+            if (ImEx.Button("设为临时"u8, "将当前设置复制到临时设置中以进行实验。"u8))
                 collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
                     new TemporaryModSettings(selection.Mod!, actual));
         }
-    }    
+    }
 
     public void Dispose()
     {
+        _imagePanel.Dispose();
         _previewDownloader.Dispose();
     }
 }

@@ -1,92 +1,82 @@
-using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
-using Dalamud.Interface.Utility;
-using OtterGui.Extensions;
-using OtterGui.Filesystem;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
+using ImSharp;
+using Luna;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
 
 namespace Penumbra.UI.ModsTab;
 
-public class MultiModPanel(ModFileSystemSelector selector, ModDataEditor editor, PredefinedTagManager tagManager) : IUiService
+public class MultiModPanel(ModFileSystem fileSystem, ModDataEditor editor, PredefinedTagManager tagManager) : IUiService
 {
     public void Draw()
     {
-        if (selector.SelectedPaths.Count == 0)
+        if (fileSystem.Selection.OrderedNodes.Count is 0)
             return;
 
-        ImGui.NewLine();
-        var treeNodePos = ImGui.GetCursorPos();
-        var numLeaves   = DrawModList();
-        DrawCounts(treeNodePos, numLeaves);
+        Im.Line.New();
+        var treeNodePos = Im.Cursor.Position;
+        DrawModList();
+        DrawCounts(treeNodePos);
         DrawMultiTagger();
     }
 
-    private void DrawCounts(Vector2 treeNodePos, int numLeaves)
+    private void DrawCounts(Vector2 treeNodePos)
     {
-        var startPos   = ImGui.GetCursorPos();
-        var numFolders = selector.SelectedPaths.Count - numLeaves;
-        var text = (numLeaves, numFolders) switch
+        var startPos   = Im.Cursor.Position;
+        var numLeaves  = fileSystem.Selection.DataNodes.Count;
+        var numFolders = fileSystem.Selection.Folders.Count;
+        Utf8StringHandler<TextStringHandlerBuffer> text = (numLeaves, numFolders) switch
         {
-            (0, 0)   => string.Empty, // should not happen
+            (0, 0)   => StringU8.Empty, // should not happen
             (> 0, 0) => $"{numLeaves} 个模组",
             (0, > 0) => $"{numFolders} 个折叠组",
             _        => $"{numLeaves} 个模组，{numFolders} 个折叠组",
         };
-        ImGui.SetCursorPos(treeNodePos);
-        ImUtf8.TextRightAligned(text);
-        ImGui.SetCursorPos(startPos);
+        Im.Cursor.Position = treeNodePos;
+        ImEx.TextRightAligned(ref text);
+        Im.Cursor.Position = startPos;
     }
 
-    private int DrawModList()
+    private void DrawModList()
     {
-        using var tree = ImUtf8.TreeNode("当前选中对象###Selected"u8,
-            ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.NoTreePushOnOpen);
-        ImGui.Separator();
-
+        using var tree = Im.Tree.Node("当前选中对象###Selected"u8,
+            TreeNodeFlags.DefaultOpen | TreeNodeFlags.NoTreePushOnOpen);
+        Im.Separator();
 
         if (!tree)
-            return selector.SelectedPaths.Count(l => l is ModFileSystem.Leaf);
+            return;
 
-        var sizeType             = new Vector2(ImGui.GetFrameHeight());
-        var availableSizePercent = (ImGui.GetContentRegionAvail().X - sizeType.X - 4 * ImGui.GetStyle().CellPadding.X) / 100;
+        var sizeType             = new Vector2(Im.Style.FrameHeight);
+        var availableSizePercent = (Im.ContentRegion.Available.X - sizeType.X - 4 * Im.Style.CellPadding.X) / 100;
         var sizeMods             = availableSizePercent * 35;
         var sizeFolders          = availableSizePercent * 65;
 
-        var leaves = 0;
-        using (var table = ImUtf8.Table("mods"u8, 3, ImGuiTableFlags.RowBg))
+        using (var table = Im.Table.Begin("mods"u8, 3, TableFlags.RowBackground))
         {
             if (!table)
-                return selector.SelectedPaths.Count(l => l is ModFileSystem.Leaf);
+                return;
 
-            ImUtf8.TableSetupColumn("type"u8, ImGuiTableColumnFlags.WidthFixed, sizeType.X);
-            ImUtf8.TableSetupColumn("mod"u8,  ImGuiTableColumnFlags.WidthFixed, sizeMods);
-            ImUtf8.TableSetupColumn("path"u8, ImGuiTableColumnFlags.WidthFixed, sizeFolders);
+            table.SetupColumn("type"u8, TableColumnFlags.WidthFixed, sizeType.X);
+            table.SetupColumn("mod"u8,  TableColumnFlags.WidthFixed, sizeMods);
+            table.SetupColumn("path"u8, TableColumnFlags.WidthFixed, sizeFolders);
 
             var i = 0;
-            foreach (var (fullName, path) in selector.SelectedPaths.Select(p => (p.FullName(), p))
-                         .OrderBy(p => p.Item1, StringComparer.OrdinalIgnoreCase))
+            foreach (var node in fileSystem.Selection.OrderedNodes.OrderBy(p => p.FullPath, StringComparer.OrdinalIgnoreCase))
             {
-                using var id = ImRaii.PushId(i++);
-                var (icon, text) = path is ModFileSystem.Leaf l
-                    ? (FontAwesomeIcon.FileCircleMinus, l.Value.Name.Text)
-                    : (FontAwesomeIcon.FolderMinus, string.Empty);
-                ImGui.TableNextColumn();
-                if (ImUtf8.IconButton(icon, "从选择中移除。"u8, sizeType))
-                    selector.RemovePathFromMultiSelection(path);
+                using var id = Im.Id.Push(i++);
+                var (icon, text) = node is IFileSystemData<Mod> l
+                    ? (LunaStyle.RemoveFileIcon, l.Value.Name)
+                    : (LunaStyle.RemoveFolderIcon, string.Empty);
+                table.NextColumn();
+                if (ImEx.Icon.Button(icon, "从选择中移除。"u8, false, sizeType))
+                    fileSystem.Selection.RemoveFromSelection(node);
 
-                ImUtf8.DrawFrameColumn(text);
-                ImUtf8.DrawFrameColumn(fullName);
-                if (path is ModFileSystem.Leaf)
-                    ++leaves;
+                table.DrawFrameColumn(text);
+                table.DrawFrameColumn(node.FullPath);
             }
         }
 
-        ImGui.Separator();
-        return leaves;
+        Im.Separator();
     }
 
     private          string           _tag        = string.Empty;
@@ -95,68 +85,69 @@ public class MultiModPanel(ModFileSystemSelector selector, ModDataEditor editor,
 
     private void DrawMultiTagger()
     {
-        var width = ImGuiHelpers.ScaledVector2(150, 0);
-        ImUtf8.TextFrameAligned("批量标签："u8);
-        ImGui.SameLine();
+        var width = ImEx.ScaledVector(150, 0);
+        ImEx.TextFrameAligned("批量标签："u8);
+        Im.Line.Same();
 
         var predefinedTagsEnabled = tagManager.Enabled;
         var inputWidth = predefinedTagsEnabled
-            ? ImGui.GetContentRegionAvail().X - 2 * width.X - 3 * ImGui.GetStyle().ItemInnerSpacing.X - ImGui.GetFrameHeight()
-            : ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemInnerSpacing.X);
-        ImGui.SetNextItemWidth(inputWidth);
-        ImUtf8.InputText("##tag"u8, ref _tag, "本地标签名称..."u8);
+            ? Im.ContentRegion.Available.X - 2 * width.X - 3 * Im.Style.ItemInnerSpacing.X - Im.Style.FrameHeight
+            : Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemInnerSpacing.X);
+        Im.Item.SetNextWidth(inputWidth);
+        Im.Input.Text("##tag"u8, ref _tag, "本地标签名称..."u8);
 
         UpdateTagCache();
-        var label = _addMods.Count > 0
-            ? $"添加到{_addMods.Count}个模组"
+        Utf8StringHandler<LabelStringHandlerBuffer> label = _addMods.Count > 0
+            ? $"添加到 {_addMods.Count} 个模组"
             : "添加";
-        var tooltip = _addMods.Count == 0
-            ? _tag.Length == 0
+        Utf8StringHandler<TextStringHandlerBuffer> tooltip = _addMods.Count is 0
+            ? _tag.Length is 0
                 ? "未指定标签。"
                 : $"所有选中的模组已包含标签 \"{_tag}\"，无论是本地还是作为模组数据。"
-            : $"将\"{_tag}\"作为本地标签添加到{_addMods.Count}个模组：\n\n\t{string.Join("\n\t", _addMods.Select(m => m.Name.Text))}";
-        ImUtf8.SameLineInner();
-        if (ImUtf8.ButtonEx(label, tooltip, width, _addMods.Count == 0))
+            : $"将标签 \"{_tag}\" 添加到 {_addMods.Count} 个模组作为本地标签：\n\n\t{string.Join("\n\t", _addMods.Select(m => m.Name))}";
+        Im.Line.SameInner();
+        if (ImEx.Button(label, width, tooltip, _addMods.Count is 0))
             foreach (var mod in _addMods)
                 editor.ChangeLocalTag(mod, mod.LocalTags.Count, _tag);
 
         label = _removeMods.Count > 0
             ? $"从 {_removeMods.Count} 个模组中移除"
             : "移除";
-        tooltip = _removeMods.Count == 0
-            ? _tag.Length == 0
+        tooltip = _removeMods.Count is 0
+            ? _tag.Length is 0
                 ? "未指定标签。"
-                : $"选中的模组不包含\"{_tag}\"这个本地标签。"
-            : $"从{_removeMods.Count}个模组移除本地标签\"{_tag}\" ：\n\n\t{string.Join("\n\t", _removeMods.Select(m => m.Item1.Name.Text))}";
-        ImUtf8.SameLineInner();
-        if (ImUtf8.ButtonEx(label, tooltip, width, _removeMods.Count == 0))
+                : $"选中的模组不包含标签 \"{_tag}\" 本地标签。"
+            : $"从 {_removeMods.Count} 个模组移除本地标签 \"{_tag}\"：\n\n\t{string.Join("\n\t", _removeMods.Select(m => m.Item1.Name))}";
+        Im.Line.SameInner();
+        if (ImEx.Button(label, width, tooltip, _removeMods.Count is 0))
             foreach (var (mod, index) in _removeMods)
                 editor.ChangeLocalTag(mod, index, string.Empty);
-        
+
         if (predefinedTagsEnabled)
         {
-            ImUtf8.SameLineInner();
+            Im.Line.SameInner();
             tagManager.DrawToggleButton();
-            tagManager.DrawListMulti(selector.SelectedPaths.OfType<ModFileSystem.Leaf>().Select(l => l.Value));
+            tagManager.DrawListMulti(fileSystem.Selection.DataNodes.Select(l => (Mod)l.Value));
         }
 
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void UpdateTagCache()
     {
         _addMods.Clear();
         _removeMods.Clear();
-        if (_tag.Length == 0)
+        if (_tag.Length is 0)
             return;
 
-        foreach (var leaf in selector.SelectedPaths.OfType<ModFileSystem.Leaf>())
+        foreach (var leaf in fileSystem.Selection.DataNodes)
         {
-            var index = leaf.Value.LocalTags.IndexOf(_tag);
+            var mod   = (Mod)leaf.Value;
+            var index = mod.LocalTags.IndexOf(_tag);
             if (index >= 0)
-                _removeMods.Add((leaf.Value, index));
-            else if (!leaf.Value.ModTags.Contains(_tag))
-                _addMods.Add(leaf.Value);
+                _removeMods.Add((mod, index));
+            else if (!mod.ModTags.Contains(_tag))
+                _addMods.Add(mod);
         }
     }
 }

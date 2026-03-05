@@ -1,9 +1,6 @@
-using Dalamud.Interface;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
 using Penumbra.Collections.Cache;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -16,10 +13,10 @@ using Penumbra.UI.Classes;
 namespace Penumbra.UI.AdvancedWindow.Meta;
 
 public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFiles)
-    : MetaDrawer<AtrIdentifier, AtrEntry>(editor, metaFiles), IService
+    : MetaDrawer<AtrIdentifier, AtrEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "属性(ATR)###ATR"u8;
+        => "属性（ATR）###ATR"u8;
 
     private ShapeAttributeString _buffer = ShapeAttributeString.TryRead("atrx_"u8, out var s) ? s : ShapeAttributeString.Empty;
     private bool                 _identifierValid;
@@ -28,7 +25,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         => 7;
 
     public override float ColumnHeight
-        => ImUtf8.FrameHeightSpacing;
+        => Im.Style.FrameHeightWithSpacing;
 
     protected override void Initialize()
     {
@@ -38,18 +35,18 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
 
     protected override void DrawNew()
     {
-        ImGui.TableNextColumn();
-        CopyToClipboardButton("将当前所有ATR操作复制到剪贴板。"u8,
+        Im.Table.NextColumn();
+        CopyToClipboardButton("复制当前所有ATR操作到剪贴板。"u8,
             new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Atr)));
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         var canAdd = !Editor.Contains(Identifier) && _identifierValid;
         var tt = canAdd
-            ? "暂存此更改。"u8
+            ? "编辑此项。"u8
             : _identifierValid
-                ? "此条目不包含有效的属性。"u8
-                : "此条目已被编辑。"u8;
-        if (ImUtf8.IconButton(FontAwesomeIcon.Plus, tt, disabled: !canAdd))
+                ? "此项不包含有效的属性。"u8
+                : "此项已被编辑。"u8;
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, AtrEntry.False);
 
         DrawIdentifierInput(ref Identifier);
@@ -77,58 +74,58 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
 
     private bool DrawIdentifierInput(ref AtrIdentifier identifier)
     {
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         var changes = DrawHumanSlot(ref identifier);
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         changes |= DrawGenderRaceConditionInput(ref identifier);
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         changes |= DrawPrimaryId(ref identifier);
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         changes |= DrawAttributeKeyInput(ref identifier, ref _buffer, ref _identifierValid);
         return changes;
     }
 
     private static void DrawIdentifier(AtrIdentifier identifier)
     {
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
+        ImEx.TextFramed(ShpMetaDrawer.SlotName(identifier.Slot), default, FrameColor);
+        Im.Tooltip.OnHover("模型部位"u8);
 
-        ImUtf8.TextFramed(ShpMetaDrawer.SlotName(identifier.Slot), FrameColor);
-        ImUtf8.HoverTooltip("模型部位"u8);
-
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         if (identifier.GenderRaceCondition is not GenderRace.Unknown)
         {
-            ImUtf8.TextFramed($"{identifier.GenderRaceCondition.ToName()} ({identifier.GenderRaceCondition.ToRaceCode()})", FrameColor);
-            ImUtf8.HoverTooltip("设置此属性所需的性别与种族代码。");
+            ImEx.TextFramed($"{identifier.GenderRaceCondition.ToNameU8()} ({identifier.GenderRaceCondition.ToRaceCode()})", default,
+                FrameColor);
+            Im.Tooltip.OnHover("设置此属性所需的性别与种族代码。");
         }
         else
         {
-            ImUtf8.TextFramed("任意性别与种族"u8, FrameColor);
+            ImEx.TextFramed("任意性别与种族"u8, default, FrameColor);
         }
 
-        ImGui.TableNextColumn();
+        Im.Table.NextColumn();
         if (identifier.Id.HasValue)
-            ImUtf8.TextFramed($"{identifier.Id.Value.Id}", FrameColor);
+            ImEx.TextFramed($"{identifier.Id.Value.Id}", default, FrameColor);
         else
-            ImUtf8.TextFramed("全部ID"u8, FrameColor);
-        ImUtf8.HoverTooltip("主ID"u8);
+            ImEx.TextFramed("全部ID"u8, default, FrameColor);
+        Im.Tooltip.OnHover("主ID"u8);
 
-        ImGui.TableNextColumn();
-        ImUtf8.TextFramed(identifier.Attribute.AsSpan, FrameColor);
+        Im.Table.NextColumn();
+        ImEx.TextFramed(identifier.Attribute.AsSpan, default, FrameColor);
     }
 
     private static bool DrawEntry(ref AtrEntry entry, bool disabled)
     {
-        using var dis = ImRaii.Disabled(disabled);
-        ImGui.TableNextColumn();
+        using var dis = Im.Disabled(disabled);
+        Im.Table.NextColumn();
         var value   = entry.Value;
-        var changes = ImUtf8.Checkbox("##atrEntry"u8, ref value);
+        var changes = Im.Checkbox("##atrEntry"u8, ref value);
         if (changes)
             entry = new AtrEntry(value);
-        ImUtf8.HoverTooltip("是否为所选项目启用或禁用此属性。");
+        Im.Tooltip.OnHover("是否为所选项目启用或禁用此属性。");
         return changes;
     }
 
@@ -137,25 +134,25 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         var allSlots = identifier.Slot is HumanSlot.Unknown;
         var all      = !identifier.Id.HasValue;
         var ret      = false;
-        using (ImRaii.Disabled(allSlots))
+        using (Im.Disabled(allSlots))
         {
-            if (ImUtf8.Checkbox("##atrAll"u8, ref all))
+            if (Im.Checkbox("##atrAll"u8, ref all))
             {
                 identifier = identifier with { Id = all ? null : 0 };
                 ret        = true;
             }
         }
 
-        ImUtf8.HoverTooltip(allSlots
+        Im.Tooltip.OnHover(allSlots
             ? "使用全部部位时，必须同时使用全部ID。"u8
             : "为所有模型ID启用此属性。"u8);
 
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        Im.Line.SameInner();
         if (all)
         {
-            using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.05f, 0.5f));
-            ImUtf8.TextFramed("全部ID"u8, ImGui.GetColorU32(ImGuiCol.FrameBg, all || allSlots ? ImGui.GetStyle().DisabledAlpha : 1f),
-                new Vector2(unscaledWidth, 0), ImGui.GetColorU32(ImGuiCol.TextDisabled));
+            using var style = ImStyleDouble.ButtonTextAlign.Push(new Vector2(0.05f, 0.5f));
+            ImEx.TextFramed("全部ID"u8, new Vector2(unscaledWidth, 0),
+                ImGuiColor.FrameBackground.Get(all || allSlots ? Im.Style.DisabledAlpha : 1f).Color, ImGuiColor.TextDisabled.Get().Color);
         }
         else
         {
@@ -167,7 +164,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             }
         }
 
-        ImUtf8.HoverTooltip("主ID - 通常可在物品路径中的 'e####' 部分或自定义内容中找到。"u8);
+        Im.Tooltip.OnHover("主ID - 通常可在物品路径中的 'e####' 部分或自定义内容中找到。"u8);
 
         return ret;
     }
@@ -175,13 +172,13 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     public bool DrawHumanSlot(ref AtrIdentifier identifier, float unscaledWidth = 150)
     {
         var ret = false;
-        ImGui.SetNextItemWidth(unscaledWidth * ImUtf8.GlobalScale);
-        using (var combo = ImUtf8.Combo("##atrSlot"u8, ShpMetaDrawer.SlotName(identifier.Slot)))
+        Im.Item.SetNextWidthScaled(unscaledWidth);
+        using (var combo = Im.Combo.Begin("##atrSlot"u8, ShpMetaDrawer.SlotName(identifier.Slot)))
         {
             if (combo)
                 foreach (var slot in ShpMetaDrawer.AvailableSlots)
                 {
-                    if (!ImUtf8.Selectable(ShpMetaDrawer.SlotName(slot), slot == identifier.Slot) || slot == identifier.Slot)
+                    if (!Im.Selectable(ShpMetaDrawer.SlotName(slot), slot == identifier.Slot) || slot == identifier.Slot)
                         continue;
 
                     ret = true;
@@ -208,23 +205,23 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
                 }
         }
 
-        ImUtf8.HoverTooltip("模型部位"u8);
+        Im.Tooltip.OnHover("模型部位"u8);
         return ret;
     }
-     
+
     private static bool DrawGenderRaceConditionInput(ref AtrIdentifier identifier, float unscaledWidth = 250)
     {
         var ret = false;
-        ImGui.SetNextItemWidth(unscaledWidth * ImUtf8.GlobalScale);
+        Im.Item.SetNextWidthScaled(unscaledWidth);
 
-        using (var combo = ImUtf8.Combo("##shpGenderRace"u8,
+        using (var combo = Im.Combo.Begin("##shpGenderRace"u8,
                    identifier.GenderRaceCondition is GenderRace.Unknown
-                       ? "任意性别与种族"
-                       : $"{identifier.GenderRaceCondition.ToName()} ({identifier.GenderRaceCondition.ToRaceCode()})"))
+                       ? "任意性别与种族"u8
+                       : $"{identifier.GenderRaceCondition.ToNameU8()} ({identifier.GenderRaceCondition.ToRaceCode()})"))
         {
             if (combo)
             {
-                if (ImUtf8.Selectable("任意性别与种族"u8, identifier.GenderRaceCondition is GenderRace.Unknown)
+                if (Im.Selectable("任意性别与种族"u8, identifier.GenderRaceCondition is GenderRace.Unknown)
                  && identifier.GenderRaceCondition is not GenderRace.Unknown)
                 {
                     identifier = identifier with { GenderRaceCondition = GenderRace.Unknown };
@@ -233,7 +230,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
 
                 foreach (var gr in ShapeAttributeHashSet.GenderRaceValues.Skip(1))
                 {
-                    if (ImUtf8.Selectable($"{gr.ToName()} ({gr.ToRaceCode()})", identifier.GenderRaceCondition == gr)
+                    if (Im.Selectable($"{gr.ToNameU8()} ({gr.ToRaceCode()})", identifier.GenderRaceCondition == gr)
                      && identifier.GenderRaceCondition != gr)
                     {
                         identifier = identifier with { GenderRaceCondition = gr };
@@ -243,8 +240,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             }
         }
 
-        ImUtf8.HoverTooltip(
-            "仅在此性别与种族代码下激活此属性。"u8);
+        Im.Tooltip.OnHover("仅在此性别与种族代码下激活此属性。"u8);
 
         return ret;
     }
@@ -255,10 +251,10 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         var ret  = false;
         var ptr  = Unsafe.AsPointer(ref buffer);
         var span = new Span<byte>(ptr, ShapeAttributeString.MaxLength + 1);
-        using (new ImRaii.ColorStyle().Push(ImGuiCol.Border, Colors.RegexWarningBorder, !valid).Push(ImGuiStyleVar.FrameBorderSize, 1f, !valid))
+        using (ImStyleBorder.Frame.Push(Colors.RegexWarningBorder, Im.Style.GlobalScale, !valid))
         {
-            ImGui.SetNextItemWidth(unscaledWidth * ImUtf8.GlobalScale);
-            if (ImUtf8.InputText("##atrAttribute"u8, span, out int newLength, "属性..."u8))
+            Im.Item.SetNextWidthScaled(unscaledWidth);
+            if (Im.Input.Text("##atrAttribute"u8, span, out ulong newLength, "属性..."u8))
             {
                 buffer.ForceLength((byte)newLength);
                 valid = buffer.ValidateCustomAttributeString();
@@ -268,7 +264,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             }
         }
 
-        ImUtf8.HoverTooltip("支持的属性需以 `atrx_*` 格式命名，且最大长度为30个字符。"u8);
+        Im.Tooltip.OnHover("支持的属性需以 `atrx_*` 格式命名，且最大长度为30个字符。"u8);
         return ret;
     }
 }

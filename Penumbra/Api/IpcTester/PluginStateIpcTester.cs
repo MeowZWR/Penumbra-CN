@@ -1,11 +1,7 @@
-using Dalamud.Interface;
-using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Table;
 using Dalamud.Plugin;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
+using ImSharp;
+using Luna;
 using Penumbra.Api.Helpers;
 using Penumbra.Api.IpcSubscribers;
 
@@ -55,82 +51,99 @@ public class PluginStateIpcTester : IUiService, IDisposable
 
     public void Draw()
     {
-        using var _ = ImRaii.TreeNode("插件状态");
-        if (!_)
+        using var tree = Im.Tree.Node("插件状态"u8);
+        if (!tree)
             return;
 
-        if (ImUtf8.InputText("所需特性"u8, ref _requiredFeatureString))
+        if (Im.Input.Text("所需特性"u8, ref _requiredFeatureString))
             _requiredFeatures = _requiredFeatureString.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        using var table = ImRaii.Table(string.Empty, 3, ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin(StringU8.Empty, 3, TableFlags.SizingFixedFit);
         if (!table)
             return;
 
-        DrawList(IpcSubscribers.Initialized.Label, "上次初始化", _initializedList);
-        DrawList(IpcSubscribers.Disposed.Label,    "上次释放",    _disposedList);
+        DrawList(IpcSubscribers.Initialized.Label, "上次初始化"u8, _initializedList);
+        DrawList(IpcSubscribers.Disposed.Label,    "上次释放"u8,    _disposedList);
 
-        IpcTester.DrawIntro(ApiVersion.Label, "当前版本");
-        var (breaking, features) = new ApiVersion(_pi).Invoke();
-        ImGui.TextUnformatted($"{breaking}.{features:D4}");
-
-        IpcTester.DrawIntro(GetEnabledState.Label, "当前状态");
-        ImGui.TextUnformatted($"{new GetEnabledState(_pi).Invoke()}");
-
-        IpcTester.DrawIntro(IpcSubscribers.EnabledChange.Label, "上次变更");
-        ImGui.TextUnformatted(_lastEnabledValue is { } v ? $"{_lastEnabledChange} (变为 {v})" : "从未");
-
-        IpcTester.DrawIntro(SupportedFeatures.Label, "支持的特性");
-        ImUtf8.Text(string.Join(", ", new SupportedFeatures(_pi).Invoke()));
-
-        IpcTester.DrawIntro(CheckSupportedFeatures.Label, "缺失的特性");
-        ImUtf8.Text(string.Join(", ", new CheckSupportedFeatures(_pi).Invoke(_requiredFeatures)));
-
-        DrawConfigPopup();
-        IpcTester.DrawIntro(GetConfiguration.Label, "配置信息");
-        if (ImGui.Button("获取"))
+        using (IpcTester.DrawIntro(ApiVersion.LabelU8, "当前版本"u8))
         {
-            _currentConfiguration = new GetConfiguration(_pi).Invoke();
-            ImGui.OpenPopup("配置弹窗");
+            var (breaking, features) = new ApiVersion(_pi).Invoke();
+            table.DrawColumn($"{breaking}.{features:D4}");
         }
 
-        IpcTester.DrawIntro(GetModDirectory.Label, "当前模组目录");
-        ImGui.TextUnformatted(new GetModDirectory(_pi).Invoke());
-
-        IpcTester.DrawIntro(IpcSubscribers.ModDirectoryChanged.Label, "上次模组目录变更");
-        ImGui.TextUnformatted(_lastModDirectoryTime > DateTimeOffset.MinValue
-            ? $"{_lastModDirectory} ({(_lastModDirectoryValid ? "有效" : "无效")}) 于 {_lastModDirectoryTime}"
-            : "无");
-
-        void DrawList(string label, string text, List<DateTimeOffset> list)
+        using (IpcTester.DrawIntro(GetEnabledState.LabelU8, "当前状态"u8))
         {
-            IpcTester.DrawIntro(label, text);
-            if (list.Count == 0)
+            table.DrawColumn($"{new GetEnabledState(_pi).Invoke()}");
+        }
+
+        using (IpcTester.DrawIntro(IpcSubscribers.EnabledChange.LabelU8, "上次变更"u8))
+        {
+            table.DrawColumn(_lastEnabledValue is { } v ? $"{_lastEnabledChange} (变为 {v})" : "从未"u8);
+        }
+
+        using (IpcTester.DrawIntro(SupportedFeatures.LabelU8, "支持的特性"u8))
+        {
+            table.DrawColumn(StringU8.Join(", "u8, new SupportedFeatures(_pi).Invoke()));
+        }
+
+        using (IpcTester.DrawIntro(CheckSupportedFeatures.LabelU8, "缺失的特性"u8))
+            table.DrawColumn(StringU8.Join(", "u8, new CheckSupportedFeatures(_pi).Invoke(_requiredFeatures)));
+
+        using (IpcTester.DrawIntro(GetConfiguration.LabelU8, "配置信息"u8))
+        {
+            DrawConfigPopup();
+            table.NextColumn();
+            if (Im.SmallButton("Get"u8))
             {
-                ImGui.TextUnformatted("从未");
+                _currentConfiguration = new GetConfiguration(_pi).Invoke();
+                Im.Popup.Open("配置弹窗"u8);
+            }
+        }
+
+        using (IpcTester.DrawIntro(GetModDirectory.LabelU8, "当前模组目录"u8))
+        {
+            table.DrawColumn(new GetModDirectory(_pi).Invoke());
+        }
+
+        using (IpcTester.DrawIntro(IpcSubscribers.ModDirectoryChanged.LabelU8, "上次模组目录变更"u8))
+        {
+            table.DrawColumn(_lastModDirectoryTime > DateTimeOffset.MinValue
+                ? $"{_lastModDirectory} ({(_lastModDirectoryValid ? "有效" : "无效")}) 于 {_lastModDirectoryTime}"
+                : "无"u8);
+        }
+
+        return;
+
+        static void DrawList(string label, ReadOnlySpan<byte> text, List<DateTimeOffset> list)
+        {
+            using var _ = IpcTester.DrawIntro(label, text);
+            if (list.Count is 0)
+            {
+                Im.Table.DrawColumn("从未"u8);
             }
             else
             {
-                ImGui.TextUnformatted(list[^1].LocalDateTime.ToString(CultureInfo.CurrentCulture));
-                if (list.Count > 1 && ImGui.IsItemHovered())
-                    ImGui.SetTooltip(string.Join("\n",
-                        list.SkipLast(1).Select(t => t.LocalDateTime.ToString(CultureInfo.CurrentCulture))));
+                Im.Table.DrawColumn(list[^1].LocalDateTime.ToString(CultureInfo.CurrentCulture));
+                if (list.Count > 1 && Im.Item.Hovered())
+                    Im.Tooltip.Set(
+                        StringU8.Join((byte)'\n', list.SkipLast(1).Select(t => t.LocalDateTime.ToString(CultureInfo.CurrentCulture))));
             }
         }
     }
 
     private void DrawConfigPopup()
     {
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(500, 500));
-        using var popup = ImRaii.Popup("配置弹窗");
+        Im.Window.SetNextSize(ImEx.ScaledVector(500, 500));
+        using var popup = Im.Popup.Begin("配置弹窗"u8);
         if (!popup)
             return;
 
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        using (Im.Font.PushMono())
         {
-            ImGuiUtil.TextWrapped(_currentConfiguration);
+            Im.TextWrapped(_currentConfiguration);
         }
 
-        if (ImGui.Button("关闭", -Vector2.UnitX) || !ImGui.IsWindowFocused())
-            ImGui.CloseCurrentPopup();
+        if (Im.Button("关闭"u8, -Vector2.UnitX) || !Im.Window.Focused())
+            Im.Popup.CloseCurrent();
     }
 
     private void UpdateModDirectoryChanged(string path, bool valid)

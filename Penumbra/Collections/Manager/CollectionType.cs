@@ -1,3 +1,4 @@
+using ImSharp;
 using Penumbra.GameData.Enums;
 
 namespace Penumbra.Collections.Manager;
@@ -110,9 +111,9 @@ public static class CollectionTypeExtensions
     public static bool CanBeRemoved(this CollectionType collectionType)
         => collectionType.IsSpecial() || collectionType is CollectionType.Individual;
 
-    public static readonly (CollectionType, string, string)[] Special = Enum.GetValues<CollectionType>()
+    public static readonly (CollectionType, StringU8, StringU8)[] Special = CollectionType.Values
         .Where(IsSpecial)
-        .Select(s => (s, s.ToName(), s.ToDescription()))
+        .Select(s => (s, new StringU8(s.ToName()), new StringU8(s.ToDescription())))
         .ToArray();
 
     public static CollectionType FromParts(Gender gender, bool npc)
@@ -330,7 +331,7 @@ public static class CollectionTypeExtensions
             return true;
         }
 
-        foreach (var t in Enum.GetValues<CollectionType>())
+        foreach (var t in CollectionType.Values)
         {
             if (t is CollectionType.Inactive or CollectionType.Temporary)
                 continue;
@@ -427,16 +428,16 @@ public static class CollectionTypeExtensions
             _                                       => string.Empty,
         };
 
-    public static string ToDescription(this CollectionType collectionType)
+    public static ReadOnlySpan<byte> ToDescription(this CollectionType collectionType)
         => collectionType switch
         {
-            CollectionType.Default => "世界、音乐、家具、未指定分配的角色和怪物。",
-            CollectionType.Interface => "用户界面、图标、地图、窗体样式材质。",
-            CollectionType.Yourself => "你的角色、无论什么名称。可用于登陆界面。",
-            CollectionType.MalePlayerCharacter => "所有男性玩家角色。",
-            CollectionType.FemalePlayerCharacter => "所有女性玩家角色。",
-            CollectionType.MaleNonPlayerCharacter => "所有男性人类NPC。",
-            CollectionType.FemaleNonPlayerCharacter => "所有女性人类NPC。",
-            _                                       => string.Empty,
+            CollectionType.Default                  => "世界、音乐、家具、未指定分配的角色和怪物。"u8,
+            CollectionType.Interface                => "用户界面、图标、地图、窗体样式材质。"u8,
+            CollectionType.Yourself                 => "你的角色、无论什么名称。可用于登陆界面。"u8,
+            CollectionType.MalePlayerCharacter      => "所有男性玩家角色。"u8,
+            CollectionType.FemalePlayerCharacter    => "所有女性玩家角色。"u8,
+            CollectionType.MaleNonPlayerCharacter   => "所有男性人类NPC。"u8,
+            CollectionType.FemaleNonPlayerCharacter => "所有女性人类NPC。"u8,
+            _                                       => StringU8.Empty,
         };
 }

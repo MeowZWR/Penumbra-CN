@@ -1,18 +1,11 @@
-using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.ManagedFontAtlas;
-using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Dalamud.Bindings.ImGui;
-using Dalamud.Plugin.Services;
-using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Extensions;
-using OtterGui.Raii;
-using OtterGui.Text;
+using ImSharp;
+using Luna;
 using Penumbra.Collections;
 using Penumbra.Collections.Manager;
 using Penumbra.GameData.Actors;
@@ -20,6 +13,7 @@ using Penumbra.GameData.Enums;
 using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
+using Penumbra.UI.Tabs;
 
 namespace Penumbra.UI.CollectionTab;
 
@@ -32,19 +26,19 @@ public sealed class CollectionPanel(
     ITargetManager targets,
     ModStorage mods,
     SaveService saveService,
-    IncognitoService incognito)
-    : IDisposable
+    IncognitoService incognito,
+    Configuration config)
+    : IDisposable, IPanel
 {
     private readonly CollectionStorage _collections = manager.Storage;
     private readonly ActiveCollections _active = manager.Active;
     private readonly IndividualAssignmentUi _individualAssignmentUi = new(communicator, actors, manager);
     private readonly InheritanceUi _inheritanceUi = new(manager, incognito);
-    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
+    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
 
-    private static readonly IReadOnlyDictionary<CollectionType, (string Name, uint Border)> Buttons      = CreateButtons();
-    private static readonly IReadOnlyList<(CollectionType, bool, bool, string, uint)>       AdvancedTree = CreateTree();
-    private readonly        List<(CollectionType Type, ActorIdentifier Identifier)>         _inUseCache  = [];
-    private                 string?                                                         _newName;
+    private static readonly IReadOnlyDictionary<CollectionType, (StringU8 Name, Vector4 Border)> Buttons      = CreateButtons();
+    private static readonly IReadOnlyList<(CollectionType, bool, bool, StringU8, Vector4)>       AdvancedTree = CreateTree();
+    private readonly        List<(CollectionType Type, ActorIdentifier Identifier)>              _inUseCache  = [];
 
     private int _draggedIndividualAssignment = -1;
 
@@ -57,16 +51,16 @@ public sealed class CollectionPanel(
     /// <summary> Draw the panel containing beginners information and simple assignments. </summary>
     public void DrawSimple()
     {
-        ImGuiUtil.TextWrapped( "合集是一组模组配置，包含启用状态、优先级和模组内的选项设置。你可以创建任意数量的合集。\n"
-          + "左侧选中并高亮显示的合集，是你在模组列表选项卡中正在编辑的合集。\n");
-        ImGuiUtil.TextWrapped(
-            "你可以将这些合集分配给一些对象，这样可以使不同的对象使用不同的模组配置。\n"
-          + "通过点击下面的对象按钮，或拖动合集到对象，可以将现有的合集分配给该对象。");
-        ImGui.Separator();
+        Im.TextWrapped("合集是一组模组配置的集合。您可以拥有任意数量的合集。\n"u8
+          + "您当前在模组选项卡中正在编辑的合集可以在这里选择并高亮显示。\n"u8);
+        Im.TextWrapped(
+            "有可以分配这些合集的功能，因此不同的模组配置适用于不同的对象。\n"u8
+          + "您可以通过点击功能或拖动合集来将现有的合集分配给这些功能。"u8);
+        Im.Separator();
 
-        var buttonWidth = new Vector2(200 * ImGuiHelpers.GlobalScale, 2 * ImGui.GetTextLineHeightWithSpacing());
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameBorderSize, 1 * ImGuiHelpers.GlobalScale);
+        var buttonWidth = new Vector2(200 * Im.Style.GlobalScale, 2 * Im.Style.FrameHeightWithSpacing);
+        using var style = Im.Style.Push(ImStyleDouble.ButtonTextAlign, Vector2.Zero)
+            .Push(ImStyleSingle.FrameBorderThickness, Im.Style.GlobalScale);
         DrawSimpleCollectionButton(CollectionType.Default,                  buttonWidth);
         DrawSimpleCollectionButton(CollectionType.Interface,                buttonWidth);
         DrawSimpleCollectionButton(CollectionType.Yourself,                 buttonWidth);
@@ -75,13 +69,14 @@ public sealed class CollectionPanel(
         DrawSimpleCollectionButton(CollectionType.MaleNonPlayerCharacter,   buttonWidth);
         DrawSimpleCollectionButton(CollectionType.FemaleNonPlayerCharacter, buttonWidth);
 
-        ImGuiUtil.DrawColoredText(("独立", ColorId.NewMod.Value()),
-            ("分配优先级高于其他任何分配，并且只能应用于特定的角色和NPC。", 0));
-        ImGui.Dummy(Vector2.UnitX);
+        ImEx.TextMultiColored("独立 "u8, ColorId.NewMod.Value())
+            .Then("分配优先级高于其他任何分配，并且只能应用于一个特定的角色或怪物。"u8)
+            .End();
+        Im.Dummy(1);
 
-        var specialWidth = buttonWidth with { X = 275 * ImGuiHelpers.GlobalScale };
+        var specialWidth = buttonWidth with { X = 275 * Im.Style.GlobalScale };
         DrawCurrentCharacter(specialWidth);
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawCurrentTarget(specialWidth);
         DrawIndividualCollections(buttonWidth);
 
@@ -89,7 +84,7 @@ public sealed class CollectionPanel(
 
         Button(CollectionType.NonPlayerChild);
         Button(CollectionType.NonPlayerElderly);
-        foreach (var race in Enum.GetValues<SubRace>().Skip(1))
+        foreach (var race in SubRace.Values.Skip(1))
         {
             Button(CollectionTypeExtensions.FromParts(race, Gender.Male,   false));
             Button(CollectionTypeExtensions.FromParts(race, Gender.Female, false));
@@ -108,94 +103,94 @@ public sealed class CollectionPanel(
 
             if (first)
             {
-                ImGui.Separator();
-                ImGui.TextUnformatted("Currently Active Advanced Assignments");
+                Im.Separator();
+                Im.Text("当前激活的高级分配"u8);
                 first = false;
             }
 
             DrawButton(name, type, buttonWidth, border, ActorIdentifier.Invalid, 's', collection);
-            ImGui.SameLine();
-            if (ImGui.GetContentRegionAvail().X < buttonWidth.X + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X)
-                ImGui.NewLine();
+            Im.Line.Same();
+            if (Im.ContentRegion.Available.X < buttonWidth.X + Im.Style.ItemSpacing.X + Im.Style.WindowPadding.X)
+                Im.Line.New();
         }
     }
 
     /// <summary> Draw the panel containing new and existing individual assignments. </summary>
     public void DrawIndividualPanel()
     {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameBorderSize, 1 * ImGuiHelpers.GlobalScale);
-        var width = new Vector2(300 * ImGuiHelpers.GlobalScale, 2 * ImGui.GetTextLineHeightWithSpacing());
+        using var style = ImStyleDouble.ButtonTextAlign.Push(Vector2.Zero)
+            .Push(ImStyleSingle.FrameBorderThickness, Im.Style.GlobalScale);
+        var width = new Vector2(300 * Im.Style.GlobalScale, 2 * Im.Style.TextHeightWithSpacing);
 
-        ImGui.Dummy(Vector2.One);
+        Im.Dummy(Vector2.One);
         DrawCurrentCharacter(width);
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawCurrentTarget(width);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.One);
+        Im.Separator();
+        Im.Dummy(Vector2.One);
         style.Pop();
         _individualAssignmentUi.DrawWorldCombo(width.X / 2);
-        ImGui.SameLine();
+        Im.Line.Same();
         _individualAssignmentUi.DrawNewPlayerCollection(width.X);
 
         _individualAssignmentUi.DrawObjectKindCombo(width.X / 2);
-        ImGui.SameLine();
+        Im.Line.Same();
         _individualAssignmentUi.DrawNewNpcCollection(width.X);
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGuiComponents.HelpMarker(
-            "NPC如果在战斗以及事件中拥有相同名称将会同时生效，这取决于你的语言设置。如果你更改了客户端语言，请检查你的合集是否正确分配。" );
-        ImGui.Dummy(Vector2.One);
-        ImGui.Separator();
-        style.Push(ImGuiStyleVar.FrameBorderSize, 1 * ImGuiHelpers.GlobalScale);
+            "战斗和事件中的NPC可能会因为同名而应用于多个ID。这取决于您的语言设置。如果您更改了客户端语言，请检查您的合集是否仍然正确分配。");
+        Im.Dummy(Vector2.One);
+        Im.Separator();
+        style.Push(ImStyleSingle.FrameBorderThickness, Im.Style.GlobalScale);
 
         DrawNewPlayer(width);
-        ImGui.SameLine();
-        ImGuiUtil.TextWrapped("同时核验常规设置中与玩家相关的用户界面选项以及继承关系。");
-        ImGui.Separator();
+        Im.Line.Same();
+        Im.TextWrapped("同时检查常规设置中与玩家相关的用户界面选项以及继承关系。"u8);
+        Im.Separator();
 
         DrawNewRetainer(width);
-        ImGui.SameLine();
-        ImGuiUtil.TextWrapped( "分配给传唤铃雇员后，带有雇员名称的人体模特也会生效。但庭院设置的雇员不会，因为他们只带有主人的名字。" );
-        ImGui.Separator();
+        Im.Line.Same();
+        Im.TextWrapped("传唤铃雇员适用于人体模特，但不适用于户外雇员，因为后者只携带其主人的名字。"u8);
+        Im.Separator();
 
         DrawNewNpc(width);
-        ImGui.SameLine();
-        ImGuiUtil.TextWrapped( "部分NPC也会出现在战斗中以及事件中，如果想要两种场合都生效需要手动分别设置。" );
-        ImGui.Separator();
+        Im.Line.Same();
+        Im.TextWrapped("部分NPC也会出现在战斗和事件中，如果想要两种场合都生效需要手动分别设置。"u8);
+        Im.Separator();
 
         DrawNewOwned(width);
-        ImGui.SameLine();
-        ImGuiUtil.TextWrapped("属于玩家的NPC优先级高于不属于玩家的同类型NPC。");
-        ImGui.Separator();
+        Im.Line.Same();
+        Im.TextWrapped("属于玩家的NPC优先级高于不属于玩家的同类型NPC。"u8);
+        Im.Separator();
 
-        DrawIndividualCollections(width with { X = 200 * ImGuiHelpers.GlobalScale });
+        DrawIndividualCollections(width with { X = 200 * Im.Style.GlobalScale });
     }
 
     /// <summary> Draw the panel containing all special group assignments. </summary>
     public void DrawGroupPanel()
     {
-        ImGui.Dummy(Vector2.One);
-        using var table = ImRaii.Table("##advanced", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        Im.Dummy(Vector2.One);
+        using var table = Im.Table.Begin("##advanced"u8, 4, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
             return;
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameBorderSize, 1 * ImGuiHelpers.GlobalScale);
+        using var style = ImStyleDouble.ButtonTextAlign.Push(Vector2.Zero)
+            .Push(ImStyleSingle.FrameBorderThickness, Im.Style.GlobalScale);
 
-        var buttonWidth = new Vector2(150 * ImGuiHelpers.GlobalScale, 2 * ImGui.GetTextLineHeightWithSpacing());
-        var dummy       = new Vector2(1,                              0);
+        var buttonWidth = new Vector2(150 * Im.Style.GlobalScale, 2 * Im.Style.TextHeightWithSpacing);
+        var dummy       = new Vector2(1,                          0);
 
         foreach (var (type, pre, post, name, border) in AdvancedTree)
         {
-            ImGui.TableNextColumn();
+            table.NextColumn();
             if (type is CollectionType.Inactive)
                 continue;
 
             if (pre)
-                ImGui.Dummy(dummy);
+                Im.Dummy(dummy);
             DrawAssignmentButton(type, buttonWidth, name, border);
             if (post)
-                ImGui.Dummy(dummy);
+                Im.Dummy(dummy);
         }
     }
 
@@ -207,112 +202,102 @@ public sealed class CollectionPanel(
         DrawStatistics(collection);
         DrawCollectionData(collection);
         _inheritanceUi.Draw();
-        ImGui.Separator();
+        Im.Separator();
         DrawInactiveSettingsList(collection);
         DrawSettingsList(collection);
     }
 
     private void DrawCollectionData(ModCollection collection)
     {
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.BeginGroup();
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("名称");
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("标识符");
-        ImGui.EndGroup();
-        ImGui.SameLine();
-        ImGui.BeginGroup();
-        var width = ImGui.GetContentRegionAvail().X;
-        using (ImRaii.Disabled(_collections.DefaultNamed == collection))
+        Im.Dummy(Vector2.Zero);
+        using (Im.Group())
         {
-            using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
-            var       name  = _newName ?? collection.Identity.Name;
-            ImGui.SetNextItemWidth(width);
-            if (ImGui.InputText("##name", ref name, 128))
-                _newName = name;
-            if (ImGui.IsItemDeactivatedAfterEdit() && _newName != null && _newName != collection.Identity.Name)
-            {
-                collection.Identity.Name = _newName;
-                saveService.QueueSave(new ModCollectionSave(mods, collection));
-                selector.RestoreCollections();
-                _newName = null;
-            }
-            else if (ImGui.IsItemDeactivated())
-            {
-                _newName = null;
-            }
-        }
-        if (_collections.DefaultNamed == collection)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "默认合集无法重命名。"u8);
-
-        var identifier = collection.Identity.Identifier;
-        var fileName   = saveService.FileNames.CollectionFile(collection);
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
-        {
-            if (ImGui.Button(collection.Identity.Identifier, new Vector2(width, 0)))
-                try
-                {
-                    Process.Start(new ProcessStartInfo(fileName) { UseShellExecute = true });
-                }
-                catch (Exception ex)
-                {
-                    Penumbra.Messager.NotificationMessage(ex, $"无法打开文件 {fileName}。", $"无法打开文件 {fileName}",
-                        NotificationType.Warning);
-                }
+            ImEx.TextFrameAligned("名称"u8);
+            ImEx.TextFrameAligned("标识符"u8);
         }
 
-        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-            ImGui.SetClipboardText(identifier);
+        Im.Line.Same();
+        using (Im.Group())
+        {
+            var width = Im.ContentRegion.Available.X;
+            using (Im.Disabled(_collections.DefaultNamed == collection))
+            {
+                using var style = ImStyleDouble.ButtonTextAlign.Push(new Vector2(0, 0.5f));
+                Im.Item.SetNextWidth(width);
+                if (ImEx.InputOnDeactivation.Text("##name"u8, collection.Identity.Name, out string newName))
+                    _collections.RenameCollection(collection, newName);
+            }
 
-        ImGuiUtil.HoverTooltip(
-            $"打开包含此设计的文件\n\t{fileName}\n在您选择的 .json 编辑器中。\n\n右键点击以复制标识符到剪贴板。");
+            if (_collections.DefaultNamed == collection)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "默认合集无法重命名。"u8);
 
-        ImGui.EndGroup();
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+            var identifier = collection.Identity.Identifier;
+            var fileName   = saveService.FileNames.CollectionFile(collection);
+            using (Im.Font.PushMono())
+            {
+                if (Im.Button(collection.Identity.Identifier, new Vector2(width, 0)))
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo(fileName) { UseShellExecute = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        Penumbra.Messager.NotificationMessage(ex, $"无法打开文件 {fileName}。", $"无法打开文件 {fileName}",
+                            NotificationType.Warning);
+                    }
+            }
+
+            if (Im.Item.RightClicked())
+                Im.Clipboard.Set(identifier);
+
+            Im.Tooltip.OnHover(
+                $"在您选择的 .json 编辑器中打开包含此设计的文件\n\t{fileName}\n。\n\n右键点击以复制标识符到剪贴板。");
+        }
+
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
     }
 
-    private void DrawContext(bool open, ModCollection? collection, CollectionType type, ActorIdentifier identifier, string text, char suffix)
+    private void DrawContext(bool open, ModCollection? collection, CollectionType type, ActorIdentifier identifier, StringU8 text, char suffix)
     {
         var label = $"{type}{text}{suffix}";
         if (open)
-            ImGui.OpenPopup(label);
+            Im.Popup.Open(label);
 
-        using var context = ImRaii.Popup(label);
+        using var context = Im.Popup.Begin(label);
         if (!context)
             return;
 
-        using (var color = ImRaii.PushColor(ImGuiCol.Text, Colors.DiscordColor))
+        using (ImGuiColor.Text.Push(LunaStyle.DiscordColor))
         {
-            if (ImGui.MenuItem("不使用模组"))
+            if (Im.Menu.Item("不使用模组"u8))
                 _active.SetCollection(ModCollection.Empty, type, _active.Individuals.GetGroup(identifier));
         }
 
-        if (collection != null && type.CanBeRemoved())
+        if (collection is not null && type.CanBeRemoved())
         {
-            using var color = ImRaii.PushColor(ImGuiCol.Text, Colors.RegexWarningBorder);
-            if (ImGui.MenuItem("移除此分配"))
+            using var color = ImGuiColor.Text.Push(Colors.RegexWarningBorder);
+            if (Im.Menu.Item("移除此分配"u8))
                 _active.SetCollection(null, type, _active.Individuals.GetGroup(identifier));
         }
 
         foreach (var coll in _collections.OrderBy(c => c.Identity.Name))
         {
-            if (coll != collection && ImGui.MenuItem($"使用 {coll.Identity.Name}。"))
+            if (coll != collection && Im.Menu.Item($"使用 {coll.Identity.Name}。"))
                 _active.SetCollection(coll, type, _active.Individuals.GetGroup(identifier));
         }
     }
 
-    private bool DrawButton(string text, CollectionType type, Vector2 width, uint borderColor, ActorIdentifier id, char suffix,
+    private void DrawButton(StringU8 text, CollectionType type, Vector2 width, Rgba32 borderColor, ActorIdentifier id, char suffix,
         ModCollection? collection = null)
     {
-        using var group      = ImRaii.Group();
-        var       invalid    = type == CollectionType.Individual && !id.IsValid;
+        using var group      = Im.Group();
+        var       invalid    = type is CollectionType.Individual && !id.IsValid;
         var       redundancy = _active.RedundancyCheck(type, id);
         collection ??= _active.ByType(type, id);
-        using var color = ImRaii.PushColor(ImGuiCol.Button,
-                collection == null
+        using var color = ImGuiColor.Button.Push(
+                collection is null
                     ? ColorId.NoAssignment.Value()
                     : redundancy.Length > 0
                         ? ColorId.RedundantAssignment.Value()
@@ -320,40 +305,38 @@ public sealed class CollectionPanel(
                             ? ColorId.SelectedCollection.Value()
                             : collection == ModCollection.Empty
                                 ? ColorId.NoModsAssignment.Value()
-                                : ImGui.GetColorU32(ImGuiCol.Button), !invalid)
-            .Push(ImGuiCol.Border, borderColor == 0 ? ImGui.GetColorU32(ImGuiCol.TextDisabled) : borderColor);
-        using var disabled = ImRaii.Disabled(invalid);
-        var       button   = ImGui.Button(text, width) || ImGui.IsItemClicked(ImGuiMouseButton.Right);
-        var       hovered  = redundancy.Length > 0 && ImGui.IsItemHovered();
+                                : ImGuiColor.Button.Get(), !invalid)
+            .Push(ImGuiColor.Border, borderColor == 0 ? ImGuiColor.TextDisabled.Get().Color : borderColor);
+        using var disabled = Im.Disabled(invalid);
+        var       button   = Im.Button(text, width) || Im.Item.RightClicked();
+        var       hovered  = redundancy.Length > 0 && Im.Item.Hovered();
         DrawIndividualDragSource(text, id);
         DrawIndividualDragTarget(id);
         if (!invalid)
         {
             selector.DragTargetAssignment(type, id);
             var name    = Name(collection);
-            var size    = ImGui.CalcTextSize(name);
-            var textPos = ImGui.GetItemRectMax() - size - ImGui.GetStyle().FramePadding;
-            ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), name);
+            var size    = Im.Font.CalculateSize(name);
+            var textPos = Im.Item.LowerRightCorner - size - Im.Style.FramePadding;
+            Im.Window.DrawList.Text(textPos, ImGuiColor.Text.Get().Color, name);
             DrawContext(button, collection, type, id, text, suffix);
         }
 
         if (hovered)
-            ImGui.SetTooltip(redundancy);
-
-        return button;
+            Im.Tooltip.Set(redundancy);
     }
 
-    private void DrawIndividualDragSource(string text, ActorIdentifier id)
+    private void DrawIndividualDragSource(ReadOnlySpan<byte> text, ActorIdentifier id)
     {
         if (!id.IsValid)
             return;
 
-        using var source = ImRaii.DragDropSource();
+        using var source = Im.DragDrop.Source();
         if (!source)
             return;
 
-        ImGui.SetDragDropPayload("DragIndividual", null, 0);
-        ImGui.TextUnformatted($"重新排序 {text}...");
+        Im.DragDrop.SetPayload("DragIndividual"u8);
+        Im.Text($"重新排序 {text}...");
         _draggedIndividualAssignment = _active.Individuals.Index(id);
     }
 
@@ -362,8 +345,8 @@ public sealed class CollectionPanel(
         if (!id.IsValid)
             return;
 
-        using var target = ImRaii.DragDropTarget();
-        if (!target || !ImGuiUtil.IsDropping("DragIndividual"))
+        using var target = Im.DragDrop.Target();
+        if (!target || !target.IsDropping("DragIndividual"u8))
             return;
 
         var currentIdx = _active.Individuals.Index(id);
@@ -374,55 +357,84 @@ public sealed class CollectionPanel(
 
     private void DrawSimpleCollectionButton(CollectionType type, Vector2 width)
     {
-        DrawButton(type.ToName(), type, width, 0, ActorIdentifier.Invalid, 's');
-        ImGui.SameLine();
-        using (var group = ImRaii.Group())
+        DrawButton(new StringU8(type.ToName()), type, width, 0, ActorIdentifier.Invalid, 's');
+        Im.Line.Same();
+        using (Im.Group())
         {
-            ImGuiUtil.TextWrapped(type.ToDescription());
+            Im.TextWrapped(type.ToDescription());
             switch (type)
             {
-                case CollectionType.Default: ImGui.TextUnformatted("优先级低于所有其他分配。"); break;
+                case CollectionType.Default: Im.Text("优先级低于所有其他分配。"u8); break;
                 case CollectionType.Yourself:
-                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("独立", ColorId.NewMod.Value()), ("分配。", 0));
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("分配。"u8)
+                        .End();
                     break;
                 case CollectionType.MalePlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("男性种族玩家", Colors.DiscordColor), ("、", 0),
-                        ("你的角色", ColorId.HandledConflictMod.Value()), ("或", 0),
-                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("男性种族玩家"u8, LunaStyle.DiscordColor)
+                        .Then(", "u8)
+                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value().Color)
+                        .Then("或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("分配。"u8)
+                        .End();
                     break;
                 case CollectionType.FemalePlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("女性种族玩家", Colors.ReniColorActive), ("、", 0),
-                        ("你的角色", ColorId.HandledConflictMod.Value()), ("或", 0),
-                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("女性种族玩家"u8, LunaStyle.ReniColorActive)
+                        .Then(", "u8)
+                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value().Color)
+                        .Then("或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("分配。"u8)
+                        .End();
                     break;
                 case CollectionType.MaleNonPlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("男性种族NPC", Colors.DiscordColor), ("、", 0),
-                        ("儿童", ColorId.FolderLine.Value()), ("、", 0), ("老年人", Colors.MetaInfoText), ("或", 0),
-                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("男性种族NPC"u8, LunaStyle.DiscordColor)
+                        .Then(", "u8)
+                        .Then("儿童"u8, ColorId.FolderLine.Value().Color)
+                        .Then(", "u8)
+                        .Then("老年人"u8, Colors.MetaInfoText)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("分配。"u8)
+                        .End();
                     break;
                 case CollectionType.FemaleNonPlayerCharacter:
-                    ImGuiUtil.DrawColoredText(("优先级低于", 0), ("女性种族NPC", Colors.ReniColorActive), ("、", 0),
-                        ("儿童", ColorId.FolderLine.Value()), ("、", 0), ("老年人", Colors.MetaInfoText), ("或", 0),
-                        ("独立", ColorId.NewMod.Value()), ("分配。", 0));
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("女性种族NPC"u8, LunaStyle.ReniColorActive)
+                        .Then(", "u8)
+                        .Then("儿童"u8, ColorId.FolderLine.Value().Color)
+                        .Then(", "u8)
+                        .Then("老年人"u8, Colors.MetaInfoText)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("分配。"u8)
+                        .End();
                     break;
             }
         }
 
-        ImGui.Separator();
+        Im.Separator();
     }
 
-    private void DrawAssignmentButton(CollectionType type, Vector2 width, string name, uint color)
+    private void DrawAssignmentButton(CollectionType type, Vector2 width, StringU8 name, Vector4 color)
         => DrawButton(name, type, width, color, ActorIdentifier.Invalid, 's', _active.ByType(type));
 
     /// <summary> Respect incognito mode for names of identifiers. </summary>
-    private string Name(ActorIdentifier id, string? name)
+    private StringU8 Name(ActorIdentifier id, string? name)
         => incognito.IncognitoMode && id.Type is IdentifierType.Player or IdentifierType.Owned
-            ? id.Incognito(name)
-            : name ?? id.ToString();
+            ? new StringU8(id.Incognito(name))
+            : name is not null
+                ? new StringU8(name)
+                : new StringU8($"{id}");
 
     /// <summary> Respect incognito mode for names of collections. </summary>
     private string Name(ModCollection? collection)
-        => collection == null                 ? "未分配" :
+        => collection is null                 ? "未分配" :
             collection == ModCollection.Empty ? "不使用模组" :
             incognito.IncognitoMode           ? collection.Identity.AnonymizedName : collection.Identity.Name;
 
@@ -430,20 +442,20 @@ public sealed class CollectionPanel(
     {
         if (identifiers.Length > 0 && identifiers[0].IsValid)
         {
-            DrawButton($"{intro} ({Name(identifiers[0], null)})", CollectionType.Individual, width, 0, identifiers[0], suffix);
+            DrawButton(new StringU8($"{intro} ({Name(identifiers[0], null)})"), CollectionType.Individual, width, 0, identifiers[0], suffix);
         }
         else
         {
             if (tooltip.Length == 0 && identifiers.Length > 0)
-                tooltip = $"当前目标 {identifiers[0].PlayerName} 分配无效。";
-            DrawButton($"{intro} (不可用)", CollectionType.Individual, width, 0, ActorIdentifier.Invalid, suffix);
+                tooltip = $"当前目标 {identifiers[0].PlayerName} 无效，无法分配。";
+            DrawButton(new StringU8($"{intro} (无效)"), CollectionType.Individual, width, 0, ActorIdentifier.Invalid, suffix);
         }
 
-        ImGuiUtil.HoverTooltip(tooltip);
+        Im.Tooltip.OnHover(tooltip);
     }
 
     private void DrawCurrentCharacter(Vector2 width)
-        => DrawIndividualButton("当前玩家", width, string.Empty, 'c', actors.GetCurrentPlayer());
+        => DrawIndividualButton("当前角色", width, string.Empty, 'c', actors.GetCurrentPlayer());
 
     private void DrawCurrentTarget(Vector2 width)
         => DrawIndividualButton("当前目标", width, string.Empty, 't',
@@ -472,51 +484,50 @@ public sealed class CollectionPanel(
             var (name, ids, coll) = _active.Individuals.Assignments[i];
             DrawButton(Name(ids[0], name), CollectionType.Individual, width, 0, ids[0], 'i', coll);
 
-            ImGui.SameLine();
-            if (ImGui.GetContentRegionAvail().X < width.X + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X
+            Im.Line.Same();
+            if (Im.ContentRegion.Available.X < width.X + Im.Style.ItemSpacing.X + Im.Style.WindowPadding.X
              && i < _active.Individuals.Count - 1)
-                ImGui.NewLine();
+                Im.Line.New();
         }
 
         if (_active.Individuals.Count > 0)
-            ImGui.NewLine();
+            Im.Line.New();
     }
 
     private void DrawCollectionName(ModCollection collection)
     {
-        ImGui.Dummy(Vector2.One);
-        using var color = ImRaii.PushColor(ImGuiCol.Border, Colors.MetaInfoText);
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * UiHelpers.Scale);
+        Im.Dummy(Vector2.One);
+        using var style = ImStyleBorder.Frame.Push(Colors.MetaInfoText, 2 * Im.Style.GlobalScale);
         using var f     = _nameFont.Push();
         var       name  = Name(collection);
-        var       size  = ImGui.CalcTextSize(name).X;
-        var       pos   = ImGui.GetContentRegionAvail().X - size + ImGui.GetStyle().FramePadding.X * 2;
+        var       size  = Im.Font.CalculateSize(name).X;
+        var       pos   = Im.ContentRegion.Available.X - size + Im.Style.FramePadding.X * 2;
         if (pos > 0)
-            ImGui.SetCursorPosX(pos / 2);
-        ImGuiUtil.DrawTextButton(name, Vector2.Zero, 0);
-        ImGui.Dummy(Vector2.One);
+            Im.Cursor.X = pos / 2;
+        ImEx.TextFramed(name, Vector2.Zero, 0);
+        Im.Dummy(Vector2.One);
     }
 
     private void DrawStatistics(ModCollection collection)
     {
         GatherInUse(collection);
-        ImGui.Separator();
+        Im.Separator();
 
-        var buttonHeight = 2 * ImGui.GetTextLineHeightWithSpacing();
+        var buttonHeight = 2 * Im.Style.TextHeightWithSpacing;
         if (_inUseCache.Count == 0 && collection.Inheritance.DirectlyInheritedBy.Count == 0)
         {
-            ImGui.Dummy(Vector2.One);
+            Im.Dummy(Vector2.One);
             using var f = _nameFont.Push();
-            ImGuiUtil.DrawTextButton("合集没有使用。", new Vector2(ImGui.GetContentRegionAvail().X, buttonHeight),
+            ImEx.TextFramed("合集未使用。"u8, Im.ContentRegion.Available with { Y = buttonHeight },
                 Colors.PressEnterWarningBg);
-            ImGui.Dummy(Vector2.One);
-            ImGui.Separator();
+            Im.Dummy(Vector2.One);
+            Im.Separator();
         }
         else
         {
-            var buttonWidth = new Vector2(175 * ImGuiHelpers.GlobalScale, buttonHeight);
+            var buttonWidth = new Vector2(175 * Im.Style.GlobalScale, buttonHeight);
             DrawInUseStatistics(collection, buttonWidth);
-            DrawInheritanceStatistics(collection, buttonWidth);
+            DrawInheritanceStatistics(collection);
         }
     }
 
@@ -529,8 +540,8 @@ public sealed class CollectionPanel(
                      .Where(t => _active.ByType(t) == collection))
             _inUseCache.Add((special, ActorIdentifier.Invalid));
 
-        foreach (var (_, id, coll) in _active.Individuals.Assignments.Where(t
-                     => t.Collection == collection && t.Identifiers.FirstOrDefault().IsValid))
+        foreach (var (_, id, _) in _active.Individuals.Assignments.Where(t
+                     => t.Collection == collection && t.Identifiers.Count > 0 && t.Identifiers[0].IsValid))
             _inUseCache.Add((CollectionType.Individual, id[0]));
     }
 
@@ -539,155 +550,152 @@ public sealed class CollectionPanel(
         if (_inUseCache.Count <= 0)
             return;
 
-        using (var _ = ImRaii.PushStyle(ImGuiStyleVar.FramePadding, Vector2.Zero))
+        using (ImStyleDouble.FramePadding.Push(Vector2.Zero))
         {
-            ImGuiUtil.DrawTextButton("下列对象分配了此合集", ImGui.GetContentRegionAvail() with { Y = 0 }, 0);
+            ImEx.TextFramed("使用者"u8, Im.ContentRegion.Available with { Y = 0 }, 0);
         }
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 1 * ImGuiHelpers.GlobalScale)
-            .Push(ImGuiStyleVar.ButtonTextAlign, Vector2.Zero);
+        using var style = ImStyleSingle.FrameBorderThickness.Push(Im.Style.GlobalScale)
+            .Push(ImStyleDouble.ButtonTextAlign, Vector2.Zero);
 
-        foreach (var ((type, id), idx) in _inUseCache.WithIndex())
+        foreach (var (idx, (type, id)) in _inUseCache.Index())
         {
-            var name  = type == CollectionType.Individual ? Name(id, null) : Buttons[type].Name;
-            var color = Buttons.TryGetValue(type, out var p) ? p.Border : 0;
+            var name  = type is CollectionType.Individual ? Name(id, null) : Buttons[type].Name;
+            var color = Buttons.TryGetValue(type, out var p) ? p.Border : Vector4.Zero;
             DrawButton(name, type, buttonWidth, color, id, 's', collection);
-            ImGui.SameLine();
-            if (ImGui.GetContentRegionAvail().X < buttonWidth.X + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X
+            Im.Line.Same();
+            if (Im.ContentRegion.Available.X < buttonWidth.X + Im.Style.ItemSpacing.X + Im.Style.WindowPadding.X
              && idx != _inUseCache.Count - 1)
-                ImGui.NewLine();
+                Im.Line.New();
         }
 
-        ImGui.NewLine();
-        ImGui.Dummy(Vector2.One);
-        ImGui.Separator();
+        Im.Line.New();
+        Im.Dummy(Vector2.One);
+        Im.Separator();
     }
 
-    private void DrawInheritanceStatistics(ModCollection collection, Vector2 buttonWidth)
+    private void DrawInheritanceStatistics(ModCollection collection)
     {
         if (collection.Inheritance.DirectlyInheritedBy.Count <= 0)
             return;
 
-        using (var _ = ImRaii.PushStyle(ImGuiStyleVar.FramePadding, Vector2.Zero))
+        using (ImStyleDouble.FramePadding.Push(Vector2.Zero))
         {
-            ImGuiUtil.DrawTextButton("下列合集继承了此合集", ImGui.GetContentRegionAvail() with { Y = 0 }, 0);
+            ImEx.TextFramed("继承者"u8, Im.ContentRegion.Available with { Y = 0 }, 0);
         }
 
         using var f     = _nameFont.Push();
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-        using var color = ImRaii.PushColor(ImGuiCol.Border, Colors.MetaInfoText);
-        ImGuiUtil.DrawTextButton(Name(collection.Inheritance.DirectlyInheritedBy[0]), Vector2.Zero, 0);
-        var constOffset = (ImGui.GetStyle().FramePadding.X + ImGuiHelpers.GlobalScale) * 2
-          + ImGui.GetStyle().ItemSpacing.X
-          + ImGui.GetStyle().WindowPadding.X;
+        using var style = ImStyleBorder.Frame.Push(Colors.MetaInfoText);
+        ImEx.TextFramed(Name(collection.Inheritance.DirectlyInheritedBy[0]), Vector2.Zero, 0);
+        var constOffset = (Im.Style.FramePadding.X + Im.Style.GlobalScale) * 2
+          + Im.Style.ItemSpacing.X
+          + Im.Style.WindowPadding.X;
         foreach (var parent in collection.Inheritance.DirectlyInheritedBy.Skip(1))
         {
             var name = Name(parent);
-            var size = ImGui.CalcTextSize(name).X;
-            ImGui.SameLine();
-            if (constOffset + size >= ImGui.GetContentRegionAvail().X)
-                ImGui.NewLine();
-            ImGuiUtil.DrawTextButton(name, Vector2.Zero, 0);
+            var size = Im.Font.CalculateSize(name).X;
+            Im.Line.Same();
+            if (constOffset + size >= Im.ContentRegion.Available.X)
+                Im.Line.New();
+            ImEx.TextFramed(name, Vector2.Zero, 0);
         }
 
-        ImGui.Dummy(Vector2.One);
-        ImGui.Separator();
+        Im.Dummy(Vector2.One);
+        Im.Separator();
     }
 
     private void DrawSettingsList(ModCollection collection)
     {
-        ImGui.Dummy(Vector2.One);
-        var       size  = new Vector2(ImGui.GetContentRegionAvail().X, 10 * ImGui.GetFrameHeightWithSpacing());
-        using var table = ImRaii.Table("##activeSettings", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY, size);
+        Im.Dummy(Vector2.One);
+        var       size  = Im.ContentRegion.Available with { Y = 10 * Im.Style.FrameHeightWithSpacing };
+        using var table = Im.Table.Begin("##activeSettings"u8, 4, TableFlags.ScrollY | TableFlags.RowBackground, size);
         if (!table)
             return;
 
-        ImGui.TableSetupScrollFreeze(0, 1);
-        ImGui.TableSetupColumn("模组名称",       ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("继承自", ImGuiTableColumnFlags.WidthFixed, 5f * ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("状态",          ImGuiTableColumnFlags.WidthFixed, 1.75f * ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("优先级",       ImGuiTableColumnFlags.WidthFixed, 2.5f * ImGui.GetFrameHeight());
-        ImGui.TableHeadersRow();
+        table.SetupScrollFreeze(0, 1);
+        table.SetupColumn("模组名称"u8,       TableColumnFlags.WidthStretch);
+        table.SetupColumn("继承自"u8, TableColumnFlags.WidthFixed, 5f * Im.Style.FrameHeight);
+        table.SetupColumn("状态"u8,          TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
+        table.SetupColumn("优先级"u8,       TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
+        table.HeaderRow();
+
         foreach (var (mod, (settings, parent)) in mods.Select(m => (m, collection.GetInheritedSettings(m.Index)))
                      .Where(t => t.Item2.Settings != null)
                      .OrderBy(t => t.m.Name))
         {
-            ImGui.TableNextColumn();
-            ImGuiUtil.CopyOnClickSelectable(mod.Name);
-            ImGui.TableNextColumn();
+            table.NextColumn();
+            ImEx.CopyOnClickSelectable(mod.Name);
+            table.NextColumn();
             if (parent != collection)
-                ImGui.TextUnformatted(Name(parent));
-            ImGui.TableNextColumn();
+                Im.Text(Name(parent));
+            table.NextColumn();
             var enabled = settings!.Enabled;
-            using (var dis = ImRaii.Disabled())
+            using (Im.Disabled())
             {
-                ImGui.Checkbox("##check", ref enabled);
+                Im.Checkbox("##check"u8, ref enabled);
             }
 
-            ImGui.TableNextColumn();
-            ImGuiUtil.RightAlign(settings.Priority.ToString(), ImGui.GetStyle().WindowPadding.X);
+            table.NextColumn();
+            ImEx.TextRightAligned($"{settings.Priority}", Im.Style.WindowPadding.X);
         }
     }
 
     private void DrawInactiveSettingsList(ModCollection collection)
     {
-        if (collection.Settings.Unused.Count == 0)
+        if (collection.Settings.Unused.Count is 0)
             return;
 
-        ImGui.Dummy(Vector2.One);
-        var text = collection.Settings.Unused.Count > 1
-            ? $"清理所有 {collection.Settings.Unused.Count} 个已删除的模组的设置。"
-            : "清除当前未使用的已删除的模组设置。";
-        if (ImGui.Button(text, new Vector2(ImGui.GetContentRegionAvail().X, 0)))
+        Im.Dummy(Vector2.One);
+        if (Im.Button(collection.Settings.Unused.Count > 1
+                ? $"清理所有 {collection.Settings.Unused.Count} 个已删除的模组的设置。"
+                : "清除当前未使用的已删除的模组设置。"u8, Im.ContentRegion.Available with { Y = 0 }))
             _collections.CleanUnavailableSettings(collection);
 
-        ImGui.Dummy(Vector2.One);
+        Im.Dummy(Vector2.One);
 
-        var size = new Vector2(ImGui.GetContentRegionAvail().X,
-            Math.Min(10, collection.Settings.Unused.Count + 1) * ImGui.GetFrameHeightWithSpacing());
-        using var table = ImRaii.Table("##inactiveSettings", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY, size);
+        var size = Im.ContentRegion.Available with { Y = Math.Min(10, collection.Settings.Unused.Count + 1) * Im.Style.FrameHeightWithSpacing };
+        using var table = Im.Table.Begin("##inactiveSettings"u8, 4, TableFlags.ScrollY | TableFlags.RowBackground, size);
         if (!table)
             return;
 
-        ImGui.TableSetupScrollFreeze(0, 1);
-        ImGui.TableSetupColumn(string.Empty,            ImGuiTableColumnFlags.WidthFixed, UiHelpers.IconButtonSize.X);
-        ImGui.TableSetupColumn("未使用的模组标识符", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("状态",                 ImGuiTableColumnFlags.WidthFixed, 1.75f * ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("优先级",              ImGuiTableColumnFlags.WidthFixed, 2.5f * ImGui.GetFrameHeight());
-        ImGui.TableHeadersRow();
+        table.SetupScrollFreeze(0, 1);
+        table.SetupColumn(StringU8.Empty,            TableColumnFlags.WidthFixed, UiHelpers.IconButtonSize.X);
+        table.SetupColumn("未使用模组标识符"u8,       TableColumnFlags.WidthStretch);
+        table.SetupColumn("状态"u8,                  TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
+        table.SetupColumn("优先级"u8,                TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
+        table.HeaderRow();
         string? delete = null;
         foreach (var (name, settings) in collection.Settings.Unused.OrderBy(n => n.Key))
         {
-            using var id = ImRaii.PushId(name);
-            ImGui.TableNextColumn();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), UiHelpers.IconButtonSize,
-                    "删除这条已未使用的设置。", false, true))
+            using var id = Im.Id.Push(name);
+            table.NextColumn();
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除这条已未使用的设置。"u8))
                 delete = name;
-            ImGui.TableNextColumn();
-            ImGuiUtil.CopyOnClickSelectable(name);
-            ImGui.TableNextColumn();
+            table.NextColumn();
+            ImEx.CopyOnClickSelectable(name);
+            table.NextColumn();
             var enabled = settings.Enabled;
-            using (var dis = ImRaii.Disabled())
+            using (Im.Disabled())
             {
-                ImGui.Checkbox("##check", ref enabled);
+                Im.Checkbox("##check"u8, ref enabled);
             }
 
-            ImGui.TableNextColumn();
-            ImGuiUtil.RightAlign(settings.Priority.ToString(), ImGui.GetStyle().WindowPadding.X);
+            table.NextColumn();
+            ImEx.TextRightAligned($"{settings.Priority}", Im.Style.WindowPadding.X);
         }
 
         _collections.CleanUnavailableSetting(collection, delete);
-        ImGui.Separator();
+        Im.Separator();
     }
 
     /// <summary> Create names and border colors for special assignments. </summary>
-    private static IReadOnlyDictionary<CollectionType, (string Name, uint Border)> CreateButtons()
+    private static IReadOnlyDictionary<CollectionType, (StringU8 Name, Vector4 Border)> CreateButtons()
     {
-        var ret = Enum.GetValues<CollectionType>().ToDictionary(t => t, t => (t.ToName(), 0u));
+        var ret = CollectionType.Values.ToDictionary(t => t, t => (new StringU8(t.ToName()), Vector4.Zero));
 
-        foreach (var race in Enum.GetValues<SubRace>().Skip(1))
+        foreach (var race in SubRace.Values.Skip(1))
         {
-            var color = race switch
+            Rgba32 color = race switch
             {
                 SubRace.Midlander       => 0xAA5C9FE4u,
                 SubRace.Highlander      => 0xAA5C9FE4u,
@@ -708,29 +716,25 @@ public sealed class CollectionPanel(
                 _                       => 0u,
             };
 
-            ret[CollectionTypeExtensions.FromParts(race, Gender.Male,   false)] = ($"♂ {race.ToShortName()}", color);
-            ret[CollectionTypeExtensions.FromParts(race, Gender.Female, false)] = ($"♀ {race.ToShortName()}", color);
-            ret[CollectionTypeExtensions.FromParts(race, Gender.Male,   true)]  = ($"♂ {race.ToShortName()} (NPC)", color);
-            ret[CollectionTypeExtensions.FromParts(race, Gender.Female, true)]  = ($"♀ {race.ToShortName()} (NPC)", color);
+            ret[CollectionTypeExtensions.FromParts(race, Gender.Male,   false)] = (new StringU8($"♂ {race.ToShortName()}"), color.ToVector());
+            ret[CollectionTypeExtensions.FromParts(race, Gender.Female, false)] = (new StringU8($"♀ {race.ToShortName()}"), color.ToVector());
+            ret[CollectionTypeExtensions.FromParts(race, Gender.Male, true)] =
+                (new StringU8($"♂ {race.ToShortName()} (NPC)"), color.ToVector());
+            ret[CollectionTypeExtensions.FromParts(race, Gender.Female, true)] =
+                (new StringU8($"♀ {race.ToShortName()} (NPC)"), color.ToVector());
         }
 
-        ret[CollectionType.MalePlayerCharacter]      = ("♂ 男性玩家", 0);
-        ret[CollectionType.FemalePlayerCharacter]    = ("♀ 女性玩家", 0);
-        ret[CollectionType.MaleNonPlayerCharacter]   = ("♂ 男性NPC", 0);
-        ret[CollectionType.FemaleNonPlayerCharacter] = ("♀ 女性NPC", 0);
+        ret[CollectionType.MalePlayerCharacter]      = (new StringU8("♂ 男性玩家"), Vector4.Zero);
+        ret[CollectionType.FemalePlayerCharacter]    = (new StringU8("♀ 女性玩家"), Vector4.Zero);
+        ret[CollectionType.MaleNonPlayerCharacter]   = (new StringU8("♂ 男性NPC"), Vector4.Zero);
+        ret[CollectionType.FemaleNonPlayerCharacter] = (new StringU8("♀ 女性NPC"), Vector4.Zero);
         return ret;
     }
 
     /// <summary> Create the special assignment tree in order and with free spaces. </summary>
-    private static IReadOnlyList<(CollectionType, bool, bool, string, uint)> CreateTree()
+    private static List<(CollectionType, bool, bool, StringU8, Vector4)> CreateTree()
     {
-        var ret = new List<(CollectionType, bool, bool, string, uint)>(Buttons.Count);
-
-        void Add(CollectionType type, bool pre, bool post)
-        {
-            var (name, border) = Buttons[type];
-            ret.Add((type, pre, post, name, border));
-        }
+        var ret = new List<(CollectionType, bool, bool, StringU8, Vector4)>(Buttons.Count);
 
         Add(CollectionType.Default,                  false, false);
         Add(CollectionType.Interface,                false, false);
@@ -745,7 +749,7 @@ public sealed class CollectionPanel(
         Add(CollectionType.MaleNonPlayerCharacter,   true,  true);
         Add(CollectionType.FemaleNonPlayerCharacter, true,  true);
         var pre = true;
-        foreach (var race in Enum.GetValues<SubRace>().Skip(1))
+        foreach (var race in SubRace.Values.Skip(1))
         {
             Add(CollectionTypeExtensions.FromParts(race, Gender.Male,   false), pre, !pre);
             Add(CollectionTypeExtensions.FromParts(race, Gender.Female, false), pre, !pre);
@@ -755,5 +759,25 @@ public sealed class CollectionPanel(
         }
 
         return ret;
+
+        void Add(CollectionType type, bool localPre, bool post)
+        {
+            var (name, border) = Buttons[type];
+            ret.Add((type, localPre, post, name, border));
+        }
+    }
+
+    public ReadOnlySpan<byte> Id
+        => "cp"u8;
+
+    public void Draw()
+    {
+        switch (config.Ephemeral.CollectionPanel)
+        {
+            case CollectionPanelMode.SimpleAssignment:     DrawSimple(); break;
+            case CollectionPanelMode.IndividualAssignment: DrawIndividualPanel(); break;
+            case CollectionPanelMode.GroupAssignment:      DrawGroupPanel(); break;
+            case CollectionPanelMode.Details:              DrawDetailsPanel(); break;
+        }
     }
 }

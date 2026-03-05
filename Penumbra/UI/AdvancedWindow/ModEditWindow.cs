@@ -1,24 +1,12 @@
-using Dalamud.Interface;
-using Dalamud.Interface.Components;
+using System.Collections.Frozen;
 using Dalamud.Interface.DragDrop;
-using Dalamud.Interface.Utility;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Extensions;
-using OtterGui.Log;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
-using OtterGui.Widgets;
+using ImSharp;
+using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.Collections.Manager;
 using Penumbra.Communication;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
-using Penumbra.Import.Models;
-using Penumbra.Import.Textures;
 using Penumbra.Interop.ResourceTree;
 using Penumbra.Meta;
 using Penumbra.Mods;
@@ -26,21 +14,23 @@ using Penumbra.Mods.Editor;
 using Penumbra.Mods.Manager;
 using Penumbra.Mods.SubMods;
 using Penumbra.Services;
-using Penumbra.String;
 using Penumbra.String.Classes;
-using Penumbra.UI.AdvancedWindow.Materials;
 using Penumbra.UI.AdvancedWindow.Meta;
 using Penumbra.UI.Classes;
-using Penumbra.Util;
+using Penumbra.UI.FileEditing;
+using Penumbra.UI.FileEditing.Materials;
+using Penumbra.UI.FileEditing.Models;
+using Penumbra.UI.FileEditing.Shaders;
+using Penumbra.UI.FileEditing.Skeletons;
+using Penumbra.UI.FileEditing.Textures;
 using MdlMaterialEditor = Penumbra.Mods.Editor.MdlMaterialEditor;
 
 namespace Penumbra.UI.AdvancedWindow;
 
-public partial class ModEditWindow : Window, IDisposable, IUiService
+public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 {
     private const string WindowBaseLabel = "###SubModEdit";
 
-    private readonly PerformanceTracker  _performance;
     private readonly ModEditor           _editor;
     private readonly Configuration       _config;
     private readonly ItemSwapTab         _itemSwapTab;
@@ -49,9 +39,17 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
     private readonly ModMergeTab         _modMergeTab;
     private readonly CommunicatorService _communicator;
     private readonly IDragDropManager    _dragDropManager;
-    private readonly IDataManager        _gameData;
-    private readonly IFramework          _framework;
     private readonly OptionSelectCombo   _optionSelect;
+
+    private readonly FileEditor _modelTab;
+    private readonly FileEditor _materialTab;
+    private readonly FileEditor _shaderPackageTab;
+    private readonly FileEditor _pbdTab;
+#if false
+    private readonly FileEditor _newTextureTab;
+#endif
+
+    private readonly CombiningTextureEditor _textureEditor;
 
     private Vector2 _iconSize = Vector2.Zero;
     private bool    _allowReduplicate;
@@ -90,7 +88,7 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
         if (mod == Mod)
             return;
 
-        WindowName = $"{mod.Name} (LOADING){WindowBaseLabel}";
+        WindowName = $"{mod.Name} (LOADING){WindowBaseLabel}{Index}";
         AppendTask(() =>
         {
             _editor.LoadMod(mod, -1, 0).Wait();
@@ -105,9 +103,10 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
             _modelTab.Reset();
             _materialTab.Reset();
             _shaderPackageTab.Reset();
+            _modMergeTab.ModMerger.ResetMod();
+            _pbdTab.Reset();
             _itemSwapTab.UpdateMod(mod, _activeCollections.Current.GetInheritedSettings(mod.Index).Settings);
             UpdateModels();
-            _forceTextureStartPath = true;
         });
     }
 
@@ -133,8 +132,6 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
     {
         if (IsLoading)
             return;
-
-        using var performance = _performance.Measure(PerformanceType.UiAdvancedWindow);
 
         var sb = new StringBuilder(256);
 
@@ -181,49 +178,50 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
 
         _allowReduplicate = redirections != _editor.Files.Available.Count || _editor.Files.Missing.Count > 0 || unused > 0;
         sb.Append(WindowBaseLabel);
+        sb.Append(Index);
         WindowName = sb.ToString();
     }
 
     public override void OnClose()
     {
-        _config.Ephemeral.AdvancedEditingOpen = false;
-        _config.Ephemeral.Save();
+        base.OnClose();
+        if (Mod is not null && _config.Ephemeral.AdvancedEditingOpenForModPaths.Remove(Mod.Identifier))
+            _config.Ephemeral.Save();
         AppendTask(() =>
         {
-            _left.Dispose();
-            _right.Dispose();
+            _textureEditor.Dispose();
             _materialTab.Reset();
             _modelTab.Reset();
             _shaderPackageTab.Reset();
+            _pbdTab.Reset();
+#if false
+            _newTextureTab.Reset();
+#endif
         });
     }
 
     public override void Draw()
     {
-        using var performance = _performance.Measure(PerformanceType.UiAdvancedWindow);
-
-        if (!_config.Ephemeral.AdvancedEditingOpen)
-        {
-            _config.Ephemeral.AdvancedEditingOpen = true;
+        if (_config.Ephemeral.AdvancedEditingOpenForModPaths.Add(Mod!.Identifier))
             _config.Ephemeral.Save();
-        }
 
         if (IsLoading)
         {
-            var radius    = 100 * ImUtf8.GlobalScale;
-            var thickness = (int)(20 * ImUtf8.GlobalScale);
-            var offsetX   = ImGui.GetContentRegionAvail().X / 2 - radius;
-            var offsetY   = ImGui.GetContentRegionAvail().Y / 2 - radius;
-            ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(offsetX, offsetY));
-            ImUtf8.Spinner("##spinner"u8, radius, thickness, ImGui.GetColorU32(ImGuiCol.Text));
+            var radius    = 100 * Im.Style.GlobalScale;
+            var thickness = (int)(20 * Im.Style.GlobalScale);
+            var offsetX   = Im.ContentRegion.Available.X / 2 - radius;
+            var offsetY   = Im.ContentRegion.Available.Y / 2 - radius;
+            Im.Cursor.Position += new Vector2(offsetX, offsetY);
+            ImEx.Spinner("##spinner"u8, radius, thickness, ImGuiColor.Text.Get());
             return;
         }
 
-        using var tabBar = ImUtf8.TabBar("##tabs"u8);
+        using var id     = Im.Id.Push(Mod!.Identifier);
+        using var tabBar = Im.TabBar.Begin("##tabs"u8);
         if (!tabBar)
             return;
 
-        _iconSize = new Vector2(ImGui.GetFrameHeight());
+        _iconSize = new Vector2(Im.Style.FrameHeight);
         DrawFileTab();
         DrawMetaTab();
         DrawSwapTab();
@@ -232,9 +230,16 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
         DrawQuickImportTab();
         _modelTab.Draw();
         _materialTab.Draw();
-        DrawTextureTab();
+        using (var tab = tabBar.Item("Textures"u8))
+        {
+            if (tab)
+                _textureEditor.DrawPanel(false);
+        }
+#if false
+        _newTextureTab.Draw();
+#endif
         _shaderPackageTab.Draw();
-        using (var tab = ImUtf8.TabItem("道具转换"u8))
+        using (var tab = tabBar.Item("道具转换"u8))
         {
             if (tab)
                 _itemSwapTab.DrawContent();
@@ -246,6 +251,15 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
         DrawMaterialReassignmentTab();
     }
 
+    private static readonly FrozenDictionary<GenderRace, StringU8> RaceCodeNames = GenderRace.Values.ToFrozenDictionary(v => v, v =>
+    {
+        if (v is GenderRace.Unknown)
+            return new StringU8("所有种族和性别");
+
+        var (gender, race) = v.Split();
+        return new StringU8($"({v.ToRaceCode()}) {race.ToNameU8()} {gender.ToNameU8()} ");
+    });
+
     /// <summary> A row of three buttonSizes and a help marker that can be used for material suffix changing. </summary>
     private static class MaterialSuffix
     {
@@ -253,25 +267,16 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
         private static string     _materialSuffixTo   = string.Empty;
         private static GenderRace _raceCode           = GenderRace.Unknown;
 
-        private static string RaceCodeName(GenderRace raceCode)
-        {
-            if (raceCode == GenderRace.Unknown)
-                return "所有种族和性别";
-
-            var (gender, race) = raceCode.Split();
-            return $"({raceCode.ToRaceCode()}) {race.ToName()} {gender.ToName()} ";
-        }
-
         private static void DrawRaceCodeCombo(Vector2 buttonSize)
         {
-            ImGui.SetNextItemWidth(buttonSize.X);
-            using var combo = ImRaii.Combo("##RaceCode", RaceCodeName(_raceCode));
+            Im.Item.SetNextWidth(buttonSize.X);
+            using var combo = Im.Combo.Begin("##RaceCode"u8, RaceCodeNames[_raceCode]);
             if (!combo)
                 return;
 
-            foreach (var raceCode in Enum.GetValues<GenderRace>())
+            foreach (var (raceCode, name) in RaceCodeNames)
             {
-                if (ImGui.Selectable(RaceCodeName(raceCode), _raceCode == raceCode))
+                if (Im.Selectable(name, _raceCode == raceCode))
                     _raceCode = raceCode;
             }
         }
@@ -279,205 +284,201 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
         public static void Draw(ModEditor editor, Vector2 buttonSize)
         {
             DrawRaceCodeCombo(buttonSize);
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(buttonSize.X);
-            ImGui.InputTextWithHint("##suffixFrom", "将此后缀...", ref _materialSuffixFrom, 32);
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(buttonSize.X);
-            ImGui.InputTextWithHint("##suffixTo", "改为...", ref _materialSuffixTo, 32);
-            ImGui.SameLine();
+            Im.Line.Same();
+            Im.Item.SetNextWidth(buttonSize.X);
+            Im.Input.Text("##suffixFrom"u8, ref _materialSuffixFrom, "此后缀..."u8);
+            Im.Line.Same();
+            Im.Item.SetNextWidth(buttonSize.X);
+            Im.Input.Text("##suffixTo"u8, ref _materialSuffixTo, "改为..."u8);
+            Im.Line.Same();
             var disabled = !MdlMaterialEditor.ValidString(_materialSuffixTo);
-            var tt = _materialSuffixTo.Length == 0
+            Utf8StringHandler<TextStringHandlerBuffer> tt = _materialSuffixTo.Length is 0
                 ? "请输入目标后缀。"
                 : _materialSuffixFrom == _materialSuffixTo
                     ? "原后缀与新后缀不能相同。"
                     : disabled
-                        ? "此后缀无效。"
-                        : _materialSuffixFrom.Length == 0
-                            ? _raceCode == GenderRace.Unknown
-                                ? "将所有皮肤材质替换为目标材质。"
-                                : "将指定种族的皮肤材质替换为目标材质。"
-                            : _raceCode == GenderRace.Unknown
-                                ? $"将所有皮肤材质的后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'."
-                                : $"将指定种族的皮肤材质的后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'.";
-            if( ImGuiUtil.DrawDisabledButton( "修改材质后缀", buttonSize, tt, disabled ) )
+                        ? "后缀无效。"
+                        : _materialSuffixFrom.Length is 0
+                            ? _raceCode is GenderRace.Unknown
+                                ? "将所有皮肤材质后缀替换为目标后缀。"
+                                : "将指定种族的皮肤材质后缀替换为目标后缀。"
+                            : _raceCode is GenderRace.Unknown
+                                ? $"将所有皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'."
+                                : $"将指定种族的皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'.";
+            if (ImEx.Button("修改材质后缀"u8, buttonSize, tt, disabled))
                 editor.MdlMaterialEditor.ReplaceAllMaterials(_materialSuffixTo, _materialSuffixFrom, _raceCode);
 
             var anyChanges = editor.MdlMaterialEditor.ModelFiles.Any(m => m.Changed);
-            if( ImGuiUtil.DrawDisabledButton( "保存所有修改", buttonSize,
-                   anyChanges ? "不可逆地重写当前应用于模型文件的所有修改。" : "还未做任何修改。", !anyChanges ) )
+            if (ImEx.Button("保存所有修改"u8, buttonSize,
+                    anyChanges ? "不可逆地重写当前应用于模型文件的所有修改。"u8 : "还未做任何修改。"u8,
+                    !anyChanges))
                 editor.MdlMaterialEditor.SaveAllModels(editor.Compactor);
 
-            ImGui.SameLine();
-            if( ImGuiUtil.DrawDisabledButton( "撤销所有修改", buttonSize,
-                   anyChanges ? "撤销当前进行的和未保存的所有修改。" : "你还未做任何修改。", !anyChanges ) )
+            Im.Line.Same();
+            if (ImEx.Button("撤销所有修改"u8, buttonSize,
+                    anyChanges ? "撤销当前进行的和未保存的所有修改。"u8 : "还未做任何修改。"u8, !anyChanges))
                 editor.MdlMaterialEditor.RestoreAllModels();
 
-            ImGui.SameLine();
-            ImGuiComponents.HelpMarker(
-                "模型文件已经调用了它们应该使用的皮肤材质。皮肤材质一般都是同一种。不过mod作者们可能会采用不同的材质来区分体型。\n"
-              + "此选项允许你将所有模型文件的一个后缀修改为另一个后缀，比如将所有的后缀b改为bibo。这会修改文件，因此请注意此操作有风险。\n"
-              + "如果你不知道这个模组当前使用的后缀是什么，你可以将'将此后缀...'留空，它会将所有后缀替换为'改为'里面的内容，而不仅仅是匹配的后缀。\n" );
+            Im.Line.SameInner();
+            LunaStyle.DrawAlignedHelpMarker(
+                "模型文件引用了它们应该使用的皮肤材质。这个皮肤材质一般都是同一种。不过mod作者们可能会采用不同的材质来区分体型。\n"u8
+              + "此选项允许你将所有模型文件的一个后缀修改为另一个后缀，比如将所有的后缀b改为bibo。这会修改文件，因此请注意此操作有风险。\n"u8
+              + "如果你不知道这个模组当前使用的后缀是什么，你可以将'将此后缀...'留空，它会将所有后缀替换为'改为'里面的内容，而不仅仅是匹配的后缀。\n"u8);
         }
     }
 
     private void DrawMissingFilesTab()
     {
-        if (_editor.Files.Missing.Count == 0)
+        if (_editor.Files.Missing.Count is 0)
             return;
 
-        using var tab = ImRaii.TabItem( "丢失的文件" );
+        using var tab = Im.TabBar.BeginItem("丢失的文件"u8);
         if (!tab)
             return;
 
-        ImGui.NewLine();
-        if( ImGui.Button( "从模组中删除丢失的文件" ) )
+        Im.Line.New();
+        if (Im.Button("从模组中删除丢失的文件"u8))
             _editor.FileEditor.RemoveMissingPaths(Mod!, _editor.Option!);
 
-        using var child = ImRaii.Child("##unusedFiles", -Vector2.One, true);
+        using var child = Im.Child.Begin("##unusedFiles"u8, Im.ContentRegion.Available, true);
         if (!child)
             return;
 
-        using var table = ImRaii.Table("##missingFiles", 1, ImGuiTableFlags.RowBg, -Vector2.One);
+        using var table = Im.Table.Begin("##missingFiles"u8, 1, TableFlags.RowBackground, Im.ContentRegion.Available);
         if (!table)
             return;
 
         foreach (var path in _editor.Files.Missing)
-        {
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted(path.FullName);
-        }
+            table.DrawColumn(path.FullName);
     }
 
     private void DrawDuplicatesTab()
     {
-        using var tab = ImRaii.TabItem("去重");
+        using var tab = Im.TabBar.BeginItem("重复项"u8);
         if (!tab)
             return;
 
         if (_editor.Duplicates.Worker.IsCompleted)
         {
-            if (ImGuiUtil.DrawDisabledButton("查找重复项", Vector2.Zero,
-                    "在这个模组中搜索相同的文件，这可能需要花上一段时间。", false))
+            if (ImEx.Button("查找重复项"u8, Vector2.Zero,
+                    "在这个模组中搜索相同的文件，这可能需要花上一段时间。"u8))
                 _editor.Duplicates.StartDuplicateCheck(_editor.Files.Available);
         }
         else
         {
-            if (ImGuiUtil.DrawDisabledButton("取消查找重复项", Vector2.Zero, "取消当前查找操作...", false))
+            if (ImEx.Button("取消查找重复项"u8, Vector2.Zero, "取消当前查找操作..."u8))
                 _editor.Duplicates.Clear();
         }
 
-        const string desc =
-            "尝试为每个游戏路径操作创建一个唯一副本并将其按[Groupname]/[Optionname]/[GamePath]排列。\n"
-          + "如果成功，还将删除所有未使用的文件和目录。\n"
-          + "注意，失败后不会破坏模组，而是应该恢复到其原始状态，但无论如何，请注意此操作有风险。";
-
         var modifier = _config.DeleteModModifier.IsActive();
-
-        var tt = _allowReduplicate ? desc :
-            modifier ? desc : desc + $"\n\n没有检查到重复项！按住{_config.DeleteModModifier}来强制标准化。";
 
         if (_editor.ModNormalizer.Running)
         {
-            ImGui.ProgressBar((float)_editor.ModNormalizer.Step / _editor.ModNormalizer.TotalSteps,
-                new Vector2(300 * UiHelpers.Scale, ImGui.GetFrameHeight()),
+            Im.ProgressBar((float)_editor.ModNormalizer.Step / _editor.ModNormalizer.TotalSteps,
+                new Vector2(300 * Im.Style.GlobalScale, Im.Style.FrameHeight),
                 $"{_editor.ModNormalizer.Step} / {_editor.ModNormalizer.TotalSteps}");
         }
-        else if (ImGuiUtil.DrawDisabledButton("重新复制文件并将模组标准化", Vector2.Zero, tt, !_allowReduplicate && !modifier))
+        else if (ImEx.Button("重新复制文件并将模组标准化"u8, Vector2.Zero,
+                     "尝试为每个游戏路径操作创建一个唯一副本并将其按[Groupname]/[Optionname]/[GamePath]排列。\n"u8
+                   + "如果成功，还将删除所有未使用的文件和目录。\n"u8
+                   + "注意，失败后不会破坏模组，而是应该恢复到其原始状态，但无论如何，请注意此操作有风险。"u8,
+                     !_allowReduplicate && !modifier))
         {
             _editor.ModNormalizer.Normalize(Mod!);
             _editor.ModNormalizer.Worker.ContinueWith(_ => _editor.LoadMod(Mod!, _editor.GroupIdx, _editor.DataIdx), TaskScheduler.Default);
         }
 
+        if (_allowReduplicate && !modifier)
+            Im.Tooltip.OnHover($"\n\nNo duplicates detected! Hold {_config.DeleteModModifier} to force normalization anyway.");
+
         if (!_editor.Duplicates.Worker.IsCompleted)
             return;
 
-        if (_editor.Duplicates.Duplicates.Count == 0)
+        if (_editor.Duplicates.Duplicates.Count is 0)
         {
-            ImGui.NewLine();
-            ImGui.TextUnformatted( "未找到重复项。" );
+            Im.Line.New();
+            Im.Text("未找到重复项。"u8);
             return;
         }
 
-        if (ImGui.Button("删除并重定向重复项"))
+        if (Im.Button("删除并重定向重复项"u8))
             _editor.Duplicates.DeleteDuplicates(_editor.Files, _editor.Mod!, _editor.Option!, true);
 
         if (_editor.Duplicates.SavedSpace > 0)
         {
-            ImGui.SameLine();
-            ImGui.TextUnformatted($"从你的硬盘释放 {Functions.HumanReadableSize(_editor.Duplicates.SavedSpace)} 。");
+            Im.Line.Same();
+            Im.Text($"从你的硬盘释放 {FormattingFunctions.HumanReadableSize(_editor.Duplicates.SavedSpace)} 。");
         }
 
-        using var child = ImRaii.Child("##duptable", -Vector2.One, true);
+        using var child = Im.Child.Begin("##duptable"u8, Im.ContentRegion.Available, true);
         if (!child)
             return;
 
-        using var table = ImRaii.Table("##duplicates", 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit, -Vector2.One);
+        using var table = Im.Table.Begin("##duplicates"u8, 3, TableFlags.RowBackground | TableFlags.SizingFixedFit, Im.ContentRegion.Available);
         if (!table)
             return;
 
-        var width = ImGui.CalcTextSize("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN ").X;
-        ImGui.TableSetupColumn("file", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("size", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("NNN.NNN  ").X);
-        ImGui.TableSetupColumn("hash", ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetWindowWidth() > 2 * width ? width : ImGui.CalcTextSize("NNNNNNNN... ").X);
+        var width = Im.Font.CalculateSize("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN "u8).X;
+        table.SetupColumn("file"u8, TableColumnFlags.WidthStretch);
+        table.SetupColumn("size"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("NNN.NNN  "u8).X);
+        table.SetupColumn("hash"u8, TableColumnFlags.WidthFixed,
+            Im.Window.Width > 2 * width ? width : Im.Font.CalculateSize("NNNNNNNN... "u8).X);
         foreach (var (set, size, hash) in _editor.Duplicates.Duplicates.Where(s => s.Paths.Length > 1))
         {
-            ImGui.TableNextColumn();
-            using var tree = ImRaii.TreeNode(set[0].FullName[(Mod!.ModPath.FullName.Length + 1)..],
-                ImGuiTreeNodeFlags.NoTreePushOnOpen);
-            ImGui.TableNextColumn();
-            ImGuiUtil.RightAlign(Functions.HumanReadableSize(size));
-            ImGui.TableNextColumn();
-            using (var _ = ImRaii.PushFont(UiBuilder.MonoFont))
+            table.NextColumn();
+            using var tree = Im.Tree.Node(set[0].FullName[(Mod!.ModPath.FullName.Length + 1)..],
+                TreeNodeFlags.NoTreePushOnOpen);
+            table.NextColumn();
+            ImEx.TextRightAligned(FormattingFunctions.HumanReadableSize(size));
+            table.NextColumn();
+            using (var _ = Im.Font.PushMono())
             {
-                if (ImGui.GetWindowWidth() > 2 * width)
-                    ImGuiUtil.RightAlign(string.Concat(hash.Select(b => b.ToString("X2"))));
+                if (Im.Window.Width > 2 * width)
+                    ImEx.TextRightAligned(FormattingFunctions.BytewiseHex(hash));
                 else
-                    ImGuiUtil.RightAlign(string.Concat(hash.Take(4).Select(b => b.ToString("X2"))) + "...");
+                    ImEx.TextRightAligned($"{FormattingFunctions.BytewiseHex(hash.AsSpan(4))}...");
             }
 
             if (!tree)
                 continue;
 
-            using var indent = ImRaii.PushIndent();
+            using var indent = Im.Indent();
             foreach (var duplicate in set.Skip(1))
             {
-                ImGui.TableNextColumn();
-                ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, Colors.RedTableBgTint);
-                using var node = ImRaii.TreeNode(duplicate.FullName[(Mod!.ModPath.FullName.Length + 1)..], ImGuiTreeNodeFlags.Leaf);
-                ImGui.TableNextColumn();
-                ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, Colors.RedTableBgTint);
-                ImGui.TableNextColumn();
-                ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, Colors.RedTableBgTint);
+                table.NextColumn();
+                table.SetBackgroundColor(TableBackgroundTarget.Cell, Colors.RedTableBgTint);
+                Im.Tree.Leaf(duplicate.FullName.AsSpan(Mod!.ModPath.FullName.Length + 1), TreeNodeFlags.Leaf);
+                table.NextColumn();
+                table.SetBackgroundColor(TableBackgroundTarget.Cell, Colors.RedTableBgTint);
+                table.NextColumn();
+                table.SetBackgroundColor(TableBackgroundTarget.Cell, Colors.RedTableBgTint);
             }
         }
     }
 
     private bool DrawOptionSelectHeader()
     {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero).Push(ImGuiStyleVar.FrameRounding, 0);
-        var       width = new Vector2(ImGui.GetContentRegionAvail().X / 3, 0);
+        using var style = ImStyleDouble.ItemSpacing.Push(Vector2.Zero).Push(ImStyleSingle.FrameRounding, 0);
+        var       width = new Vector2(Im.ContentRegion.Available.X / 3, 0);
         var       ret   = false;
-        if (ImUtf8.ButtonEx("默认选项"u8, "切换到模组的默认选项。\n这将重置未保存的更改。"u8, width,
+        if (ImEx.Button("默认选项"u8, width, "切换到模组的默认选项。\n这将重置未保存的更改。"u8,
                 _editor.Option is DefaultSubMod))
         {
             _editor.LoadOption(-1, 0).Wait();
             ret = true;
         }
 
-        ImGui.SameLine();
-        if (ImUtf8.ButtonEx("刷新数据"u8, "刷新当前选项的数据。\n这将重置未保存的更改。"u8, width))
+        Im.Line.Same();
+        if (ImEx.Button("刷新数据"u8, width, "刷新当前选项的数据。\n这将重置未保存的更改。"u8))
         {
             _editor.LoadMod(_editor.Mod!, _editor.GroupIdx, _editor.DataIdx).Wait();
             ret = true;
         }
 
-        ImGui.SameLine();
-        if (_optionSelect.Draw(width.X))
+        Im.Line.Same();
+        if (_optionSelect.Draw("##option"u8, _editor.Option?.GetFullName() ?? string.Empty, default, width.X, out var option))
         {
-            var (groupIdx, dataIdx) = _optionSelect.CurrentSelection.Index;
-            _editor.LoadOption(groupIdx, dataIdx).Wait();
+            _editor.LoadOption(option.GroupIndex, option.DataIndex).Wait();
             ret = true;
         }
 
@@ -489,7 +490,7 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
 
     private void DrawSwapTab()
     {
-        using var tab = ImRaii.TabItem("文件替换");
+        using var tab = Im.TabBar.BeginItem("文件替换"u8);
         if (!tab)
             return;
 
@@ -497,146 +498,92 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
 
         var setsEqual = !_editor.SwapEditor.Changes;
         var tt        = setsEqual ? "未暂存任何修改" : "应用当前暂存的修改到此选项。";
-        ImGui.NewLine();
-        if (ImGuiUtil.DrawDisabledButton("应用修改", Vector2.Zero, tt, setsEqual))
+        Im.Line.New();
+        if (ImEx.Button("应用修改"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Apply(_editor.Option!);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         tt = setsEqual ? "未暂存任何修改" : "撤销当前暂存的所有修改。";
-        if( ImGuiUtil.DrawDisabledButton( "撤销修改", Vector2.Zero, tt, setsEqual ) )
+        if (ImEx.Button("撤销修改"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Revert(_editor.Option!);
 
         var otherSwaps = _editor.Mod!.TotalSwapCount - _editor.Option!.FileSwaps.Count;
         if (otherSwaps > 0)
         {
-            ImGui.SameLine();
-            ImGuiUtil.DrawTextButton($"{otherSwaps} 文件替换已经在其他选项中设置过了。", Vector2.Zero,
-                ColorId.RedundantAssignment.Value());
+            Im.Line.Same();
+            ImEx.TextFramed($"{otherSwaps} 文件替换已经在其他选项中设置过了。", Vector2.Zero,
+                ColorId.RedundantAssignment.Value().Color);
         }
 
-        using var child = ImRaii.Child("##swaps", -Vector2.One, true);
+        using var child = Im.Child.Begin("##swaps"u8, Im.ContentRegion.Available, true);
         if (!child)
             return;
 
-        using var list = ImRaii.Table("##table", 3, ImGuiTableFlags.RowBg, -Vector2.One);
-        if (!list)
+        using var table = Im.Table.Begin("##table"u8, 3, TableFlags.RowBackground, Im.ContentRegion.Available);
+        if (!table)
             return;
 
         var idx      = 0;
-        var iconSize = ImGui.GetFrameHeight() * Vector2.One;
-        var pathSize = ImGui.GetContentRegionAvail().X / 2 - iconSize.X;
-        ImGui.TableSetupColumn("button", ImGuiTableColumnFlags.WidthFixed, iconSize.X);
-        ImGui.TableSetupColumn("source", ImGuiTableColumnFlags.WidthFixed, pathSize);
-        ImGui.TableSetupColumn("value",  ImGuiTableColumnFlags.WidthFixed, pathSize);
+        var iconSize = Im.Style.FrameHeight * Vector2.One;
+        var pathSize = Im.ContentRegion.Available.X / 2 - iconSize.X;
+        table.SetupColumn("button"u8, TableColumnFlags.WidthFixed, iconSize.X);
+        table.SetupColumn("source"u8, TableColumnFlags.WidthFixed, pathSize);
+        table.SetupColumn("value"u8,  TableColumnFlags.WidthFixed, pathSize);
 
         foreach (var (gamePath, file) in _editor.SwapEditor.Swaps.ToList())
         {
-            using var id = ImRaii.PushId(idx++);
-            ImGui.TableNextColumn();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), iconSize, "Delete this swap.", false, true))
+            using var id = Im.Id.Push(idx++);
+            table.NextColumn();
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除此替换。"u8))
                 _editor.SwapEditor.Remove(gamePath);
 
-            ImGui.TableNextColumn();
+            table.NextColumn();
             var tmp = file.FullName;
-            ImGui.SetNextItemWidth(-1);
-            if (ImGui.InputText("##value", ref tmp, Utf8GamePath.MaxGamePathLength) && tmp.Length > 0)
+            Im.Item.SetNextWidth(-1);
+            if (Im.Input.Text("##value"u8, ref tmp, maxLength: Utf8GamePath.MaxGamePathLength) && tmp.Length > 0)
                 _editor.SwapEditor.Change(gamePath, new FullPath(tmp));
 
-            ImGui.TableNextColumn();
+            table.NextColumn();
             tmp = gamePath.Path.ToString();
-            ImGui.SetNextItemWidth(-1);
-            if (ImGui.InputText("##key", ref tmp, Utf8GamePath.MaxGamePathLength)
+            Im.Item.SetNextWidth(-1);
+            if (Im.Input.Text("##key"u8, ref tmp, maxLength: Utf8GamePath.MaxGamePathLength)
              && Utf8GamePath.FromString(tmp, out var path)
              && !_editor.SwapEditor.Swaps.ContainsKey(path))
                 _editor.SwapEditor.Change(gamePath, path);
         }
 
-        ImGui.TableNextColumn();
+        table.NextColumn();
         var addable = Utf8GamePath.FromString(_newSwapKey, out var newPath)
          && newPath.Length > 0
          && _newSwapValue.Length > 0
          && _newSwapValue != _newSwapKey
          && !_editor.SwapEditor.Swaps.ContainsKey(newPath);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), iconSize, "Add a new file swap to this option.", !addable,
-                true))
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, "添加一个新的文件替换到此选项。"u8, !addable))
         {
             _editor.SwapEditor.Add(newPath, new FullPath(_newSwapValue));
             _newSwapKey   = string.Empty;
             _newSwapValue = string.Empty;
         }
 
-        ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##swapKey", "新替换来源...", ref _newSwapValue, Utf8GamePath.MaxGamePathLength);
-        ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##swapValue", "... 新替换目标。", ref _newSwapKey, Utf8GamePath.MaxGamePathLength);
+        table.NextColumn();
+        Im.Item.SetNextWidth(-1);
+        Im.Input.Text("##swapKey"u8, ref _newSwapValue, "新替换来源..."u8, maxLength: Utf8GamePath.MaxGamePathLength);
+        table.NextColumn();
+        Im.Item.SetNextWidth(-1);
+        Im.Input.Text("##swapValue"u8, ref _newSwapKey, "... 新替换目标。"u8, maxLength: Utf8GamePath.MaxGamePathLength);
     }
 
-    /// <summary>
-    /// Find the best matching associated file for a given path.
-    /// </summary>
-    /// <remarks>
-    /// Tries to resolve from the current collection first and chooses the currently resolved file if any exists.
-    /// If none exists, goes through all options in the currently selected mod (if any) in order of priority and resolves in them. 
-    /// If no redirection is found in either of those options, returns the original path.
-    /// </remarks>
-    internal FullPath FindBestMatch(Utf8GamePath path)
-    {
-        var currentFile = _activeCollections.Current.ResolvePath(path);
-        if (currentFile != null)
-            return currentFile.Value;
-
-        if (Mod != null)
-        {
-            foreach (var option in Mod.Groups.OrderByDescending(g => g.Priority))
-            {
-                if (option.FindBestMatch(path) is { } fullPath)
-                    return fullPath;
-            }
-
-            if (Mod.Default.Files.TryGetValue(path, out var value) || Mod.Default.FileSwaps.TryGetValue(path, out value))
-                return value;
-        }
-
-        return new FullPath(path);
-    }
-
-    internal HashSet<Utf8GamePath> FindPathsStartingWith(CiByteString prefix)
-    {
-        var ret = new HashSet<Utf8GamePath>();
-
-        foreach (var path in _activeCollections.Current.ResolvedFiles.Keys)
-        {
-            if (path.Path.StartsWith(prefix))
-                ret.Add(path);
-        }
-
-        if (Mod != null)
-            foreach (var option in Mod.AllDataContainers)
-            {
-                foreach (var path in option.Files.Keys)
-                {
-                    if (path.Path.StartsWith(prefix))
-                        ret.Add(path);
-                }
-            }
-
-        return ret;
-    }
-
-    public ModEditWindow(PerformanceTracker performance, FileDialogService fileDialog, ItemSwapTab itemSwapTab, IDataManager gameData,
+    public ModEditWindow(FileDialogService fileDialog, ItemSwapTab itemSwapTab, IDataManager gameData,
         Configuration config, ModEditor editor, ResourceTreeFactory resourceTreeFactory, MetaFileManager metaFileManager,
         ActiveCollections activeCollections, ModMergeTab modMergeTab,
-        CommunicatorService communicator, TextureManager textures, ModelManager models, IDragDropManager dragDropManager,
+        CommunicatorService communicator, IDragDropManager dragDropManager,
         ResourceTreeViewerFactory resourceTreeViewerFactory, IFramework framework,
-        MetaDrawers metaDrawers, MigrationManager migrationManager,
-        MtrlTabFactory mtrlTabFactory, ModSelection selection)
-        : base(WindowBaseLabel)
+        MetaDrawers metaDrawers, MaterialEditorFactory materialEditorFactory, ModelEditorFactory modelEditorFactory,
+        ShaderPackageEditorFactory shaderPackageEditorFactory, DeformerEditorFactory deformerEditorFactory,
+        CombiningTextureEditorFactory textureEditorFactory, int index)
+        : base(WindowBaseLabel, index)
     {
-        _performance       = performance;
         _itemSwapTab       = itemSwapTab;
-        _gameData          = gameData;
         _config            = config;
         _editor            = editor;
         _metaFileManager   = metaFileManager;
@@ -644,34 +591,35 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
         _modMergeTab       = modMergeTab;
         _communicator      = communicator;
         _dragDropManager   = dragDropManager;
-        _textures          = textures;
-        _models            = models;
         _fileDialog        = fileDialog;
-        _framework         = framework;
         _metaDrawers       = metaDrawers;
+        _overviewTable     = new OverviewTable(_editor);
         _optionSelect      = new OptionSelectCombo(editor, this);
-        _materialTab = new FileEditor<MtrlTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "材质(颜色集)", ".mtrl",
-            () => PopulateIsOnPlayer(_editor.Files.Mtrl, ResourceType.Mtrl), DrawMaterialPanel, () => Mod?.ModPath.FullName ?? string.Empty,
-            (bytes, path, writable) => mtrlTabFactory.Create(this, new MtrlFile(bytes), path, writable));
-        _modelTab = new FileEditor<MdlTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "模型", ".mdl",
-            () => PopulateIsOnPlayer(_editor.Files.Mdl, ResourceType.Mdl), DrawModelPanel, () => Mod?.ModPath.FullName ?? string.Empty,
-            (bytes, path, _) => new MdlTab(this, bytes, path));
-        _shaderPackageTab = new FileEditor<ShpkTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "着色器", ".shpk",
-            () => PopulateIsOnPlayer(_editor.Files.Shpk, ResourceType.Shpk), DrawShaderPackagePanel,
-            () => Mod?.ModPath.FullName ?? string.Empty,
-            (bytes, path, _) => new ShpkTab(_fileDialog, bytes, path));
-        _pbdTab = new FileEditor<PbdTab>(this, _communicator, gameData, config, _editor.Compactor, _fileDialog, "变形器", ".pbd",
-            () => _editor.Files.Pbd, DrawDeformerPanel,
-            () => Mod?.ModPath.FullName ?? string.Empty,
-            (bytes, path, _) => new PbdTab(bytes, path));
-        _center              = new CombinedTexture(_left, _right);
-        _textureSelectCombo  = new TextureDrawer.PathSelectCombo(textures, editor, () => GetPlayerResourcesOfType(ResourceType.Tex));
+
+        var fileEditingContext = new ModEditFileEditingContext(activeCollections, editor);
+
+        _materialTab      = CreateFileEditor("材质(颜色集)", ".mtrl", ResourceType.Mtrl, materialEditorFactory);
+        _modelTab         = CreateFileEditor("模型",    ".mdl",  ResourceType.Mdl,  modelEditorFactory);
+        _shaderPackageTab = CreateFileEditor("着色器",   ".shpk", ResourceType.Shpk, shaderPackageEditorFactory);
+        _pbdTab           = CreateFileEditor("变形器", ".pbd",  ResourceType.Pbd,  deformerEditorFactory);
+#if false
+        _newTextureTab = CreateFileEditor("贴图", ".tex", ResourceType.Tex, textureEditorFactory);
+#endif
+
+        _textureEditor = textureEditorFactory.CreateForModEditWindow(fileEditingContext);
+
         _resourceTreeFactory = resourceTreeFactory;
         _quickImportViewer   = resourceTreeViewerFactory.Create(1, OnQuickImportRefresh, DrawQuickImportActions);
         _communicator.ModPathChanged.Subscribe(OnModPathChange, ModPathChanged.Priority.ModEditWindow);
-        IsOpen = _config is { OpenWindowAtStart: true, Ephemeral.AdvancedEditingOpen: true };
-        if (IsOpen && selection.Mod != null)
-            ChangeMod(selection.Mod);
+
+        return;
+
+        FileEditor CreateFileEditor(string tabName, string fileType, ResourceType type, IFileEditorFactory editorFactory)
+        {
+            return new FileEditor(this, communicator, config, editor.Compactor, fileDialog, framework, tabName, fileType,
+                () => PopulateIsOnPlayer(_editor.Files.GetByType(type), type), () => Mod?.ModPath.FullName ?? string.Empty, editorFactory,
+                fileEditingContext);
+        }
     }
 
     public void Dispose()
@@ -681,17 +629,25 @@ public partial class ModEditWindow : Window, IDisposable, IUiService
         _materialTab.Dispose();
         _modelTab.Dispose();
         _shaderPackageTab.Dispose();
-        _left.Dispose();
-        _right.Dispose();
-        _center.Dispose();
+        _textureEditor.Dispose();
+        _modMergeTab.ModMerger.Dispose();
     }
 
-    private void OnModPathChange(ModPathChangeType type, Mod mod, DirectoryInfo? _1, DirectoryInfo? _2)
+    private void OnModPathChange(in ModPathChanged.Arguments arguments)
     {
-        if (type is not (ModPathChangeType.Reloaded or ModPathChangeType.Moved) || mod != Mod)
+        if (arguments.Mod != Mod)
             return;
 
-        Mod = null;
-        ChangeMod(mod);
+        switch (arguments.Type)
+        {
+            case ModPathChangeType.Reloaded or ModPathChangeType.Moved:
+                Mod = null;
+                ChangeMod(arguments.Mod);
+                break;
+            case ModPathChangeType.Deleted:
+                IsOpen = false;
+                Dispose();
+                break;
+        }
     }
 }
