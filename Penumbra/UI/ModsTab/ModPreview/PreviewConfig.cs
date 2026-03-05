@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using ImSharp;
+using Luna;
 using Penumbra.UI;
-using Dalamud.Bindings.ImGui;
 
 namespace Penumbra.UI.ModsTab.ModPreview;
 
@@ -27,10 +28,10 @@ public class PreviewConfig
         if (float.IsNaN(_tempRatio))
             _tempRatio = config.PreviewPanelRatio;
 
-        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-        bool changed = ImGui.DragFloat("##预览面板比例", ref _tempRatio, 0.01f, min, max, "%.2f");
+        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
+        _ = Im.Drag("##预览面板比例"u8, ref _tempRatio, "%.2f"u8, min, max, 0.01f);
         
-        if (ImGui.IsItemDeactivatedAfterEdit() && _tempRatio != config.PreviewPanelRatio)
+        if (Im.Item.DeactivatedAfterEdit && _tempRatio != config.PreviewPanelRatio)
         {
             config.PreviewPanelRatio = _tempRatio;
             config.Save();
@@ -46,10 +47,10 @@ public class PreviewConfig
         if (float.IsNaN(_tempMinWidth))
             _tempMinWidth = config.PreviewPanelMinWidth;
             
-        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-        bool changed = ImGui.DragFloat("##预览面板最小宽度", ref _tempMinWidth, 1f, min, max, "%.0f");
+        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
+        _ = Im.Drag("##预览面板最小宽度"u8, ref _tempMinWidth, "%.0f"u8, min, max, 1f);
         
-        if (ImGui.IsItemDeactivatedAfterEdit() && _tempMinWidth != config.PreviewPanelMinWidth)
+        if (Im.Item.DeactivatedAfterEdit && _tempMinWidth != config.PreviewPanelMinWidth)
         {
             config.PreviewPanelMinWidth = _tempMinWidth;
             config.Save();
@@ -65,10 +66,10 @@ public class PreviewConfig
         if (float.IsNaN(_tempMaxWidth))
             _tempMaxWidth = config.PreviewPanelMaxWidth;
             
-        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-        bool changed = ImGui.DragFloat("##预览面板最大宽度", ref _tempMaxWidth, 1f, min, max, "%.0f");
+        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
+        _ = Im.Drag("##预览面板最大宽度"u8, ref _tempMaxWidth, "%.0f"u8, min, max, 1f);
         
-        if (ImGui.IsItemDeactivatedAfterEdit() && _tempMaxWidth != config.PreviewPanelMaxWidth)
+        if (Im.Item.DeactivatedAfterEdit && _tempMaxWidth != config.PreviewPanelMaxWidth)
         {
             config.PreviewPanelMaxWidth = _tempMaxWidth;
             config.Save();
@@ -84,10 +85,10 @@ public class PreviewConfig
         if (float.IsNaN(_tempImageMinWidth))
             _tempImageMinWidth = config.PreviewImageMinWidth;
             
-        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-        bool changed = ImGui.DragFloat("##预览图片最小宽度", ref _tempImageMinWidth, 1f, min, max, "%.0f");
-        
-        if (ImGui.IsItemDeactivatedAfterEdit() && _tempImageMinWidth != config.PreviewImageMinWidth)
+        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
+        _ = Im.Drag("##预览图片最小宽度"u8, ref _tempImageMinWidth, "%.0f"u8, min, max, 1f);
+
+        if (Im.Item.DeactivatedAfterEdit && _tempImageMinWidth != config.PreviewImageMinWidth)
         {
             config.PreviewImageMinWidth = _tempImageMinWidth;
             config.Save();
@@ -103,10 +104,10 @@ public class PreviewConfig
         if (float.IsNaN(_tempSpacing))
             _tempSpacing = config.PreviewPanelImageSpacing;
             
-        ImGui.SetNextItemWidth(UiHelpers.InputTextWidth.X);
-        bool changed = ImGui.DragFloat("##图片间距", ref _tempSpacing, 0.1f, min, max, "%.1f");
+        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
+        _ = Im.Drag("##图片间距"u8, ref _tempSpacing, "%.1f"u8, min, max, 0.1f);
         
-        if (ImGui.IsItemDeactivatedAfterEdit() && _tempSpacing != config.PreviewPanelImageSpacing)
+        if (Im.Item.DeactivatedAfterEdit && _tempSpacing != config.PreviewPanelImageSpacing)
         {
             config.PreviewPanelImageSpacing = _tempSpacing;
             config.Save();

@@ -194,7 +194,7 @@ public class ModPreviewDownloader : IDisposable
     /// <summary>
     /// 验证文件是否为有效的图片格式
     /// </summary>
-    private bool IsValidImageFile(byte[] data) => 
+    private static bool IsValidImageFile(byte[] data) => 
         data.Length >= 8 && (
             // JPEG
             data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF || 
@@ -268,8 +268,8 @@ public class ModPreviewDownloader : IDisposable
 /// </summary>
 public interface ISupportedModSite
 {
-    bool IsSupported(string url);
-    Task<List<string>> GetPreviewImageUrls(string modUrl, HttpClient client);
+    public bool IsSupported(string url);
+    public Task<List<string>> GetPreviewImageUrls(string modUrl, HttpClient client);
 }
 
 /// <summary>

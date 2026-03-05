@@ -37,7 +37,7 @@ public partial class ModEditWindow
         Im.Line.Same();
         SetFromClipboardButton();
         Im.Line.Same();
-        CopyToClipboardButton("将当前的所有操作复制到剪贴板。", _iconSize, _editor.MetaEditor);
+        CopyToClipboardButton("将当前的所有操作复制到剪贴板。"u8, _iconSize, _editor.MetaEditor);
         Im.Line.Same();
         if (Im.Button("写入为TexTools文件"u8))
             _metaFileManager.WriteAllTexToolsMeta(Mod!);

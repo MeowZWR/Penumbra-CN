@@ -59,8 +59,8 @@ public class ModPanelSettingsTab(
             _previewExpanded = _imagePanel.Config.Expanded;
             
         // 计算可用总宽度
-        var totalAvailableWidth = ImGui.GetContentRegionAvail().X;
-        var buttonWidth = ImGui.GetFrameHeight();
+        var totalAvailableWidth = Im.ContentRegion.Available.X;
+        var buttonWidth = Im.Style.FrameHeight;
 
         // 计算最大允许宽度（基于比例）
         var maxAllowedWidth = (totalAvailableWidth - buttonWidth) * config.PreviewPanelRatio;
@@ -157,7 +157,7 @@ public class ModPanelSettingsTab(
         {
             // 设置左侧间距
             var leftPadding = 0 * UiHelpers.Scale;
-            Im.Cursor.PositionX = leftPadding;
+            Im.Cursor.X = leftPadding;
 
             var coverFolder = Path.Combine(selection.Mod!.ModPath.FullName, "CoverImage");
             var folderExists = Directory.Exists(coverFolder);
@@ -172,9 +172,9 @@ public class ModPanelSettingsTab(
             }
 
             Im.Line.Same();
-            if (ImEx.Icon.Button(FontAwesomeIcon.Clipboard.Icon(), "从剪贴板导入图片", false, UiHelpers.IconButtonSize))
+            if (ImEx.Icon.Button(FontAwesomeIcon.Clipboard.Icon(), "从剪贴板导入图片"u8, false, UiHelpers.IconButtonSize))
             {
-                var staThread = new System.Threading.Thread(() =>
+                var staThread = new Thread(() =>
                 {
                     try
                     {
@@ -185,7 +185,7 @@ public class ModPanelSettingsTab(
                         Penumbra.Log.Warning($"从剪贴板导入图片失败: {ex.Message}");
                     }
                 });
-                staThread.SetApartmentState(System.Threading.ApartmentState.STA);
+                staThread.SetApartmentState(ApartmentState.STA);
                 
                 staThread.Start();
             }
@@ -212,7 +212,7 @@ public class ModPanelSettingsTab(
             }
 
             Im.Line.Same();
-            if (ImEx.Icon.Button(FontAwesomeIcon.Repeat.Icon(), "重新加载预览图", false, UiHelpers.IconButtonSize))
+            if (ImEx.Icon.Button(FontAwesomeIcon.Repeat.Icon(), "重新加载预览图"u8, false, UiHelpers.IconButtonSize))
             {
                 _imagePanel.ReloadImages();
             }
@@ -251,7 +251,7 @@ public class ModPanelSettingsTab(
         if (selection.Mod != null)
             _imagePanel.Draw(selection.Mod, availableWidth);
         else
-            Im.TextDisabled("未选择模组。");
+            Im.TextDisabled("未选择模组。"u8);
     }
 
     private void DrawSettingsPanelContent()
@@ -294,7 +294,7 @@ public class ModPanelSettingsTab(
         using var color =
             ImGuiColor.Button.Push(Rgba32.TintColor(Im.Style[ImGuiColor.Button], ColorId.TemporaryModSettingsTint.Value().ToVector()));
         var width = Im.ContentRegion.Available with { Y = 0 };
-        if (ImEx.Button($"这些设置由 {selection.TemporarySettings!.Source} 临时设置{(_locked ? "，并且已锁定。" : "。")}",
+        if (ImEx.Button($"这些设置由 {selection.TemporarySettings!.Source} 临时设置{(_locked ? "，并且已锁定。"u8 : "。"u8)}",
                 width, _locked))
             collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!, null);
 

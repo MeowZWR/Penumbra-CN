@@ -66,7 +66,7 @@ public class ModPanelTabBar : TabBar<ModPanelTab>
               + "\t\t- 去重\n"u8
               + "\t\t- 纹理\n"u8
               + "\t\t- 道具转换\n"u8
-              + "\t\t- 合并模组");
+              + "\t\t- 合并模组"u8);
     }
 
     public void Draw(Mod mod)

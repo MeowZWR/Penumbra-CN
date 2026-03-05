@@ -15,9 +15,6 @@ public partial class ModEditWindow
     private          string                _fileFilter    = string.Empty;
     private          bool                  _showGamePaths = true;
     private          string                _gamePathEdit  = string.Empty;
-    private          string                _fileOverviewFilter1 = string.Empty;
-    private          string                _fileOverviewFilter2 = string.Empty;
-    private          string                _fileOverviewFilter3 = string.Empty;
     private          int                   _fileIdx       = -1;
     private          int                   _pathIdx       = -1;
     private          int                   _folderSkip;
@@ -107,7 +104,7 @@ public partial class ModEditWindow
         if (!table)
             return;
 
-        foreach (var (i, registry) in _editor.Files.Available.Index().Where(CheckFilter))
+        foreach (var (i, registry) in _editor.Files.Available.Index().Where(CheckFilter).Where(p => !ShouldHideFile(p.Item2)))
         {
             using var id = Im.Id.Push(i);
             table.NextColumn();
@@ -352,13 +349,13 @@ public partial class ModEditWindow
         else if (!active)
             tt += $"\n\nHold {_config.DeleteModModifier} to delete.";
 
-        if (ImEx.Button("删除选中的文件", Vector2.Zero, tt, _selectedFiles.Count is 0 || !active))
+        if (ImEx.Button("删除选中的文件"u8, Vector2.Zero, tt, _selectedFiles.Count is 0 || !active))
             _editor.FileEditor.DeleteFiles(_editor.Mod!, _editor.Option!, _editor.Files.Available.Where(_selectedFiles.Contains));
 
         Im.Line.Same();
         var changes = _editor.FileEditor.Changes;
         var tt2     = changes ? "将当前文件设置应用到选中的文件。"u8 : "没作出任何修改。"u8;
-        if (ImEx.Button("应用修改", Vector2.Zero, tt2, !changes))
+        if (ImEx.Button("应用修改"u8, Vector2.Zero, tt2, !changes))
         {
             var failedFiles = _editor.FileEditor.Apply(_editor.Mod!, _editor.Option!);
             if (failedFiles > 0)
@@ -375,16 +372,15 @@ public partial class ModEditWindow
         Im.Tooltip.OnHover("恢复自上次的文件、选项重载或数据刷新以来所有可恢复的修改。");
 
         Im.Line.Same();
-        Im.Checkbox("总览模式", ref _overviewMode);
+        Im.Checkbox("总览模式"u8, ref _overviewMode);
     }
 
     private void DrawFileManagementNormal()
     {
-        // 1. 计数文本（右上角）
+        // 1. 计数文本
         var totalCount  = _editor.Files.Available.Count;
         var hiddenCount = _editor.Files.Available.Count(ShouldHideFile);
         var countText   = $"已选中{_selectedFiles.Count} / {totalCount}个文件" + (hiddenCount > 0 ? $"（{hiddenCount}隐藏）" : "");
-        ImEx.TextRightAligned(countText);
 
         // 2. 按钮与筛选
         Im.Item.SetNextWidthScaled(250);
@@ -412,30 +408,14 @@ public partial class ModEditWindow
             Im.Popup.Open("fileTypeFilterPopupNormal"u8);
 
         Im.Tooltip.OnHover("设置要隐藏的文件类型");
+        Im.Line.Same();
+        ImEx.TextRightAligned(countText);
 
         using (var popup = Im.Popup.Begin("fileTypeFilterPopupNormal"u8))
         {
             if (popup)
                 DrawFileTypeFilterOptions();
         }
-    }
-
-    private void DrawFileManagementOverview()
-    {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameRounding, 0)
-            .Push(ImGuiStyleVar.ItemSpacing,     Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameBorderSize, ImGui.GetStyle().ChildBorderSize);
-
-        var width = Im.ContentRegion.Available.X / 8;
-
-        Im.Item.SetNextWidth(width * 3);
-        Im.Input.Text("##fileFilter"u8, ref _fileOverviewFilter1, "筛选文件..."u8);
-        Im.Line.Same();
-        Im.Item.SetNextWidth(width * 3);
-        Im.Input.Text("##pathFilter"u8, ref _fileOverviewFilter2, "筛选路径..."u8);
-        Im.Line.Same();
-        Im.Item.SetNextWidth(width * 2);
-        Im.Input.Text("##optionFilter"u8, ref _fileOverviewFilter3, "筛选选项..."u8);
     }
 
     /// <summary>

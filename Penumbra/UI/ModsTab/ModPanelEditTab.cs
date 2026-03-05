@@ -47,7 +47,7 @@ public class ModPanelEditTab(
         EditLocalData();
         UiHelpers.DefaultLineSpace();
 
-        if (Input.Text("模组路径（用于排序）", Input.Path, Input.None, _leaf.FullPath, out var newPath, UiHelpers.InputTextWidth.X))
+        if (Input.Text("模组路径（用于排序）"u8, Input.Path, Input.None, _leaf.FullPath, out var newPath, UiHelpers.InputTextWidth.X))
             try
             {
                 fileSystem.RenameAndMove(_leaf, newPath);
@@ -155,17 +155,17 @@ public class ModPanelEditTab(
     /// <summary> Anything about editing the regular meta information about the mod. </summary>
     private void EditRegularMeta()
     {
-        if (Input.Text("模组名称", Input.Name, Input.None, _mod.Name, out var newName, UiHelpers.InputTextWidth.X))
+        if (Input.Text("模组名称"u8, Input.Name, Input.None, _mod.Name, out var newName, UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModName(_mod, newName);
 
-        if (Input.Text("作者", Input.Author, Input.None, _mod.Author, out var newAuthor, UiHelpers.InputTextWidth.X))
+        if (Input.Text("作者"u8, Input.Author, Input.None, _mod.Author, out var newAuthor, UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModAuthor(_mod, newAuthor);
 
-        if (Input.Text("版本", Input.Version, Input.None, _mod.Version, out var newVersion,
+        if (Input.Text("版本"u8, Input.Version, Input.None, _mod.Version, out var newVersion,
                 UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModVersion(_mod, newVersion);
 
-        if (Input.Text("网址", Input.Website, Input.None, _mod.Website, out var newWebsite,
+        if (Input.Text("网址"u8, Input.Website, Input.None, _mod.Website, out var newWebsite,
                 UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModWebsite(_mod, newWebsite);
 

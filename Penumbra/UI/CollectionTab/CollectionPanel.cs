@@ -34,7 +34,7 @@ public sealed class CollectionPanel(
     private readonly ActiveCollections _active = manager.Active;
     private readonly IndividualAssignmentUi _individualAssignmentUi = new(communicator, actors, manager);
     private readonly InheritanceUi _inheritanceUi = new(manager, incognito);
-    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
+    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
 
     private static readonly IReadOnlyDictionary<CollectionType, (StringU8 Name, Vector4 Border)> Buttons      = CreateButtons();
     private static readonly IReadOnlyList<(CollectionType, bool, bool, StringU8, Vector4)>       AdvancedTree = CreateTree();

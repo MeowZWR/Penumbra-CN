@@ -57,7 +57,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
     private void DrawMdlMigration()
     {
-        if (Im.Button("迁移V5模型文件到V6版本"u8, _buttonSize, migrationManager.IsRunning))
+        if (ImEx.Button("迁移V5模型文件到V6版本"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
             migrationManager.MigrateMdlDirectory(config.ModDirectory, _createBackups);
 
         Im.Line.SameInner();
@@ -83,7 +83,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
     private void DrawMdlCleanup()
     {
-        if (Im.Button("删除现有的模型备份文件"u8, _buttonSize, migrationManager.IsRunning))
+        if (ImEx.Button("删除现有的模型备份文件"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
             migrationManager.CleanMdlBackups(config.ModDirectory);
 
         Im.Line.SameInner();
@@ -94,7 +94,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
     private void DrawMtrlCleanup()
     {
-        if (Im.Button("删除现有的材质备份文件"u8, _buttonSize, migrationManager.IsRunning))
+        if (ImEx.Button("删除现有的材质备份文件"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
             migrationManager.CleanMtrlBackups(config.ModDirectory);
 
         Im.Line.SameInner();
@@ -108,7 +108,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
     private void DrawMdlRestore()
     {
-        if (Im.Button("恢复模型备份"u8, _buttonSize, migrationManager.IsRunning))
+        if (ImEx.Button("恢复模型备份"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
             migrationManager.RestoreMdlBackups(config.ModDirectory);
 
         Im.Line.SameInner();
@@ -119,7 +119,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
     private void DrawMtrlRestore()
     {
-        if (Im.Button("恢复材质备份"u8, _buttonSize, migrationManager.IsRunning))
+        if (ImEx.Button("恢复材质备份"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
             migrationManager.RestoreMtrlBackups(config.ModDirectory);
 
         Im.Line.SameInner();
@@ -140,7 +140,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     private void DrawCancelButton(MigrationManager.TaskType task, ReadOnlySpan<byte> tooltip)
     {
         using var _ = Im.Id.Push((int)task);
-        if (Im.Button("取消"u8, Vector2.Zero, tooltip, !migrationManager.IsRunning || task != migrationManager.CurrentTask))
+        if (ImEx.Button("取消"u8, Vector2.Zero, tooltip, !migrationManager.IsRunning || task != migrationManager.CurrentTask))
             migrationManager.Cancel();
     }
 

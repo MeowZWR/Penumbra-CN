@@ -176,7 +176,7 @@ public class ResourceTreeViewer(
         var yOffset = (ChangedItemDrawer.TypeFilterIconSize.Y - Im.Style.FrameHeight) / 2f;
         Im.Cursor.Y += yOffset;
 
-        if (Im.Button("刷新角色列表"))
+        if (Im.Button("刷新角色列表"u8))
             _task = RefreshCharacterList();
 
         var checkSpacing = Im.Style.ItemInnerSpacing.X;
@@ -506,10 +506,10 @@ public class ResourceTreeViewer(
     private static ReadOnlySpan<byte> GetPathStatusDescription(ResourceNode.PathStatus status)
         => status switch
         {
-            ResourceNode.PathStatus.External => "该文件的实际路径不可用，因为它由外部工具管理。",
+            ResourceNode.PathStatus.External => "该文件的实际路径不可用，因为它由外部工具管理。"u8,
             ResourceNode.PathStatus.NonExistent =>
-                "该文件的实际路径不可用，因为它在加载后可能已被移动或删除。",
-            _ => "该文件的实际路径不可用。",
+                "该文件的实际路径不可用，因为它在加载后可能已被移动或删除。"u8,
+            _ => "该文件的实际路径不可用。"u8,
         };
 
     private static void HeaderInteraction(ResourceTree tree)
@@ -595,10 +595,10 @@ public class ResourceTreeViewer(
     private static ReadOnlySpan<byte> CategoryFilterDescription(TreeCategory category)
         => category switch
         {
-            TreeCategory.LocalPlayer  => "显示你和从属于你的对象（坐骑、宠物、时尚配饰、战斗伙伴等等）。",
-            TreeCategory.Player       => "显示其他玩家和从属于他们的对象",
-            TreeCategory.Networked    => "显示由游戏服务器处理的NPC对象。",
-            TreeCategory.NonNetworked => "显示由本地处理的NPC对象。",
+            TreeCategory.LocalPlayer  => "显示你和从属于你的对象（坐骑、宠物、时尚配饰、战斗伙伴等等）。"u8,
+            TreeCategory.Player       => "显示其他玩家和从属于他们的对象"u8,
+            TreeCategory.Networked    => "显示由游戏服务器处理的NPC对象。"u8,
+            TreeCategory.NonNetworked => "显示由本地处理的NPC对象。"u8,
             _                         => throw new ArgumentException(),
         };
 

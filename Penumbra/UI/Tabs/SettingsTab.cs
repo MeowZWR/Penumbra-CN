@@ -274,7 +274,7 @@ public sealed class SettingsTab : ITab<TabType>
               + "此目录需要你有读写权限。\n"u8
               + "建议将此目录放置于读写速度快的硬盘上，最好是固态硬盘。\n"u8
               + "它还应该放在逻辑驱动器的根目录附近，总之此文件夹的总路径越短越好。\n"u8
-              + "绝对不要将此目录放在卫月目录或其子目录中。";
+              + "绝对不要将此目录放在卫月目录或其子目录中。"u8;
 
             Im.Line.SameInner();
             LunaStyle.DrawAlignedHelpMarker(tt);
@@ -301,9 +301,9 @@ public sealed class SettingsTab : ITab<TabType>
         UiHelpers.DrawOpenDirectoryButton(0, _modManager.BasePath, _modManager.Valid);
         Im.Line.Same();
         var tt = _modManager.Valid
-            ? "强制Penumbra完全重扫模组根目录，相当于重启Penumbra。"
-            : "当前选择的文件夹无效。请选择其他文件夹。";
-        if (ImEx.Button("重新扫描模组", Vector2.Zero, tt, !_modManager.Valid))
+            ? "强制Penumbra完全重扫模组根目录，相当于重启Penumbra。"u8
+            : "当前选择的文件夹无效。请选择其他文件夹。"u8;
+        if (ImEx.Button("重新扫描模组"u8, Vector2.Zero, tt, !_modManager.Valid))
             _modManager.DiscoverMods();
     }
 
@@ -367,7 +367,7 @@ public sealed class SettingsTab : ITab<TabType>
 
         LunaStyle.DrawAlignedHelpMarkerLabel("单选项组单选项显示上限"u8,
             "如果单选项组的选项数量等于或多于此处设定的值，将收起变更为下拉菜单。\n"u8
-          + "少于此值的单选项组仍会展开显示。");
+          + "少于此值的单选项组仍会展开显示。"u8);
     }
 
     /// <summary> Draw a selection for the minimum number of options after which a group is drawn as collapsible. </summary>
@@ -382,18 +382,18 @@ public sealed class SettingsTab : ITab<TabType>
         }
 
         LunaStyle.DrawAlignedHelpMarkerLabel("选项组折叠设置"u8,
-            "选项组选项数量高于此值时在选项组上方添加一个展开/折叠按钮。");
+            "选项组选项数量高于此值时在选项组上方添加一个展开/折叠按钮。"u8);
     }
 
 
     /// <summary> Draw the window hiding state checkboxes.  </summary>
     private void DrawHidingSettings()
     {
-        Checkbox("游戏启动时自动开启设置窗口"u8, "在启动游戏后，Penumbra主窗口应该打开还是关闭。",
+        Checkbox("游戏启动时自动开启设置窗口"u8, "在启动游戏后，Penumbra主窗口应该打开还是关闭。"u8,
             _config.OpenWindowAtStart,                 v => _config.OpenWindowAtStart = v);
 
         Checkbox("隐藏游戏UI时，隐藏设置窗口"u8,
-            "手动隐藏游戏UI时，隐藏Penumbra的主窗口。", _config.HideUiWhenUiHidden,
+            "手动隐藏游戏UI时，隐藏Penumbra的主窗口。"u8, _config.HideUiWhenUiHidden,
             v =>
             {
                 _config.HideUiWhenUiHidden                   = v;
@@ -523,14 +523,14 @@ public sealed class SettingsTab : ITab<TabType>
     private void DrawMiscSettings()
     {
         Checkbox("自动选择角色关联合集"u8,
-            "每次登录时，自动选择与当前角色关联的合集作为当前编辑的合集。",
+            "每次登录时，自动选择与当前角色关联的合集作为当前编辑的合集。"u8,
             _config.AutoSelectCollection, _autoSelector.SetAutomaticSelection);
         Checkbox("将成功运行的消息输出到聊天窗口"u8,
-            "聊天命令通常只在运行失败时输出消息到聊天窗口，但也可以在成功运行时输出消息供你确认。你可以在此处禁用这个功能。",
+            "聊天命令通常只在运行失败时输出消息到聊天窗口，但也可以在成功运行时输出消息供你确认。你可以在此处禁用这个功能。"u8,
             _config.PrintSuccessfulCommandsToChat, v => _config.PrintSuccessfulCommandsToChat = v);
-        Checkbox("在模组界面中隐藏重绘栏"u8, "隐藏模组选项卡下模组界面底部的重绘栏。",
+        Checkbox("在模组界面中隐藏重绘栏"u8, "隐藏模组选项卡下模组界面底部的重绘栏。"u8,
             _config.HideRedrawBar,                 v => _config.HideRedrawBar = v);
-        Checkbox("隐藏更改项目筛选图标"u8, "隐藏在更改项目（包括模组面板里的更改项目）选项卡中的一行筛选图标。",
+        Checkbox("隐藏更改项目筛选图标"u8, "隐藏在更改项目（包括模组面板里的更改项目）选项卡中的一行筛选图标。"u8,
             _config.HideChangedItemFilters,     v =>
             {
                 _config.HideChangedItemFilters = v;
@@ -552,14 +552,14 @@ public sealed class SettingsTab : ITab<TabType>
 
         Checkbox("在更改项目中忽略机工副手"u8,
             "在更改项目标签中忽略所有以太转换器（机工副手），因为对它们的任何更改都会同时更改所有这些项目。\n\n"u8
-          + "更改此选项会重新扫描您的模组，以便更新所有已更改的项目。",
+          + "更改此选项会重新扫描您的模组，以便更新所有已更改的项目。"u8,
             _config.HideMachinistOffhandFromChangedItems, v =>
             {
                 _config.HideMachinistOffhandFromChangedItems = v;
                 _modManager.DiscoverMods();
             });
         Checkbox("隐藏模组选择器优先级数字标识"u8,
-            "如果模组选择器里的模组优先级不是0，而且有足够的空间显示，则在模组名称后添加优先级数字标识。勾选此选项后隐藏这个标识。",
+            "如果模组选择器里的模组优先级不是0，而且有足够的空间显示，则在模组名称后添加优先级数字标识。勾选此选项后隐藏这个标识。"u8,
             _config.HidePrioritiesInSelector, v => _config.HidePrioritiesInSelector = v);
         DrawSingleSelectRadioMax();
         DrawCollapsibleGroupMin();
@@ -569,28 +569,28 @@ public sealed class SettingsTab : ITab<TabType>
     private void DrawIdentificationSettings()
     {
         Checkbox("允许其他插件的UI使用界面合集"u8,
-            "允许其他卫月插件在调用UI材质时使用界面合集中的文件。",
+            "允许其他卫月插件在调用UI材质时使用界面合集中的文件。"u8,
             _dalamudSubstitutionProvider.Enabled, _dalamudSubstitutionProvider.Set);
         Checkbox("在登陆界面中使用合集"u8,
-            "如果禁用此选项，则不会对登陆界面或美容师中的角色应用任何模组。",
+            "如果禁用此选项，则不会对登陆界面或美容师中的角色应用任何模组。"u8,
             _config.ShowModsInLobby, v => _config.ShowModsInLobby = v);
         Checkbox("在角色窗口中使用合集"u8,
-            "如果设置，则使用基于你的玩家名字命名的独立角色合集或你的角色组合集。",
+            "如果设置，则使用基于你的玩家名字命名的独立角色合集或你的角色组合集。"u8,
             _config.UseCharacterCollectionInMainWindow, v => _config.UseCharacterCollectionInMainWindow = v);
         Checkbox("在冒险者铭牌中使用合集"u8,
-            "根据冒险者的姓名，为其使用合适的合集。",
+            "根据冒险者的姓名，为其使用合适的合集。"u8,
             _config.UseCharacterCollectionsInCards, v => _config.UseCharacterCollectionsInCards = v);
         Checkbox("在试穿窗口中使用合集"u8,
-            "如果设置，则使用基于你的角色名字的独立合集。",
+            "如果设置，则使用基于你的角色名字的独立合集。"u8,
             _config.UseCharacterCollectionInTryOn, v => _config.UseCharacterCollectionInTryOn = v);
         Checkbox("在调查窗口中不使用模组"u8,
             "使用空合集来调查角色，不管是什么角色。\n"u8
-          + "优先于下一个选项。", _config.UseNoModsInInspect, v => _config.UseNoModsInInspect = v);
+          + "优先于下一个选项。"u8, _config.UseNoModsInInspect, v => _config.UseNoModsInInspect = v);
         Checkbox("在调查窗口中使用合集"u8,
-            "根据当前调查的角色的名称，为其使用符合角色名称的合集。",
+            "根据当前调查的角色的名称，为其使用符合角色名称的合集。"u8,
             _config.UseCharacterCollectionInInspect, v => _config.UseCharacterCollectionInInspect = v);
         Checkbox("基于所有者使用合集"u8,
-            "使用所有者的名字来决定其坐骑、宠物、时尚配饰、战斗伙伴使用适当的角色合集。",
+            "使用所有者的名字来决定其坐骑、宠物、时尚配饰、战斗伙伴使用适当的角色合集。"u8,
             _config.UseOwnerNameForCharacterCollection, v => _config.UseOwnerNameForCharacterCollection = v);
     }
 
@@ -615,7 +615,7 @@ public sealed class SettingsTab : ITab<TabType>
                 }
         }
 
-        LunaStyle.DrawAlignedHelpMarkerLabel("模组排序方式"u8, "选择模组选项卡中模组选择器的默认排序方式。");
+        LunaStyle.DrawAlignedHelpMarkerLabel("模组排序方式"u8, "选择模组选项卡中模组选择器的默认排序方式。"u8);
     }
 
     private void DrawRenameSettings()
@@ -634,7 +634,7 @@ public sealed class SettingsTab : ITab<TabType>
         }
 
         LunaStyle.DrawAlignedHelpMarkerLabel("模组上下文菜单中的重命名字段"u8,
-            "选择在模组选择器中打开模组右键上下文菜单时可见的两个重命名输入字段中的哪一个。");
+            "选择在模组选择器中打开模组右键上下文菜单时可见的两个重命名输入字段中的哪一个。"u8);
     }
 
     /// <summary> Draw all settings pertaining to the mod selector. </summary>
@@ -642,7 +642,7 @@ public sealed class SettingsTab : ITab<TabType>
     {
         DrawFolderSortType();
         DrawRenameSettings();
-        Checkbox("默认展开折叠组"u8, "打开模组选择器时，默认展开全部折叠组，否则最小化全部折叠组。",
+        Checkbox("默认展开折叠组"u8, "打开模组选择器时，默认展开全部折叠组，否则最小化全部折叠组。"u8,
             _config.OpenFoldersByDefault,     v =>
             {
                 _config.OpenFoldersByDefault = v;
@@ -651,7 +651,7 @@ public sealed class SettingsTab : ITab<TabType>
             });
 
         KeySelector.DoubleModifier("模组删除组合键"u8,
-            "在点击删除模组按钮时，选择是否需要使用组合键才令删除生效。防止误点。", UiHelpers.InputTextWidth.X,
+            "在点击删除模组按钮时，选择是否需要使用组合键才令删除生效。防止误点。"u8, UiHelpers.InputTextWidth.X,
             _config.DeleteModModifier,
             v =>
             {
@@ -659,7 +659,7 @@ public sealed class SettingsTab : ITab<TabType>
                 _config.Save();
             });
         KeySelector.DoubleModifier("匿名模式组合键"u8,
-            "点击匿名模式或临时设置模式按钮时需要按住的组合键，防止误操作。",
+            "点击匿名模式或临时设置模式按钮时需要按住的组合键，防止误操作。"u8,
             UiHelpers.InputTextWidth.X,
             _config.IncognitoModifier,
             v =>
@@ -673,16 +673,16 @@ public sealed class SettingsTab : ITab<TabType>
     private void DrawModHandlingSettings()
     {
         Checkbox("默认使用临时设置"u8,
-            "当您对合集进行任何更改时，首先将其应用为临时更改，如果您希望保留这些更改，则需要点击[转为永久]。",
+            "当您对合集进行任何更改时，首先将其应用为临时更改，如果您希望保留这些更改，则需要点击[转为永久]。"u8,
             _config.DefaultTemporaryMode, v => _config.DefaultTemporaryMode = v);
         Checkbox("导入时替换非标准符号"u8,
-            "导入模组时，将模组和选项名称中的所有非ASCII符号替换为下划线。", _config.ReplaceNonAsciiOnImport,
+            "导入模组时，将模组和选项名称中的所有非ASCII符号替换为下划线。"u8, _config.ReplaceNonAsciiOnImport,
             v => _config.ReplaceNonAsciiOnImport = v);
         Checkbox("打开导入窗口时始终使用默认目录"u8,
-            "每次都在此处指定的目录位置打开导入窗口，不使用上一次的路径。",
+            "每次都在此处指定的目录位置打开导入窗口，不使用上一次的路径。"u8,
             _config.AlwaysOpenDefaultImport, v => _config.AlwaysOpenDefaultImport = v);
         Checkbox("处理PCP文件"u8,
-            "当检测到特定模组（通常以.pcp结尾，但不一定）时，Penumbra会自动尝试为该模组包创建对应角色的合集，并分配给特定角色。如果不需要自动处理可关闭此功能。",
+            "当检测到特定模组（通常以.pcp结尾，但不一定）时，Penumbra会自动尝试为该模组包创建对应角色的合集，并分配给特定角色。如果不需要自动处理可关闭此功能。"u8,
             !_config.PcpSettings.DisableHandling, v => _config.PcpSettings.DisableHandling = !v);
 
         var active = _config.DeleteModModifier.IsActive();
@@ -700,15 +700,15 @@ public sealed class SettingsTab : ITab<TabType>
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"请在点击时按住{_config.DeleteModModifier}。");
 
         Checkbox("允许其他插件访问PCP处理功能"u8,
-            "在创建或导入PCP文件时，其他插件可以添加和解释它们自己的数据到character.json文件。",
+            "在创建或导入PCP文件时，其他插件可以添加和解释它们自己的数据到character.json文件。"u8,
             _config.PcpSettings.AllowIpc, v => _config.PcpSettings.AllowIpc = v);
 
         Checkbox("导入PCP文件时创建合集"u8,
-            "导入PCP文件时自动创建对应的合集。",
+            "导入PCP文件时自动创建对应的合集。"u8,
             _config.PcpSettings.CreateCollection, v => _config.PcpSettings.CreateCollection = v);
 
         Checkbox("导入PCP文件时分配合集"u8,
-            "导入PCP文件并创建合集时，自动将该合集分配给关联角色。",
+            "导入PCP文件并创建合集时，自动将该合集分配给关联角色。"u8,
             _config.PcpSettings.AssignCollection, v => _config.PcpSettings.AssignCollection = v);
         DrawDefaultModImportPath();
         DrawDefaultModAuthor();
@@ -717,17 +717,17 @@ public sealed class SettingsTab : ITab<TabType>
         DrawPcpExtension();
         DrawDefaultModExportPath();
         Checkbox("启用目录监听器"u8,
-            "启用文件监听器后，Penumbra会自动监听指定目录中新出现的模组文件，并在检测到新模组时弹出导入这些模组的询问弹窗。",
+            "启用文件监听器后，Penumbra会自动监听指定目录中新出现的模组文件，并在检测到新模组时弹出导入这些模组的询问弹窗。"u8,
             _config.EnableDirectoryWatch, _fileWatcher.Toggle);
         Checkbox("启用全自动导入"u8,
-            "配合文件监听器，自动跳过询问弹窗并导入检测到的所有新模组。",
+            "配合文件监听器，自动跳过询问弹窗并导入检测到的所有新模组。"u8,
             _config.EnableAutomaticModImport, v => _config.EnableAutomaticModImport = v);
         Checkbox("防止导出的模组被自动重新导入"u8,
-            "如果自动导入目录与默认模组导出目录相同，则防止导出的模组和角色包被自动重新导入或显示询问弹窗。",
+            "如果自动导入目录与默认模组导出目录相同，则防止导出的模组和角色包被自动重新导入或显示询问弹窗。"u8,
             _config.PreventExportLoopback, v => _config.PreventExportLoopback = v);
         DrawFileWatcherPath();
         Checkbox("自动关闭模组导入成功的报告"u8,
-            "如果所有模组都成功导入，则自动关闭报告。\n包含错误的报告仍需要手动关闭。",
+            "如果所有模组都成功导入，则自动关闭报告。\n包含错误的报告仍需要手动关闭。"u8,
             _config.AutoDismissModImportSuccessReports, v => _config.AutoDismissModImportSuccessReports = v);
     }
 
@@ -943,18 +943,18 @@ public sealed class SettingsTab : ITab<TabType>
         DrawMinimumDimensionConfig();
         DrawHdrRenderTargets();
         Checkbox("导入时自动清除重复文件"u8,
-            "导入时自动清除模组中的重复文件。这将使模组文件的占用变小，但会删除（二进制完全相同的）文件。",
+            "导入时自动清除模组中的重复文件。这将使模组文件的占用变小，但会删除（二进制完全相同的）文件。"u8,
             _config.AutoDeduplicateOnImport, v => _config.AutoDeduplicateOnImport = v);
         Checkbox("PMP导入时自动重复复制UI文件"u8,
-            "从PMP文件导入时自动重复复制并规范化与UI有关的文件。强烈建议启用此选项，因为UI文件导入时去重会导致游戏崩溃。",
+            "从PMP文件导入时自动重复复制并规范化与UI有关的文件。强烈建议启用此选项，因为UI文件导入时去重会导致游戏崩溃。"u8,
             _config.AutoReduplicateUiOnImport, v => _config.AutoReduplicateUiOnImport = v);
         DrawCompressionBox();
         Checkbox("导入时保持默认的元数据修改"u8,
             "通常情况下，元数据修改的值（有时是由TexTools导出的）与游戏默认的值相同时，将被抛弃。"u8
-          + "切换此选项以保留它们 - 假如你认为某个模组中的某个选项在先前的选项中被禁用了元数据的修改。",
+          + "切换此选项以保留它们 - 假如你认为某个模组中的某个选项在先前的选项中被禁用了元数据的修改。"u8,
             _config.KeepDefaultMetaChanges, v => _config.KeepDefaultMetaChanges = v);
         Checkbox("启用自定义形状与属性支持"u8,
-            "Penumbra将允许对模组模型的自定义形状键和属性进行识别与合并。",
+            "Penumbra将允许对模组模型的自定义形状键和属性进行识别与合并。"u8,
             _config.EnableCustomShapes, _attributeHook.SetState);
         DrawWaitForPluginsReflection();
         DrawEnableHttpApiBox();
@@ -1156,7 +1156,7 @@ public sealed class SettingsTab : ITab<TabType>
                 "有些模组需要在游戏开始时加载一次，之后不再加载的文件。\n"u8
               + "游戏文件加载后Penumbra才加载该文件可能会导致出现问题。\n"u8
               + "这个设置将导致游戏等待，直到Penumbra里的某些模组完成加载，使这些模组（一般在基础合集中）能够正常生效。\n\n"u8
-              + "这将更改Dalamud设置(命令 /xlsettings) -> 基本配置中的设置。",
+              + "这将更改Dalamud设置(命令 /xlsettings) -> 基本配置中的设置。"u8,
                 value,
                 v => _dalamudConfig.SetDalamudConfig(DalamudConfigService.WaitingForPluginsOption, v, "doWaitForPluginsOnStartup"));
         }
@@ -1173,21 +1173,20 @@ public sealed class SettingsTab : ITab<TabType>
         if (Im.Scroll.MaximumY > 0)
             xPos -= Im.Style.ScrollbarSize + Im.Style.FramePadding.X;
 
-        Im.Cursor.Position = new Vector2(xPos, Im.Style.FrameHeightWithSpacing);
-        UiHelpers.DrawSupportButton(_penumbra);
-
         Im.Cursor.Position = new Vector2(xPos, 0);
-        SupportButton.Discord(Penumbra.Messager, width);
+        SupportButton.DiscordSplit(Penumbra.Messager, new Vector2(width, 0));
+
+        Im.Cursor.Position = new Vector2(xPos, 1 * Im.Style.FrameHeightWithSpacing);
+        SupportButton.ModSites(Penumbra.Messager, new Vector2(width, 0));
 
         Im.Cursor.Position = new Vector2(xPos, 2 * Im.Style.FrameHeightWithSpacing);
-        SupportButton.ReniGuide(Penumbra.Messager, width);
-
-        Im.Cursor.Position = new Vector2(xPos, 3 * Im.Style.FrameHeightWithSpacing);
-        if (Im.Button("重启教程"u8, new Vector2(width, 0)))
-        {
+        SupportButton.GuideTutorial(Penumbra.Messager, new Vector2(width, 0), () => {
             _config.Ephemeral.TutorialStep = 0;
             _config.Ephemeral.Save();
-        }
+        });
+
+        Im.Cursor.Position = new Vector2(xPos, 3 * Im.Style.FrameHeightWithSpacing);
+        UiHelpers.DrawSupportButton(_penumbra);
 
         Im.Cursor.Position = new Vector2(xPos, 4 * Im.Style.FrameHeightWithSpacing);
         if (Im.Button("查看更新日志"u8, new Vector2(width, 0)))

@@ -149,37 +149,6 @@ public class ItemSwapTab : IDisposable, ITab
         _communicator.ModOptionChanged.Unsubscribe(OnModOptionChange);
     }
 
-    private class ItemSelector(ActiveCollections collections, ItemData data, ModFileSystemSelector? selector, FullEquipType type)
-        : FilterComboCache<(EquipItem Item, bool InMod, SingleArray<IMod> InCollection)>(() =>
-        {
-            var list = data.ByType[type];
-            var enumerable = selector?.Selected is { } mod && mod.ChangedItems.Values.Any(o => o is IdentifiedItem i && i.Item.Type == type)
-                ? list.Select(i => (i, mod.ChangedItems.ContainsKey(i.Name), collections.Current.ChangedItems.TryGetValue(i.Name, out var m) ? m.Item1 : new SingleArray<IMod>()))
-                    .OrderByDescending(p => p.Item2).ThenByDescending(p => p.Item3.Count)
-                : selector is null
-                    ? list.Select(i => (i, false, collections.Current.ChangedItems.TryGetValue(i.Name, out var m) ? m.Item1 : new SingleArray<IMod>())).OrderBy(p => p.Item3.Count)
-                    : list.Select(i => (i, false, collections.Current.ChangedItems.TryGetValue(i.Name, out var m) ? m.Item1 : new SingleArray<IMod>())).OrderByDescending(p => p.Item3.Count);
-            return enumerable.ToList();
-        }, MouseWheelType.None, Penumbra.Log)
-    {
-        protected override bool DrawSelectable(int globalIdx, bool selected)
-        {
-            var (_, inMod, inCollection) = Items[globalIdx];
-            using var color = inMod
-                ? ImRaii.PushColor(ImGuiCol.Text, ColorId.ResTreeLocalPlayer.Value())
-                : inCollection.Count > 0
-                    ? ImRaii.PushColor(ImGuiCol.Text, ColorId.ResTreeNonNetworked.Value())
-                    : null;
-            var ret = base.DrawSelectable(globalIdx, selected);
-            if (inCollection.Count > 0)
-                ImUtf8.HoverTooltip(string.Join('\n', inCollection.Select(m => m.Name.Text)));
-            return ret;
-        }
-
-        protected override string ToString((EquipItem Item, bool InMod, SingleArray<IMod> InCollection) obj)
-            => obj.Item.Name;
-    }
-
     private readonly Dictionary<SwapType, (ItemSelector Source, ItemSelector Target, StringU8 TextFrom, StringU8 TextTo)> _selectors;
     private readonly ItemSwapContainer                                                                                    _swapData;
 
@@ -677,19 +646,6 @@ public class ItemSwapTab : IDisposable, ITab
 
         using var table = Im.Table.Begin("##settings"u8, 2, TableFlags.SizingFixedFit);
         DrawTargetIdInput(table, "将这个发型"u8);
-        DrawSourceIdInput(table, "转换给"u8);
-        DrawGenderInput(table, "给所有的"u8);
-    }
-
-    private void DrawFaceSwap()
-    {
-        using var disabled = ImRaii.Disabled();
-        using var tab      = DrawTab(SwapType.Face);
-        if (!tab)
-            return;
-
-        using var table = Im.Table.Begin("##settings"u8, 2, TableFlags.SizingFixedFit);
-        DrawTargetIdInput(table, "将这个脸型"u8);
         DrawSourceIdInput(table, "转换给"u8);
         DrawGenderInput(table, "给所有的"u8);
     }

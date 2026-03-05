@@ -1,8 +1,9 @@
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
+using ImSharp;
+using Luna;
+using Notification = Dalamud.Interface.ImGuiNotification.Notification;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
 using SixLabors.ImageSharp;
@@ -15,16 +16,16 @@ public class ModPreviewImagePanel : IDisposable
 {
     private readonly ITextureProvider _textureProvider;
     private readonly ImageCompressor _imageCompressor;
-    private readonly Dictionary<string, CachedTexture> _textureCache = new();
-    private readonly Dictionary<string, Vector2> _originalSizes = new();
-    private readonly Dictionary<string, Vector2> _scaledSizes = new();
-    private readonly HashSet<string> _loadingImages = new();
-    private readonly LinkedList<string> _lruList = new();
-    private readonly object _cacheLock = new();
+    private readonly Dictionary<string, CachedTexture> _textureCache = [];
+    private readonly Dictionary<string, Vector2> _originalSizes = [];
+    private readonly Dictionary<string, Vector2> _scaledSizes = [];
+    private readonly HashSet<string> _loadingImages = [];
+    private readonly LinkedList<string> _lruList = [];
+    private readonly Lock _cacheLock = new();
     private readonly Timer _cacheCleanupTimer;
     private readonly ObjectPool<MemoryStream> _memoryStreamPool;
-    private readonly object _fileLock = new();
-    private readonly HashSet<string> _processingFiles = new();
+    private readonly Lock _fileLock = new();
+    private readonly HashSet<string> _processingFiles = [];
     private readonly IDragDropManager _dragDrop;
     private readonly ModManager _modManager;
     private readonly IDalamudPluginInterface _pluginInterface;
@@ -43,6 +44,9 @@ public class ModPreviewImagePanel : IDisposable
     private const int LogIntervalMs = 1000;
     private int _lastTotalImageCount = 0;
     private int _lastDrawnImageCount = 0;
+    private DateTime _lastPreviewTooltipReleaseTime = DateTime.MinValue;
+    private bool _wasPreviewRightMouseDown;
+    private const int TooltipRestoreDelayMs = 120;
 
     private static ModPreviewImagePanel? _instance;
 
@@ -70,9 +74,9 @@ public class ModPreviewImagePanel : IDisposable
 
     private readonly PreviewConfig _config = new();
     private readonly PinnedImageConfig _pinnedConfig = new();
-    private readonly List<string> _imagePaths = new();
+    private readonly List<string> _imagePaths = [];
 
-    private static readonly string[] SupportedExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".webp", ".gif", ".tiff" };
+    private static readonly string[] SupportedExtensions = [".png", ".jpg", ".jpeg", ".tga", ".bmp", ".webp", ".gif", ".tiff"];
     private static readonly string ConfigFileName = "preview_config.json";
     private static readonly string PinnedConfigFileName = "pinned_images.json";
 
@@ -458,14 +462,17 @@ public class ModPreviewImagePanel : IDisposable
         // 创建拖拽源
         _dragDrop.CreateImGuiSource("PreviewImageDrop", m => m.Extensions.Any(e => SupportedExtensions.Contains(e.ToLowerInvariant())), m =>
         {
-            ImGui.TextUnformatted($"拖拽图片到预览面板进行导入：\n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
+            Im.Text($"拖拽图片到预览面板进行导入：\n\t{string.Join("\n\t", m.Files.Select(Path.GetFileName))}");
             return true;
         });
-        var y = ImGui.GetCursorPos().Y;
+        var y = Im.Cursor.Position.Y;
         
-        using (var _ = ImRaii.Child("##DragDropTarget", new Vector2(panelWidth, ImGui.GetContentRegionAvail().Y - 4f), false, ImGuiWindowFlags.NoMouseInputs)){}
+        using (var _ = Im.Child.Begin("##DragDropTarget"u8, new Vector2(panelWidth, Im.ContentRegion.Available.Y - 4f), false,
+                   WindowFlags.NoMouseInputs))
+        {
+        }
 
-        ImGui.SetCursorPos(new Vector2(ImGui.GetCursorPos().X, y));
+        Im.Cursor.Position = new Vector2(Im.Cursor.Position.X, y);
 
         // 设置拖拽目标
         if (_dragDrop.CreateImGuiTarget("PreviewImageDrop", out var files, out _))
@@ -525,7 +532,7 @@ public class ModPreviewImagePanel : IDisposable
 
         if (!Directory.Exists(coverFolder))
         {
-            ImGui.TextDisabled("未找到 CoverImage 文件夹。");
+            Im.TextDisabled("未找到 CoverImage 文件夹。"u8);
             return;
         }
 
@@ -567,7 +574,7 @@ public class ModPreviewImagePanel : IDisposable
 
         if (imageFilesToDisplay.Count == 0)
         {
-            ImGui.TextDisabled("没有支持格式的图片。");
+            Im.TextDisabled("没有支持格式的图片。"u8);
             return;
         }
 
@@ -630,11 +637,11 @@ public class ModPreviewImagePanel : IDisposable
         int actualVisibleCount = 0;
         
         // 创建一个子窗口来包含所有图片，并设置滚动条位置
-        using (var child = ImRaii.Child("##PreviewContent", new Vector2(panelWidth, -1), false, ImGuiWindowFlags.NoScrollbar))
+        using (var child = Im.Child.Begin("##PreviewContent"u8, new Vector2(panelWidth, -1), false, WindowFlags.NoScrollbar))
         {
             if (child)
             {
-                ImGui.SetCursorPosY(0);
+                Im.Cursor.Position = Im.Cursor.Position with { Y = 0 };
                 
                 // 重置所有图片的可见状态为false
                 lock (_cacheLock)
@@ -645,7 +652,7 @@ public class ModPreviewImagePanel : IDisposable
                     }
                 }
                 
-                var scrollbarWidth = ImGui.GetStyle().ScrollbarSize;
+                var scrollbarWidth = Im.Style.ScrollbarSize;
                 var leftPadding = 0 * UiHelpers.Scale; // 减小左侧间距
                 var availableWidth = panelWidth - leftPadding - scrollbarWidth;
                 var spacing = _configuration.PreviewPanelImageSpacing * UiHelpers.Scale;
@@ -689,8 +696,8 @@ public class ModPreviewImagePanel : IDisposable
                     {
                         if (_loadingImages.Contains(path))
                         {
-                            ImGui.TextDisabled("加载中...");
-                            ImGui.NewLine();
+                            Im.TextDisabled("加载中..."u8);
+                            Im.Line.New();
                             continue;
                         }
                         continue;
@@ -775,8 +782,8 @@ public class ModPreviewImagePanel : IDisposable
                     if (columnHeights[shortestColumn] > 0)
                         posY = columnHeights[shortestColumn] + spacing;
                     
-                    ImGui.SetCursorPos(new Vector2(posX, posY));
-                    ImGui.Image(cachedTexture.Texture.Handle, cachedTexture.ScaledSize);
+                    Im.Cursor.Position = new Vector2(posX, posY);
+                    Im.Image.Draw(cachedTexture.Texture.Id, cachedTexture.ScaledSize);
 
                     UpdateLRU(path, true);
                     actualVisibleCount++;
@@ -788,28 +795,36 @@ public class ModPreviewImagePanel : IDisposable
                     }
 #endif
 
-                    if (ImGui.IsItemHovered() && _config.EnableImageInteraction)
+                    if (Im.Item.Hovered() && _config.EnableImageInteraction)
                     {
-                        ImGui.BeginTooltip();
-                        ImGui.Text("图片操作说明：");
-                        ImGui.BulletText("放大图片：按住右键");
-                        ImGui.BulletText("删除图片：Shift + Ctrl + 左键");
-                        ImGui.BulletText("置顶/取消置顶：Shift + 右键");
-                        ImGui.BulletText("使用外部工具打开：Ctrl + 左键");
+                        var isRightMouseDown = Im.Mouse.IsDown(MouseButton.Right);
+                        if (_wasPreviewRightMouseDown && !isRightMouseDown)
+                            _lastPreviewTooltipReleaseTime = DateTime.Now;
 
-                        ImGui.TextColored(new Vector4(1, 0.5f, 0, 1), "注意："); 
-                        ImGui.SameLine(0, 0);
-                        ImGui.TextWrapped("点击后若未及时松开Ctrl键，外部工具会在后台打开");
-                        ImGui.EndTooltip();
+                        _wasPreviewRightMouseDown = isRightMouseDown;
+                        var shouldShowHelpTooltip = !isRightMouseDown
+                         && (DateTime.Now - _lastPreviewTooltipReleaseTime).TotalMilliseconds >= TooltipRestoreDelayMs;
+
+                        if (shouldShowHelpTooltip)
+                        {
+                            using var tt = Im.Tooltip.Begin();
+                            Im.Text("图片操作说明："u8);
+                            Im.Text("- 放大图片：按住右键"u8);
+                            Im.Text("- 删除图片：Shift + Ctrl + 左键"u8);
+                            Im.Text("- 置顶/取消置顶：Shift + 右键"u8);
+                            Im.Text("- 使用外部工具打开：Ctrl + 左键"u8);
+                            Im.Text("注意："u8);
+                            Im.TextWrapped("点击后若未及时松开Ctrl键，外部工具会在后台打开"u8);
+                        }
 
                         // Shift + 右键点击置顶
-                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyShift)
+                        if (Im.Mouse.IsClicked(MouseButton.Right) && Im.Io.KeyShift)
                         {
                             PinImage(path);
                         }
-                        else if (ImGui.IsMouseDown(ImGuiMouseButton.Right) && !ImGui.GetIO().KeyShift)
+                        else if (isRightMouseDown && !Im.Io.KeyShift)
                         {
-                            var winSize = ImGui.GetIO().DisplaySize;
+                            var winSize = Im.Io.DisplaySize;
                             
                             if (cachedTexture.Resolution < ImageCompressor.ResolutionType.Original && 
                                 !_loadingImages.Contains(path))
@@ -859,8 +874,8 @@ public class ModPreviewImagePanel : IDisposable
                                                     cachedTexture.OriginalTexture?.Height ?? cachedTexture.Texture.Height);
 
                             var scale = Math.Min(
-                                (winSize.X * 0.95f) / imgSize.X,
-                                (winSize.Y * 0.95f) / imgSize.Y
+                                winSize.X * 0.95f / imgSize.X,
+                                winSize.Y * 0.95f / imgSize.Y
                             );
 
                             if (scale < 1)
@@ -868,35 +883,20 @@ public class ModPreviewImagePanel : IDisposable
                                 imgSize *= scale;
                             }
 
-                            var min = new Vector2(winSize.X / 2 - imgSize.X / 2, winSize.Y / 2 - imgSize.Y / 2);
-                            var max = min + imgSize;
-
                             var texture = cachedTexture.OriginalTexture ?? cachedTexture.Texture;
-                            var foregroundDrawList = ImGui.GetForegroundDrawList();
-                            
-                            foregroundDrawList.AddRectFilled(
-                                Vector2.Zero,
-                                winSize,
-                                ImGui.GetColorU32(new Vector4(0, 0, 0, 0.7f))
-                            );
-                            
-                            foregroundDrawList.AddImage(texture.Handle, min, max);
                             
                             var sizeText = $"{texture.Width} x {texture.Height} - {cachedTexture.Resolution}";
                             if (cachedTexture.Resolution != ImageCompressor.ResolutionType.Original)
                                 sizeText += " (加载中...)";
-                                
-                            var textSize = ImGui.CalcTextSize(sizeText);
-                            var textPos = min + new Vector2(10, 10);
-                            foregroundDrawList.AddText(
-                                textPos,
-                                ImGui.GetColorU32(new Vector4(1, 1, 1, 1)),
-                                sizeText
-                            );
+
+                            Im.Window.SetNextPosition(winSize / 2, Condition.Always, Vector2.One / 2);
+                            using var full = Im.Tooltip.Begin();
+                            Im.Image.Draw(texture.Id, imgSize);
+                            Im.Text(sizeText);
                         }
 
                         // Ctrl + 左键点击打开外部工具
-                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
+                        if (Im.Mouse.IsClicked(MouseButton.Left) && Im.Io.KeyControl && !Im.Io.KeyShift)
                         {
                             try
                             {
@@ -913,7 +913,7 @@ public class ModPreviewImagePanel : IDisposable
                         }
 
                         // Shift + Ctrl + 左键删除
-                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && ImGui.GetIO().KeyShift)
+                        if (Im.Mouse.IsClicked(MouseButton.Left) && Im.Io.KeyControl && Im.Io.KeyShift)
                         {
                             try
                             {
@@ -947,42 +947,21 @@ public class ModPreviewImagePanel : IDisposable
                     if (columnHeights[shortestColumn] > 0)
                         posY = columnHeights[shortestColumn] + spacing;
                     
-                    ImGui.SetCursorPos(new Vector2(posX, posY));
+                    Im.Cursor.Position = new Vector2(posX, posY);
                     
                     var hiddenCount = totalImageCount - imageFilesToDisplay.Count;
                     var infoText = $"只支持 10 张预览图\n还有 {hiddenCount} 张图片未显示...";
-                    var textSize = ImGui.CalcTextSize(infoText);
-                    
-                    var padding = 10 * UiHelpers.Scale;
-                    var rectMin = ImGui.GetCursorScreenPos();
-                    var rectMax = new Vector2(
-                        rectMin.X + columnWidths[shortestColumn],
-                        rectMin.Y + textSize.Y + padding * 2
-                    );
-                    
-                    ImGui.GetWindowDrawList().AddRectFilled(
-                        rectMin,
-                        rectMax,
-                        ImGui.GetColorU32(new Vector4(0.1f, 0.1f, 0.1f, 0.7f)),
-                        4.0f
-                    );
-                    
-                    ImGui.SetCursorPos(new Vector2(
-                        posX + (columnWidths[shortestColumn] - textSize.X) / 2,
-                        posY + padding
-                    ));
-                    ImGui.TextColored(new Vector4(1, 1, 1, 0.9f), infoText);
-                    
-                    columnHeights[shortestColumn] = posY + textSize.Y + padding * 2;
+                    Im.Text(infoText);
+                    columnHeights[shortestColumn] = posY + Im.Font.CalculateSize(infoText).Y;
                 }
 
                 var maxHeight = columnHeights.Max();
                 if (maxHeight > 0)
                 {
                     var contentHeight = maxHeight;
-                    var availableHeight = ImGui.GetContentRegionAvail().Y;
+                    var availableHeight = Im.ContentRegion.Available.Y;
                     var finalHeight = Math.Min(contentHeight, availableHeight);
-                    ImGui.Dummy(new Vector2(0, finalHeight));
+                    Im.Dummy(new Vector2(0, finalHeight));
                 }
             }
         }
@@ -1151,7 +1130,7 @@ public class ModPreviewImagePanel : IDisposable
         }
     }
 
-    private Vector2 GetScaledSize(Vector2 originalSize, float maxWidth)
+    private static Vector2 GetScaledSize(Vector2 originalSize, float maxWidth)
     {
         // 计算缩放比例，保持宽高比
         float scale = Math.Min(1.0f, maxWidth / originalSize.X);
@@ -1164,7 +1143,7 @@ public class ModPreviewImagePanel : IDisposable
             return;
 
         var coverFolder = Path.Combine(CurrentModPath, "CoverImage");
-        var shouldCreate = !Directory.Exists(coverFolder) && ImGui.GetIO().KeyCtrl;
+        var shouldCreate = !Directory.Exists(coverFolder) && Im.Io.KeyControl;
 
         if (shouldCreate)
         {

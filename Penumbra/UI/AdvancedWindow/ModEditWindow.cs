@@ -159,7 +159,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             sb.Append($"   |   {subMods} 选项");
 
         if (size > 0)
-            sb.Append($"   |   {_editor.Files.Available.Count} 文件 ({Functions.HumanReadableSize(size)})");
+            sb.Append($"   |   {_editor.Files.Available.Count} 文件 ({FormattingFunctions.HumanReadableSize(size)})");
 
         if (unused > 0)
             sb.Append($"   |   {unused} 未使用的文件");

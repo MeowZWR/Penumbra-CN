@@ -144,7 +144,7 @@ public sealed class MainWindow : Window
 
         Im.Line.New();
         Im.Line.New();
-        SupportButton.DiscordSplit(Penumbra.Messager, 0);
+        SupportButton.DiscordSplit(Penumbra.Messager, new Vector2(0, 0));
         Im.Line.Same();
         UiHelpers.DrawSupportButton(_penumbra!);
         Im.Line.New();
