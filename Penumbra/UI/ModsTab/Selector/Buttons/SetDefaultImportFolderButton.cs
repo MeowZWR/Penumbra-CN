@@ -8,7 +8,7 @@ public sealed class SetDefaultImportFolderButton(ModFileSystemDrawer drawer) : B
 {
     /// <inheritdoc/>
     public override ReadOnlySpan<byte> Label(in IFileSystemFolder _)
-        => "Set As Default Import Folder"u8;
+        => "★设置为默认导入折叠组"u8;
 
     /// <inheritdoc/>
     public override void OnClick(in IFileSystemFolder folder)

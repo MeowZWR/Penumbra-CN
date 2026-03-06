@@ -11,10 +11,10 @@ public sealed class SetDescendantsButton(ModFileSystemDrawer drawer, bool setTo,
 {
     private readonly StringU8 _label = new((inherit, setTo) switch
     {
-        (true, true)  => "Inherit Descendants"u8,
-        (true, false) => "Stop Inheriting Descendants"u8,
-        (_, true)     => "Enable Descendants"u8,
-        (_, false)    => "Disable Descendants"u8,
+        (true, true)  => "继承子折叠组"u8,
+        (true, false) => "停止继承子折叠组"u8,
+        (_, true)     => "启用子折叠组"u8,
+        (_, false)    => "禁用子折叠组"u8,
     });
 
     /// <inheritdoc/>

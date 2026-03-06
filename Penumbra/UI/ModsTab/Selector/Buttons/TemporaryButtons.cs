@@ -21,13 +21,13 @@ public sealed class TemporaryButtons(ModFileSystemDrawer drawer) : BaseButton<IF
             return false;
 
         var editor = drawer.CollectionManager.Editor;
-        if (tempSettings is { Lock: <= 0 } && Im.Menu.Item("Remove Temporary Settings"u8))
+        if (tempSettings is { Lock: <= 0 } && Im.Menu.Item("清理临时设置"u8))
             editor.SetTemporarySettings(current, mod, null);
         var actual = current.GetActualSettings(mod.Index).Settings;
-        if (actual?.Enabled is true && Im.Menu.Item("Disable Temporarily"u8))
+        if (actual?.Enabled is true && Im.Menu.Item("禁用临时设置"u8))
             editor.SetTemporarySettings(current, mod, new TemporaryModSettings(mod, actual) { Enabled = false });
 
-        if (actual is not { Enabled: true } && Im.Menu.Item("Enable Temporarily"u8))
+        if (actual is not { Enabled: true } && Im.Menu.Item("启用临时设置"u8))
         {
             var newSettings = actual is null
                 ? TemporaryModSettings.DefaultSettings(mod, TemporaryModSettings.OwnSource, true)
@@ -35,7 +35,7 @@ public sealed class TemporaryButtons(ModFileSystemDrawer drawer) : BaseButton<IF
             editor.SetTemporarySettings(current, mod, newSettings);
         }
 
-        if (tempSettings is null && Im.Menu.Item("Turn Temporary"u8))
+        if (tempSettings is null && Im.Menu.Item("设为临时设置"u8))
             editor.SetTemporarySettings(current, mod, new TemporaryModSettings(mod, actual));
         return false;
     }

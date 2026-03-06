@@ -8,7 +8,7 @@ public sealed class ClearTemporarySettingsButton(ModFileSystemDrawer drawer) : B
 {
     /// <inheritdoc/>
     public override ReadOnlySpan<byte> Label
-        => "Clear Temporary Settings"u8;
+        => "清理临时设置"u8;
 
     /// <inheritdoc/>
     public override void OnClick()

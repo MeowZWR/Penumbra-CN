@@ -9,7 +9,7 @@ public sealed class ToggleFavoriteButton(ModFileSystemDrawer drawer) : BaseButto
 {
     /// <inheritdoc/>
     public override ReadOnlySpan<byte> Label(in IFileSystemData data)
-        => ((Mod)data.Value).Favorite ? "Remove Favorite"u8 : "Mark as Favorite"u8;
+        => ((Mod)data.Value).Favorite ? "移除收藏"u8 : "标记为收藏"u8;
 
     /// <inheritdoc/>
     public override void OnClick(in IFileSystemData data)

@@ -16,12 +16,12 @@ public sealed class MoveModInput(ModFileSystemDrawer fileSystem) : BaseButton<IF
         var       currentPath = data.FullPath;
         using var style       = Im.Style.PushDefault(ImStyleDouble.FramePadding);
         MenuSeparator.DrawSeparator();
-        Im.Text("Move Mod:"u8);
+        Im.Text("移动模组:"u8);
         if (Im.Window.Appearing)
             Im.Keyboard.SetFocusHere();
         var ret = Im.Input.Text(Label(data), ref currentPath, flags: InputTextFlags.EnterReturnsTrue);
         Im.Tooltip.OnHover(
-            "Enter a full path here to move the mod or change its search path. Creates all required parent directories, if possible."u8);
+            "输入一个完整路径来移动模组或更改其搜索路径。如果可能的话，会创建所有需要的父折叠组。"u8);
         if (!ret)
             return false;
 

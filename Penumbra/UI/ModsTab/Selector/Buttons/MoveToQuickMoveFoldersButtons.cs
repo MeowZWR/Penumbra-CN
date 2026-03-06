@@ -19,7 +19,7 @@ public sealed class MoveToQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : 
             var targetPath = $"{drawer.Config.QuickMoveFolder1}/{currentName}";
             if (!drawer.FileSystem.Equal(currentPath, targetPath))
             {
-                if (Im.Menu.Item($"Move to {drawer.Config.QuickMoveFolder1}"))
+                if (Im.Menu.Item($"移动到 {drawer.Config.QuickMoveFolder1}"))
                 {
                     foreach (var path in drawer.FileSystem.Selection.OrderedNodes)
                     {
@@ -29,7 +29,7 @@ public sealed class MoveToQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : 
 
                     drawer.FileSystem.RenameAndMoveWithDuplicates(data, targetPath);
                 }
-                Im.Tooltip.OnHover("Move the selected objects to a previously set-up quick move location, if possible."u8);
+                Im.Tooltip.OnHover("将选定的对象移动到之前设置的快速移动位置（如果有的话）。"u8);
             }
 
             id.Pop();
@@ -41,7 +41,7 @@ public sealed class MoveToQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : 
             var targetPath = $"{drawer.Config.QuickMoveFolder2}/{currentName}";
             if (!drawer.FileSystem.Equal(currentPath, targetPath))
             {
-                if (Im.Menu.Item($"Move to {drawer.Config.QuickMoveFolder2}"))
+                if (Im.Menu.Item($"移动到 {drawer.Config.QuickMoveFolder2}"))
                 {
                     foreach (var path in drawer.FileSystem.Selection.OrderedNodes)
                     {
@@ -51,7 +51,7 @@ public sealed class MoveToQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : 
 
                     drawer.FileSystem.RenameAndMoveWithDuplicates(data, targetPath);
                 }
-                Im.Tooltip.OnHover("Move the selected objects to a previously set-up quick move location, if possible."u8);
+                Im.Tooltip.OnHover("将选定的对象移动到之前设置的快速移动位置（如果有的话）。"u8);
             }
 
             id.Pop();
@@ -63,7 +63,7 @@ public sealed class MoveToQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : 
             var targetPath = $"{drawer.Config.QuickMoveFolder3}/{currentName}";
             if (!drawer.FileSystem.Equal(currentPath, targetPath))
             {
-                if (Im.Menu.Item($"Move to {drawer.Config.QuickMoveFolder3}"))
+                if (Im.Menu.Item($"移动到 {drawer.Config.QuickMoveFolder3}"))
                 {
                     foreach (var path in drawer.FileSystem.Selection.OrderedNodes)
                     {
@@ -73,7 +73,7 @@ public sealed class MoveToQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : 
 
                     drawer.FileSystem.RenameAndMoveWithDuplicates(data, targetPath);
                 }
-                Im.Tooltip.OnHover("Move the selected objects to a previously set-up quick move location, if possible."u8);
+                Im.Tooltip.OnHover("将选定的对象移动到之前设置的快速移动位置（如果有的话）。"u8);
             }
 
             id.Pop();

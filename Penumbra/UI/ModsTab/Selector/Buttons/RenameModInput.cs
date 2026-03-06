@@ -18,11 +18,11 @@ public sealed class RenameModInput(ModFileSystemDrawer fileSystem) : BaseButton<
         var       currentName = mod.Name;
         using var style       = Im.Style.PushDefault(ImStyleDouble.FramePadding);
         MenuSeparator.DrawSeparator();
-        Im.Text("Rename Mod:"u8);
+        Im.Text("重命名模组:"u8);
         if (Im.Window.Appearing)
             Im.Keyboard.SetFocusHere();
         var ret = Im.Input.Text(Label(data), ref currentName, flags: InputTextFlags.EnterReturnsTrue);
-        Im.Tooltip.OnHover("Enter a new name here to rename the changed mod."u8);
+        Im.Tooltip.OnHover("输入一个新名称来重命名模组。"u8);
         if (!ret)
             return false;
 

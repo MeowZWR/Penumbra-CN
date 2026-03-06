@@ -8,7 +8,7 @@ public sealed class ClearDefaultImportFolderButton(ModFileSystemDrawer drawer) :
 {
     /// <inheritdoc/>
     public override ReadOnlySpan<byte> Label
-        => "Clear Default Import Folder"u8;
+        => "★清理默认导入折叠组"u8;
 
     /// <inheritdoc/>
     public override void OnClick()
