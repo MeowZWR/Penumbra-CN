@@ -7,14 +7,14 @@ namespace Penumbra.UI.ModsTab.Selector;
 /// <param name="drawer"> The file system drawer. </param>
 /// <param name="setTo"> Whether the drawer should enable or disable the descendants. </param>
 /// <param name="inherit"> Whether the drawer should inherit all descendants instead of enabling or disabling them. </param>
-public sealed class SetDescendantsButton(ModFileSystemDrawer drawer, bool setTo, bool inherit = false) : BaseButton<IFileSystemFolder>
+public sealed class SetDescendantsButton(ModFileSystemDrawer drawer, bool setTo, bool? inherit) : BaseButton<IFileSystemFolder>
 {
     private readonly StringU8 _label = new((inherit, setTo) switch
     {
-        (true, true)  => "继承子折叠组"u8,
-        (true, false) => "停止继承子折叠组"u8,
-        (_, true)     => "启用子折叠组"u8,
-        (_, false)    => "禁用子折叠组"u8,
+        (true, _)     => "继承子折叠组"u8,
+        (false, _)    => "停止继承子折叠组"u8,
+        (null, true)  => "启用子折叠组"u8,
+        (null, false) => "禁用子折叠组"u8,
     });
 
     /// <inheritdoc/>

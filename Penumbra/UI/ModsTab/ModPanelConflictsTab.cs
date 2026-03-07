@@ -35,13 +35,14 @@ public class ModPanelConflictsTab(CollectionManager collectionManager, ModSelect
 
     public void DrawContent()
     {
+        using var id    = Im.Id.Push(selection.ModName);
         using var table = Im.Table.Begin("conflicts"u8, 3, TableFlags.RowBackground | TableFlags.ScrollY, Im.ContentRegion.Available);
         if (!table)
             return;
 
         var       buttonSize       = new Vector2(Im.Style.FrameHeight);
         var       spacing          = Im.Style.ItemInnerSpacing with { Y = Im.Style.ItemSpacing.Y };
-        var       priorityRowWidth = Im.Font.CalculateSize("Priority"u8).X + 20 * Im.Style.GlobalScale + 2 * buttonSize.X;
+        var       priorityRowWidth = Im.Font.CalculateSize("优先级"u8).X + 20 * Im.Style.GlobalScale + 2 * buttonSize.X;
         var       priorityWidth    = priorityRowWidth - 2 * (buttonSize.X + spacing.X);
         using var style            = ImStyleDouble.ItemSpacing.Push(spacing);
         table.SetupColumn("冲突的模组"u8, TableColumnFlags.WidthStretch);
@@ -58,8 +59,9 @@ public class ModPanelConflictsTab(CollectionManager collectionManager, ModSelect
                      .OrderByDescending(GetPriority)
                      .ThenBy(c => c.Mod2.Name, StringComparer.OrdinalIgnoreCase).Index())
         {
-            using var id = Im.Id.Push(index);
+            id.Push(index);
             DrawConflictRow(table, conflict, priorityWidth, buttonSize);
+            id.Pop();
         }
     }
 
@@ -92,7 +94,7 @@ public class ModPanelConflictsTab(CollectionManager collectionManager, ModSelect
         if (conflict.Mod2 is Mod otherMod2)
         {
             if (hovered)
-                Im.Tooltip.Set("点击跳转到模组，Ctrl + 右键点击禁用模组。"u8);
+                Im.Tooltip.Set("左键点击跳转到模组，Ctrl + 右键点击禁用模组。"u8);
             if (rightClicked && Im.Io.KeyControl)
                 collectionManager.Editor.SetModState(collectionManager.Active.Current, otherMod2, false);
         }

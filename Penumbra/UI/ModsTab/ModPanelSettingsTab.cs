@@ -256,6 +256,7 @@ public class ModPanelSettingsTab(
 
     private void DrawSettingsPanelContent()
     {
+        using var id    = Im.Id.Push(selection.ModName);
         using var table = Im.Table.Begin("##settings"u8, 1, TableFlags.ScrollY, Im.ContentRegion.Available);
         if (!table)
             return;
