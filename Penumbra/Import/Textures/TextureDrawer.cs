@@ -24,11 +24,11 @@ public static class TextureDrawer
 
             if (texture.LoadError is DllNotFoundException)
             {
-                Im.Text("A texture handling dependency could not be found. Try installing a current Microsoft VC Redistributable."u8,
+                Im.Text("无法找到纹理处理依赖。请安装最新的 Microsoft VC Redistributable。"u8,
                     Colors.RegexWarningBorder);
                 if (Im.Button("Microsoft VC Redistributables"u8))
                     Dalamud.Utility.Util.OpenLink(link);
-                Im.Tooltip.OnHover($"Open {link} in your browser.");
+                Im.Tooltip.OnHover($"在浏览器中打开 {link}。");
             }
 
             Im.Text($"{texture.LoadError}", Colors.RegexWarningBorder);
@@ -58,7 +58,7 @@ public static class TextureDrawer
                     current.Load(textures, paths[0]);
             }
 
-            fileDialog.OpenFilePicker("打开图像...", "纹理{.png,.dds,.tex,.tga}", UpdatePath, 1, startPath, false);
+            fileDialog.OpenFilePicker("打开图像...", "Textures{.png,.dds,.tex,.atex,.tga}", UpdatePath, 1, startPath, false);
         }
 
         Im.Line.Same();
@@ -82,19 +82,19 @@ public static class TextureDrawer
             case ScratchImage s:
                 table.DrawColumn("格式"u8);
                 table.DrawColumn($"{s.Meta.Format}");
-                table.DrawColumn("Mip Levels"u8);
+                table.DrawColumn("Mip 级别"u8);
                 table.DrawColumn($"{s.Meta.MipLevels}");
-                table.DrawColumn("Data Size"u8);
+                table.DrawColumn("数据大小"u8);
                 table.DrawColumn($"{FormattingFunctions.HumanReadableSize(s.Pixels.Length)} ({s.Pixels.Length} Bytes)");
-                table.DrawColumn("Number of Images"u8);
+                table.DrawColumn("图像数量"u8);
                 table.DrawColumn($"{s.Images.Length}");
                 break;
             case TexFile t:
-                table.DrawColumn("Format"u8);
+                table.DrawColumn("格式"u8);
                 table.DrawColumn($"{t.Header.Format}");
-                table.DrawColumn("Mip Levels"u8);
+                table.DrawColumn("Mip 级别"u8);
                 table.DrawColumn($"{t.Header.MipCount}");
-                table.DrawColumn("Data Size"u8);
+                table.DrawColumn("数据大小"u8);
                 table.DrawColumn($"{FormattingFunctions.HumanReadableSize(t.ImageData.Length)} ({t.ImageData.Length} Bytes)");
                 break;
         }
