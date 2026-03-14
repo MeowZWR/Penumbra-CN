@@ -9,6 +9,7 @@
         <UseWindowsForms>true</UseWindowsForms>
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <LangVersion>preview</LangVersion>
+        <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     </PropertyGroup>
 
     <PropertyGroup>

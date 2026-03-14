@@ -40,7 +40,7 @@ public partial class ModEditWindow
         return files;
     }
 
-    private void DrawQuickImportTab()
+    private void DrawQuickImportTab(bool optionChanged)
     {
         using var tab = Im.TabBar.BeginItem("从画面导入"u8);
         if (!tab)
@@ -49,7 +49,7 @@ public partial class ModEditWindow
             return;
         }
 
-        if (DrawOptionSelectHeader())
+        if (optionChanged)
             _quickImportActions.Clear();
         _quickImportViewer.Draw();
     }

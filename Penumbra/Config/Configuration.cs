@@ -67,24 +67,24 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
 
     public bool AutoSelectCollection            { get; set; } = false;
 
-    public bool        ShowModsInLobby                      { get; set; } = true;
-    public bool        UseCharacterCollectionInMainWindow   { get; set; } = true;
-    public bool        UseCharacterCollectionsInCards       { get; set; } = true;
-    public bool        UseCharacterCollectionInInspect      { get; set; } = true;
-    public bool        UseCharacterCollectionInTryOn        { get; set; } = true;
-    public bool        UseOwnerNameForCharacterCollection   { get; set; } = true;
-    public bool        UseNoModsInInspect                   { get; set; } = false;
-    public bool        HideChangedItemFilters               { get; set; } = false;
-    public bool        ReplaceNonAsciiOnImport              { get; set; } = false;
-    public bool        HidePrioritiesInSelector             { get; set; } = false;
-    public bool        HideRedrawBar                        { get; set; } = false;
-    public bool        HideMachinistOffhandFromChangedItems { get; set; } = true;
-    public bool        DefaultTemporaryMode                 { get; set; } = false;
-    public bool        EnableDirectoryWatch                 { get; set; } = false;
-    public bool        EnableAutomaticModImport             { get; set; } = false;
-    public bool        AutoDismissModImportSuccessReports   { get; set; } = true;
-    public bool        PreventExportLoopback                { get; set; } = true;
-    public bool        EnableCustomShapes                   { get; set; } = true;
+    public bool ShowModsInLobby                      { get; set; } = true;
+    public bool UseCharacterCollectionInMainWindow   { get; set; } = true;
+    public bool UseCharacterCollectionsInCards       { get; set; } = true;
+    public bool UseCharacterCollectionInInspect      { get; set; } = true;
+    public bool UseCharacterCollectionInTryOn        { get; set; } = true;
+    public bool UseOwnerNameForCharacterCollection   { get; set; } = true;
+    public bool UseNoModsInInspect                   { get; set; } = false;
+    public bool HideChangedItemFilters               { get; set; } = false;
+    public bool ReplaceNonAsciiOnImport              { get; set; } = false;
+    public bool HidePrioritiesInSelector             { get; set; } = false;
+    public bool HideRedrawBar                        { get; set; } = false;
+    public bool HideMachinistOffhandFromChangedItems { get; set; } = true;
+    public bool DefaultTemporaryMode                 { get; set; } = false;
+    public bool EnableDirectoryWatch                 { get; set; } = false;
+    public bool EnableAutomaticModImport             { get; set; } = false;
+    public bool AutoDismissModImportSuccessReports   { get; set; } = true;
+    public bool PreventExportLoopback                { get; set; } = true;
+    public bool EnableCustomShapes                   { get; set; } = true;
 
     [ConfigProperty]
     private bool _includeShpkInSwap = false;
@@ -149,6 +149,7 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     public bool   KeepDefaultMetaChanges  { get; set; } = false;
     public string DefaultModAuthor        { get; set; } = DefaultTexToolsData.Author;
 
+    public bool DefaultEditWindowModPinned        { get; set; } = true;
     public bool EditRawTileTransforms             { get; set; } = false;
     public bool WholePairSelectorAlwaysHighlights { get; set; } = false;
 

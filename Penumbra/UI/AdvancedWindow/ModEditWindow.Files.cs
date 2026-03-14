@@ -81,7 +81,6 @@ public partial class ModEditWindow
         if (!tab)
             return;
 
-        DrawOptionSelectHeader();
         DrawButtonHeader();
 
         if (!_overviewMode)
@@ -318,8 +317,6 @@ public partial class ModEditWindow
 
     private void DrawButtonHeader()
     {
-        Im.Line.New();
-
         using var spacing = ImStyleDouble.ItemSpacing.Push(new Vector2(3 * Im.Style.GlobalScale, 0));
         Im.Item.SetNextWidthScaled(30);
         Im.Drag("##skippedFolders"u8, ref _folderSkip, 0, 10, 0.01f);

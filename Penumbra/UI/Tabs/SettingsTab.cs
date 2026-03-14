@@ -897,6 +897,10 @@ public sealed class SettingsTab : ITab<TabType>
     /// <summary> Draw all settings pertaining to advanced editing of mods. </summary>
     private void DrawModEditorSettings()
     {
+        Checkbox("Advanced Editing: Automatically Pin Mod in Editing Window"u8,
+            "Determines the default pinning behavior when opening a new Advanced Editing window.\n\nPinned: The editing window will stay on the mod it was on at the time of opening/pinning.\nUnpinned: When changing your selected mod in the main window, the editing window will follow the selection, unless a pinned window exists for the new selected mod."u8,
+            _config.DefaultEditWindowModPinned, v => _config.DefaultEditWindowModPinned = v);
+
         Checkbox("高级编辑：编辑原始Tile UV变换"u8,
             "编辑Tile UV变换的原始矩阵组件，而不是将它们分解为缩放、旋转和剪切。"u8,
             _config.EditRawTileTransforms, v => _config.EditRawTileTransforms = v);

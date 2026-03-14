@@ -1,7 +1,6 @@
 using ImSharp;
 using Luna;
 using OtterTex;
-using Penumbra.Api.Enums;
 using Penumbra.Communication;
 using Penumbra.Import.Textures;
 using Penumbra.String.Classes;
@@ -38,8 +37,12 @@ public partial class CombiningTextureEditor
 
     private bool _overlayCollapsed = true;
 
-    bool IFileEditor.DrawToolbar(bool disabled)
-        => false;
+    public bool DrawToolbar(bool disabled)
+    {
+        if (!_inModEditWindow)
+            DrawOverlayCollapseButton();
+        return false;
+    }
 
     public bool DrawPanel(bool disabled)
     {
@@ -58,15 +61,25 @@ public partial class CombiningTextureEditor
             var imageSize  = new Vector2(childWidth.X - Im.Style.FramePadding.X * 2);
             DrawInputChild("输入纹理"u8, _left, childWidth, imageSize);
             Im.Line.Same();
-            DrawOutputChild(childWidth, imageSize);
+            if (_inModEditWindow)
+            {
+                using var child = Im.Child.Begin("###OutputWrapper"u8, childWidth);
+                if (child)
+                {
+                    DrawOverlayCollapseButton();
+                    DrawOutputChild(new Vector2(-1), imageSize);
+                }
+            }
+            else
+            {
+                DrawOutputChild(childWidth, imageSize);
+            }
+
             if (!_overlayCollapsed)
             {
                 Im.Line.Same();
                 DrawInputChild("叠加纹理"u8, _right, childWidth, imageSize);
             }
-
-            Im.Line.Same();
-            DrawOverlayCollapseButton();
         }
         catch (Exception e)
         {
@@ -78,14 +91,14 @@ public partial class CombiningTextureEditor
 
     private Vector2 GetChildWidth()
     {
-        var windowWidth = Im.Window.MaximumContentRegion.X - Im.Window.MinimumContentRegion.X - Im.Style.TextHeight;
+        var windowWidth = Im.Window.MaximumContentRegion.X - Im.Window.MinimumContentRegion.X;
         if (_overlayCollapsed)
         {
-            var width = windowWidth - Im.Style.FramePadding.X * 3;
+            var width = windowWidth - Im.Style.ItemSpacing.X;
             return new Vector2(width / 2, -1);
         }
 
-        return new Vector2((windowWidth - Im.Style.FramePadding.X * 5) / 3, -1);
+        return new Vector2((windowWidth - Im.Style.ItemSpacing.X * 2) / 3, -1);
     }
 
     private void DrawInputChild(ReadOnlySpan<byte> label, Texture tex, Vector2 size, Vector2 imageSize)
@@ -112,6 +125,14 @@ public partial class CombiningTextureEditor
                             _context?.Mod?.ModPath.FullName.Length + 1 ?? 0, out var newPath)
                      && newPath != tex.Path)
                         tex.Load(_textures, newPath);
+                }
+
+                if (tex.OriginalBaseImage.MipMaps > 1)
+                {
+                    Im.Item.SetNextWidthScaled(75.0f);
+                    if (Im.Drag("Scaling"u8, ref tex.LevelOfDetail, $"\u00F7 {1 << tex.LevelOfDetail}", 0, tex.OriginalBaseImage.MipMaps - 1,
+                            0.1f, SliderFlags.NoInput))
+                        tex.SelectLevelOfDetail(_textures);
                 }
 
                 if (tex == _left)
@@ -196,7 +217,9 @@ public partial class CombiningTextureEditor
                         isActive
                             ? "将纹理保存并覆盖原文件。此操作不可撤销。"u8
                             : $"将纹理保存并覆盖原文件。此操作不可撤销。按住 {_config.DeleteModModifier} 键以保存。",
-                        !isActive || !canSaveInPlace || _center.IsLeftCopy && _currentSaveAs is (int)CombinedTexture.TextureSaveType.AsIs))
+                        !isActive
+                     || !canSaveInPlace
+                     || _center.IsLeftCopy && _currentSaveAs is (int)CombinedTexture.TextureSaveType.AsIs && _left.LevelOfDetail is 0))
                     SaveRequested?.Invoke();
 
                 Im.Line.Same();
@@ -267,6 +290,27 @@ public partial class CombiningTextureEditor
 
         Im.Line.New();
 
+        if (_center.TryGetRgbaSolidColor(out var solidColor, out var width, out var height))
+        {
+            using var color = ImGuiColor.Text.Push(ImGuiColor.Text.Get().HalfBlend(Rgba32.Yellow));
+            Im.TextWrapped(
+                $"This texture is a solid surface of color {solidColor}.");
+            if (Texture.SolidTextures.TryGetValue(solidColor, out var path))
+            {
+                Im.TextWrapped($"Consider using a file swap to {path}.");
+                Im.Line.Same();
+                color.Pop();
+                if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Copy this path to your clipboard."u8))
+                    Im.Clipboard.Set(path);
+            }
+            else if (width > 32 || height > 32)
+            {
+                Im.TextWrapped($"Consider scaling it down to at most 32 \u00D7 32 pixels.");
+            }
+
+            Im.Line.New();
+        }
+
         using var child2 = Im.Child.Begin("image"u8);
         if (child2)
             _center.Draw(_textures, imageSize);
@@ -275,7 +319,7 @@ public partial class CombiningTextureEditor
     private void OpenSaveAsDialog(string defaultExtension)
     {
         var fileName = Path.GetFileNameWithoutExtension(_left.Path.Length > 0 ? _left.Path : _right.Path);
-        _fileDialog.OpenSavePicker("保存纹理为 TEX, DDS, PNG 或 TGA...", "Textures{.png,.dds,.tex,.atex,.tga},.tex{.tex,.atex},.dds,.png,.tga", fileName,
+        _fileDialog.OpenSavePicker("保存纹理为 TEX, DDS, PNG 或 TGA...", "Textures{.png,.dds,.tex,.atex,.tga},.tex,.atex,.dds,.png,.tga", fileName,
             defaultExtension,
             (a, b) =>
             {
@@ -320,14 +364,15 @@ public partial class CombiningTextureEditor
 
     private void DrawOverlayCollapseButton()
     {
-        var (label, tooltip) = _overlayCollapsed
-            ? RefTuple.Create(">"u8,
+        var (icon, iconPosition, label, tooltip) = _overlayCollapsed
+            ? RefTuple.Create(LunaStyle.CollapseLeftIcon, ImEx.Icon.IconPosition.BeforeLabel, "显示叠加层"u8,
                 "显示一个第三面板，您可以在其中导入额外的纹理作为主纹理的叠加层。"u8)
-            : RefTuple.Create("<"u8, "隐藏叠加纹理面板并清除当前加载的叠加纹理（如果存在）。"u8);
-        if (Im.Button(label, Im.ContentRegion.Available with { X = Im.Style.TextHeight }))
+            : RefTuple.Create(LunaStyle.ExpandRightIcon, ImEx.Icon.IconPosition.AfterLabel, "隐藏叠加层"u8,
+                "隐藏叠加纹理面板并清除当前加载的叠加纹理（如果存在）。"u8);
+        Im.Dummy(Im.ContentRegion.Available.X - ImEx.Icon.CalculateLabeledButtonSize(icon, label).X);
+        Im.Line.NoSpacing();
+        if (ImEx.Icon.LabeledButton(icon, label, tooltip, iconPosition: iconPosition))
             _overlayCollapsed = !_overlayCollapsed;
-
-        Im.Tooltip.OnHover(tooltip);
     }
 
     private static bool GetFirstTexture(IEnumerable<string> files, [NotNullWhen(true)] out string? file)
