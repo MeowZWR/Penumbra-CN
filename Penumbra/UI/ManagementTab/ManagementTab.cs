@@ -57,11 +57,11 @@ public sealed class ManagementTab : TabBar<ManagementTabType>, ITab<TabType>, ID
     {
         var size = ImEx.ScaledVectorX(100);
 
-        if (Im.Button("Scan"u8, size))
+        if (Im.Button("扫描"u8, size))
             scanner.Scan();
         Im.Line.SameInner();
         var running = scanner.Running;
-        if (ImEx.Button("Cancel"u8, size, "Cancel the current scan process."u8, !running))
+        if (ImEx.Button("取消"u8, size, "取消当前扫描进程。"u8, !running))
             scanner.Cancel();
         if (running)
         {

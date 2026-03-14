@@ -12,7 +12,7 @@ namespace Penumbra.UI.ManagementTab;
 public sealed class RedundantFilesTab(ModManager mods, IDataManager dataManager, UiNavigator navigator) : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
-        => "Redundant Files"u8;
+        => "冗余文件"u8;
 
     public void DrawContent()
     {

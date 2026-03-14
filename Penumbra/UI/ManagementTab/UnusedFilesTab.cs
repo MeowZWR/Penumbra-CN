@@ -9,7 +9,7 @@ namespace Penumbra.UI.ManagementTab;
 public sealed class UnusedFilesTab(ModManager mods, UiNavigator navigator) : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
-        => "Unused Files"u8;
+        => "未使用文件"u8;
 
     public void DrawContent()
     {

@@ -80,14 +80,14 @@ public sealed class ForbiddenFileNotification(
         => NotificationType;
 
     string IMessage.NotificationMessage
-        => "Redirection of these files is forbidden because unexpected replacements will cause crashes.\n\n"
-          + "See Management -> Forbidden Files for more details.";
+        => "不允许重定向这些文件，因为意外的替换会导致崩溃。\n\n"
+          + "查看 模组管理 -> 被禁止的文件 以获取更多详细信息。";
 
     TimeSpan IMessage.NotificationDuration
         => NotificationDuration;
 
     string IMessage.NotificationTitle
-        => $"{_gatheredFiles.Count} Forbidden File{(_gatheredFiles.Count is 1 ? string.Empty : "s")} Encountered";
+        => $"检测到 {_gatheredFiles.Count} 个被禁止的文件";
 
     string IMessage.LogMessage
         => string.Empty;
@@ -105,10 +105,10 @@ public sealed class ForbiddenFileNotification(
     {
         var width = Im.ContentRegion.Available with { Y = 0 };
         width.X = (width.X - Im.Style.ItemInnerSpacing.X) / 2;
-        if (Im.Button("Open Messages"u8, width))
+        if (Im.Button("打开消息"u8, width))
             navigator.OpenTo(TabType.Messages);
         Im.Line.SameInner();
-        if (Im.Button("Open Management"u8, width))
+        if (Im.Button("打开模组管理"u8, width))
             navigator.OpenTo(ManagementTabType.ForbiddenFiles);
     }
 

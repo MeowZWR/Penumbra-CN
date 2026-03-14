@@ -43,7 +43,7 @@ public sealed class ForbiddenFilesTab(ModManager mods, TextureManager textures, 
         Im.Window.SetNextSize(ImEx.ScaledVectorX(800));
         using var tt = Im.Tooltip.Begin();
         Im.TextWrapped(
-            "Forbidden files are used in a multitude of places in the game and expected to have very specific semantics, so that manipulating them generally will cause unintended side-effects. Allowing their redirection will cause graphical glitches in the best case, or make the game crash or hang indefinitely in loading screens in worse cases.\n\nThere are not many forbidden files, and they are blocked from being applied even if not fixed, so if you are unsure how to fix a mod, you do not need to worry about this warning.\n\nThe forbidden files are:"u8);
+            "被禁止的文件在游戏中被广泛使用，并具有非常特定的语义，因此操纵它们通常会导致意想不到的副作用。允许重定向这些文件会导致图形错误（最好的情况），导致游戏崩溃或无限挂起（最坏的情况）。\n\n被禁止的文件并不多，即使没有修复，它们也会被阻止应用，因此如果您不确定如何修复模组，您不需要过多担心此警告。\n\n被禁止的文件包括："u8);
         using (Im.Group())
         {
             foreach (var name in ForbiddenFiles.Values)
@@ -63,15 +63,15 @@ public sealed class ForbiddenFilesTab(ModManager mods, TextureManager textures, 
         {
             return hash switch
             {
-                0x90E4EE2F => "Intended to be a pure white texture of minimal size."u8,
-                0x84815A1A => "Required to be a solid white square with full alpha."u8,
-                0x749091FB => "Required to be a solid black square with full alpha."u8,
-                0x5CB9681A => "Used as the default ID-mapping, required to be a solid square of #780000 with full alpha."u8,
-                0x7E78D000 => "Required to be a solid red square with full alpha."u8,
-                0xBDC0BFD3 => "Required to be a solid green square with full alpha."u8,
-                0xC410E850 => "Required to be a solid blue square with full alpha."u8,
-                0xD5CFA221 => "Used as a default normal map, required to be a solid square of #7E7FFF with full alpha."u8,
-                0xBE48CA67 => "Used as the default skin mask, required to be a solid square of #A5749A with full alpha."u8,
+                0x90E4EE2F => "应为最小尺寸的纯白纹理。"u8,
+                0x84815A1A => "必须是全不透明的纯白方块。"u8,
+                0x749091FB => "必须是全不透明的纯黑方块。"u8,
+                0x5CB9681A => "用作默认 ID 映射，必须是全不透明的 #780000 纯色方块。"u8,
+                0x7E78D000 => "必须是全不透明的纯红方块。"u8,
+                0xBDC0BFD3 => "必须是全不透明的纯绿方块。"u8,
+                0xC410E850 => "必须是全不透明的纯蓝方块。"u8,
+                0xD5CFA221 => "用作默认法线贴图，必须是全不透明的 #7E7FFF 纯色方块。"u8,
+                0xBE48CA67 => "用作默认皮肤蒙版，必须是全不透明的 #A5749A 纯色方块。"u8,
                 _          => StringU8.Empty,
             };
         }
@@ -79,7 +79,7 @@ public sealed class ForbiddenFilesTab(ModManager mods, TextureManager textures, 
 
 
     public ReadOnlySpan<byte> Label
-        => "禁止文件"u8;
+        => "被禁止的文件"u8;
 
     private sealed class Cache(ModManager mods, TextureManager textures) : BasicCache
     {
@@ -179,7 +179,7 @@ public sealed class ForbiddenFilesTab(ModManager mods, TextureManager textures, 
     {
         var hovered = LunaStyle.DrawAlignedHelpMarker();
         Im.Line.SameInner();
-        ImEx.TextFrameAligned("What are Forbidden Files?"u8);
+        ImEx.TextFrameAligned("什么是被禁止的文件？"u8);
         if (hovered || Im.Item.Hovered())
             DrawTooltip();
 
@@ -187,7 +187,7 @@ public sealed class ForbiddenFilesTab(ModManager mods, TextureManager textures, 
         ManagementTab.DrawScanButtons(cache.Redirections);
         var active = config.DeleteModModifier.IsActive();
 
-        if (ImEx.Button("Remove All Redundant Redirections"u8, default, !active))
+        if (ImEx.Button("删除所有冗余重定向"u8, default, !active))
             ;
 
         using var table = Im.Table.Begin("t"u8, 6,
@@ -214,7 +214,7 @@ public sealed class ForbiddenFilesTab(ModManager mods, TextureManager textures, 
             }
             else
             {
-                table.DrawColumn("MOD MISSING"u8);
+                table.DrawColumn("模组缺失"u8);
                 table.NextColumn();
             }
 

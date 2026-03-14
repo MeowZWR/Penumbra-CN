@@ -18,16 +18,16 @@ public sealed class TextureOptimizationTab(ModManager mods, TextureManager textu
     private static int  _largeDimensionLimit = 4096;
 
     public ReadOnlySpan<byte> Label
-        => "Texture Optimization"u8;
+        => "纹理优化"u8;
 
     public void DrawContent()
     {
         Im.Item.SetNextWidthScaled(100);
-        ImEx.LogarithmicInput("Ignore Textures Below This Size"u8, FormattingFunctions.HumanReadableSize(_lowerSizeLimit), ref _lowerSizeLimit);
+        ImEx.LogarithmicInput("忽略小于此大小的纹理"u8, FormattingFunctions.HumanReadableSize(_lowerSizeLimit), ref _lowerSizeLimit);
         Im.Item.SetNextWidthScaled(100);
-        ImEx.LogarithmicInput("Ignore Textures With Smaller Dimensions"u8, ref _smallDimensionLimit);
+        ImEx.LogarithmicInput("忽略较小尺寸的纹理"u8, ref _smallDimensionLimit);
         Im.Item.SetNextWidthScaled(100);
-        ImEx.LogarithmicInput("Show Textures With Larger Dimensions, Even If Compressed"u8, ref _largeDimensionLimit);
+        ImEx.LogarithmicInput("显示较大尺寸的纹理（包含已被压缩的）"u8, ref _largeDimensionLimit);
 
         var cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(mods, textures));
         ManagementTab.DrawScanButtons(cache.Scanner);

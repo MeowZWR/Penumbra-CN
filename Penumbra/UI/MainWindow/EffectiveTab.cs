@@ -109,9 +109,9 @@ public sealed class EffectiveTab(
         {
             using var style = ImStyleSingle.FrameRounding.Push(0).PushX(ImStyleDouble.ItemSpacing, 0);
 
-            Filter.Filter1.DrawFilter("Filter game path..."u8, new Vector2(_gamePathSize + Im.Style.CellPadding.X, Im.Style.FrameHeight));
+            Filter.Filter1.DrawFilter("筛选游戏路径..."u8, new Vector2(_gamePathSize + Im.Style.CellPadding.X, Im.Style.FrameHeight));
             Im.Line.Same(0, _arrowSize + 2 * Im.Style.CellPadding.X);
-            Filter.Filter2.DrawFilter("Filter file path..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
+            Filter.Filter2.DrawFilter("筛选文件路径..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
         }
 
         private void DrawTable()
@@ -136,7 +136,7 @@ public sealed class EffectiveTab(
                 table.NextColumn();
                 ImEx.CopyOnClickSelectable(item.FilePath.InternalName.Span);
                 if (!item.IsMeta)
-                    Im.Tooltip.OnHover($"\nChanged by {item.Mod.Name}.");
+                    Im.Tooltip.OnHover($"\n由 {item.Mod.Name} 更改。");
             }
         }
     }
