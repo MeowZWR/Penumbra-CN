@@ -318,7 +318,7 @@ public partial class ModEditWindow
 
     private void DrawButtonHeader()
     {
-        Im.Line.Same();
+        Im.Line.New();
 
         using var spacing = ImStyleDouble.ItemSpacing.Push(new Vector2(3 * Im.Style.GlobalScale, 0));
         Im.Item.SetNextWidthScaled(30);

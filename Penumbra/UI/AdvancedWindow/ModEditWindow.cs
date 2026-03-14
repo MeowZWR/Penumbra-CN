@@ -494,7 +494,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         var setsEqual = !_editor.SwapEditor.Changes;
         var tt        = setsEqual ? "未暂存任何修改" : "应用当前暂存的修改到此选项。";
-        Im.Line.Same();
+        Im.Line.New();
         if (ImEx.Button("应用修改"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Apply(_editor.Option!);
 

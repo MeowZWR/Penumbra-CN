@@ -29,7 +29,7 @@ public sealed class ForbiddenFilesTab(ModManager mods, IDataManager dataManager,
 
 
     public ReadOnlySpan<byte> Label
-        => "Forbidden Files"u8;
+        => "禁止文件"u8;
 
     private sealed class Cache(IDataManager dataManager) : BasicCache
     {
@@ -51,7 +51,7 @@ public sealed class ForbiddenFilesTab(ModManager mods, IDataManager dataManager,
         if (!child)
             return;
 
-        Im.Text("WORK IN PROGRESS"u8);
+        Im.Text("工作进行中"u8);
 
         //using var table = Im.Table.Begin("t"u8, 6, TableFlags.RowBackground | TableFlags.SizingFixedFit);
         //if (!table)

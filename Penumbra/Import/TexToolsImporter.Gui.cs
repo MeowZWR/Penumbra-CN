@@ -21,7 +21,7 @@ public partial class TexToolsImporter
     public (string Title, string Text, float Progress, bool Ended, bool Successful) ComputeNotificationData()
     {
         if (_modPackCount is 0)
-            return ("No mods to import", "Nothing to extract.", 1.0f, true, true);
+            return ("没有可导入的模组", "没有可提取的内容。", 1.0f, true, true);
 
         if (_modPackCount == _currentModPackIdx)
         {
@@ -31,26 +31,26 @@ public partial class TexToolsImporter
             {
                 title = ExtractedMods.Count switch
                 {
-                    1 => $"Successfully imported {_currentModName}",
-                    _ => "Successfully imported mods",
+                    1 => $"成功导入 {_currentModName}",
+                    _ => "成功导入模组",
                 };
             }
             else
             {
                 title = ExtractedMods.Count switch
                 {
-                    1 => $"Failed to import {(string.IsNullOrEmpty(_currentModName) ? ExtractedMods[0].File.Name : _currentModName)}",
-                    _ => "Failed to import some mods",
+                    1 => $"导入 {(string.IsNullOrEmpty(_currentModName) ? ExtractedMods[0].File.Name : _currentModName)} 失败",
+                    _ => "导入模组失败",
                 };
             }
 
-            return (title, $"Successfully extracted {success} / {ExtractedMods.Count} files.", 1.0f, true, success == ExtractedMods.Count);
+            return (title, $"成功提取 {success} / {ExtractedMods.Count} 个文件。", 1.0f, true, success == ExtractedMods.Count);
         }
 
         if (State is ImporterState.DeduplicatingFiles)
-            return ($"Installing {_currentModName}", "Deduplicating Files...", 1.0f, false, true);
+            return ($"正在安装 {_currentModName}", "正在去重文件...", 1.0f, false, true);
 
-        return ($"Installing {_currentModName}", $"Extracting File {_currentFileName}...",
+        return ($"正在安装 {_currentModName}", $"提取文件 {_currentFileName}...",
             _currentNumFiles > 0 ? _currentFileIdx / (float)_currentNumFiles : 0.0f, false, true);
     }
 
@@ -73,31 +73,31 @@ public partial class TexToolsImporter
         Im.ProgressBar(percentage, size, $"Mod {_currentModPackIdx + 1} / {_modPackCount}");
         Im.Line.New();
         Im.Text(State is ImporterState.DeduplicatingFiles
-            ? $"Deduplicating {_currentModName}..."
-            : $"Extracting {_currentModName}...");
+            ? $"正在去重 {_currentModName}..."
+            : $"正在提取 {_currentModName}...");
 
         if (_currentNumOptions > 1)
         {
             Im.Line.New();
             Im.Line.New();
             if (_currentOptionIdx >= _currentNumOptions)
-                Im.ProgressBar(1f, size, $"Extracted {_currentNumOptions} Options");
+                Im.ProgressBar(1f, size, $"提取 {_currentNumOptions} 个选项");
             else
                 Im.ProgressBar(_currentOptionIdx / (float)_currentNumOptions, size,
-                    $"Extracting Option {_currentOptionIdx + 1} / {_currentNumOptions}...");
+                    $"正在提取选项 {_currentOptionIdx + 1} / {_currentNumOptions}...");
 
             Im.Line.New();
             if (State is not ImporterState.DeduplicatingFiles)
                 Im.Text(
-                    $"Extracting Option {(_currentGroupName.Length == 0 ? string.Empty : $"{_currentGroupName} - ")}{_currentOptionName}...");
+                    $"正在提取选项 {(_currentGroupName.Length == 0 ? string.Empty : $"{_currentGroupName} - ")}{_currentOptionName}...");
         }
 
         Im.Line.New();
         Im.Line.New();
         if (_currentFileIdx >= _currentNumFiles)
-            Im.ProgressBar(1f, size, $"Extracted {_currentNumFiles} Files");
+            Im.ProgressBar(1f, size, $"提取 {_currentNumFiles} 个文件");
         else
-            Im.ProgressBar(_currentFileIdx / (float)_currentNumFiles, size, $"Extracting File {_currentFileIdx + 1} / {_currentNumFiles}...");
+            Im.ProgressBar(_currentFileIdx / (float)_currentNumFiles, size, $"正在提取文件 {_currentFileIdx + 1} / {_currentNumFiles}...");
 
         Im.Line.New();
         if (State is not ImporterState.DeduplicatingFiles)
