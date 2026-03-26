@@ -14,7 +14,10 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<EqpIdentifier, EqpEntryInternal>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "装备参数设置(设置可见性)(EQP)###EQP"u8;
+        => "装备参数设置（EQP）"u8;
+
+    public override ReadOnlySpan<byte> Tooltip
+        => "装备参数设置（设置可见性）"u8;
 
     public override int NumColumns
         => 5;
@@ -61,7 +64,7 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             .ThenBy(kvp => kvp.Key.Slot)
             .Select(kvp => (kvp.Key, kvp.Value));
 
-    protected override int Count
+    public override int Count
         => Editor.Eqp.Count;
 
     private static bool DrawIdentifierInput(ref EqpIdentifier identifier)

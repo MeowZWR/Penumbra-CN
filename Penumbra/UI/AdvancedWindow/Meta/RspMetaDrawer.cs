@@ -13,7 +13,10 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<RspIdentifier, RspEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "种族缩放编辑(全局修改)(RSP)###RSP"u8;
+        => "种族缩放编辑（RSP）###RSP"u8;
+
+    public override ReadOnlySpan<byte> Tooltip
+        => "种族缩放编辑(全局修改)"u8;
 
     public override int NumColumns
         => 5;
@@ -61,7 +64,7 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             .ThenBy(kvp => kvp.Key.Attribute)
             .Select(kvp => (kvp.Key, kvp.Value));
 
-    protected override int Count
+    public override int Count
         => Editor.Rsp.Count;
 
     private static bool DrawIdentifierInput(ref RspIdentifier identifier)

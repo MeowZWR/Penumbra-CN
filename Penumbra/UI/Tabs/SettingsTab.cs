@@ -726,8 +726,11 @@ public sealed class SettingsTab : ITab<TabType>
             "如果自动导入目录与默认模组导出目录相同，则防止导出的模组和角色包被自动重新导入或显示询问弹窗。"u8,
             _config.PreventExportLoopback, v => _config.PreventExportLoopback = v);
         DrawFileWatcherPath();
-        Checkbox("自动关闭模组导入成功的报告"u8,
-            "如果所有模组都成功导入，则自动关闭报告。\n包含错误的报告仍需要手动关闭。"u8,
+        Checkbox("始终显示导入详情窗口"u8,
+            "在屏幕中央显示包含最新导入信息的详情窗口，而非使用 Dalamud 通知。"u8,
+            _config.AlwaysShowDetailedModImport, v => _config.AlwaysShowDetailedModImport = v);
+        Checkbox("自动关闭导入成功的报告"u8,
+            "如果所有模组都导入成功，导入报告通知将在几秒后自动消失。\n包含错误的报告仍需手动关闭。"u8,
             _config.AutoDismissModImportSuccessReports, v => _config.AutoDismissModImportSuccessReports = v);
     }
 

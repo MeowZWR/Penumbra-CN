@@ -13,7 +13,10 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<ImcIdentifier, ImcEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "变体编辑(IMC)###IMC"u8;
+        => "变体编辑（IMC）"u8;
+
+    public override ReadOnlySpan<byte> Tooltip
+        => "变体编辑"u8;
 
     public override int NumColumns
         => 10;
@@ -32,11 +35,11 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     protected override void DrawNew()
     {
         Im.Table.NextColumn();
-        CopyToClipboardButton("将当前所有IMC操作复制到剪贴板。"u8,
+        CopyToClipboardButton("复制当前所有IMC操作到剪贴板。"u8,
             new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Imc)));
         Im.Table.NextColumn();
         var canAdd = _fileExists && !Editor.Contains(Identifier);
-        var tt     = canAdd ? "编辑此项。"u8 : !_fileExists ? "此IMC文件不存在。"u8 : "此项已被编辑。"u8;
+        var tt     = canAdd ? "暂存此编辑。"u8 : !_fileExists ? "此IMC文件不存在。"u8 : "此项已被编辑。"u8;
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, Entry);
 
@@ -90,7 +93,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
 
         Im.Table.NextColumn();
         ImEx.TextFramed($"{identifier.PrimaryId.Id}", default, FrameColor);
-        Im.Tooltip.OnHover("主要ID");
+        Im.Tooltip.OnHover("主ID");
 
         Im.Table.NextColumn();
         if (identifier.ObjectType is ObjectType.Equipment or ObjectType.Accessory)
@@ -101,7 +104,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         else
         {
             ImEx.TextFramed($"{identifier.SecondaryId.Id}", default, FrameColor);
-            Im.Tooltip.OnHover("次要ID"u8);
+            Im.Tooltip.OnHover("次ID"u8);
         }
 
         Im.Table.NextColumn();
@@ -145,7 +148,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             .ThenBy(kvp => kvp.Key.Variant.Id)
             .Select(kvp => (kvp.Key, kvp.Value));
 
-    protected override int Count
+    public override int Count
         => Editor.Imc.Count;
 
     public static bool DrawObjectType(ref ImcIdentifier identifier, float width = 110)
@@ -177,7 +180,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     {
         var ret = IdInput("##imcPrimaryId"u8, unscaledWidth, identifier.PrimaryId.Id, out var newId, 0, ushort.MaxValue,
             identifier.PrimaryId.Id <= 1);
-        Im.Tooltip.OnHover("主要ID - 通常可以在物品路径的'x####'部分找到。也可以在更改项目中查看。\n"u8
+        Im.Tooltip.OnHover("主ID - 通常可在物品路径中的 'x####' 部分找到。\n"u8
           + "除非你明确需要，否则通常不应将此值设置为小于等于1。"u8);
         if (ret)
             identifier = identifier with { PrimaryId = newId };
@@ -187,7 +190,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     public static bool DrawSecondaryId(ref ImcIdentifier identifier, float unscaledWidth = 100)
     {
         var ret = IdInput("##imcSecondaryId"u8, unscaledWidth, identifier.SecondaryId.Id, out var newId, 0, ushort.MaxValue, false);
-        Im.Tooltip.OnHover("次要ID"u8);
+        Im.Tooltip.OnHover("次ID"u8);
         if (ret)
             identifier = identifier with { SecondaryId = newId };
         return ret;

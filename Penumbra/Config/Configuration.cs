@@ -83,6 +83,7 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     public bool EnableDirectoryWatch                 { get; set; } = false;
     public bool EnableAutomaticModImport             { get; set; } = false;
     public bool AutoDismissModImportSuccessReports   { get; set; } = true;
+    public bool AlwaysShowDetailedModImport          { get; set; } = false;
     public bool PreventExportLoopback                { get; set; } = true;
     public bool EnableCustomShapes                   { get; set; } = true;
 
@@ -221,13 +222,7 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     /// <summary> Contains some default values or boundaries for config values. </summary>
     public static class Constants
     {
-        public const int   CurrentVersion      = 11;
-        public const float MaxAbsoluteSize     = 600;
-        public const int   DefaultAbsoluteSize = 250;
-        public const float MinAbsoluteSize     = 50;
-        public const int   MaxScaledSize       = 80;
-        public const int   DefaultScaledSize   = 20;
-        public const int   MinScaledSize       = 5;
+        public const int   CurrentVersion      = 13;
         public const int   MinimumSizeX        = 900;
         public const int   MinimumSizeY        = 675;
     }
@@ -254,8 +249,9 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     public string ToFilePath(FilenameService fileNames)
         => fileNames.ConfigurationFile;
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
+        using var writer  = new StreamWriter(stream);
         using var jWriter = new JsonTextWriter(writer);
         jWriter.Formatting = Formatting.Indented;
         var serializer = new JsonSerializer { Formatting = Formatting.Indented };

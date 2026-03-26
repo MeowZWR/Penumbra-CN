@@ -1,4 +1,5 @@
 using Luna;
+using Luna.Generators;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Structs;
 using Penumbra.Meta.Manipulations;
@@ -11,6 +12,7 @@ using Penumbra.String.Classes;
 namespace Penumbra.Mods;
 
 [Flags]
+[NamedEnum(Utf16: false)]
 public enum FeatureFlags : ulong
 {
     None    = 0,
@@ -33,12 +35,9 @@ public sealed class Mod : IMod, IFileSystemValue<Mod>
     public DirectoryInfo ModPath { get; internal set; }
 
     public string Identifier
-        => Index >= 0 ? ModPath.Name : Name;
+        => ModPath.Name;
 
     public int Index { get; internal set; } = -1;
-
-    public bool IsTemporary
-        => Index < 0;
 
     /// <summary>Unused if Index is less than 0 but used for special temporary mods.</summary>
     public ModPriority Priority

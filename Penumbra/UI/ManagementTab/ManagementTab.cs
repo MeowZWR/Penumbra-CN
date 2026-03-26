@@ -9,7 +9,7 @@ public enum ManagementTabType
 {
     UnusedMods,
     DuplicateMods,
-    ForbiddenFiles,
+    ReservedFiles,
     Cleanup,
     UnusedFiles,
     RedundantFiles,
@@ -30,13 +30,13 @@ public sealed class ManagementTab : TabBar<ManagementTabType>, ITab<TabType>, ID
         EphemeralConfig config,
         UnusedModsTab unusedMods,
         DuplicateModsTab duplicateMods,
-        ForbiddenFilesTab forbiddenFiles,
+        ReservedFilesTab reservedFiles,
         UnusedFilesTab unusedFiles,
         RedundantFilesTab redundantFiles,
         TextureOptimizationTab textureOptimization,
         CleanupTab cleanup,
         UiNavigator navigator)
-        : base("模组管理", log, unusedMods, duplicateMods, forbiddenFiles, unusedFiles, redundantFiles, textureOptimization, cleanup)
+        : base("模组管理", log, unusedMods, duplicateMods, reservedFiles, unusedFiles, redundantFiles, textureOptimization, cleanup)
     {
         _navigator = navigator;
         NextTab    = config.SelectedManagementTab;

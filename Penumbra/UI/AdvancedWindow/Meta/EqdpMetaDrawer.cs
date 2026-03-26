@@ -14,7 +14,10 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
     : MetaDrawer<EqdpIdentifier, EqdpEntryInternal>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "种族模型编辑(EQDP)###EQDP"u8;
+        => "种族模型编辑（EQDP）"u8;
+
+    public override ReadOnlySpan<byte> Tooltip
+        => "种族模型编辑"u8;
 
     public override int NumColumns
         => 7;
@@ -63,7 +66,7 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
             .ThenBy(kvp => kvp.Key.Slot)
             .Select(kvp => (kvp.Key, kvp.Value));
 
-    protected override int Count
+    public override int Count
         => Editor.Eqdp.Count;
 
     private static bool DrawIdentifierInput(ref EqdpIdentifier identifier)

@@ -13,7 +13,10 @@ public sealed class GmpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<GmpIdentifier, GmpEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "面甲/可调整头部装备编辑(GMP)###GMP"u8;
+        => "面甲/可调整头部装备编辑（GMP）"u8;
+
+    public override ReadOnlySpan<byte> Tooltip
+        => "面甲/可调整头部装备编辑"u8;
 
     public override int NumColumns
         => 7;
@@ -60,7 +63,7 @@ public sealed class GmpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             .OrderBy(kvp => kvp.Key.SetId.Id)
             .Select(kvp => (kvp.Key, kvp.Value));
 
-    protected override int Count
+    public override int Count
         => Editor.Gmp.Count;
 
     private static bool DrawIdentifierInput(ref GmpIdentifier identifier)

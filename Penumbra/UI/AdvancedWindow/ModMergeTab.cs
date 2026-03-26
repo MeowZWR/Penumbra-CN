@@ -20,6 +20,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
         if (!tab)
             return;
 
+        using var id = Im.Id.Push(ModMerger.MergeFromMod!.Identifier);
         Im.Dummy(Vector2.Zero);
         var size = 550 * Im.Style.GlobalScale;
         DrawMergeInto(size);
@@ -48,7 +49,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
 
         using (Im.Group())
         {
-            Im.Text("合并 "u8);
+            Im.Text("合并"u8);
             Im.Line.NoSpacing();
             if (size - textSize < minComboSize)
             {
@@ -61,7 +62,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
             }
 
             Im.Line.NoSpacing();
-            Im.Text(" 到"u8);
+            Im.Text("到"u8);
         }
 
         Im.Line.Same();
@@ -132,7 +133,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
                 ? "请至少选择一个选项进行拆分。"u8
                 : StringU8.Empty;
         if (ImEx.Button(
-                $"拆分 {ModMerger.SelectedOptions.Count} 个选项{(ModMerger.SelectedOptions.Count > 1 ? "s"u8 : StringU8.Empty)}###SplitOff",
+                $"拆分 {ModMerger.SelectedOptions.Count} 个选项###SplitOff",
                 new Vector2(size, 0), tt, tt.Length > 0))
             ModMerger.SplitIntoMod(_newModName);
 
@@ -151,7 +152,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
 
     private static void DrawSplitOffDesc()
     {
-        Im.TextWrapped("在这里，你可以选择创建当前所选模组的副本或部分副本。\n\n"u8
+        Im.TextWrapped("在这里，你可以创建当前所选模组的副本或部分副本。\n\n"u8
           + "选择你想要复制的选项，输入新模组名称并点击拆分按钮。\n\n"u8
           + "你可以右键点击选项组来选择或取消选择该组中的所有选项，也可以使用表格上方的三个按钮进行快速操作。\n\n"u8
           + "只有选中的文件才会被复制到新的模组中，选项和选项组名称将会在新模组中保留，如果未选择'默认选项'，则新模组的'默认选项'将留空。"u8);

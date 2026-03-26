@@ -18,7 +18,7 @@ public sealed class TextureOptimizationTab(ModManager mods, TextureManager textu
     private static int  _largeDimensionLimit = 4096;
 
     public ReadOnlySpan<byte> Label
-        => "纹理优化"u8;
+        => "纹理优化（开发中）"u8;
 
     public void DrawContent()
     {

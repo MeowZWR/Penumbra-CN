@@ -70,17 +70,7 @@ public sealed class MainWindow : Window
         _globalModImporter.DrawWindowTarget();
         try
         {
-            if (_validityChecker.ImcExceptions.Count > 0)
-            {
-                DrawProblemWindow(
-                    $"在尝试从游戏数据加载IMC文件时发生了 {_validityChecker.ImcExceptions.Count} 个错误。\n"
-                  + "这通常是因为你的模组使用了国服/国际服当前客户端不存在的物品，下面报错中指出了物品编号，请移除相关模组。\n\n"
-                  + "也有可能你用TexTools安装了模组，但没有初始化就更新游戏而对游戏文件产生了损坏。\n"
-                  + "建议不要同时使用TexTools和Penumbra（或其他基于Lumina的工具)来安装模组。\n"
-                  + "请修复客户端。");
-                DrawImcExceptions();
-            }
-            else if (!_validityChecker.IsValidSourceRepo)
+            if (!_validityChecker.IsValidSourceRepo)
             {
                 DrawProblemWindow(
                     $"你正在从其他仓库 \"{_pluginInterface.SourceRepository}\" 而不是官方仓库加载Penumbra的发行版本。\n"
@@ -150,19 +140,6 @@ public sealed class MainWindow : Window
         UiHelpers.DrawSupportButton(_penumbra!);
         Im.Line.New();
         Im.Line.New();
-    }
-
-    private void DrawImcExceptions()
-    {
-        Im.Text("异常"u8);
-        Im.Separator();
-        using var box = Im.ListBox.Begin("##Exceptions"u8, new Vector2(-1, -1));
-        foreach (var exception in _validityChecker.ImcExceptions)
-        {
-            Im.TextWrapped($"{exception}");
-            Im.Separator();
-            Im.Line.New();
-        }
     }
 
     private void OnToggleMainWindow(bool open)

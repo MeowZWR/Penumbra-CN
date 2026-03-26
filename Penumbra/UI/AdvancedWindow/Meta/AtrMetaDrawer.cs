@@ -16,7 +16,10 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<AtrIdentifier, AtrEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "属性（ATR）###ATR"u8;
+        => "属性（ATR）"u8;
+
+    public override ReadOnlySpan<byte> Tooltip
+        => "属性"u8;
 
     private ShapeAttributeString _buffer = ShapeAttributeString.TryRead("atrx_"u8, out var s) ? s : ShapeAttributeString.Empty;
     private bool                 _identifierValid;
@@ -25,7 +28,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         => 7;
 
     public override float ColumnHeight
-        => Im.Style.FrameHeightWithSpacing;
+        => Im.Style.FrameHeight + 2 * Im.Style.CellPadding.Y;
 
     protected override void Initialize()
     {
@@ -42,7 +45,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         Im.Table.NextColumn();
         var canAdd = !Editor.Contains(Identifier) && _identifierValid;
         var tt = canAdd
-            ? "编辑此项。"u8
+            ? "暂存此编辑。"u8
             : _identifierValid
                 ? "此项不包含有效的属性。"u8
                 : "此项已被编辑。"u8;
@@ -69,7 +72,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
             .ThenBy(kvp => kvp.Key.Id)
             .Select(kvp => (kvp.Key, kvp.Value));
 
-    protected override int Count
+    public override int Count
         => Editor.Atr.Count;
 
     private bool DrawIdentifierInput(ref AtrIdentifier identifier)
@@ -254,7 +257,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
         using (ImStyleBorder.Frame.Push(Colors.RegexWarningBorder, Im.Style.GlobalScale, !valid))
         {
             Im.Item.SetNextWidthScaled(unscaledWidth);
-            if (Im.Input.Text("##atrAttribute"u8, span, out ulong newLength, "属性..."u8))
+            if (Im.Input.Text("##atrAttribute"u8, span, out ulong newLength, "Attribute..."u8))
             {
                 buffer.ForceLength((byte)newLength);
                 valid = buffer.ValidateCustomAttributeString();

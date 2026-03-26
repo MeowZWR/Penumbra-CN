@@ -18,13 +18,16 @@ namespace Penumbra.UI.AdvancedWindow.Meta;
 public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>
 {
     public override ReadOnlySpan<byte> Label
-        => "骨骼挂点（ATCH）###ATCH"u8;
+        => "骨骼挂点（ATCH）"u8;
+
+    public override ReadOnlySpan<byte> Tooltip
+        => "骨骼挂点"u8;
 
     public override int NumColumns
         => 10;
 
     public override float ColumnHeight
-        => 2 * Im.Style.FrameHeightWithSpacing;
+        => 2 * Im.Style.FrameHeight + Im.Style.ItemSpacing.Y + 2 * Im.Style.CellPadding.Y;
 
     private          AtchFile?      _currentBaseAtchFile;
     private          AtchPoint?     _currentBaseAtchPoint;
@@ -91,7 +94,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>
 
         Im.Table.NextColumn();
         var canAdd = !Editor.Contains(Identifier);
-        var tt     = canAdd ? "编辑此项。"u8 : "此项已被编辑。"u8;
+        var tt     = canAdd ? "暂存此编辑。"u8 : "此项已被编辑。"u8;
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, !canAdd))
             Editor.Changes |= Editor.TryAdd(Identifier, Entry);
 
@@ -129,7 +132,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>
             .ThenBy(p => p.Key.Type)
             .ThenBy(p => p.Key.EntryIndex);
 
-    protected override int Count
+    public override int Count
         => Editor.Atch.Count;
 
     private bool DrawIdentifierInput(ref AtchIdentifier identifier)
@@ -179,7 +182,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>
 
         Im.Table.NextColumn();
         ImEx.TextFramed(identifier.Type.ToName(), default, FrameColor);
-        Im.Tooltip.OnHover("挂点类型"u8);
+        Im.Tooltip.OnHover("骨骼挂点类型"u8);
 
         Im.Table.NextColumn();
         ImEx.TextFramed($"{identifier.EntryIndex}", default, FrameColor);
@@ -259,7 +262,7 @@ public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>
 
     private static bool DrawPointInput(ref AtchIdentifier identifier, AtchPointCombo combo)
     {
-        if (!combo.Draw("##AtchPoint"u8, identifier.Type, "挂点类型"u8, 160 * Im.Style.GlobalScale, out var newType))
+        if (!combo.Draw("##AtchPoint"u8, identifier.Type, "骨骼挂点类型"u8, 160 * Im.Style.GlobalScale, out var newType))
             return false;
 
         identifier = identifier with { Type = newType };

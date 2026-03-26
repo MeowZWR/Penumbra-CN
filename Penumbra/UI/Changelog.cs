@@ -63,26 +63,38 @@ public class PenumbraChangelog : IUiService
         Add1_4_0_0(Changelog);
         Add1_5_0_0(Changelog);
         Add1_5_1_0(Changelog);
+        AddDummy(Changelog);
         Add1_6_0_0(Changelog);
     }
 
     #region Changelogs
 
+    private static void Add1_6_1_0(Changelog log)
+        => log.NextVersion("Version 1.6.1.0"u8)
+            .RegisterEntry("任何与'禁止文件'相关的内容都被重命名为'保留文件'，以使其听起来不那么吓人。"u8);
+
     private static void Add1_6_0_0(Changelog log)
         => log.NextVersion("版本 1.6.0.0"u8)
             .RegisterImportant(
-                "本次更新更换了整套 UI 后端——这是过去数月一直在做的工作。\n希望不会给用户带来明显差异，但由于所有涉及 ImGui 的代码都已修改，可能会出现新的或旧有的问题。\n如果发现配置丢失，您可以在 %AppData%\\XIVLauncherCN\\backups\\Penumbra 中找到备份设置进行恢复。"u8)
+                "本次更新更换了整套 UI 后端 —— 这是过去数月一直在做的工作。\n希望不会给用户带来明显差异，但由于所有涉及 ImGui 的代码都已修改，可能会出现新的或旧有的问题。\n如果发现配置丢失，您可以在 %AppData%\\XIVLauncherCN\\backups\\Penumbra 中找到备份设置进行恢复。"u8)
             .RegisterEntry("Penumbra 现在会记住 mod 的完整选择状态以及哪些文件夹已展开、哪些未展开。"u8, 1)
             .RegisterEntry(
-                "Penumbra 现在会记住大部分您输入的筛选状态——若希望筛选在每次重置，也可在设置中关闭此功能。"u8,
+                "Penumbra 现在会记住大部分您输入的筛选状态——若希望筛选在每次打开时重置，也可在设置中关闭此功能。"u8,
                 1)
             .RegisterEntry(
                 "将 mod 拖入游戏进行安装时，不再需要拖到 mod 选择器或保持 Penumbra 窗口打开，只需拖入游戏窗口即可。"u8,
                 1)
-            .RegisterEntry("mod 导入弹窗已改为 Dalamud 通知形式；仅在点击通知查看详情时才会打开弹窗（感谢 Ny！）。"u8)
-            .RegisterEntry("通知会汇总多次导入活动，而不会弹出多个弹窗。"u8, 1)
             .RegisterEntry("多项 UI 控件已更加精确、一致。"u8, 1)
+            .RegisterEntry(
+                "mod 导入弹窗已改为 Dalamud 通知形式；仅在点击通知查看详情时才会打开弹窗（感谢 Ny！）。"u8)
+            .RegisterEntry(
+                "设置中可让通知保持显示直至手动关闭，或始终像以往一样打开详细弹窗。"u8, 1)
+            .RegisterEntry("通知会汇总多次导入活动，而不会弹出多个弹窗。"u8,       1)
             .RegisterHighlight("现已支持同时打开多个高级编辑窗口（感谢 Ny！）。"u8)
+            .RegisterEntry("默认情况下，每个打开的标签页都会固定到为其打开时所对应的 mod。"u8, 1)
+            .RegisterEntry(
+                "您可以取消固定窗口，或选择默认不固定窗口的标签页。此时窗口会像以往一样跟随当前选中的 mod，但将无法再打开更多窗口。"u8,
+                1)
             .RegisterHighlight("新增「管理」标签页。"u8)
             .RegisterEntry("管理标签页用于帮助用户清理未使用的 mod。"u8, 1)
             .RegisterEntry(
@@ -90,9 +102,26 @@ public class PenumbraChangelog : IUiService
                 1)
             .RegisterEntry(
                 "新增 IPC，允许其他插件在查询未启用 mod 时添加备注或将它们标为活跃。"u8, 1)
-            .RegisterEntry("重复 mod 面板会检查是否存在多个同名 mod。"u8,                                         1)
-            .RegisterEntry("清理功能已从高级设置移至通用清理面板。"u8,                        1)
+            .RegisterEntry(
+                "「禁止文件」标签页可用于检查并移除因稳定性问题而不再被 Penumbra 允许的文件重定向。若启用这些文件会触发通知，且可能需要更新 mod 以保留功能。"u8,
+                1)
+            .RegisterEntry("其他管理标签页可用于清理和优化 mod，但目前仍为开发中。"u8, 1)
+            .RegisterEntry("重复 mod 面板会检查是否存在多个同名 mod。"u8,                                  1)
+            .RegisterEntry("清理功能已从高级设置移至通用清理面板。"u8,                 1)
+            .RegisterEntry("mod 编辑标签页中新增了可快速重排选项组顺序的模式。"u8)
+            .RegisterEntry("纹理编辑标签页新增了多项模式与功能，并有所改进（感谢 Ny！）。"u8)
             .RegisterEntry("挂载点 BLD 和 BL2 已识别为双剑（Twinblades）。"u8)
+            .RegisterEntry("使用物品交换创建 mod 时会尝试保留相关的 ATR 与 SHP 元数据编辑。"u8)
+            .RegisterEntry("多设计（Multi-design）操作现在会尊重临时设置模式。"u8)
+            .RegisterEntry("修复了材质与 avfx 文件子文件资源重定向的多项线程问题。"u8)
+            .RegisterEntry(
+                "更新 Penumbra 时会显示通知，提示用户若遇到问题可先重启游戏再反馈。"u8)
+            .RegisterEntry("在高级编辑标签页的文件组合框中增加了部分右键菜单选项。"u8)
+            .RegisterEntry("将本地 mod 数据从「每个 mod 一个文件」改为合并为单一文件，并普遍改善启动速度。"u8)
+            .RegisterEntry("改进了对无效 IMC 编辑的处理。"u8)
+            .RegisterEntry("修复了 Penumbra 崩溃处理器的若干问题，使其更加健壮。"u8)
+            .RegisterEntry("修复了过场动画或 NPC 道具上的挂载点问题。"u8)
+            .RegisterEntry("修复了交换跟宠时的相关问题。"u8)
             .RegisterHighlight("纹理压缩 IPC 增加对其他块压缩类型的支持 (1.5.1.12)。"u8)
             .RegisterHighlight(
                 "新增 IPC，在 Penumbra 设置标签页中展示其他插件的 Penumbra 相关设置（感谢 Ny！）(1.5.1.9)。"u8)

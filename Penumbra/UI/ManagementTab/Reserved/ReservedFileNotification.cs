@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.ImGuiNotification.EventArgs;
@@ -7,13 +6,11 @@ using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.Communication;
 using Penumbra.Mods.Editor;
-using Penumbra.Services;
 using Penumbra.String.Classes;
-using Penumbra.UI.ManagementTab;
 
-namespace Penumbra.UI;
+namespace Penumbra.UI.ManagementTab;
 
-public sealed class ForbiddenFileNotification(
+public sealed class ReservedFileNotification(
     Services.MessageService service,
     UiNavigator navigator)
     : INotificationAwareMessage, IService
@@ -22,7 +19,7 @@ public sealed class ForbiddenFileNotification(
 
     public bool IsRedirectionSupported(Utf8GamePath path, IMod mod, bool temporaryCollection)
     {
-        if (ForbiddenFilesTab.ForbiddenFiles.ContainsKey((uint)path.Path.Crc32))
+        if (ReservedFilesTab.ReservedFiles.ContainsKey((uint)path.Path.Crc32))
         {
             if (!temporaryCollection)
                 AddFile(path, mod);
@@ -80,7 +77,7 @@ public sealed class ForbiddenFileNotification(
         => NotificationType;
 
     string IMessage.NotificationMessage
-        => "不允许重定向这些文件，因为意外的替换会导致崩溃。\n\n"
+        => "这些文件的重定向已被禁止，意外的替换会导致崩溃。\n\n"
           + "查看 模组管理 -> 被禁止的文件 以获取更多详细信息。";
 
     TimeSpan IMessage.NotificationDuration
@@ -109,7 +106,7 @@ public sealed class ForbiddenFileNotification(
             navigator.OpenTo(TabType.Messages);
         Im.Line.SameInner();
         if (Im.Button("打开模组管理"u8, width))
-            navigator.OpenTo(ManagementTabType.ForbiddenFiles);
+            navigator.OpenTo(ManagementTabType.ReservedFiles);
     }
 
     void INotificationAwareMessage.OnNotificationCreated(IActiveNotification notification)
@@ -128,7 +125,7 @@ public sealed class ForbiddenFileNotification(
         _currentNotification = null;
     }
 
-    private sealed class StoredNotification(ForbiddenFileNotification parent, string file, string mod) : IMessage
+    private sealed class StoredNotification(ReservedFileNotification parent, string file, string mod) : IMessage
     {
         public NotificationType NotificationType
             => NotificationType.Warning;
@@ -147,7 +144,7 @@ public sealed class ForbiddenFileNotification(
         public SeString ChatMessage
             => SeString.Empty;
 
-        public StringU8 StoredMessage { get; } = new($"{file} in {mod}: Forbidden File Redirection.");
+        public StringU8 StoredMessage { get; } = new($"{file} in {mod}: Reserved File Redirection.");
         public StringU8 StoredTooltip { get; } = new($"File: {file}\nMod: {mod}");
 
         public void OnNotificationActions(INotificationDrawArgs args)
@@ -156,7 +153,7 @@ public sealed class ForbiddenFileNotification(
         public void OnRemoval()
         {
             parent._gatheredFiles.Remove((file, mod));
-            if (parent._currentNotification is {} notification)
+            if (parent._currentNotification is { } notification)
             {
                 if (parent._gatheredFiles.Count is 0)
                     notification.DismissNow();

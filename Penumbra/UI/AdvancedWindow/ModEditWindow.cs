@@ -213,8 +213,6 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             return;
         }
 
-        using var id = Im.Id.Push(Mod!.Identifier);
-
         var optionChanged = DrawOptionSelectHeader();
 
         using var tabBar = Im.TabBar.Begin("##tabs"u8);
@@ -336,6 +334,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         if (!tab)
             return;
 
+        using var id = Im.Id.Push(Mod!.Identifier);
         Im.Line.New();
         if (Im.Button("从模组中删除丢失的文件"u8))
             _editor.FileEditor.RemoveMissingPaths(Mod!, _editor.Option!);
@@ -358,6 +357,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         if (!tab)
             return;
 
+        using var id = Im.Id.Push(Mod!.Identifier);
         if (_editor.Duplicates.Worker.IsCompleted)
         {
             if (ImEx.Button("查找重复项"u8, Vector2.Zero,
@@ -480,10 +480,13 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             }
 
             Im.Line.Same();
-            if (_optionSelect.Draw("##option"u8, _editor.Option?.GetFullName() ?? string.Empty, default, width.X, out var option))
+            using (Im.Id.Push(Mod!.Identifier))
             {
-                _editor.LoadOption(option.GroupIndex, option.DataIndex).Wait();
-                ret = true;
+                if (_optionSelect.Draw("##option"u8, _editor.Option?.GetFullName() ?? string.Empty, default, width.X, out var option))
+                {
+                    _editor.LoadOption(option.GroupIndex, option.DataIndex).Wait();
+                    ret = true;
+                }
             }
 
             Im.Line.Same();
@@ -511,8 +514,9 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         if (!tab)
             return;
 
-        var setsEqual = !_editor.SwapEditor.Changes;
-        var tt        = setsEqual ? "未暂存任何修改" : "应用当前暂存的修改到此选项。";
+        using var id        = Im.Id.Push(Mod!.Identifier);
+        var       setsEqual = !_editor.SwapEditor.Changes;
+        var       tt        = setsEqual ? "未暂存任何修改" : "应用当前暂存的修改到此选项。";
         Im.Line.New();
         if (ImEx.Button("应用修改"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Apply(_editor.Option!);
@@ -547,7 +551,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         foreach (var (gamePath, file) in _editor.SwapEditor.Swaps.ToList())
         {
-            using var id = Im.Id.Push(idx++);
+            id.Push(idx++);
             table.NextColumn();
             if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除此替换。"u8))
                 _editor.SwapEditor.Remove(gamePath);
@@ -560,11 +564,12 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
             table.NextColumn();
             tmp = gamePath.Path.ToString();
-            Im.Item.SetNextWidth(-1);
+            Im.Item.SetNextWidthFull();
             if (Im.Input.Text("##key"u8, ref tmp, maxLength: Utf8GamePath.MaxGamePathLength)
              && Utf8GamePath.FromString(tmp, out var path)
              && !_editor.SwapEditor.Swaps.ContainsKey(path))
                 _editor.SwapEditor.Change(gamePath, path);
+            id.Pop();
         }
 
         table.NextColumn();
@@ -581,11 +586,11 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         }
 
         table.NextColumn();
-        Im.Item.SetNextWidth(-1);
-        Im.Input.Text("##swapKey"u8, ref _newSwapValue, "新替换来源..."u8, maxLength: Utf8GamePath.MaxGamePathLength);
+        Im.Item.SetNextWidthFull();
+        Im.Input.Text("##swapKey"u8, ref _newSwapValue, "加载此文件..."u8, maxLength: Utf8GamePath.MaxGamePathLength);
         table.NextColumn();
-        Im.Item.SetNextWidth(-1);
-        Im.Input.Text("##swapValue"u8, ref _newSwapKey, "... 新替换目标。"u8, maxLength: Utf8GamePath.MaxGamePathLength);
+        Im.Item.SetNextWidthFull();
+        Im.Input.Text("##swapValue"u8, ref _newSwapKey, "... 替换为此文件。"u8, maxLength: Utf8GamePath.MaxGamePathLength);
     }
 
     public ModEditWindow(FileDialogService fileDialog, ItemSwapTab itemSwapTab, IDataManager gameData,

@@ -4,7 +4,9 @@ using ImSharp;
 using Luna;
 using Penumbra.Mods;
 using Penumbra.Mods.Editor;
+using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager;
+using Penumbra.Mods.Settings;
 using Penumbra.Services;
 using Penumbra.UI.ModsTab.Groups;
 
@@ -23,8 +25,11 @@ public class ModPanelEditTab(
     AddGroupDrawer addGroupDrawer)
     : ITab<ModPanelTab>
 {
-    private IFileSystemData<Mod> _leaf = null!;
-    private Mod                  _mod  = null!;
+    private IFileSystemData<Mod> _leaf             = null!;
+    private Mod                  _mod              = null!;
+    private bool                 _groupReorderMode = false;
+    private IModGroup?           _draggedGroup     = null;
+
 
     public ReadOnlySpan<byte> Label
         => "编辑模组"u8;
@@ -64,7 +69,7 @@ public class ModPanelEditTab(
         UiHelpers.DefaultLineSpace();
         var sharedTagsEnabled     = predefinedTagManager.Enabled;
         var sharedTagButtonOffset = sharedTagsEnabled ? Im.Style.FrameHeight + Im.Style.FramePadding.X : 0;
-        var tagIdx = TagButtons.Draw("模组标签："u8, "点击修改，或添加新标签。空白标签会被移除。"u8, _mod.ModTags,
+        var tagIdx = TagButtons.Draw("模组标签： "u8, "点击标签进行编辑，或添加新标签。空标签将被移除。"u8, _mod.ModTags,
             out var editedTag, rightEndOffset: sharedTagButtonOffset);
         if (tagIdx >= 0)
             modManager.DataEditor.ChangeModTag(_mod, tagIdx, editedTag);
@@ -79,7 +84,18 @@ public class ModPanelEditTab(
             addGroupDrawer.Draw(_mod, UiHelpers.InputTextWidth.X);
             UiHelpers.DefaultLineSpace();
 
-            groupEditDrawer.Draw(_mod);
+            if (Im.RadioButton("组编辑模式"u8, !_groupReorderMode))
+                _groupReorderMode = false;
+            Im.Line.SameInner();
+            if (Im.RadioButton("组排序模式"u8, _groupReorderMode))
+                _groupReorderMode = true;
+
+            UiHelpers.DefaultLineSpace();
+
+            if (_groupReorderMode)
+                DrawGroupReordering(_mod);
+            else
+                groupEditDrawer.Draw(_mod);
         }
 
         descriptionPopup.Draw();
@@ -91,18 +107,81 @@ public class ModPanelEditTab(
         Input.Reset();
     }
 
+    private void DrawGroupReordering(Mod mod)
+    {
+        using var table = Im.Table.Begin("##reorder"u8, 5, TableFlags.BordersOuter | TableFlags.RowBackground);
+        if (!table)
+            return;
+
+        table.SetupColumn("索引"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("组 #00  "u8).X);
+        table.SetupColumn("组"u8, TableColumnFlags.WidthStretch);
+        table.SetupColumn("类型"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("合并  "u8).X);
+        table.SetupColumn("选项"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("1000 选项  "u8).X);
+        table.SetupColumn("优先级##actions"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X);
+        table.HeaderRow();
+
+        var        active   = config.DeleteModModifier.IsActive();
+        using var  clip     = new Im.ListClipper(mod.Groups.Count, Im.Style.FrameHeightWithSpacing);
+        IModGroup? deletion = null;
+        foreach(var i in clip)
+        {
+            using var id    = Im.Id.Push(i);
+            var       group = mod.Groups[i];
+            table.DrawFrameColumn($"组 #{i + 1:D2}");
+
+            table.NextColumn();
+            Im.Selectable(group.Name);
+            using (var source = Im.DragDrop.Source())
+            {
+                if (source)
+                {
+                    source.SetPayload("##group"u8);
+                    _draggedGroup = group;
+                    Im.Text($"拖拽组 #{i + 1} - {group.Name}...");
+                }
+            }
+
+            using (var target = Im.DragDrop.Target())
+            {
+                if (target.IsDropping("##group"u8) && _draggedGroup is not null)
+                {
+                    modManager.OptionEditor.MoveModGroup(_draggedGroup, i);
+                    _draggedGroup = null;
+                }
+            }
+
+
+            table.DrawFrameColumn($"{group.Type}");
+
+            table.DrawFrameColumn($"{group.Options.Count} 个选项");
+
+            table.NextColumn();
+            Im.Item.SetNextWidth(2 * Im.Style.FrameHeight);
+            if (ImEx.InputOnDeactivation.Scalar("##prio"u8, group.Priority.Value, out var newPriority))
+                modManager.OptionEditor.ChangeGroupPriority(group, new ModPriority(newPriority));
+            Im.Line.SameInner();
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除此选项组。"u8, !active))
+                deletion = group;
+
+            if (!active)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {config.DeleteModModifier} 删除。");
+        }
+        if (deletion is not null)
+            modManager.OptionEditor.DeleteModGroup(deletion);
+    }
+
     /// <summary> The general edit row for non-detailed mod edits. </summary>
     private void EditButtons()
     {
         var buttonSize   = new Vector2(150 * Im.Style.GlobalScale, 0);
         var folderExists = Directory.Exists(_mod.ModPath.FullName);
         if (ImEx.Button("打开模组目录"u8, buttonSize, folderExists
-                ? $"在操作系统指定的文件浏览器中打开目录：\"{_mod.ModPath.FullName}\" 。"
-                : $"模组目录：\"{_mod.ModPath.FullName}\" 不存在。", !folderExists))
+                ? $"在您选择的文件浏览器中打开 \"{_mod.ModPath.FullName}\"。"
+                : $"模组目录 \"{_mod.ModPath.FullName}\" 不存在。", !folderExists))
             Process.Start(new ProcessStartInfo(_mod.ModPath.FullName) { UseShellExecute = true });
 
         Im.Line.Same();
-        if (ImEx.Button("重新加载模组"u8, buttonSize, "重新加载当前模组从其文件。\n"u8
+        if (ImEx.Button("重新加载模组"u8, buttonSize, "从其文件重新加载当前模组。\n"u8
               + "如果模组目录或元数据文件不存在，或者新模组名称为空，则模组会被删除。"u8,
                 false))
             modManager.ReloadMod(_mod);
@@ -117,17 +196,17 @@ public class ModPanelEditTab(
     {
         var backup = new ModBackup(modExportManager, _mod);
         if (ImEx.Button("备份模组"u8, buttonSize, ModBackup.CreatingBackup
-                ? "模组正在备份中。"
+                ? "正在备份模组。"
                 : backup.Exists
-                    ? $"用当前模组覆盖当前备份：\"{backup.Name}\"。"
-                    : $"创建一个备份压缩包到：\"{backup.Name}\"。", ModBackup.CreatingBackup))
+                    ? $"用当前模组覆盖当前备份的模组 \"{backup.Name}\"。"
+                    : $"创建当前模组的备份压缩包到 \"{backup.Name}\"。", ModBackup.CreatingBackup))
             _ = backup.CreateAsync();
 
         if (Im.Item.RightClicked())
             Im.Popup.Open("context"u8);
 
         Im.Line.Same();
-        if (ImEx.Button("删除备份"u8, buttonSize, backup.Exists
+        if (ImEx.Button("删除导出"u8, buttonSize, backup.Exists
                 ? $"删除存在的备份文件：\"{backup.Name}\" (点击时按住{config.DeleteModModifier})。"
                 : $"备份文件\"{backup.Name}\"不存在。", !backup.Exists || !config.DeleteModModifier.IsActive()))
             backup.Delete();
@@ -193,7 +272,10 @@ public class ModPanelEditTab(
     private void EditLocalData()
     {
         DrawImportDate();
-        DrawOpenLocalData();
+        ImEx.TextFramed($"{DateTimeOffset.FromUnixTimeMilliseconds(_mod.LastConfigEdit).ToLocalTime():yyyy/MM/dd HH:mm}",
+            UiHelpers.InputTextWidth with { Y = 0 }, ImGuiColor.FrameBackground.Get(0.5f));
+        Im.Line.SameInner();
+        Im.Text("最后一次配置编辑"u8);
     }
 
     private void DrawImportDate()
@@ -204,23 +286,12 @@ public class ModPanelEditTab(
 
         var canRefresh = config.DeleteModModifier.IsActive();
         if (ImEx.Icon.Button(LunaStyle.RefreshIcon, canRefresh
-                    ? "将导入日期重置为当前日期和时间。"u8
-                    : $"将导入日期重置为当前日期和时间。\n点击时按住{config.DeleteModModifier}以刷新。",
+                    ? "重置导入日期为当前日期和时间。"u8
+                    : $"重置导入日期为当前日期和时间。\n点击时按住 {config.DeleteModModifier} 刷新。",
                 !canRefresh))
             modManager.DataEditor.ResetModImportDate(_mod);
         Im.Line.SameInner();
         Im.Text("导入日期"u8);
-    }
-
-    private void DrawOpenLocalData()
-    {
-        var file       = filenames.LocalDataFile(_mod);
-        var fileExists = File.Exists(file);
-        var tt = fileExists
-            ? "在您选择的文本编辑器中打开本地模组数据文件。"u8
-            : "本地模组数据文件不存在。"u8;
-        if (ImEx.Button("打开本地数据"u8, UiHelpers.InputTextWidth, tt, !fileExists))
-            Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
     }
 
     private void DrawOpenDefaultMod()
