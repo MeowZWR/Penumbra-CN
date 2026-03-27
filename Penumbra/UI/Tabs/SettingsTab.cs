@@ -446,7 +446,7 @@ public sealed class SettingsTab : ITab<TabType>
         // 预览面板开关
         table.NextColumn();
         var showPreviewPanel = _config.ShowModPreviewPanel;
-        if (Im.Checkbox("##显示预览面板"u8, ref showPreviewPanel))
+        if (Im.Checkbox("##显示预览面板（国服特供）"u8, ref showPreviewPanel))
         {
             _config.ShowModPreviewPanel = showPreviewPanel;
             _config.Save();
@@ -900,8 +900,8 @@ public sealed class SettingsTab : ITab<TabType>
     /// <summary> Draw all settings pertaining to advanced editing of mods. </summary>
     private void DrawModEditorSettings()
     {
-        Checkbox("Advanced Editing: Automatically Pin Mod in Editing Window"u8,
-            "Determines the default pinning behavior when opening a new Advanced Editing window.\n\nPinned: The editing window will stay on the mod it was on at the time of opening/pinning.\nUnpinned: When changing your selected mod in the main window, the editing window will follow the selection, unless a pinned window exists for the new selected mod."u8,
+        Checkbox("高级编辑：在编辑窗口中自动固定模组"u8,
+            "决定打开新的高级编辑窗口时的默认固定行为。\n\n已固定：编辑窗口将始终锁定在打开或固定时所选的模组上，不会随主界面切换。\n未固定：当你在主窗口切换所选 Mod 时，编辑窗口将同步跟随切换（除非新选中的模组已经有一个已固定的编辑窗口）。"u8,
             _config.DefaultEditWindowModPinned, v => _config.DefaultEditWindowModPinned = v);
 
         Checkbox("高级编辑：编辑原始Tile UV变换"u8,

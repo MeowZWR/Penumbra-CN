@@ -96,7 +96,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             _editor.LoadMod(mod, -1, 0).Wait();
             SizeConstraints = new WindowSizeConstraints
             {
-                MinimumSize = new Vector2(1240, 600),
+                MinimumSize = new Vector2(940, 600),
                 MaximumSize = 4000 * Vector2.One,
             };
             _selectedFiles.Clear();
@@ -493,10 +493,10 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             using (ImGuiColor.Button.Push(Im.Style[ImGuiColor.ButtonActive], ModPinned))
             {
                 if (ImEx.Icon.Button(LunaStyle.PinIcon, _parent.UnpinnedWindow == this
-                            ? $"Pin {Mod?.Name} to this editing window.\nOpening Advanced Editing on another mod will then open another window."
+                            ? $"将 {Mod?.Name} 固定到此编辑窗口。\n固定后，在其他 Mod 上打开高级编辑时将开启新窗口。"
                             : _parent.UnpinnedWindow?.Mod is not { } mod
-                                ? $"Unpin {Mod?.Name} from this editing window.\nThis window will then follow your selected mod in the main window."
-                                : $"Unpin {Mod?.Name} from this editing window.\nThis window will then follow your selected mod in the main window.\n\nThis will pin an existing unpinned window to {mod.Name}.",
+                                ? $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的 Mod。"
+                                : $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的 Mod。\n\n这会将现有的未固定窗口固定到 {mod.Name}。",
                         false, new Vector2(frameHeight + spacingX, frameHeight)))
                     _parent.UnpinWindow(this, _parent.UnpinnedWindow != this);
             }
