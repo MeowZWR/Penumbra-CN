@@ -14,7 +14,7 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
     : MetaDrawer<EqdpIdentifier, EqdpEntryInternal>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "种族模型编辑（EQDP）"u8;
+        => "EQDP"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "种族模型编辑"u8;

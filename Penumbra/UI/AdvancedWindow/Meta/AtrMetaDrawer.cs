@@ -16,7 +16,7 @@ public sealed class AtrMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<AtrIdentifier, AtrEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "属性（ATR）"u8;
+        => "ATR"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "属性"u8;

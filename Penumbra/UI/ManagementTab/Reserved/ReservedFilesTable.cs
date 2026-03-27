@@ -13,11 +13,11 @@ namespace Penumbra.UI.ManagementTab;
 public sealed class ReservedFilesTable(ModManager mods, TextureManager textures, UiNavigator navigator, Configuration config)
     : TableBase<ReservedFileCacheObject, ScannerTabCache<ReservedFileCacheObject, ReservedFileRedirection>>(new StringU8("##fft"u8),
         new ActionColumn(mods, config),
-        new GamePathColumn<ReservedFileCacheObject, ReservedFileRedirection> { Label = new StringU8("Game Path"u8) },
-        new StateColumn { Label                                                        = new StringU8("State"u8) },
-        new TargetColumn<ReservedFileCacheObject, ReservedFileRedirection> { Label   = new StringU8("Target File"u8) },
-        new ModColumn(navigator) { Label                                               = new StringU8("Mod"u8) },
-        new ContainerColumn(navigator) { Label                                         = new StringU8("Option"u8) })
+        new GamePathColumn<ReservedFileCacheObject, ReservedFileRedirection> { Label = new StringU8("游戏路径"u8) },
+        new StateColumn { Label                                                        = new StringU8("状态"u8) },
+        new TargetColumn<ReservedFileCacheObject, ReservedFileRedirection> { Label   = new StringU8("目标文件"u8) },
+        new ModColumn(navigator) { Label                                               = new StringU8("模组"u8) },
+        new ContainerColumn(navigator) { Label                                         = new StringU8("选项"u8) })
 {
     private const bool DryRun = false;
 
@@ -30,23 +30,23 @@ public sealed class ReservedFilesTable(ModManager mods, TextureManager textures,
         cache.DrawScanButtons();
 
         var active = config.DeleteModModifier.IsActive();
-        if (ImEx.Button("Remove All Simple Redirections"u8, default, !active))
+        if (ImEx.Button("移除所有简单重定向"u8, default, !active))
             RemoveRedundant(cache);
 
         if (Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
         {
             using var tt = Im.Tooltip.Begin();
-            Im.Text("Executing this will"u8);
-            Im.BulletText("Remove all listed file swaps, as they can not be reasonable."u8);
-            Im.BulletText("Remove all redirections listed as 'Broken', as they could not be read and can not be useful."u8);
-            Im.BulletText("Remove all redirections listed as 'Missing', as their target files do not exist and thus can not be useful."u8);
+            Im.Text("执行此操作将："u8);
+            Im.BulletText("移除所有列出的文件替换(File Swaps)，因为这些配置不合理。"u8);
+            Im.BulletText("移除所有状态为“损坏(Broken)”的重定向，因为它们无法被读取且无效。"u8);
+            Im.BulletText("移除所有状态为“缺失 (Missing)”的重定向，因为目标文件不存在且无效。"u8);
             Im.BulletText(
-                "Remove all redirections listed as 'Equal', as the target files are equivalent to the game files and thus the redirections are not meaningful."u8);
-            Im.BulletText("Delete all target files who have no remaining redirections in their mods left afterwards."u8);
-            Im.Text("\nTHIS IS NOT REVERTIBLE."u8, Colors.RegexWarningBorder);
+                "移除所有状态为“一致 (Equal)”的重定向，因为目标文件与游戏原始文件相同，没有重定向意义。"u8);
+            Im.BulletText("删除所有在上述操作后不再有关联重定向的目标文件。"u8);
+            Im.Text("\n【此操作无法撤销，请谨慎操作】"u8, Colors.RegexWarningBorder);
 
             if (!active)
-                Im.Text($"\nHold {config.DeleteModModifier} while clicking.");
+                Im.Text($"\n请在点击时按住 {config.DeleteModModifier} 键。");
         }
     }
 
@@ -87,8 +87,8 @@ public sealed class ReservedFilesTable(ModManager mods, TextureManager textures,
             var disabled = !_config.DeleteModModifier.IsActive();
             if (ImEx.Icon.Button(LunaStyle.DeleteIcon,
                     item.ScannedObject.FileSwap
-                        ? "Remove this file swap."u8
-                        : "Remove this redirection and delete the target file if it was the last redirection in the mod referencing it."u8,
+                        ? "移除此文件替换(File Swap)。"u8
+                        : "移除此重定向并删除目标文件，如果它是模组中最后一个重定向。"u8,
                     disabled))
             {
                 if (item.ScannedObject.Container.TryGetTarget(out var container))
@@ -123,7 +123,7 @@ public sealed class ReservedFilesTable(ModManager mods, TextureManager textures,
             }
 
             if (disabled)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\nHold {_config.DeleteModModifier} while clicking to remove.");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\n按住 {_config.DeleteModModifier} 键以删除。");
         }
 
         public override float ComputeWidth(IEnumerable<ReservedFileCacheObject> _)
@@ -191,14 +191,14 @@ public sealed class ReservedFilesTable(ModManager mods, TextureManager textures,
         {
             using var tt = Im.Tooltip.Begin();
             Im.Text(item.ScannedObject.FileSwap
-                ? "There can no be any file swaps that are valid and useful for this kind of file."u8
+                ? "对此类文件，不存在有效或有意义的文件替换(File Swap)。"u8
                 : item.ScannedObject.Broken
-                    ? "The scanner was unable to read or parse this file, so it is invalid and should be removed."u8
+                    ? "扫描器无法读取或解析该文件，此重定向无效，建议移除。"u8
                     : item.ScannedObject.Missing
-                        ? "The file this is redirected to does not exist, so the redirection should just be removed."u8
+                        ? "重定向指向的文件不存在，请直接移除此重定向。"u8
                         : item.ScannedObject.ConceptuallyEqual
-                            ? "The file this is redirected to is equivalent to the original file, so the redirection can just be removed without consequences."u8
-                            : "This file is conceptually different from the original game file. The mod may have to be fixed by its creator.\n\nYou can freely remove this redirection to silence the warning, as it is not applied either way, but the mod may not work as intended."u8);
+                            ? "重定向目标与游戏原始文件一致，可直接移除此重定向，无不良影响。"u8
+                            : "此文件与游戏原始文件在语义上不一致，模组可能需要由作者修复。\n\n该重定向本就不会生效，您可以移除此重定向以消除警告，但模组可能无法按预期工作。"u8);
         }
 
         public override void DrawColumn(in ReservedFileCacheObject item, int globalIndex)

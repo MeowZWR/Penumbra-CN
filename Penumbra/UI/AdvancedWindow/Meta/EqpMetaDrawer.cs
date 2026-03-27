@@ -14,7 +14,7 @@ public sealed class EqpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<EqpIdentifier, EqpEntryInternal>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "装备参数设置（EQP）"u8;
+        => "EQP"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "装备参数设置（设置可见性）"u8;

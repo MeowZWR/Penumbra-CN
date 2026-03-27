@@ -16,7 +16,7 @@ public sealed class ShpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<ShpIdentifier, ShpEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "形态键（SHP）"u8;
+        => "SHP"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "形态键"u8;

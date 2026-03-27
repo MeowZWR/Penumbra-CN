@@ -13,7 +13,7 @@ public sealed class RspMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<RspIdentifier, RspEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "种族缩放编辑（RSP）###RSP"u8;
+        => "RSP"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "种族缩放编辑(全局修改)"u8;

@@ -18,7 +18,7 @@ namespace Penumbra.UI.AdvancedWindow.Meta;
 public sealed class AtchMetaDrawer : MetaDrawer<AtchIdentifier, AtchEntry>
 {
     public override ReadOnlySpan<byte> Label
-        => "骨骼挂点（ATCH）"u8;
+        => "ATCH"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "骨骼挂点"u8;

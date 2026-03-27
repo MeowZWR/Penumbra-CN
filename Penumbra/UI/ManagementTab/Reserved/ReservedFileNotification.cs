@@ -77,14 +77,14 @@ public sealed class ReservedFileNotification(
         => NotificationType;
 
     string IMessage.NotificationMessage
-        => "这些文件的重定向已被禁止，意外的替换会导致崩溃。\n\n"
-          + "查看 模组管理 -> 被禁止的文件 以获取更多详细信息。";
+        => "这些文件的重定向已被禁用，意外的替换会导致崩溃。\n\n"
+          + "查看 模组管理 -> 保留文件 以获取更多详细信息。";
 
     TimeSpan IMessage.NotificationDuration
         => NotificationDuration;
 
     string IMessage.NotificationTitle
-        => $"检测到 {_gatheredFiles.Count} 个被禁止的文件";
+        => $"检测到 {_gatheredFiles.Count} 个保留文件";
 
     string IMessage.LogMessage
         => string.Empty;

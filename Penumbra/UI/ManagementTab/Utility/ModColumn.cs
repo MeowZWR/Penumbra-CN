@@ -26,7 +26,7 @@ public abstract class ModColumn<TCacheObject> : TextColumn<TCacheObject>
         }
 
         if (mod is not null)
-            Im.Tooltip.OnHover("Click to move to mod."u8);
+            Im.Tooltip.OnHover("点击跳转到模组。"u8);
     }
 
     protected abstract bool MatchesLastItem(in TCacheObject item);

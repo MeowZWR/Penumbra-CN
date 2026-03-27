@@ -32,7 +32,7 @@ public class ModPanelEditTab(
 
 
     public ReadOnlySpan<byte> Label
-        => "编辑模组"u8;
+        => "模组编辑"u8;
 
     public ModPanelTab Identifier
         => ModPanelTab.Edit;

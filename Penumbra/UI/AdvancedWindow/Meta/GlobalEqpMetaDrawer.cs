@@ -12,7 +12,7 @@ public sealed class GlobalEqpMetaDrawer(ModMetaEditor editor, MetaFileManager me
     : MetaDrawer<GlobalEqpManipulation, byte>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "全局装备参数编辑（GEQP）"u8;
+        => "Global EQP"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "全局装备参数"u8;

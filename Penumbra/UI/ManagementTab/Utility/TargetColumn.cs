@@ -49,7 +49,7 @@ public sealed class TargetColumn<TCacheObject, TRedirection> : TextColumn<TCache
                     }
             }
 
-            Im.Tooltip.OnHover("Click to open containing directory in the file explorer of your choice.");
+            Im.Tooltip.OnHover("点击以在您的系统资源管理器中打开此文件所在目录。"u8);
         }
 
         _lastFile = item.Target.Utf16;

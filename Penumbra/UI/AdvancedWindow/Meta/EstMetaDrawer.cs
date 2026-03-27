@@ -13,7 +13,7 @@ public sealed class EstMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<EstIdentifier, EstEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "额外骨骼参数(EST)"u8;
+        => "EST"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "额外骨骼参数"u8;

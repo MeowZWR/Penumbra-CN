@@ -67,7 +67,7 @@ public sealed class ModGroupEditDrawer(
     private void DrawGroup(IModGroup group, int idx)
     {
         using var id    = Im.Id.Push(idx);
-        using var frame = ImEx.FramedGroup($"Group #{idx + 1}");
+        using var frame = ImEx.FramedGroup($"选项组 #{idx + 1}");
         DrawGroupNameRow(group, idx);
         group.EditDrawer(this).Draw();
     }
@@ -148,7 +148,7 @@ public sealed class ModGroupEditDrawer(
         if (isFirst)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "到顶了"u8);
         else
-            Im.Tooltip.OnHover($"移动此组到组 #{idx} 之上。");
+            Im.Tooltip.OnHover($"移动此组到选项组 #{idx} 之上。");
 
 
         Im.Line.SameInner();
@@ -159,7 +159,7 @@ public sealed class ModGroupEditDrawer(
         if (isLast)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "到底了。"u8);
         else
-            Im.Tooltip.OnHover($"移动此组到组 #{idx + 2} 之下。");
+            Im.Tooltip.OnHover($"移动此组到选项组 #{idx + 2} 之下。");
     }
 
     private void DrawGroupOpenFile(IModGroup group, int idx)

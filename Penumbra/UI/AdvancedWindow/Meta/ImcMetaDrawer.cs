@@ -13,7 +13,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<ImcIdentifier, ImcEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "变体编辑（IMC）"u8;
+        => "IMC"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "变体编辑"u8;

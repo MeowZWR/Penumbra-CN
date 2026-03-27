@@ -13,7 +13,7 @@ public sealed class GmpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     : MetaDrawer<GmpIdentifier, GmpEntry>(editor, metaFiles)
 {
     public override ReadOnlySpan<byte> Label
-        => "面甲/可调整头部装备编辑（GMP）"u8;
+        => "GMP"u8;
 
     public override ReadOnlySpan<byte> Tooltip
         => "面甲/可调整头部装备编辑"u8;
