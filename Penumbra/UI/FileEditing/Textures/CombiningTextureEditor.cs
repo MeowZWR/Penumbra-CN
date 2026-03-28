@@ -27,8 +27,12 @@ public sealed partial class CombiningTextureEditor : IFileEditor
     private readonly Texture         _right = new();
     private readonly CombinedTexture _center;
 
-    private int  _currentSaveAs = (int)CombinedTexture.TextureSaveType.AsIs;
-    private bool _addMipMaps    = true;
+    private int _currentSaveAs = (int)CombinedTexture.TextureSaveType.AsIs;
+#if DEBUG
+    private bool _addMipMaps = false;
+#else
+    private bool _addMipMaps = true;
+#endif
 
     private CombinedTexture.TextureSaveType? _nextSaveAs;
     private bool?                            _nextAddMipMaps;
