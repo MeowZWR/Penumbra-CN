@@ -62,7 +62,7 @@ public abstract class PathSelectCombo(IDataManager dataManager) : FilterComboBas
 
         Im.Tooltip.OnHover(item.IsGame
             ? "这是一个游戏路径，指的是游戏数据中的未修改文件。"u8
-            : "这是一个模组文件路径，指的是您文件系统中的模组文件。"u8);
+            : "这是一个模组文件路径，指的是您文件系统中的模组文件。"u8, true);
         return ret;
     }
 
