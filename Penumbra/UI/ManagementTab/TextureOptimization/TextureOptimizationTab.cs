@@ -11,7 +11,7 @@ public sealed class TextureOptimizationTab(ModManager mods, TextureManager textu
     private readonly TextureOptimizationTable _table = new(mods, textures, optimization, navigator, config, log);
 
     public ReadOnlySpan<byte> Label
-        => "Texture Optimization"u8;
+        => "纹理优化"u8;
 
     public void DrawContent()
         => _table.Draw();

@@ -20,14 +20,14 @@ public sealed class TextureOptimizationTable(
     ManagementLog<TextureOptimization> log)
     : TableBase<TextureOptimizationCacheObject, TextureOptimizationTable.Cache>(new StringU8("##tot"u8),
         new ActionColumn(config, textures, optimization),
-        new FileColumn<TextureOptimizationCacheObject, OptimizableTexture> { Label = new StringU8("File"u8) },
-        new ModColumn(navigator) { Label                                           = new StringU8("Mod"u8) },
-        new FormatColumn { Label                                                   = new StringU8("Format"u8) },
-        new WidthColumn { Label                                                    = new StringU8("Width"u8) },
-        new HeightColumn { Label                                                   = new StringU8("Height"u8) },
-        new SizeColumn { Label                                                     = new StringU8("Size"u8) },
+        new FileColumn<TextureOptimizationCacheObject, OptimizableTexture> { Label = new StringU8("文件"u8) },
+        new ModColumn(navigator) { Label                                           = new StringU8("模组"u8) },
+        new FormatColumn { Label                                                   = new StringU8("格式"u8) },
+        new WidthColumn { Label                                                    = new StringU8("宽度"u8) },
+        new HeightColumn { Label                                                   = new StringU8("高度"u8) },
+        new SizeColumn { Label                                                     = new StringU8("大小"u8) },
         new MipMapColumn { Label                                                   = new StringU8("Mips"u8) },
-        new SolidColorColumn { Label                                               = new StringU8("Color"u8) }
+        new SolidColorColumn { Label                                               = new StringU8("颜色"u8) }
     )
 {
     
@@ -35,18 +35,18 @@ public sealed class TextureOptimizationTable(
     protected override void PreDraw(in Cache cache)
     {
         Im.Item.SetNextWidthScaled(100);
-        ImEx.LogarithmicInput("Ignore Textures Below This Size"u8, FormattingFunctions.HumanReadableSize(config.TextureOptimization.LowerSizeLimit), ref config.TextureOptimization.LowerSizeLimit);
+        ImEx.LogarithmicInput("忽略小于此大小的纹理"u8, FormattingFunctions.HumanReadableSize(config.TextureOptimization.LowerSizeLimit), ref config.TextureOptimization.LowerSizeLimit);
         Im.Item.SetNextWidthScaled(100);
-        ImEx.LogarithmicInput("Ignore Textures With Smaller Dimensions"u8, ref config.TextureOptimization.SmallDimensionLimit);
+        ImEx.LogarithmicInput("忽略较小分辨率的纹理"u8, ref config.TextureOptimization.SmallDimensionLimit);
         Im.Item.SetNextWidthScaled(100);
-        ImEx.LogarithmicInput("Show Textures With Larger Dimensions, Even If Compressed"u8, ref config.TextureOptimization.LargeDimensionLimit);
+        ImEx.LogarithmicInput("显示较大分辨率的纹理，即使已被压缩"u8, ref config.TextureOptimization.LargeDimensionLimit);
         cache.DrawScanButtons();
         LunaStyle.DrawSeparator();
-        Im.Checkbox("Create Backups Before Destructive Operations"u8, ref config.TextureOptimization.CreateBackups);
-        Im.Tooltip.OnHover("When this is enabled, before any texture is overwritten, it will be moved to its path with a '.bak' appended, overwriting previously existing backup files of the same name."u8);
+        Im.Checkbox("在执行破坏性操作前创建备份"u8, ref config.TextureOptimization.CreateBackups);
+        Im.Tooltip.OnHover("启用此选项，任何纹理在被覆盖之前将被添加 '.bak' 后缀，在其所处路径下覆盖以前同名的备份文件。"u8);
         Im.Item.SetNextWidthScaled(100);
-        ImEx.LogarithmicInput("Texture Dimension Restriction"u8, ref config.TextureOptimization.TextureDimensionLimit, 4);
-        Im.Tooltip.OnHover("This is the upper limit for texture dimensions in both directions when using automatic resizing. The texture size will be halved in both dimensions until both directions are less than this or equal to it."u8);
+        ImEx.LogarithmicInput("纹理分辨率限制"u8, ref config.TextureOptimization.TextureDimensionLimit, 4);
+        Im.Tooltip.OnHover("这是自动调整分辨率时纹理分辨率在两个方向上的上限。纹理分辨率将在两个方向上减半，直到两个方向都小于或等于此值。"u8);
     }
 
     /// <remarks> Implemented in the cache due to use of scanner. </remarks>>
@@ -103,7 +103,7 @@ public sealed class TextureOptimizationTable(
             else if (exception is null)
                 ImEx.Spinner("##spin"u8, 256 * Im.Style.GlobalScale, 10 * (int)Im.Style.GlobalScale, ImGuiColor.Text.Get());
             else
-                Im.TextWrapped($"Failed to load image:\n{exception}");
+                Im.TextWrapped($"无法加载图像:\n{exception}");
         }
 
         private void DrawSolidColorButton(in TextureOptimizationCacheObject item, int globalIndex)
@@ -122,11 +122,11 @@ public sealed class TextureOptimizationTable(
             {
                 using var tt = Im.Tooltip.Begin();
                 if (_optimization.CanReplaceWithSwap(item.ScannedObject.FilePath, mod, color, out var path))
-                    Im.Text($"Replace all usages of this file by a file swap to {path} and delete the file.");
+                    Im.Text($"将此文件更改为“文件替换” {path} 并删除该文件。");
                 else
-                    Im.Text($"Replace this file with a 1x1 texture of color {color}.");
+                    Im.Text($"替换此文件为颜色为 {color} 的 1x1 纹理。");
                 if (!active)
-                    Im.Text($"\nHold {_config.IncognitoModifier} to replace.");
+                    Im.Text($"\n按住 {_config.IncognitoModifier} 键以替换。");
             }
         }
 
@@ -146,11 +146,11 @@ public sealed class TextureOptimizationTable(
                 {
                     using var tt    = Im.Tooltip.Begin();
                     var       usage = _optimization.GetTargetFormat(item.ScannedObject.FilePath, mod);
-                    Im.Text($"Compress this texture using block compression {usage}.");
+                    Im.Text($"压缩此纹理使用块压缩 {usage}。");
                     if (!active)
-                        Im.Text($"\nHold {_config.DeleteModModifier} to compress.");
+                        Im.Text($"\n按住 {_config.DeleteModModifier} 键以压缩。");
                     if (otherTask)
-                        Im.Text("\nWait until the resizing task is finished."u8);
+                        Im.Text("\n等待任务完成。"u8);
                 }
             }
             else if (item.CompressionTask.IsFaulted)
@@ -163,7 +163,7 @@ public sealed class TextureOptimizationTable(
                 {
                     using var tt    = Im.Tooltip.Begin();
                     var       usage = _optimization.GetTargetFormat(item.ScannedObject.FilePath, mod);
-                    Im.Text($"Failed to compress the texture. Retry compressing to {usage}.");
+                    Im.Text($"无法压缩纹理。重试压缩为 {usage}。");
                     if (item.CompressionTask.Exception is { } exception)
                     {
                         using var color = ImGuiColor.Text.Push(Colors.RegexWarningBorder);
@@ -171,9 +171,9 @@ public sealed class TextureOptimizationTable(
                     }
 
                     if (!active)
-                        Im.Text($"\nHold {_config.DeleteModModifier} to retry.");
+                        Im.Text($"\n按住 {_config.DeleteModModifier} 进行重试。");
                     if (otherTask)
-                        Im.Text("\nWait until the resizing task is finished."u8);
+                        Im.Text("\n等待任务完成。"u8);
                 }
             }
             else if (item.CompressionTask.IsCompletedSuccessfully)
@@ -185,7 +185,7 @@ public sealed class TextureOptimizationTable(
             {
                 Im.Cursor.Position += Im.Style.FramePadding;
                 ImEx.Spinner("##compression"u8, Im.Style.TextHeight / 2, 3, ImGuiColor.Text.Get());
-                Im.Tooltip.OnHover("Compressing..."u8);
+                Im.Tooltip.OnHover("压缩中..."u8);
             }
         }
 
@@ -212,16 +212,16 @@ public sealed class TextureOptimizationTable(
                 {
                     using var tt = Im.Tooltip.Begin();
                     Im.Text(
-                        $"Restrict this texture to the maximum specified size by halving its size until it is small enough in both dimensions.");
+                        $"限制此纹理的分辨率，通过将其尺寸减半，直到其在两个方向上都小于或等于指定的最大值。");
                     var targetFormat = item.ScannedObject.Format.ToTexFormat() is TexFile.TextureFormat.B8G8R8A8
                         ? _optimization.GetTargetFormat(item.ScannedObject.FilePath, mod)
                         : CombinedTexture
                             .TextureSaveType.AsIs;
                     if (targetFormat is not CombinedTexture.TextureSaveType.AsIs)
-                        Im.Text($"\nThis will also compress the texture to {targetFormat}.");
+                        Im.Text($"\n这将同时压缩纹理为 {targetFormat}。");
 
                     if (!active)
-                        Im.Text($"\nHold {_config.DeleteModModifier} to resize.");
+                        Im.Text($"\n按住 {_config.DeleteModModifier} 键以调整分辨率。");
                 }
             }
             else if (item.ResizeTask.IsFaulted)
@@ -246,8 +246,8 @@ public sealed class TextureOptimizationTable(
                             .TextureSaveType.AsIs;
 
                     Im.Text(targetFormat is CombinedTexture.TextureSaveType.AsIs
-                        ? "Failed to resize the texture. Retry resizing."u8
-                        : $"Failed to resize the texture. Retry resizing and compressing the texture to {targetFormat}.");
+                        ? "无法调整纹理的分辨率。重试调整分辨率。"u8
+                        : $"无法调整纹理的分辨率。重试调整分辨率并压缩纹理为 {targetFormat}。");
                     if (item.ResizeTask.Exception is { } exception)
                     {
                         using var color = ImGuiColor.Text.Push(Colors.RegexWarningBorder);
@@ -255,7 +255,7 @@ public sealed class TextureOptimizationTable(
                     }
 
                     if (!active)
-                        Im.Text($"\nHold {_config.DeleteModModifier} to retry.");
+                        Im.Text($"\n按住 {_config.DeleteModModifier} 键以重试。");
                 }
             }
             else if (item.ResizeTask.IsCompletedSuccessfully)
@@ -267,7 +267,7 @@ public sealed class TextureOptimizationTable(
             {
                 Im.Cursor.Position += Im.Style.FramePadding;
                 ImEx.Spinner("##resizing"u8, Im.Style.TextHeight / 2, 3, ImGuiColor.Text.Get());
-                Im.Tooltip.OnHover("Resizing..."u8);
+                Im.Tooltip.OnHover("调整中..."u8);
             }
         }
 
