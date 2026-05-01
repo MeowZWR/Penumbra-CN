@@ -46,7 +46,7 @@ public sealed class TextureOptimizationTable(
         Im.Tooltip.OnHover("启用此选项，任何纹理在被覆盖之前将被添加 '.bak' 后缀，在其所处路径下覆盖以前同名的备份文件。"u8);
         Im.Item.SetNextWidthScaled(100);
         ImEx.LogarithmicInput("纹理分辨率限制"u8, ref config.TextureOptimization.TextureDimensionLimit, 4);
-        Im.Tooltip.OnHover("这是自动调整分辨率时纹理分辨率在两个方向上的上限。纹理分辨率将在两个方向上减半，直到两个方向都小于或等于此值。"u8);
+        Im.Tooltip.OnHover("自动调整分辨率时纹理分辨率在两个方向上的上限。纹理分辨率将在两个方向上减半，直到两个方向都小于或等于此值。"u8);
     }
 
     /// <remarks> Implemented in the cache due to use of scanner. </remarks>>
