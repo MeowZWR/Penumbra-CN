@@ -903,6 +903,10 @@ public sealed class SettingsTab : ITab<TabType>
         Checkbox("高级编辑：悬停选择按钮时始终高亮颜色组"u8,
             "使整个颜色组选择按钮都能触发游戏内高亮反馈，而不仅限于悬停在拾取图标上。开启此项后，无需按住 Ctrl 键即可生效。"u8,
             _config.WholePairSelectorAlwaysHighlights, v => _config.WholePairSelectorAlwaysHighlights = v);
+
+        Checkbox("Advanced Editing: Unlock More Dye Chanels"u8,
+            "Although the vanilla game is limited to two dye channels, the current material file format supports four.\nThis option will allow the use of those four dye channels in the material editor.\nPlease note, though, that this has limited usefulness: at the time of writing, those four channels are only usable within the material editor."u8,
+            _config.AllDyeChannels, v => _config.AllDyeChannels = v);
     }
 
     #endregion

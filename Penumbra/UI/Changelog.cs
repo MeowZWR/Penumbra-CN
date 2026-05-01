@@ -75,12 +75,9 @@ public class PenumbraChangelog : IUiService
             .RegisterHighlight("Penumbra 已适配游戏版本 7.50 与 Dalamud API 15。"u8)
             .RegisterEntry("在找到更稳妥的实现方式之前，HDR 启动选项已暂时关闭。"u8, 1)
             .RegisterHighlight("Mod 文件系统新增功能："u8)
-            .RegisterEntry(
-                "现可在 mod 文件系统中添加分隔线；右键分隔线可设置颜色、与文件夹或文件一同参与排序时的归类方式，以及具体排序规则。"u8,
-                1)
-            .RegisterEntry(
-                "微调了 mod 文件系统中文件夹的右键菜单：在「编辑文件夹」子菜单中，可为指定文件夹单独设置颜色与排序模式。"u8,
-                1)
+            .RegisterEntry("现可在 mod 文件系统中添加分隔线；右键分隔线可设置颜色、与文件夹或文件一同参与排序时的归类方式，以及具体排序规则。"u8,1)
+            .RegisterEntry("微调了 mod 文件系统中文件夹的右键菜单：在「编辑文件夹」子菜单中，可为指定文件夹单独设置颜色与排序模式。"u8,1)
+            .RegisterEntry("高级材质编辑中新增一项默认关闭的设置，可显示理论上支持的全部四个染色通道。多出的两个通道目前仅在本材质编辑器中有用，日后可能会在 Glamourer 中增加支持（感谢 Ny！）。"u8)
             .RegisterEntry("导入压缩包时，无效字符改为用下划线替换，而不再直接删除。"u8)
             .RegisterEntry("新版元数据编辑区域的标签页样式更易辨认。"u8)
             .RegisterEntry("修正了部分颠倒的折叠箭头图标。"u8)

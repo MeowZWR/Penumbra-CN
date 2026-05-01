@@ -4,6 +4,7 @@ using Luna;
 using Penumbra.GameData.Files;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
+using Penumbra.Services;
 
 namespace Penumbra.UI.FileEditing.Materials;
 
@@ -83,32 +84,36 @@ public partial class MaterialEditor
 
     private bool DrawPreviewDye(bool disabled)
     {
-        var (name1, _, dyeId1, _) = _stainService.StainCombo1.CurrentSelection;
-        var (name2, _, dyeId2, _) = _stainService.StainCombo2.CurrentSelection;
-        var tt = dyeId1 is 0 && dyeId2 is 0
+        Span<StainId> stainIds = stackalloc StainId[StainService.ChannelCount];
+        _stainService.GetCurrentSelection(stainIds);
+        var isEmpty = stainIds.IndexOfAnyExcept((StainId)0) < 0;
+        var ret     = false;
+        var tt = isEmpty
             ? "请先选择一个预览染剂。"u8
             : "应用预览值到启用了染色功能的染料模板和所选染剂。"u8;
-        if (ImEx.Button("应用预览染剂"u8, default, tt, disabled || dyeId1 is 0 && dyeId2 is 0))
+        if (ImEx.Button("应用预览染剂"u8, default, tt, disabled || isEmpty))
         {
-            var ret = false;
             if (Mtrl.DyeTable != null)
             {
-                ret |= Mtrl.ApplyDye(_stainService.LegacyStmFile, [dyeId1, dyeId2]);
-                ret |= Mtrl.ApplyDye(_stainService.GudStmFile,    [dyeId1, dyeId2]);
+                ret |= Mtrl.ApplyDye(_stainService.LegacyStmFile, stainIds);
+                ret |= Mtrl.ApplyDye(_stainService.GudStmFile,    stainIds);
             }
 
             UpdateColorTablePreview();
-
-            return ret;
         }
 
-        Im.Line.Same();
-        if (_stainService.StainCombo1.Draw(dyeId1 is 0 ? "预览染剂 1###pd1" : $"{name1} (预览 1)###pd1"))
-            UpdateColorTablePreview();
-        Im.Line.Same();
-        if (_stainService.StainCombo2.Draw(dyeId2 is 0 ? "预览染剂 2###pd2" : $"{name2} (预览 2)###pd2"))
-            UpdateColorTablePreview();
-        return false;
+        var uiChannelCount = StainService.GetUiChannelCount(_config);
+        for (var i = 0; i < uiChannelCount; ++i)
+        {
+            Im.Line.Same();
+            var stainCombo = _stainService.GetStainCombo(i);
+            if (stainCombo.Draw(stainIds[i] == 0
+                    ? $"预览染剂 {i + 1}###pd{i}"
+                    : $"{stainCombo.CurrentSelection.Name} ({i + 1})###pd{i}"))
+                UpdateColorTablePreview();
+        }
+
+        return ret;
     }
 
     private bool ColorTablePasteAllClipboardButton(bool disabled)
