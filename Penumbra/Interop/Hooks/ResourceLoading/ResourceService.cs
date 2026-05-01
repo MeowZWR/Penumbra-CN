@@ -153,7 +153,7 @@ public unsafe class ResourceService : IDisposable, Luna.IRequiredService
 
     #endregion
 
-    private delegate nint ResourceHandlePrototype(ResourceHandle* handle);
+    private delegate ResourceHandle* ResourceHandlePrototype(ResourceHandle* handle);
 
     #region UpdateResourceState
 
@@ -216,15 +216,15 @@ public unsafe class ResourceService : IDisposable, Luna.IRequiredService
     /// Call the game function that increases the reference counter of a resource handle.
     /// </summary>
     public nint IncRef(ResourceHandle* handle)
-        => _incRefHook.OriginalDisposeSafe(handle);
+        => (nint)_incRefHook.OriginalDisposeSafe(handle);
 
     private readonly Hook<ResourceHandlePrototype> _incRefHook;
 
-    private nint ResourceHandleIncRefDetour(ResourceHandle* handle)
+    private ResourceHandle* ResourceHandleIncRefDetour(ResourceHandle* handle)
     {
         nint? ret = null;
         ResourceHandleIncRef?.Invoke(handle, ref ret);
-        return ret ?? _incRefHook.OriginalDisposeSafe(handle);
+        return ret.HasValue ? (ResourceHandle*)ret.Value : _incRefHook.OriginalDisposeSafe(handle);
     }
 
     #endregion
@@ -234,7 +234,7 @@ public unsafe class ResourceService : IDisposable, Luna.IRequiredService
     /// <summary> Invoked before a resource handle reference count is decremented. </summary>
     /// <param name="handle">The resource handle.</param>
     /// <param name="returnValue">The return value to use, setting this value will skip calling original.</param>
-    public delegate void ResourceHandleDecRefDelegate(ResourceHandle* handle, ref byte? returnValue);
+    public delegate void ResourceHandleDecRefDelegate(ResourceHandle* handle, ref bool? returnValue);
 
     /// <summary>
     /// <inheritdoc cref="ResourceHandleDecRefDelegate"/> <para/>
@@ -245,15 +245,15 @@ public unsafe class ResourceService : IDisposable, Luna.IRequiredService
     /// <summary>
     /// Call the original game function that decreases the reference counter of a resource handle.
     /// </summary>
-    public byte DecRef(ResourceHandle* handle)
+    public bool DecRef(ResourceHandle* handle)
         => _decRefHook.OriginalDisposeSafe(handle);
 
-    private delegate byte                                ResourceHandleDecRefPrototype(ResourceHandle* handle);
+    private delegate bool                                ResourceHandleDecRefPrototype(ResourceHandle* handle);
     private readonly Hook<ResourceHandleDecRefPrototype> _decRefHook;
 
-    private byte ResourceHandleDecRefDetour(ResourceHandle* handle)
+    private bool ResourceHandleDecRefDetour(ResourceHandle* handle)
     {
-        byte? ret = null;
+        bool? ret = null;
         ResourceHandleDecRef?.Invoke(handle, ref ret);
         return ret ?? _decRefHook.OriginalDisposeSafe(handle);
     }

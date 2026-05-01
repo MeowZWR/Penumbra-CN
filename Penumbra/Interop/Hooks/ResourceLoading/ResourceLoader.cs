@@ -346,7 +346,7 @@ public unsafe class ResourceLoader : IDisposable, Luna.IService
     /// <summary>
     /// Catch weird errors with invalid decrements of the reference count.
     /// </summary>
-    private static void DecRefProtection(ResourceHandle* handle, ref byte? returnValue)
+    private static void DecRefProtection(ResourceHandle* handle, ref bool? returnValue)
     {
         if (handle->RefCount is not 0)
             return;
@@ -361,7 +361,7 @@ public unsafe class ResourceLoader : IDisposable, Luna.IService
             // ignored
         }
 
-        returnValue = 1;
+        returnValue = true;
     }
 
     private void ResourceDestructorHandler(in ResourceHandleDestructor.Arguments arguments)
