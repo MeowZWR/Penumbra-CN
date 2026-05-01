@@ -38,13 +38,13 @@ public sealed unsafe class CharacterBaseDestructor : EventBase<CharacterBaseDest
     public bool Finished
         => _task.IsCompletedSuccessfully;
 
-    private delegate nint Delegate(CharacterBase* characterBase);
+    private delegate void Delegate(CharacterBase* characterBase);
 
-    private nint Detour(CharacterBase* characterBase)
+    private void Detour(CharacterBase* characterBase)
     {
         Penumbra.Log.Excessive($"[{Name}] Triggered with 0x{(nint)characterBase:X}.");
         Invoke(new Arguments(characterBase));
-        return _task.Result!.Original(characterBase);
+        _task.Result!.Original(characterBase);
     }
 
     /// <summary> The arguments for a character base destructor event. </summary>

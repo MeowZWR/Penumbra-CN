@@ -1,4 +1,3 @@
-using Dalamud.Interface;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Files.MaterialStructs;
@@ -122,7 +121,7 @@ public partial class MaterialEditor
             var       tmp      = Mtrl.Textures[textureI].Path;
             var       unfolded = UnfoldedTextures.Contains(samplerI);
             table.NextColumn();
-            if (ImEx.Icon.Button(unfolded ? LunaStyle.TreeExpandIcon : LunaStyle.TreeCollapseIcon,
+            if (ImEx.Icon.Button(unfolded ? LunaStyle.TreeCollapseIcon : LunaStyle.TreeExpandIcon,
                     "此纹理及其相关采样器的设置"u8))
             {
                 unfolded = !unfolded;

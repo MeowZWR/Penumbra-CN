@@ -1,4 +1,3 @@
-using Dalamud.Interface;
 using ImSharp;
 using Luna;
 using Penumbra.Mods;
@@ -104,7 +103,7 @@ public class MultiModPanel(ModFileSystem fileSystem, ModDataEditor editor, Prede
             ? _tag.Length is 0
                 ? "未指定标签。"
                 : $"所有选中的模组已包含标签 \"{_tag}\"，无论是本地还是作为模组数据。"
-            : $"将标签 \"{_tag}\" 添加到 {_addMods.Count} 个模组作为本地标签：\n\n\t{string.Join("\n\t", _addMods.Select(m => m.Name))}";
+            : $"Add the tag \"{_tag}\" to {_addMods.Count} mods as a local tag:\n\n\t{string.Join("\n\t", _addMods.Select(m => m.Name))}";
         Im.Line.SameInner();
         if (ImEx.Button(label, width, tooltip, _addMods.Count is 0))
             foreach (var mod in _addMods)
@@ -116,8 +115,8 @@ public class MultiModPanel(ModFileSystem fileSystem, ModDataEditor editor, Prede
         tooltip = _removeMods.Count is 0
             ? _tag.Length is 0
                 ? "未指定标签。"
-                : $"选中的模组不包含标签 \"{_tag}\" 本地标签。"
-            : $"从 {_removeMods.Count} 个模组移除本地标签 \"{_tag}\"：\n\n\t{string.Join("\n\t", _removeMods.Select(m => m.Item1.Name))}";
+                : $"选中的模组不包含本地标签 \"{_tag}\"。"
+            : $"从 {_removeMods.Count} 个模组中移除本地标签 \"{_tag}\"：\n\n\t{string.Join("\n\t", _removeMods.Select(m => m.Item1.Name))}";
         Im.Line.SameInner();
         if (ImEx.Button(label, width, tooltip, _removeMods.Count is 0))
             foreach (var (mod, index) in _removeMods)

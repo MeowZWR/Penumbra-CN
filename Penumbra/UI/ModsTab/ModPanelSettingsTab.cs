@@ -5,14 +5,14 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using ImSharp;
 using Luna;
-using Penumbra.UI.Classes;
 using Penumbra.Collections.Manager;
 using Penumbra.Communication;
 using Penumbra.UI.ModsTab.ModPreview;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
-using Penumbra.Services;
 using Penumbra.Mods.Settings;
+using Penumbra.Services;
+using Penumbra.UI.Classes;
 using Penumbra.UI.ModsTab.Groups;
 
 namespace Penumbra.UI.ModsTab;

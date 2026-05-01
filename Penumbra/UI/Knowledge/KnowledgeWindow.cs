@@ -1,11 +1,11 @@
+using Dalamud.Interface.Windowing;
 using ImSharp;
-using Luna;
 using Penumbra.String;
 
 namespace Penumbra.UI.Knowledge;
 
 /// <summary> Draw the progress information for import. </summary>
-public sealed class KnowledgeWindow : Window, IUiService
+public sealed class KnowledgeWindow : Luna.Window
 {
     private readonly IReadOnlyList<IKnowledgeTab> _tabs =
     [

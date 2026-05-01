@@ -91,7 +91,7 @@ public unsafe class GlobalVariablesDrawer(
             Penumbra.Dynamis.DrawPointer(data);
             table.DrawColumn($"{length}");
             table.NextColumn();
-            if (intern.Value is -1)
+            if (intern.Value is not -1)
             {
                 Penumbra.Dynamis.DrawPointer(characterUtility.DefaultResource(intern).Address);
                 table.DrawColumn($"{characterUtility.DefaultResource(intern).Size}");

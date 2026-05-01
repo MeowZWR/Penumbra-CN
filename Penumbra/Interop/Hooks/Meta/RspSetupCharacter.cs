@@ -17,22 +17,22 @@ public sealed unsafe class RspSetupCharacter : FastHook<RspSetupCharacter.Delega
         Task                = hooks.CreateHook<Delegate>("RSP Setup Character", Sigs.RspSetupCharacter, Detour, !HookOverrides.Instance.Meta.RspSetupCharacter);
     }
 
-    public delegate void Delegate(DrawObject* drawObject, nint unk2, float unk3, nint unk4, byte unk5);
+    public delegate void Delegate(DrawObject* drawObject, byte unk1);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private void Detour(DrawObject* drawObject, nint unk2, float unk3, nint unk4, byte unk5)
+    private void Detour(DrawObject* drawObject, byte unk1)
     {
-        Penumbra.Log.Excessive($"[RSP Setup Character] Invoked on {(nint)drawObject:X} with {unk2}, {unk3}, {unk4}, {unk5}.");
+        Penumbra.Log.Excessive($"[RSP Setup Character] Invoked on {(nint)drawObject:X} with {unk1:X}.");
         // Skip if we are coming from ChangeCustomize.
         if (_metaState.CustomizeChangeCollection.Valid)
         {
-            Task.Result!.Original.Invoke(drawObject, unk2, unk3, unk4, unk5);
+            Task.Result!.Original.Invoke(drawObject, unk1);
             return;
         }
 
         var collection = _collectionResolver.IdentifyCollection(drawObject, true);
         _metaState.RspCollection.Push(collection);
-        Task.Result!.Original.Invoke(drawObject, unk2, unk3, unk4, unk5);
+        Task.Result!.Original.Invoke(drawObject, unk1);
         _metaState.RspCollection.Pop();
     }
 }

@@ -2,6 +2,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.ImGuiNotification;
 using ImSharp;
 using Luna;
+using Penumbra.Files;
 using Penumbra.Meta;
 using Penumbra.Mods;
 using Penumbra.Mods.Groups;
@@ -9,7 +10,6 @@ using Penumbra.Mods.Manager;
 using Penumbra.Mods.Manager.OptionEditor;
 using Penumbra.Mods.Settings;
 using Penumbra.Mods.SubMods;
-using Penumbra.Services;
 using Penumbra.UI.Classes;
 
 namespace Penumbra.UI.ModsTab.Groups;
@@ -67,7 +67,7 @@ public sealed class ModGroupEditDrawer(
     private void DrawGroup(IModGroup group, int idx)
     {
         using var id    = Im.Id.Push(idx);
-        using var frame = ImEx.FramedGroup($"选项组 #{idx + 1}");
+        using var frame = ImEx.FramedGroup($"组 #{idx + 1}");
         DrawGroupNameRow(group, idx);
         group.EditDrawer(this).Draw();
     }
@@ -109,7 +109,7 @@ public sealed class ModGroupEditDrawer(
         }
 
         var tt = _isGroupNameValid
-            ? "修改组名称。"u8
+            ? "更改组名称。"u8
             : "当前名称不能用于此组。"u8;
         Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, tt);
     }
@@ -121,7 +121,7 @@ public sealed class ModGroupEditDrawer(
 
         Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "删除此选项组。"u8);
         if (!_deleteEnabled)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住{config.DeleteModModifier}并点击以删除。");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {config.DeleteModModifier} 并点击以删除。");
     }
 
     private void DrawGroupPriority(IModGroup group)
@@ -129,7 +129,7 @@ public sealed class ModGroupEditDrawer(
         Im.Item.SetNextWidth(PriorityWidth);
         if (ImEx.InputOnDeactivation.Scalar("##GroupPriority"u8, group.Priority.Value, out var newPriority))
             ModManager.OptionEditor.ChangeGroupPriority(group, new ModPriority(newPriority));
-        Im.Tooltip.OnHover("组优先级"u8);
+        Im.Tooltip.OnHover("组优先级。"u8);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -146,9 +146,9 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.MoveModGroup(group, idx - 1));
 
         if (isFirst)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "到顶了"u8);
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "到顶了。"u8);
         else
-            Im.Tooltip.OnHover($"移动此组到选项组 #{idx} 之上。");
+            Im.Tooltip.OnHover($"移动此组到组 #{idx} 之上。");
 
 
         Im.Line.SameInner();
@@ -159,7 +159,7 @@ public sealed class ModGroupEditDrawer(
         if (isLast)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "到底了。"u8);
         else
-            Im.Tooltip.OnHover($"移动此组到选项组 #{idx + 2} 之下。");
+            Im.Tooltip.OnHover($"移动此组到组 #{idx + 2} 之下。");
     }
 
     private void DrawGroupOpenFile(IModGroup group, int idx)
@@ -198,7 +198,7 @@ public sealed class ModGroupEditDrawer(
         var isDefaultOption = group.DefaultSettings.AsIndex == optionIdx;
         if (Im.RadioButton("##default"u8, isDefaultOption))
             ModManager.OptionEditor.ChangeModGroupDefaultOption(group, Setting.Single(optionIdx));
-        Im.Tooltip.OnHover($"将 {option.Name} 设置为此组的默认选项。");
+        Im.Tooltip.OnHover($"设置 {option.Name} 为这个组的默认选项。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -244,7 +244,7 @@ public sealed class ModGroupEditDrawer(
             Im.Tooltip.OnHover("删除此选项。"u8);
         else
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
-                $"删除此选项。\n按住{config.DeleteModModifier}并点击以删除。");
+                $"删除此选项。\n按住 {config.DeleteModModifier} 并点击以删除。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

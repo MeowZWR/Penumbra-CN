@@ -55,7 +55,7 @@ public unsafe class ModelRenderer : IDisposable, Luna.IRequiredService
         => Address switch
         {
             null     => null,
-            var data => &data->HairMaskShaderPackage,
+            var data => &data->CharacterOcclusionShaderPackage, // TODO: check if this still exists? &data->HairMaskShaderPackage, otherwise remove
         };
 
     public ShaderPackageResourceHandle* DefaultIrisShaderPackage { get; private set; }

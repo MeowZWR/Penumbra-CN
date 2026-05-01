@@ -1,7 +1,7 @@
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using Penumbra.Interop.Structs;
 using Penumbra.Interop.Services;
+using Penumbra.Interop.Structs;
 using Penumbra.Meta.Manipulations;
 using Penumbra.String.Functions;
 
@@ -16,7 +16,7 @@ public sealed unsafe class CmpFile : MetaBaseFile
     public static readonly CharacterUtility.InternalIndex InternalIndex =
         CharacterUtility.ReverseIndices[(int)MetaIndex.HumanCmp];
 
-    private const int RacialScalingStart = 0x2A800;
+    private const int RacialScalingStart = 0x2C800;
 
     public RspEntry this[SubRace subRace, RspAttribute attribute]
     {

@@ -32,19 +32,6 @@ using ResidentResourceManager = Penumbra.Interop.Services.ResidentResourceManage
 
 namespace Penumbra;
 
-public sealed class PenumbraErrorWindow(IDalamudPluginInterface pi)
-    : ErrorWindow(pi, GetLabel(), "Penumbra")
-{
-    private static string GetLabel()
-    {
-        var assembly = typeof(PenumbraErrorWindow).Assembly;
-        var version  = assembly.GetName().Version?.ToString() ?? string.Empty;
-        return version.Length is 0
-            ? "Penumbra###PenumbraConfigWindow"
-            : $"Penumbra v{version}###PenumbraConfigWindow";
-    }
-}
-
 public class Penumbra : IDalamudPlugin
 {
     public static readonly MainLogger     Log = new("Penumbra");
@@ -67,7 +54,7 @@ public class Penumbra : IDalamudPlugin
 
     private readonly ServiceManager _services = null!;
 
-    private readonly ErrorWindow? _errorWindow;
+    private ErrorWindow? _errorWindow;
 
     public Penumbra(IDalamudPluginInterface pluginInterface)
     {
@@ -182,7 +169,19 @@ public class Penumbra : IDalamudPlugin
                     system.Dispose();
                 }
             }
-        );
+        ).ContinueWith(state =>
+        {
+            if (!state.IsFaulted)
+                return;
+
+            if (_errorWindow is not null)
+                return;
+
+            var pi = _services.GetService<IDalamudPluginInterface>();
+            Log.Error($"Error constructing Penumbra, Disposing again:\n{state.Exception}");
+            Dispose();
+            _errorWindow = new PenumbraErrorWindow(pi);
+        });
     }
 
     public bool SetEnabled(bool enabled)

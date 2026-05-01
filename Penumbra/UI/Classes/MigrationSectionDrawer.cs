@@ -104,7 +104,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     }
 
     private static ReadOnlySpan<byte> RestorationTooltip
-        => "取消恢复。这不会恢复已完成的恢复。"u8;
+        => "取消恢复。这不会恢复已经完成的恢复。"u8;
 
     private void DrawMdlRestore()
     {

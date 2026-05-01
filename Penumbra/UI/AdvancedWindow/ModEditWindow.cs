@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Dalamud.Interface.DragDrop;
+using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using ImSharp;
 using Luna;
@@ -252,7 +253,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
     private static readonly FrozenDictionary<GenderRace, StringU8> RaceCodeNames = GenderRace.Values.ToFrozenDictionary(v => v, v =>
     {
         if (v is GenderRace.Unknown)
-            return new StringU8("所有种族和性别");
+            return new StringU8("所有种族和性别"u8);
 
         var (gender, race) = v.Split();
         return new StringU8($"({v.ToRaceCode()}) {race.ToNameU8()} {gender.ToNameU8()} ");

@@ -26,10 +26,10 @@ public static unsafe class ModelRendererStructs
         [FieldOffset(8)]
         public ModelResourceHandle* ModelResourceHandle;
 
-        [FieldOffset(0x10)]
+        [FieldOffset(0x30)]
         public UnkShaderWrapper* ShaderWrapper;
 
-        [FieldOffset(0x1C)]
+        [FieldOffset(0x3C)]
         public ushort UnkIndex;
     }
 }

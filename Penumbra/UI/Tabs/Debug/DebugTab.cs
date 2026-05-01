@@ -1,21 +1,29 @@
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Windowing;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.Resource;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using Dalamud.Interface.Colors;
 using ImSharp;
 using Luna;
 using Microsoft.Extensions.DependencyInjection;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
+using Penumbra.Api.IpcTester;
 using Penumbra.Collections.Manager;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.StainMapStructs;
 using Penumbra.GameData.Interop;
 using Penumbra.Import.Structs;
 using Penumbra.Import.Textures;
+using Penumbra.Interop;
+using Penumbra.Interop.Hooks.PostProcessing;
+using Penumbra.Interop.Hooks.ResourceLoading;
 using Penumbra.Interop.PathResolving;
 using Penumbra.Interop.Services;
 using Penumbra.Interop.Structs;
@@ -23,15 +31,10 @@ using Penumbra.Mods;
 using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.String;
-using Penumbra.UI.Classes;
-using Penumbra.Api.IpcTester;
-using Penumbra.GameData.Data;
-using Penumbra.Interop.Hooks.PostProcessing;
-using Penumbra.Interop.Hooks.ResourceLoading;
-using Penumbra.GameData.Files.StainMapStructs;
-using Penumbra.Interop;
 using Penumbra.String.Classes;
+using Penumbra.UI.Classes;
 using Penumbra.UI.FileEditing.Materials;
+using Window = Luna.Window;
 
 namespace Penumbra.UI.Tabs.Debug;
 
@@ -319,6 +322,27 @@ public sealed class DebugTab : Window, ITab<TabType>
             }
         }
 
+        using (var tree = Im.Tree.Node("Misc"u8))
+        {
+            if (tree)
+            {
+                var active = _config.DeleteModModifier.IsActive();
+                if (ImEx.Button("Move ALL Mod Tags to Local Tags"u8, default, "THIS IS NOT REVERTIBLE!"u8, !active))
+                    foreach (var mod in _modManager)
+                    {
+                        var modTags = mod.ModTags.ToArray();
+                        // Delete all mod tags first.
+                        while (mod.ModTags.Count > 0)
+                            _modManager.DataEditor.ChangeModTag(mod, 0, string.Empty);
+                        // Add all mod tags to local tags. Duplicates or conflicts are not possible.
+                        foreach (var tag in modTags)
+                            _modManager.DataEditor.ChangeLocalTag(mod, mod.LocalTags.Count, tag);
+                    }
+
+                if (!active)
+                    Im.Tooltip.OnHover($"\nHold {_config.DeleteModModifier} to click.");
+            }
+        }
 
         var issues = _modManager.Index().Count(p => p.Index != p.Item.Index);
         using (var tree = Im.Tree.Node($"Mods ({issues} Issues)###Mods"))
@@ -658,7 +682,6 @@ public sealed class DebugTab : Window, ITab<TabType>
             {
                 using var table = Im.Table.Begin("###EarmarkedTable"u8, 3, TableFlags.SizingFixedFit);
                 if (table)
-                {
                     foreach (var ((crc, collection), resolve) in _subfileHelper.EarmarkedFiles)
                     {
                         table.DrawColumn($"0x{crc:X}");
@@ -666,7 +689,6 @@ public sealed class DebugTab : Window, ITab<TabType>
                         table.NextColumn();
                         Penumbra.Dynamis.DrawPointer(resolve.AssociatedGameObject);
                     }
-                }
             }
         }
 
@@ -775,30 +797,13 @@ public sealed class DebugTab : Window, ITab<TabType>
         DrawChangedItemTest();
     }
 
-    private string  _filePath = string.Empty;
-    private byte[]? _fileData;
-
     private void DrawFileTest()
     {
         using var node = Im.Tree.Node("Game File Test"u8);
         if (!node)
             return;
 
-        if (Im.Input.Text("##Path"u8, ref _filePath, "File Path..."u8))
-            _fileData = _dataManager.GetFile(_filePath)?.Data;
-
-        using (Im.Group())
-        {
-            Im.Text("Exists"u8);
-            Im.Text("File Size"u8);
-        }
-
-        Im.Line.SameInner();
-        using (Im.Group())
-        {
-            Im.Text($"{_fileData is not null}");
-            Im.Text($"{_fileData?.Length ?? 0}");
-        }
+        PenumbraErrorWindow.DrawFileTest(_dataManager);
     }
 
     private          string                                    _changedItemPath = string.Empty;

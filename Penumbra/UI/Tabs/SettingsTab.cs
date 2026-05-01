@@ -389,8 +389,9 @@ public sealed class SettingsTab : ITab<TabType>
     /// <summary> Draw the window hiding state checkboxes.  </summary>
     private void DrawHidingSettings()
     {
-        Checkbox("游戏启动时自动开启设置窗口"u8, "在启动游戏后，Penumbra主窗口应该打开还是关闭。"u8,
-            _config.OpenWindowAtStart,                 v => _config.OpenWindowAtStart = v);
+        Checkbox("游戏启动时自动开启设置窗口"u8,
+            "游戏启动后，Penumbra主窗口应该打开还是关闭。"u8,
+            _config.OpenWindowAtStart, v => _config.OpenWindowAtStart = v);
 
         Checkbox("隐藏游戏UI时，隐藏设置窗口"u8,
             "手动隐藏游戏UI时，隐藏Penumbra的主窗口。"u8, _config.HideUiWhenUiHidden,
@@ -530,8 +531,9 @@ public sealed class SettingsTab : ITab<TabType>
             _config.PrintSuccessfulCommandsToChat, v => _config.PrintSuccessfulCommandsToChat = v);
         Checkbox("在模组界面中隐藏重绘栏"u8, "隐藏模组选项卡下模组界面底部的重绘栏。"u8,
             _config.HideRedrawBar,                 v => _config.HideRedrawBar = v);
-        Checkbox("隐藏更改项目筛选图标"u8, "隐藏在更改项目（包括模组面板里的更改项目）选项卡中的一行筛选图标。"u8,
-            _config.HideChangedItemFilters,     v =>
+        Checkbox("隐藏更改项目筛选栏"u8,
+            "隐藏在更改项目（包括模组面板里的更改项目）选项卡中的一行筛选栏。"u8,
+            _config.HideChangedItemFilters, v =>
             {
                 _config.HideChangedItemFilters = v;
                 if (v)
@@ -597,22 +599,11 @@ public sealed class SettingsTab : ITab<TabType>
     /// <summary> Different supported sort modes as a combo. </summary>
     private void DrawFolderSortType()
     {
-        var sortMode = _config.SortMode;
-        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
-        using (var combo = Im.Combo.Begin("##sortMode"u8, sortMode.Name))
+        if (SortModeCombo.DrawCombo(ISortMode.Valid.Values, "##sortMode"u8, _config.SortMode, out var newSortMode, false, UiHelpers.InputTextWidth.X))
         {
-            if (combo)
-                foreach (var val in ISortMode.Valid.Values)
-                {
-                    if (Im.Selectable(val.Name, val.Equals(sortMode)) && !val.Equals(sortMode))
-                    {
-                        _config.SortMode              = val;
-                        _modFileSystemDrawer.SortMode = val;
-                        _config.Save();
-                    }
-
-                    Im.Tooltip.OnHover(val.Description);
-                }
+            _config.SortMode              = newSortMode!;
+            _modFileSystemDrawer.SortMode = newSortMode!;
+            _config.Save();
         }
 
         LunaStyle.DrawAlignedHelpMarkerLabel("模组排序方式"u8, "选择模组选项卡中模组选择器的默认排序方式。"u8);
@@ -676,7 +667,8 @@ public sealed class SettingsTab : ITab<TabType>
             "当您对合集进行任何更改时，首先将其应用为临时更改，如果您希望保留这些更改，则需要点击[转为永久]。"u8,
             _config.DefaultTemporaryMode, v => _config.DefaultTemporaryMode = v);
         Checkbox("导入时替换非标准符号"u8,
-            "导入模组时，将模组和选项名称中的所有非ASCII符号替换为下划线。"u8, _config.ReplaceNonAsciiOnImport,
+            "导入模组时，将模组和选项名称中的所有非ASCII符号替换为下划线。"u8,
+            _config.ReplaceNonAsciiOnImport,
             v => _config.ReplaceNonAsciiOnImport = v);
         Checkbox("打开导入窗口时始终使用默认目录"u8,
             "每次都在此处指定的目录位置打开导入窗口，不使用上一次的路径。"u8,
@@ -1003,7 +995,8 @@ public sealed class SettingsTab : ITab<TabType>
         if (ImEx.Button("压缩现有文件"u8, Vector2.Zero,
                 "尝试压缩根目录中的所有文件。这需要一段时间。"u8,
                 _compactor.MassCompactRunning || !_modManager.Valid))
-            _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories), CompressionAlgorithm.Xpress8K,
+            _compactor.StartMassCompact(_modManager.BasePath.EnumerateFiles("*.*", SearchOption.AllDirectories),
+                CompressionAlgorithm.Xpress8K,
                 true);
 
         Im.Line.Same();
@@ -1075,6 +1068,10 @@ public sealed class SettingsTab : ITab<TabType>
 
     private void DrawHdrRenderTargets()
     {
+        if (!RenderTargetHdrEnabler.HdrModeSupported)
+            return;
+
+#pragma warning disable CS0162 // Unreachable code detected
         Im.Item.SetNextWidth(Im.Font.CalculateSize("M"u8).X * 5.0f + Im.Style.FrameHeight);
         using (var combo = Im.Combo.Begin("##hdrRenderTarget"u8, _config.HdrRenderTargets ? "HDR"u8 : "SDR"u8))
         {
@@ -1097,6 +1094,7 @@ public sealed class SettingsTab : ITab<TabType>
         LunaStyle.DrawAlignedHelpMarkerLabel("漫反射动态范围"u8,
             "设置材质中漫反射颜色可用的动态范围，以避免产生视觉伪影。\n"u8
           + "更改此设置需要重启游戏。此设置仅在启用[启动时等待插件]时有效。"u8);
+#pragma warning restore CS0162 // Unreachable code detected
     }
 
     /// <summary> Draw a checkbox for the HTTP API that creates and destroys the web server when toggled. </summary>

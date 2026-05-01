@@ -366,13 +366,13 @@ public partial class CombiningTextureEditor
     private void DrawOverlayCollapseButton()
     {
         var (icon, iconPosition, label, tooltip) = _overlayCollapsed
-            ? RefTuple.Create(LunaStyle.CollapseLeftIcon, ImEx.Icon.IconPosition.BeforeLabel, "显示叠加层"u8,
+            ? RefTuple.Create(LunaStyle.CollapseLeftIcon, ImEx.Icon.IconFlags.BeforeLabel, "显示叠加层"u8,
                 "显示一个第三面板，您可以在其中导入额外的纹理作为主纹理的叠加层。"u8)
-            : RefTuple.Create(LunaStyle.ExpandRightIcon, ImEx.Icon.IconPosition.AfterLabel, "隐藏叠加层"u8,
+            : RefTuple.Create(LunaStyle.ExpandRightIcon, ImEx.Icon.IconFlags.AfterLabel, "隐藏叠加层"u8,
                 "隐藏叠加纹理面板并清除当前加载的叠加纹理（如果存在）。"u8);
         Im.Dummy(Im.ContentRegion.Available.X - ImEx.Icon.CalculateLabeledButtonSize(icon, label).X);
         Im.Line.NoSpacing();
-        if (ImEx.Icon.LabeledButton(icon, label, tooltip, iconPosition: iconPosition))
+        if (ImEx.Icon.LabeledButton(icon, label, tooltip, iconFlags: iconPosition))
             _overlayCollapsed = !_overlayCollapsed;
     }
 

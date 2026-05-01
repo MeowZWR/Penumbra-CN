@@ -11,19 +11,20 @@ public unsafe struct CharacterUtilityData
     public const int IndexDecalTex               = 80;
     public const int IndexTileOrbArrayTex        = 81;
     public const int IndexTileNormArrayTex       = 82;
-    public const int IndexSkinShpk               = 83;
-    public const int IndexCharacterStockingsShpk = 84;
-    public const int IndexCharacterLegacyShpk    = 85;
-    public const int IndexGudStm                 = 94;
-    public const int IndexLegacyStm              = 95;
-    public const int IndexSphereDArrayTex        = 96;
+    public const int IndexIrisShpk               = 83;
+    public const int IndexSkinShpk               = 84;
+    public const int IndexCharacterStockingsShpk = 85;
+    public const int IndexCharacterLegacyShpk    = 86;
+    public const int IndexGudStm                 = 95;
+    public const int IndexLegacyStm              = 96;
+    public const int IndexSphereDArrayTex        = 97;
 
     public static readonly MetaIndex[] EqdpIndices = Enum.GetNames<MetaIndex>()
         .Zip(MetaIndex.Values)
         .Where(n => n.First.StartsWith("Eqdp"))
         .Select(n => n.Second).ToArray();
 
-    public const int TotalNumResources = 114;
+    public const int TotalNumResources = 115;
 
     /// <summary> Obtain the index for the eqdp file corresponding to the given race code and accessory. </summary>
     public static MetaIndex EqdpIdx(GenderRace raceCode, bool accessory)
@@ -110,6 +111,9 @@ public unsafe struct CharacterUtilityData
 
     [FieldOffset(8 + IndexTileNormArrayTex * 8)]
     public TextureResourceHandle* TileNormArrayTexResource;
+
+    [FieldOffset(8 + IndexIrisShpk * 8)]
+    public ResourceHandle* IrisShpkResource;
 
     [FieldOffset(8 + IndexSkinShpk * 8)]
     public ResourceHandle* SkinShpkResource;

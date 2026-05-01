@@ -8,6 +8,7 @@ using ImSharp;
 using Luna;
 using Penumbra.Collections;
 using Penumbra.Collections.Manager;
+using Penumbra.Files;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.Mods.Manager;
@@ -724,10 +725,10 @@ public sealed class CollectionPanel(
                 (new StringU8($"♀ {race.ToShortName()} (NPC)"), color.ToVector());
         }
 
-        ret[CollectionType.MalePlayerCharacter]      = (new StringU8("♂ 男性玩家"), Vector4.Zero);
-        ret[CollectionType.FemalePlayerCharacter]    = (new StringU8("♀ 女性玩家"), Vector4.Zero);
-        ret[CollectionType.MaleNonPlayerCharacter]   = (new StringU8("♂ 男性NPC"), Vector4.Zero);
-        ret[CollectionType.FemaleNonPlayerCharacter] = (new StringU8("♀ 女性NPC"), Vector4.Zero);
+        ret[CollectionType.MalePlayerCharacter]      = (new StringU8("♂ 男性玩家"u8), Vector4.Zero);
+        ret[CollectionType.FemalePlayerCharacter]    = (new StringU8("♀ 女性玩家"u8), Vector4.Zero);
+        ret[CollectionType.MaleNonPlayerCharacter]   = (new StringU8("♂ 男性NPC"u8), Vector4.Zero);
+        ret[CollectionType.FemaleNonPlayerCharacter] = (new StringU8("♀ 女性NPC"u8), Vector4.Zero);
         return ret;
     }
 

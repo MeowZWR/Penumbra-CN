@@ -65,13 +65,27 @@ public class PenumbraChangelog : IUiService
         Add1_5_1_0(Changelog);
         AddDummy(Changelog);
         Add1_6_0_0(Changelog);
+        Add1_6_1_0(Changelog);
     }
 
     #region Changelogs
 
     private static void Add1_6_1_0(Changelog log)
-        => log.NextVersion("Version 1.6.1.0"u8)
-            .RegisterEntry("任何与'禁止文件'相关的内容都被重命名为'保留文件'，以使其听起来不那么吓人。"u8);
+        => log.NextVersion("版本 1.6.1.0"u8)
+            .RegisterHighlight("Penumbra 已适配游戏版本 7.50 与 Dalamud API 15。"u8)
+            .RegisterEntry("在找到更稳妥的实现方式之前，HDR 启动选项已暂时关闭。"u8, 1)
+            .RegisterHighlight("Mod 文件系统新增功能："u8)
+            .RegisterEntry(
+                "现可在 mod 文件系统中添加分隔线；右键分隔线可设置颜色、与文件夹或文件一同参与排序时的归类方式，以及具体排序规则。"u8,
+                1)
+            .RegisterEntry(
+                "微调了 mod 文件系统中文件夹的右键菜单：在「编辑文件夹」子菜单中，可为指定文件夹单独设置颜色与排序模式。"u8,
+                1)
+            .RegisterEntry("导入压缩包时，无效字符改为用下划线替换，而不再直接删除。"u8)
+            .RegisterEntry("新版元数据编辑区域的标签页样式更易辨认。"u8)
+            .RegisterEntry("修正了部分颠倒的折叠箭头图标。"u8)
+            .RegisterEntry("修正了部分元数据编辑界面的标签文案。"u8)
+            .RegisterEntry("将与「禁止文件」相关的表述统一更名为「保留文件」，以使其听起来不那么吓人。"u8);
 
     private static void Add1_6_0_0(Changelog log)
         => log.NextVersion("版本 1.6.0.0"u8)

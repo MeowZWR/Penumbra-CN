@@ -128,7 +128,7 @@ public sealed partial class IndividualCollections
                 ObjectKind.BattleNpc => manager.Data.BNpcs,
                 ObjectKind.EventNpc  => manager.Data.ENpcs,
                 ObjectKind.Companion => manager.Data.Companions,
-                ObjectKind.MountType => manager.Data.Mounts,
+                ObjectKind.Mount     => manager.Data.Mounts,
                 ObjectKind.Ornament  => manager.Data.Ornaments,
                 _                    => throw new NotImplementedException(),
             };

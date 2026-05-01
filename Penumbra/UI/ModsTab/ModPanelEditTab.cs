@@ -2,12 +2,13 @@ using Dalamud.Interface;
 using Dalamud.Interface.ImGuiNotification;
 using ImSharp;
 using Luna;
+using Penumbra.Communication;
+using Penumbra.Files;
 using Penumbra.Mods;
 using Penumbra.Mods.Editor;
 using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager;
 using Penumbra.Mods.Settings;
-using Penumbra.Services;
 using Penumbra.UI.ModsTab.Groups;
 
 namespace Penumbra.UI.ModsTab;
@@ -113,17 +114,17 @@ public class ModPanelEditTab(
         if (!table)
             return;
 
-        table.SetupColumn("索引"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("组 #00  "u8).X);
-        table.SetupColumn("组"u8, TableColumnFlags.WidthStretch);
-        table.SetupColumn("类型"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("合并  "u8).X);
-        table.SetupColumn("选项"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("1000 选项  "u8).X);
-        table.SetupColumn("优先级##actions"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X);
+        table.SetupColumn("索引"u8,             TableColumnFlags.WidthFixed, Im.Font.CalculateSize("组 #00  "u8).X);
+        table.SetupColumn("组"u8,               TableColumnFlags.WidthStretch);
+        table.SetupColumn("类型"u8,             TableColumnFlags.WidthFixed, Im.Font.CalculateSize("合并  "u8).X);
+        table.SetupColumn("选项"u8,             TableColumnFlags.WidthFixed, Im.Font.CalculateSize("1000 选项  "u8).X);
+        table.SetupColumn("优先级##actions"u8,  TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X);
         table.HeaderRow();
 
         var        active   = config.DeleteModModifier.IsActive();
         using var  clip     = new Im.ListClipper(mod.Groups.Count, Im.Style.FrameHeightWithSpacing);
         IModGroup? deletion = null;
-        foreach(var i in clip)
+        foreach (var i in clip)
         {
             using var id    = Im.Id.Push(i);
             var       group = mod.Groups[i];
@@ -166,6 +167,7 @@ public class ModPanelEditTab(
             if (!active)
                 Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {config.DeleteModModifier} 删除。");
         }
+
         if (deletion is not null)
             modManager.OptionEditor.DeleteModGroup(deletion);
     }
@@ -272,26 +274,49 @@ public class ModPanelEditTab(
     private void EditLocalData()
     {
         DrawImportDate();
-        ImEx.TextFramed($"{DateTimeOffset.FromUnixTimeMilliseconds(_mod.LastConfigEdit).ToLocalTime():yyyy/MM/dd HH:mm}",
-            UiHelpers.InputTextWidth with { Y = 0 }, ImGuiColor.FrameBackground.Get(0.5f));
-        Im.Line.SameInner();
-        Im.Text("最后一次配置编辑"u8);
+        DrawConfigEditDate();
     }
 
     private void DrawImportDate()
     {
+        using var id = Im.Id.Push(1);
         ImEx.TextFramed($"{DateTimeOffset.FromUnixTimeMilliseconds(_mod.ImportDate).ToLocalTime():yyyy/MM/dd HH:mm}",
             new Vector2(UiHelpers.InputTextMinusButton3, 0), ImGuiColor.FrameBackground.Get(0.5f));
-        Im.Line.Same(0, 3 * Im.Style.GlobalScale);
+        if (Im.Item.Clicked())
+            Im.Clipboard.Set($"{_mod.ImportDate}");
+        Im.Tooltip.OnHover($"点击复制时间戳: {_mod.ImportDate}");
 
+        Im.Line.Same(0, 3 * Im.Style.GlobalScale);
         var canRefresh = config.DeleteModModifier.IsActive();
         if (ImEx.Icon.Button(LunaStyle.RefreshIcon, canRefresh
                     ? "重置导入日期为当前日期和时间。"u8
                     : $"重置导入日期为当前日期和时间。\n点击时按住 {config.DeleteModModifier} 刷新。",
                 !canRefresh))
-            modManager.DataEditor.ResetModImportDate(_mod);
+            modManager.DataEditor.ChangeModImportDate(_mod, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
         Im.Line.SameInner();
         Im.Text("导入日期"u8);
+    }
+
+    private void DrawConfigEditDate()
+    {
+        using var id = Im.Id.Push(2);
+        ImEx.TextFramed($"{DateTimeOffset.FromUnixTimeMilliseconds(_mod.LastConfigEdit).ToLocalTime():yyyy/MM/dd HH:mm}",
+            new Vector2(UiHelpers.InputTextMinusButton3, 0), ImGuiColor.FrameBackground.Get(0.5f));
+        if (Im.Item.Clicked())
+            Im.Clipboard.Set($"{_mod.LastConfigEdit}");
+        Im.Tooltip.OnHover($"点击复制时间戳: {_mod.LastConfigEdit}");
+
+        Im.Line.Same(0, 3 * Im.Style.GlobalScale);
+        var canRefresh = config.IncognitoModifier.IsActive();
+        if (ImEx.Icon.Button(LunaStyle.RefreshIcon, canRefresh
+                    ? "重置最后一次配置编辑日期为当前日期和时间。"u8
+                    : $"重置最后一次配置编辑日期为当前日期和时间。\n点击时按住 {config.IncognitoModifier} 刷新。",
+                !canRefresh))
+            modManager.DataEditor.ChangeLastConfigEdit(_mod, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+        Im.Line.SameInner();
+        Im.Text("最后一次配置编辑"u8);
     }
 
     private void DrawOpenDefaultMod()

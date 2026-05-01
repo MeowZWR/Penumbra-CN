@@ -34,6 +34,7 @@ public unsafe class CharacterUtility : IDisposable, Luna.IRequiredService
     public nint DefaultHumanPbdResource               { get; private set; }
     public nint DefaultTransparentResource            { get; private set; }
     public nint DefaultDecalResource                  { get; private set; }
+    public nint DefaultIrisShpkResource               { get; private set; }
     public nint DefaultSkinShpkResource               { get; private set; }
     public nint DefaultCharacterStockingsShpkResource { get; private set; }
     public nint DefaultCharacterLegacyShpkResource    { get; private set; }
@@ -108,6 +109,12 @@ public unsafe class CharacterUtility : IDisposable, Luna.IRequiredService
             anyMissing           |= DefaultDecalResource == nint.Zero;
         }
 
+        if (DefaultIrisShpkResource == nint.Zero)
+        {
+            DefaultIrisShpkResource =  (nint)Address->IrisShpkResource;
+            anyMissing              |= DefaultIrisShpkResource == nint.Zero;
+        }
+
         if (DefaultSkinShpkResource == nint.Zero)
         {
             DefaultSkinShpkResource =  (nint)Address->SkinShpkResource;
@@ -143,6 +150,7 @@ public unsafe class CharacterUtility : IDisposable, Luna.IRequiredService
         Address->HumanPbdResource               = (ResourceHandle*)DefaultHumanPbdResource;
         Address->TransparentTexResource         = (TextureResourceHandle*)DefaultTransparentResource;
         Address->DecalTexResource               = (TextureResourceHandle*)DefaultDecalResource;
+        Address->IrisShpkResource               = (ResourceHandle*)DefaultIrisShpkResource;
         Address->SkinShpkResource               = (ResourceHandle*)DefaultSkinShpkResource;
         Address->CharacterStockingsShpkResource = (ResourceHandle*)DefaultCharacterStockingsShpkResource;
         Address->CharacterLegacyShpkResource    = (ResourceHandle*)DefaultCharacterLegacyShpkResource;

@@ -1,3 +1,4 @@
+using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ImSharp;
 using Luna;
@@ -5,6 +6,7 @@ using Penumbra.Communication;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
 using TabType = Penumbra.Api.Enums.TabType;
+using Window = Luna.Window;
 
 namespace Penumbra.UI.MainWindow;
 

@@ -12,6 +12,8 @@ namespace Penumbra.Interop.Hooks.PostProcessing;
 
 public unsafe class RenderTargetHdrEnabler : Luna.IService, IDisposable
 {
+    public const bool HdrModeSupported = false;
+
     /// <remarks> This array must be sorted by CreationOrder ascending. </remarks>
     private static readonly ImmutableArray<ForcedTextureConfig> ForcedTextureConfigs =
     [
@@ -44,7 +46,7 @@ public unsafe class RenderTargetHdrEnabler : Luna.IService, IDisposable
                 interop.HookFromAddress<RenderTargetManagerInitializeFunc>(initializeAddress, RenderTargetManagerInitializeDetour);
             _createTexture2D = interop.HookFromAddress<CreateTexture2DFunc>(createAddress, CreateTexture2DDetour);
 
-            if (config.HdrRenderTargets && !HookOverrides.Instance.PostProcessing.RenderTargetManagerInitialize)
+            if (HdrModeSupported && config.HdrRenderTargets && !HookOverrides.Instance.PostProcessing.RenderTargetManagerInitialize)
                 _renderTargetManagerInitialize.Enable();
         }
 

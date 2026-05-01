@@ -1,6 +1,7 @@
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.ImGuiNotification.EventArgs;
+using Dalamud.Interface.Windowing;
 using ImSharp;
 using Luna;
 using Penumbra.Api.Enums;
@@ -10,6 +11,7 @@ using Penumbra.Mods.Manager;
 using MessageService = Penumbra.Services.MessageService;
 using MouseButton = ImSharp.MouseButton;
 using Notification = Luna.Notification;
+using Window = Luna.Window;
 
 namespace Penumbra.UI;
 
