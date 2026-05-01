@@ -32,13 +32,13 @@ public sealed class ReservedFileNotification(
             case ".atch" or ".eqp" or ".eqdp" or ".est" or ".gmp" or ".cmp" or ".imc":
                 if (!temporaryCollection)
                     Penumbra.Messager.NotificationMessage(
-                        $"Redirection of {ext} files for {mod.Name} is unsupported. This probably means that the mod is outdated and may not work correctly.\n\nPlease tell the mod creator to use the corresponding meta manipulations instead.",
+                        $"不支持对模组「{mod.Name}」中的 {ext} 文件进行重定向，通常表示该模组较旧，可能无法正常工作。\n\n请提醒作者改用相应的元数据（meta）操作来实现效果。",
                         NotificationType.Warning);
                 return false;
             case ".lvb" or ".lgb" or ".sgb":
                 if (!temporaryCollection)
                     Penumbra.Messager.NotificationMessage(
-                        $"Redirection of {ext} files for {mod.Name} is unsupported as this breaks the game.\n\nThis mod will probably not work correctly.",
+                        $"不支持对模组「{mod.Name}」中的 {ext} 文件进行重定向，否则可能破坏游戏稳定性。\n\n该模组可能无法正常工作。",
                         NotificationType.Warning);
                 return false;
             default: return true;
@@ -139,13 +139,13 @@ public sealed class ReservedFileNotification(
         public TimeSpan NotificationDuration
             => TimeSpan.Zero;
 
-        public string LogMessage { get; } = $"Redirection of {file} in mod {mod} stopped.";
+        public string LogMessage { get; } = $"已停止模组「{mod}」中对「{file}」的重定向。";
 
         public SeString ChatMessage
             => SeString.Empty;
 
-        public StringU8 StoredMessage { get; } = new($"{file} in {mod}: Reserved File Redirection.");
-        public StringU8 StoredTooltip { get; } = new($"File: {file}\nMod: {mod}");
+        public StringU8 StoredMessage { get; } = new($"{file}（模组 {mod}）：保留文件重定向");
+        public StringU8 StoredTooltip { get; } = new($"文件：{file}\n模组：{mod}");
 
         public void OnNotificationActions(INotificationDrawArgs args)
         { }
