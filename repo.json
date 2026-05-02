@@ -5,8 +5,8 @@
     "Punchline": "运行时模组加载和管理器。",
     "Description": "运行时模组加载和管理器。",
     "InternalName": "Penumbra",
-    "AssemblyVersion": "1.6.0.5",
-    "TestingAssemblyVersion": "1.6.0.5",
+    "AssemblyVersion": "1.6.1.2",
+    "TestingAssemblyVersion": "1.6.1.2",
     "RepoUrl": "https://github.com/MeowZWR/Penumbra-CN",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 15,
@@ -18,9 +18,9 @@
     "LoadPriority": 69420,
     "LoadRequiredState": 2,
     "LoadSync": true,
-    "DownloadLinkInstall": "https://meowrs.com/https://github.com/MeowZWR/Penumbra-CN/releases/download/1.6.0.5-cn/Penumbra.zip",
-    "DownloadLinkTesting": "https://meowrs.com/https://github.com/MeowZWR/Penumbra-CN/releases/download/1.6.0.5-cn/Penumbra.zip",
-    "DownloadLinkUpdate": "https://meowrs.com/https://github.com/MeowZWR/Penumbra-CN/releases/download/1.6.0.5-cn/Penumbra.zip",
+    "DownloadLinkInstall": "https://meowrs.com/https://github.com/MeowZWR/Penumbra-CN/releases/download/1.6.1.2-cn/Penumbra.zip",
+    "DownloadLinkTesting": "https://meowrs.com/https://github.com/MeowZWR/Penumbra-CN/releases/download/1.6.1.2-cn/Penumbra.zip",
+    "DownloadLinkUpdate": "https://meowrs.com/https://github.com/MeowZWR/Penumbra-CN/releases/download/1.6.1.2-cn/Penumbra.zip",
     "IconUrl": "https://static.meowrs.com/Plugins/Penumbra/icon.png"
   }
 ]
