@@ -85,9 +85,7 @@ public readonly struct ModMeta(Mod mod) : ISavable
 
         if (!File.Exists(metaFile))
         {
-            Penumbra.Messager.NotificationMessage(new Exception("缺少文件。"),
-                $"未找到元数据文件\n\n\t{mod.ModPath.Name}\n\n已跳过加载该模组。",
-                $"未找到模组元数据：{mod.ModPath.Name}", NotificationType.Error);
+            creator.FailedMod.AddMissingMeta(mod);
             return ModDataChangeType.Deletion;
         }
 
@@ -171,8 +169,7 @@ public readonly struct ModMeta(Mod mod) : ISavable
         }
         catch (Exception e)
         {
-            Penumbra.Messager.NotificationMessage(e, $"读取元数据失败\n\n\t{mod.ModPath.Name}\n\n已跳过加载该模组。",
-                $"无法加载模组元数据：{metaFile}", NotificationType.Error);
+            creator.FailedMod.AddInvalidMeta(mod, e);
             return ModDataChangeType.Deletion;
         }
 
