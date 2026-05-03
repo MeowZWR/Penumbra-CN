@@ -48,8 +48,8 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
 
     private delegate nint CharacterBaseOnRenderMaterialDelegate(CharacterBase* drawObject, CSModelRenderer.OnRenderMaterialParams* param);
 
-    private delegate ushort* ModelRendererOnRenderMaterialDelegate(CSModelRenderer* modelRenderer, ushort* outFlags,
-        CSModelRenderer.OnRenderModelParams* param, Material* material, uint materialIndex);
+    private delegate ushort* ModelRendererOnRenderMaterialDelegate(CSModelRenderer* modelRenderer,
+        CSModelRenderer.OnRenderMaterialParams2* param, Material* material, uint materialIndex);
 
     private delegate void ModelRendererUnkFuncDelegate(CSModelRenderer* modelRenderer, ModelRendererStructs.UnkPayload* unkPayload, uint unk2,
         uint unk3, uint unk4, uint unk5);
@@ -370,17 +370,17 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
         }
     }
 
-    private ushort* ModelRendererOnRenderMaterialDetour(CSModelRenderer* modelRenderer, ushort* outFlags,
-        CSModelRenderer.OnRenderModelParams* param, Material* material, uint materialIndex)
+    private ushort* ModelRendererOnRenderMaterialDetour(CSModelRenderer* modelRenderer, CSModelRenderer.OnRenderMaterialParams2* param,
+        Material* material, uint materialIndex)
     {
         // If we don't have any on-screen instances of modded characterglass.shpk or others, we don't need the slow path at all.
         if (!Enabled || GetTotalMaterialCountForModelRendererRender() is 0)
-            return _modelRendererOnRenderMaterialHook!.Original(modelRenderer, outFlags, param, material, materialIndex);
+            return _modelRendererOnRenderMaterialHook!.Original(modelRenderer, param, material, materialIndex);
 
         var mtrlResource = material->MaterialResourceHandle;
         var shpkState    = GetStateForModelRendererRender(mtrlResource);
         if (shpkState is null || shpkState.MaterialCount is 0)
-            return _modelRendererOnRenderMaterialHook!.Original(modelRenderer, outFlags, param, material, materialIndex);
+            return _modelRendererOnRenderMaterialHook!.Original(modelRenderer, param, material, materialIndex);
 
         shpkState.IncrementSlowPathCallDelta();
 
@@ -391,7 +391,7 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
             try
             {
                 *shpkReference = mtrlResource->ShaderPackageResourceHandle;
-                return _modelRendererOnRenderMaterialHook!.Original(modelRenderer, outFlags, param, material, materialIndex);
+                return _modelRendererOnRenderMaterialHook!.Original(modelRenderer, param, material, materialIndex);
             }
             finally
             {
