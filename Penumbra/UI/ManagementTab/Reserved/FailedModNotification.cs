@@ -12,7 +12,9 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
     : AmassingNotification<(string Mod, Exception Error)>(service), IService
 {
     public void AddMissingMeta(Mod mod)
-        => AddObject((mod.ModPath.Name, new FileNotFoundException("未找到元数据。", Path.Combine(mod.ModPath.FullName, "meta.json"))));
+        => AddObject((mod.ModPath.Name, new FileNotFoundException("未找到元数据。\n\n"
+          + "所述文件夹并非已安装的模组，请将 Penumbra 根目录留给 Penumbra 使用，勿在其中放置您自己的文件夹。\n\n"
+          + "删除此文件夹或将其移出根目录即可消除此警告。", Path.Combine(mod.ModPath.FullName, "meta.json"))));
 
     public void AddInvalidMeta(Mod mod, Exception ex)
         => AddObject((mod.ModPath.Name, ex));
