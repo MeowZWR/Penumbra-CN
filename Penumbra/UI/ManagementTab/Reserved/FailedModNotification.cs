@@ -12,7 +12,7 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
     : AmassingNotification<(string Mod, Exception Error)>(service), IService
 {
     public void AddMissingMeta(Mod mod)
-        => AddObject((mod.ModPath.Name, new FileNotFoundException("No Metadata found.", Path.Combine(mod.ModPath.FullName, "meta.json"))));
+        => AddObject((mod.ModPath.Name, new FileNotFoundException("未找到元数据。", Path.Combine(mod.ModPath.FullName, "meta.json"))));
 
     public void AddInvalidMeta(Mod mod, Exception ex)
         => AddObject((mod.ModPath.Name, ex));
@@ -21,20 +21,20 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
         => NotificationType.Error;
 
     public override string NotificationTitle
-        => $"{Count} Mod{(Count is 1 ? string.Empty : "s")} failed to load";
+        => $"{Count} 个模组加载失败";
 
     // TODO: add management tab for this
     public override string NotificationMessage
-        => "One or more Mods failed to load.\n\n See the Messages tab for details.\n\nA management tab for handling these cases more easily will be added later.";
+        => "有一个或多个模组未能加载。\n\n请在「消息」页签中查看详情。\n\n后续将添加专门的管理页签，以便更便捷地处理此类情况。";
 
     public override void NotificationActions(INotificationDrawArgs args)
     {
         var width = Im.ContentRegion.Available with { Y = 0 };
         width.X = (width.X - Im.Style.ItemInnerSpacing.X) / 2;
-        if (Im.Button("Open Messages"u8, width))
+        if (Im.Button("打开消息"u8, width))
             navigator.OpenTo(TabType.Messages);
         Im.Line.SameInner();
-        if (ImEx.Button("Open Management"u8, width, true))
+        if (ImEx.Button("打开模组管理"u8, width, true))
             navigator.OpenTo(ManagementTabType.ReservedFiles); // TODO
     }
 
@@ -43,11 +43,11 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
 
     private sealed class Stored(FailedModNotification parent, string mod, Exception error) : StoredNotification(parent, (mod, error))
     {
-        public override string LogMessage { get; } = $"Mod {mod} failed to load:\n{error}";
+        public override string LogMessage { get; } = $"模组「{mod}」加载失败：\n{error}";
 
         public override StringU8 StoredMessage { get; } = new(error is FileNotFoundException
-            ? $"[{mod}] failed to load: No Metadata found."
-            : $"[{mod}] failed to load: Error reading Metadata.");
+            ? $"[{mod}] 加载失败：未找到元数据。"
+            : $"[{mod}] 加载失败：读取元数据时出错。");
 
         public override StringU8 StoredTooltip { get; } = new($"{error}");
     }
