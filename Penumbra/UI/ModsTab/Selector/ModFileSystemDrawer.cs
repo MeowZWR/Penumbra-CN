@@ -43,7 +43,7 @@ public sealed class ModFileSystemDrawer : FileSystemDrawer<ModFileSystemCache.Mo
         FolderContext.AddButton(new SetDescendantsButton(this, false, null),  10);
         FolderContext.AddButton(new SetDescendantsButton(this, true,  true),  6);
         FolderContext.AddButton(new SetDescendantsButton(this, true,  false), 5);
-        var setFolderButtons = new SubMenuButton<IFileSystemFolder>(new StringU8("Set Folder as..."u8));
+        var setFolderButtons = new SubMenuButton<IFileSystemFolder>(new StringU8("设置折叠组为..."u8));
         setFolderButtons.Entries.AddButton(new SetDefaultImportFolderButton(this), 100);
         setFolderButtons.Entries.AddButton(new SetQuickMoveFoldersButtons(this),   0);
         FolderContext.AddButton(setFolderButtons, -50);

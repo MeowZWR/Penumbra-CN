@@ -9,10 +9,10 @@ public readonly struct ImportDate : ISortMode
     public static readonly ImportDate Instance = new();
 
     public ReadOnlySpan<byte> Name
-        => "Import Date (Older First)"u8;
+        => "导入日期（旧到新）"u8;
 
     public ReadOnlySpan<byte> Description
-        => "In each folder, sort all subfolders lexicographically, then sort all leaves using their import date."u8;
+        => "在每个折叠组中，按字典顺序排序所有子折叠组，然后按导入日期排序所有数据节点。"u8;
 
     public IEnumerable<IFileSystemNode> GetChildren(IFileSystemFolder f)
         => ISortMode.GetFolderLike(f)
@@ -29,10 +29,10 @@ public readonly struct InverseImportDate : ISortMode
     public static readonly InverseImportDate Instance = new();
 
     public ReadOnlySpan<byte> Name
-        => "Import Date (Newer First)"u8;
+        => "导入日期（新到旧）"u8;
 
     public ReadOnlySpan<byte> Description
-        => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse import date."u8;
+        => "在每个折叠组中，按字典顺序排序所有子折叠组，然后按反导入日期排序所有数据节点。"u8;
 
     public IEnumerable<IFileSystemNode> GetChildren(IFileSystemFolder f)
         => ISortMode.GetFolderLike(f)
