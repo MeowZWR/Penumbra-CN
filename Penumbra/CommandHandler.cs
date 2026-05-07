@@ -80,7 +80,6 @@ public class CommandHandler : IDisposable, IApiService
             "toggle"        => SetPenumbraState(arguments, null),
             "reload"        => Reload(arguments),
             "redraw"        => Redraw(arguments),
-            "lockui"        => SetUiLockState(arguments),
             "size"          => SetUiMinimumSize(arguments),
             "debug"         => SetDebug(arguments),
             "collection"    => SetCollection(arguments),
@@ -112,10 +111,7 @@ public class CommandHandler : IDisposable, IApiService
         _chat.Print(new SeStringBuilder().AddCommand("reload", "重新搜寻模组目录并加载所有模组。").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("redraw", "重绘所有游戏对象。可以指定一个名称重绘特定对象。").BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("lockui", "切换Penumbra主窗口的锁定状态。可与[on|off]一起使用以强制维持特定状态。")
-            .BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("尺寸", "将配置窗口的最小尺寸重设为默认值。").BuiltString);
+        _chat.Print(new SeStringBuilder().AddCommand("size", "将配置窗口的最小尺寸重设为默认值。").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("debug", "切换Penumbra的调试模式。可与[on|off]一起使用以强制维持特定状态。").BuiltString);
         _chat.Print(new SeStringBuilder()
@@ -128,7 +124,7 @@ public class CommandHandler : IDisposable, IApiService
             .BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("clearsettings",
-                "Clear all temporary settings applied manually through Penumbra in the current or all collections. Use with 'all' parameter for all.")
+                "清除当前或所有合集中手动通过Penumbra应用的所有临时设置。使用'all'参数清除所有。")
             .BuiltString);
         return true;
     }
@@ -200,28 +196,6 @@ public class CommandHandler : IDisposable, IApiService
             ? "你的模组已启用。"
             : "你的模组已禁用。" );
         return _penumbra.SetEnabled(value);
-    }
-
-    private bool SetUiLockState(string arguments)
-    {
-        var value = ParseTrueFalseToggle(arguments) ?? !_config.Ephemeral.FixMainWindow;
-        if (value == _config.Ephemeral.FixMainWindow)
-            return false;
-
-        if (value)
-        {
-            Print("Penumbra UI locked in place.");
-            _mainWindow.Flags |= WindowFlags.NoMove | WindowFlags.NoResize;
-        }
-        else
-        {
-            Print("Penumbra UI unlocked.");
-            _mainWindow.Flags &= ~(WindowFlags.NoMove | WindowFlags.NoResize);
-        }
-
-        _config.Ephemeral.FixMainWindow = value;
-        _config.Ephemeral.Save();
-        return true;
     }
 
     private bool SetUiMinimumSize(string _)

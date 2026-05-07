@@ -107,8 +107,7 @@ public sealed class SettingsTab : ITab<TabType>
             return;
 
         DrawEnabledBox();
-        EphemeralCheckbox("锁定主窗口"u8, "防止主窗口被调整大小或移动。"u8, _config.Ephemeral.FixMainWindow,
-            v => _config.Ephemeral.FixMainWindow = v);
+        Im.Line.New();
 
         Im.Line.New();
         DrawRootFolder();

@@ -371,8 +371,6 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
                 _editor.Duplicates.Clear();
         }
 
-        var modifier = _config.DeleteModModifier.IsActive();
-
         if (_editor.ModNormalizer.Running)
         {
             Im.ProgressBar((float)_editor.ModNormalizer.Step / _editor.ModNormalizer.TotalSteps,
@@ -383,14 +381,14 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
                      "尝试为每个游戏路径操作创建一个唯一副本并将其按[Groupname]/[Optionname]/[GamePath]排列。\n"u8
                    + "如果成功，还将删除所有未使用的文件和目录。\n"u8
                    + "注意，失败后不会破坏模组，而是应该恢复到其原始状态，但无论如何，请注意此操作有风险。"u8,
-                     !_allowReduplicate && !modifier))
+                     !_allowReduplicate && !LunaStyle.Modifier.Destructive))
         {
             _editor.ModNormalizer.Normalize(Mod!);
             _editor.ModNormalizer.Worker.ContinueWith(_ => _editor.LoadMod(Mod!, _editor.GroupIdx, _editor.DataIdx), TaskScheduler.Default);
         }
 
-        if (_allowReduplicate && !modifier)
-            Im.Tooltip.OnHover($"\n\nNo duplicates detected! Hold {_config.DeleteModModifier} to force normalization anyway.");
+        if (_allowReduplicate && !LunaStyle.Modifier.Destructive)
+            Im.Tooltip.OnHover($"\n\nNo duplicates detected! Hold {LunaStyle.Modifier.Destructive} to force normalization anyway.");
 
         if (!_editor.Duplicates.Worker.IsCompleted)
             return;
