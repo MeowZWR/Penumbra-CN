@@ -53,7 +53,7 @@ public sealed class GlobalModImporter : IRequiredService, IDisposable
 
     private static bool DragTooltip(IDragDropManager manager)
     {
-        Im.Text(manager.Files.Count > 1 ? "Dragging mods for import:"u8 : "Dragging mod for import:"u8);
+        Im.Text(manager.Files.Count > 1 ? "拖拽模组包进行导入:"u8 : "拖拽模组包进行导入:"u8);
         foreach (var file in manager.Files.Select(Path.GetFileName))
             Im.BulletText(file!);
         return true;
