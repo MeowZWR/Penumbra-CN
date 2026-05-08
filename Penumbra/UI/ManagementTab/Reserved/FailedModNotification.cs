@@ -25,9 +25,8 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
     public override string NotificationTitle
         => $"{Count} 个模组加载失败";
 
-    // TODO: add management tab for this
     public override string NotificationMessage
-        => "有一个或多个模组未能加载。\n\n请在「消息」页签中查看详情。\n\n后续将添加专门的管理页签，以便更便捷地处理此类情况。";
+        => "有一个或多个模组未能加载。\n\n请在「消息」页签中查看详情。查看「模组管理」->「损坏的模组」以修复问题。";
 
     public override void NotificationActions(INotificationDrawArgs args)
     {
@@ -37,7 +36,7 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
             navigator.OpenTo(TabType.Messages);
         Im.Line.SameInner();
         if (ImEx.Button("打开模组管理"u8, width, true))
-            navigator.OpenTo(ManagementTabType.ReservedFiles); // TODO
+            navigator.OpenTo(ManagementTabType.BrokenMods);
     }
 
     protected override StoredNotification CreateStored(in (string Mod, Exception Error) @object)
