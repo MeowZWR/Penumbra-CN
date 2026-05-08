@@ -108,7 +108,7 @@ public class Penumbra : IDalamudPlugin
             if (pluginInterface.Reason is PluginLoadReason.Update)
                 Messager.AddMessage(
                     new Notification(
-                        "Penumbra seems to have been updated right now.\n\nIf you encounter any issues, please try restarting the game before reporting them.",
+                        "Penumbra 似乎刚刚更新。\n\n如果您遇到任何问题，请在报告之前尝试重新启动游戏。",
                         TimeSpan.FromSeconds(30), NotificationType.Info), false, true, false, true);
 
             if (_services.GetService<HookManager>().LogExceptions(Log))

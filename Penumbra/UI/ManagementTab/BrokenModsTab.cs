@@ -10,7 +10,7 @@ namespace Penumbra.UI.ManagementTab;
 public sealed class BrokenModsTab(ModManager mods, FailedModNotification notification) : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
-        => "Broken Mods"u8;
+        => "损坏的模组"u8;
 
     public ManagementTabType Identifier
         => ManagementTabType.BrokenMods;
@@ -19,7 +19,7 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
     {
         var cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(mods));
 
-        if (Im.Button("Refresh"u8))
+        if (Im.Button("刷新"u8))
             cache.Dirty |= IManagedCache.DirtyFlags.Custom;
 
         Im.Line.Same();
@@ -38,8 +38,8 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
 
     private static void DrawDeleteEmptyButton(FailedModNotification notification, Cache cache)
     {
-        if (ImEx.Button("Delete All Empty Folders"u8, default,
-                "Deletes all folders that contain no objects or have no size at all (meaning they only have empty subfolders).\n\nTHIS IS NOT REVERTIBLE!"u8,
+        if (ImEx.Button("删除所有空文件夹"u8, default,
+                "删除所有不包含对象或大小为0的文件夹（这意味着它们只有空的子文件夹）。\n\n这是不可恢复的！"u8,
                 !LunaStyle.Modifier.Destructive))
             for (var i = 0; i < cache.BrokenMods.Count; ++i)
             {
@@ -64,8 +64,8 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
 
     private static void DrawMoveToTempButton(FailedModNotification notification, ModManager mods, Cache cache)
     {
-        if (ImEx.Button("Move All Folders to Temp"u8, default,
-                $"Moves all folders in the list to the '{mods.BasePath.FullName}/broken_mods' directory to make it easier to move them out of the Root directory.",
+        if (ImEx.Button("将所有文件夹移动到临时目录"u8, default,
+                $"将列表中的所有文件夹移动到 '{mods.BasePath.FullName}/broken_mods' 目录，以便更容易将它们移出根目录。",
                 !LunaStyle.Modifier.Destructive))
         {
             cache.Dirty |= IManagedCache.DirtyFlags.Custom;
@@ -106,10 +106,10 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
             return;
 
         table.SetupColumn("##"u8,            TableColumnFlags.WidthFixed,   2 * Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X);
-        table.SetupColumn("Mod Directory"u8, TableColumnFlags.WidthStretch, 0.3f);
-        table.SetupColumn("Error"u8,         TableColumnFlags.WidthStretch, 0.7f);
-        table.SetupColumn("Size"u8,          TableColumnFlags.WidthFixed,   70 * Im.Style.GlobalScale);
-        table.SetupColumn("Objects"u8,       TableColumnFlags.WidthFixed,   60 * Im.Style.GlobalScale);
+        table.SetupColumn("模组目录"u8, TableColumnFlags.WidthStretch, 0.3f);
+        table.SetupColumn("错误"u8,         TableColumnFlags.WidthStretch, 0.7f);
+        table.SetupColumn("大小"u8,          TableColumnFlags.WidthFixed,   70 * Im.Style.GlobalScale);
+        table.SetupColumn("对象"u8,       TableColumnFlags.WidthFixed,   60 * Im.Style.GlobalScale);
 
         table.HeaderRow();
 
@@ -119,7 +119,7 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
         {
             var mod = cache.BrokenMods[idx - removed];
             table.NextColumn();
-            if (ImEx.Icon.Button(LunaStyle.FolderIcon, "Open this directory in the file explorer of your choice."u8))
+            if (ImEx.Icon.Button(LunaStyle.FolderIcon, "在您选择的文件资源管理器中打开此目录。"u8))
                 try
                 {
                     Process.Start(new ProcessStartInfo(mod.FullPath) { UseShellExecute = true });
@@ -132,7 +132,7 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
                 }
 
             Im.Line.SameInner();
-            if (ImEx.Icon.Button(LunaStyle.RemoveFolderIcon, "Delete this directory. This is NOT revertible!"u8,
+            if (ImEx.Icon.Button(LunaStyle.RemoveFolderIcon, "删除此目录。注意：不可恢复！"u8,
                     !LunaStyle.Modifier.Destructive))
                 try
                 {
