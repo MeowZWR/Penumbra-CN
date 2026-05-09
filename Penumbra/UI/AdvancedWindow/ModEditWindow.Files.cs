@@ -345,7 +345,7 @@ public partial class ModEditWindow
         if (_selectedFiles.Count is 0)
             tt += "\n\n没有文件被删除。";
         else if (!active)
-            tt += $"\n\nHold {_config.DeleteModModifier} to delete.";
+            tt += $"\n\n按住 {_config.DeleteModModifier} 键并点击以删除。";
 
         if (ImEx.Button("删除选中的文件"u8, Vector2.Zero, tt, _selectedFiles.Count is 0 || !active))
             _editor.FileEditor.DeleteFiles(_editor.Mod!, _editor.Option!, _editor.Files.Available.Where(_selectedFiles.Contains));

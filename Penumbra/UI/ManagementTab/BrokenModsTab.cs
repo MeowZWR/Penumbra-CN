@@ -59,7 +59,7 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
                 }
             }
 
-        LunaStyle.Modifier.Destructive.TooltipLineBreak("delete"u8);
+        LunaStyle.Modifier.Destructive.TooltipLineBreak("删除"u8);
     }
 
     private static void DrawMoveToTempButton(FailedModNotification notification, ModManager mods, Cache cache)
@@ -96,7 +96,7 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
             }
         }
 
-        LunaStyle.Modifier.Destructive.TooltipLineBreak("move"u8);
+        LunaStyle.Modifier.Destructive.TooltipLineBreak("移动"u8);
     }
 
     private static void DrawTable(FailedModNotification notification, Cache cache)
@@ -146,7 +146,7 @@ public sealed class BrokenModsTab(ModManager mods, FailedModNotification notific
                     Penumbra.Log.Error($"Failed to delete broken mod directory {mod.Name.Utf16}:\n{ex}");
                 }
 
-            LunaStyle.Modifier.Destructive.TooltipLineBreak("delete"u8);
+            LunaStyle.Modifier.Destructive.TooltipLineBreak("删除"u8);
             table.DrawFrameColumn(mod.Name.Utf8);
             table.DrawFrameColumn(mod.Error.Utf8);
             Im.Tooltip.OnHover($"{mod.Exception}");
