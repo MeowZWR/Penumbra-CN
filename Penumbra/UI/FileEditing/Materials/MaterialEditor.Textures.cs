@@ -16,6 +16,10 @@ public partial class MaterialEditor
     public readonly HashSet<uint> SamplerIds       = new(16);
     public          float         TextureLabelWidth;
     private         bool          _samplersPinned;
+#if DEBUG
+    private string _texturePathReplaceSearch  = string.Empty;
+    private string _texturePathReplaceReplace = string.Empty;
+#endif
 
     private void UpdateTextures()
     {
@@ -110,6 +114,9 @@ public partial class MaterialEditor
 
         var       frameHeight = Im.Style.FrameHeight;
         var       ret         = false;
+#if DEBUG
+        ret |= DrawTexturePathReplaceDebug(disabled);
+#endif
         using var table       = Im.Table.Begin("##Textures"u8, 3);
 
         table.SetupColumn(StringU8.Empty, TableColumnFlags.WidthFixed, frameHeight);
@@ -162,6 +169,42 @@ public partial class MaterialEditor
 
         return ret;
     }
+
+#if DEBUG
+    private bool DrawTexturePathReplaceDebug(bool disabled)
+    {
+        using var tree = Im.Tree.Node("Debug: 批量替换纹理路径文本"u8);
+        if (!tree)
+            return false;
+
+        Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
+        Im.Input.Text("查找文本##TexturePathReplaceSearch"u8, ref _texturePathReplaceSearch, flags: disabled ? InputTextFlags.ReadOnly : InputTextFlags.None);
+        Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
+        Im.Input.Text("替换为##TexturePathReplaceReplace"u8, ref _texturePathReplaceReplace, flags: disabled ? InputTextFlags.ReadOnly : InputTextFlags.None);
+
+        using var dis = Im.Disabled(disabled || _texturePathReplaceSearch.Length == 0);
+        if (!Im.Button("替换当前材质中的匹配路径文本"u8))
+            return false;
+
+        var ret            = false;
+        var textureIndices = new HashSet<int>();
+        foreach (var (_, textureIndex, _, _, _) in Textures)
+            textureIndices.Add(textureIndex);
+
+        foreach (var textureIndex in textureIndices)
+        {
+            var path    = Mtrl.Textures[textureIndex].Path;
+            var newPath = path.Replace(_texturePathReplaceSearch, _texturePathReplaceReplace);
+            if (newPath == path)
+                continue;
+
+            Mtrl.Textures[textureIndex].Path = newPath;
+            ret                              = true;
+        }
+
+        return ret;
+    }
+#endif
 
     private static bool ComboTextureAddressMode(ReadOnlySpan<byte> label, ref TextureAddressMode value)
     {
