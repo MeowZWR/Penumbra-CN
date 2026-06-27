@@ -35,7 +35,7 @@ public readonly record struct EstIdentifier(PrimaryId SetId, EstType Slot, Gende
                 var (gender, race) = GenderRace.Split();
                 var id = (CustomizeValue)SetId.Id;
                 changedItems.UpdateCountOrSet(
-                    $"Customization: {race.ToName()} {gender.ToName()} Hair {SetId}", () => IdentifiedCustomization.Hair(race, gender, id));
+                    $"外貌：{race.ToName()} {gender.ToName()} Hair {SetId}", () => IdentifiedCustomization.Hair(race, gender, id));
                 break;
             }
             case EstType.Face:
@@ -43,7 +43,7 @@ public readonly record struct EstIdentifier(PrimaryId SetId, EstType Slot, Gende
                 var (gender, race) = GenderRace.Split();
                 var id = (CustomizeValue)SetId.Id;
                 changedItems.UpdateCountOrSet(
-                    $"Customization: {race.ToName()} {gender.ToName()} Face {SetId}",
+                    $"外貌：{race.ToName()} {gender.ToName()} Face {SetId}",
                     () => IdentifiedCustomization.Face(race, gender, id));
                 break;
             }
