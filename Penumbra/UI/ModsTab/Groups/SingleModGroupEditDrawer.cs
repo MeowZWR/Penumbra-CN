@@ -20,7 +20,7 @@ public readonly struct SingleModGroupEditDrawer(ModGroupEditDrawer editor, Singl
             editor.DrawOptionName(option);
 
             Im.Line.SameInner();
-            editor.DrawOptionDescription(option);
+            editor.DrawOptionButtons(option);
 
             Im.Line.SameInner();
             editor.DrawOptionDelete(option);

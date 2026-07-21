@@ -1,4 +1,5 @@
 using ImSharp;
+using Luna;
 using Penumbra.Mods;
 using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager;
@@ -6,71 +7,57 @@ using Penumbra.Mods.SubMods;
 
 namespace Penumbra.UI.ModsTab;
 
-public class DescriptionEditPopup(ModManager modManager) : Luna.IUiService
+public sealed class
+    DescriptionEditPopup(ModManager modManager) : ObjectEditPopup, IUiService
 {
-    private static ReadOnlySpan<byte> PopupId
+    protected override ReadOnlySpan<byte> PopupId
         => "EditDesc"u8;
 
-    private bool   _hasBeenEdited;
     private StringU8 _description = StringU8.Empty;
-
-    private object? _current;
-    private bool    _opened;
 
     public void Open(Mod mod)
     {
-        _current       = mod;
-        _opened        = true;
-        _hasBeenEdited = false;
-        _description   = new StringU8(mod.Description);
+        Open((object)mod);
+        _description = new StringU8(mod.Description);
     }
 
     public void Open(IModGroup group)
     {
-        _current       = group;
-        _opened        = true;
-        _hasBeenEdited = false;
-        _description   = new StringU8(group.Description);
+        Open((object)group);
+        _description = new StringU8(group.Description);
     }
 
     public void Open(IModOption option)
     {
-        _current       = option;
-        _opened        = true;
-        _hasBeenEdited = false;
-        _description   = new StringU8(option.Description);
+        Open((object)option);
+        _description = new StringU8(option.Description);
     }
 
-    public void Draw()
+    protected override void PrePopup()
     {
-        if (_current is null)
-            return;
+        Im.Window.SetNextSizeConstraints(ImEx.ScaledVector(300), Vector2.PositiveInfinity);
+        Im.Window.SetNextSize(ImEx.ScaledVector(500), Condition.FirstUseEver);
+    }
 
-        if (_opened)
-        {
-            _opened = false;
-            Im.Popup.Open(PopupId);
-        }
+    protected override Im.PopupDisposable Begin()
+        => Im.Popup.BeginResizable(PopupId);
 
-        var       inputSize = ImEx.ScaledVector(800);
-        using var popup     = Im.Popup.Begin(PopupId);
-        if (!popup)
-            return;
-
+    protected override void DrawInternal()
+    {
         if (Im.Window.Appearing)
             Im.Keyboard.SetFocusHere();
 
+        var inputSize = Im.ContentRegion.Available;
+        inputSize.Y -= Im.Style.FrameHeight * 2;
         if (Im.Input.MultiLine("##editDescription"u8, ref _description, inputSize))
-            _hasBeenEdited = true;
-        UiHelpers.DefaultLineSpace();
+            Edited = true;
 
-        var buttonSize = new Vector2(Im.Style.GlobalScale * 100, 0);
+        var buttonSize = ImEx.ScaledVectorX(100);
 
-        var width = 2 * buttonSize.X
-          + 4 * Im.Style.FramePadding.X
-          + Im.Style.ItemSpacing.X;
+        var width = 2 * buttonSize.X + Im.Style.ItemSpacing.X;
 
-        Im.Cursor.X = (inputSize.X - width) / 2;
+        Im.Cursor.Y += Im.Style.FrameHeight / 2;
+        Im.Cursor.X +=  (Im.ContentRegion.Available.X - width) / 2;
         DrawSaveButton(buttonSize);
         Im.Line.Same();
         DrawCancelButton(buttonSize);
@@ -78,19 +65,18 @@ public class DescriptionEditPopup(ModManager modManager) : Luna.IUiService
 
     private void DrawSaveButton(Vector2 buttonSize)
     {
-        if (!ImEx.Button("Save"u8, buttonSize, _hasBeenEdited ? StringU8.Empty : "No changes made yet."u8, !_hasBeenEdited))
+        if (!ImEx.Button("Save"u8, buttonSize, Edited ? StringU8.Empty : "No changes made yet."u8, !Edited))
             return;
 
-        switch (_current)
+        switch (Current)
         {
             case Mod mod:           modManager.DataEditor.ChangeModDescription(mod, _description.ToString()); break;
             case IModGroup group:   modManager.OptionEditor.ChangeGroupDescription(group, _description.ToString()); break;
             case IModOption option: modManager.OptionEditor.ChangeOptionDescription(option, _description.ToString()); break;
         }
 
-        _description   = StringU8.Empty;
-        _hasBeenEdited = false;
-        Im.Popup.CloseCurrent();
+        _description = StringU8.Empty;
+        Close();
     }
 
     private void DrawCancelButton(Vector2 buttonSize)
@@ -98,8 +84,7 @@ public class DescriptionEditPopup(ModManager modManager) : Luna.IUiService
         if (!Im.Button("Cancel"u8, buttonSize) && !Im.Keyboard.IsPressed(Key.Escape))
             return;
 
-        _description   = StringU8.Empty;
-        _hasBeenEdited = false;
-        Im.Popup.CloseCurrent();
+        _description = StringU8.Empty;
+        Close();
     }
 }

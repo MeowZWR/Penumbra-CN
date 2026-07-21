@@ -30,7 +30,7 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         var allVariants = group.AllVariants;
         if (Im.Checkbox("所有变体"u8, ref allVariants))
             editor.ModManager.OptionEditor.ImcEditor.ChangeAllVariants(group, allVariants);
-        Im.Tooltip.OnHover("使此组覆盖所有对应的变体，而不仅仅是指定的一个。"u8);
+        Im.Tooltip.OnHover("使此组覆盖此标识符的所有对应变体，而不仅仅是指定的一个。"u8);
 
         Im.Line.Same();
         var onlyAttributes = group.OnlyAttributes;
@@ -117,7 +117,7 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
             editor.DrawOptionName(option);
 
             Im.Line.SameInner();
-            editor.DrawOptionDescription(option);
+            editor.DrawOptionButtons(option);
 
             if (!option.IsDisableSubMod)
             {
@@ -135,8 +135,8 @@ public readonly struct ImcModGroupEditDrawer(ModGroupEditDrawer editor, ImcModGr
         var tt = dis
             ? "新选项没有空闲属性插槽..."u8
             : validName
-                ? "向此组添加一个新选项。"u8
-                : "请为新选项输入一个名称。"u8;
+                ? "添加一个新的选项到此组。"u8
+                : "请输入新选项的名称。"u8;
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, !validName || dis))
         {
             editor.ModManager.OptionEditor.ImcEditor.AddOption(group, cache, name);

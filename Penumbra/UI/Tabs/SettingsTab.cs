@@ -6,6 +6,7 @@ using Luna;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
 using Penumbra.Collections;
+using Penumbra.Import.Textures;
 using Penumbra.Interop;
 using Penumbra.Interop.Hooks.PostProcessing;
 using Penumbra.Interop.Services;
@@ -254,7 +255,7 @@ public sealed class SettingsTab : ITab<TabType>
         bool save, selected;
         using (Im.Group())
         {
-            Im.Item.SetNextWidth(UiHelpers.InputTextMinusButton3);
+            Im.Item.SetNextWidth(UiHelpers.InputTextMinusButtonInner);
             using (var color = ImStyleBorder.Frame.Push(Colors.RegexWarningBorder, Im.Style.GlobalScale, !_modManager.Valid))
             {
                 color.Push(ImGuiColor.TextDisabled, Colors.RegexWarningBorder, !_modManager.Valid);
@@ -263,10 +264,8 @@ public sealed class SettingsTab : ITab<TabType>
             }
 
             selected = Im.Item.Active;
-            using var style = ImStyleDouble.ItemSpacing.Push(new Vector2(Im.Style.GlobalScale * 3, 0));
-            Im.Line.Same();
+            Im.Line.SameInner();
             DrawDirectoryPickerButton();
-            style.Pop();
 
             var tt = "这是Penumbra即将存储提取到的模组文件的地方。\n"u8
               + "TTMP文件不会被复制，而是被解压到这里。\n"u8
@@ -368,22 +367,6 @@ public sealed class SettingsTab : ITab<TabType>
             "如果单选项组的选项数量等于或多于此处设定的值，将收起变更为下拉菜单。\n"u8
           + "少于此值的单选项组仍会展开显示。"u8);
     }
-
-    /// <summary> Draw a selection for the minimum number of options after which a group is drawn as collapsible. </summary>
-    private void DrawCollapsibleGroupMin()
-    {
-        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
-        if (ImEx.InputOnDeactivation.Drag("##CollapsibleGroupMin"u8, _config.OptionGroupCollapsibleMin, out var newValue, 2, null, 0.01f,
-                SliderFlags.AlwaysClamp))
-        {
-            _config.OptionGroupCollapsibleMin = newValue;
-            _config.Save();
-        }
-
-        LunaStyle.DrawAlignedHelpMarkerLabel("选项组折叠设置"u8,
-            "选项组选项数量高于此值时在选项组上方添加一个展开/折叠按钮。"u8);
-    }
-
 
     /// <summary> Draw the window hiding state checkboxes.  </summary>
     private void DrawHidingSettings()
@@ -562,8 +545,13 @@ public sealed class SettingsTab : ITab<TabType>
         Checkbox("隐藏模组选择器优先级数字标识"u8,
             "如果模组选择器里的模组优先级不是0，而且有足够的空间显示，则在模组名称后添加优先级数字标识。勾选此选项后隐藏这个标识。"u8,
             _config.HidePrioritiesInSelector, v => _config.HidePrioritiesInSelector = v);
+        Checkbox("Draw Tabs for Option Pages"u8,
+            "When this is on, pages set for options in a mod's metadata are drawn as a tab bar. When it is off, pages are drawn successively on the same page using sections of collapsing headers."u8,
+            _config.DisplayPages, v => _config.DisplayPages = v);
+        Checkbox("Hide Right Part of Option Group Lines"u8,
+            "When this is on, only the left (and center parts) of the header lines for option groups are drawn, otherwise the line continues to the right of the window."u8,
+            _config.HideRightOptionGroupLine, v => _config.HideRightOptionGroupLine = v);
         DrawSingleSelectRadioMax();
-        DrawCollapsibleGroupMin();
     }
 
     /// <summary> Draw all settings pertaining to actor identification for collections. </summary>
@@ -593,12 +581,20 @@ public sealed class SettingsTab : ITab<TabType>
         Checkbox("基于所有者使用合集"u8,
             "使用所有者的名字来决定其坐骑、宠物、时尚配饰、战斗伙伴使用适当的角色合集。"u8,
             _config.UseOwnerNameForCharacterCollection, v => _config.UseOwnerNameForCharacterCollection = v);
+        if (_config.UseOwnerNameForCharacterCollection)
+            using (Im.Indent(Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X))
+            {
+                Checkbox("包含敌对所有者角色"u8,
+                    "包含任何由角色拥有的敌对角色，例如为单人任务生成的敌人。"u8,
+                    _config.UseOwnerForHostiles, v => _config.UseOwnerForHostiles = v);
+            }
     }
 
     /// <summary> Different supported sort modes as a combo. </summary>
     private void DrawFolderSortType()
     {
-        if (SortModeCombo.DrawCombo(ISortMode.Valid.Values, "##sortMode"u8, _config.SortMode, out var newSortMode, false, UiHelpers.InputTextWidth.X))
+        if (SortModeCombo.DrawCombo(ISortMode.Valid.Values, "##sortMode"u8, _config.SortMode, out var newSortMode, false,
+                UiHelpers.InputTextWidth.X))
         {
             _config.SortMode              = newSortMode!;
             _modFileSystemDrawer.SortMode = newSortMode!;
@@ -648,8 +644,8 @@ public sealed class SettingsTab : ITab<TabType>
                 _config.DeleteModModifier = v;
                 _config.Save();
             });
-        KeySelector.DoubleModifier("匿名模式组合键"u8,
-            "点击匿名模式或临时设置模式按钮时需要按住的组合键，防止误操作。"u8,
+        KeySelector.DoubleModifier("误点击组合键"u8,
+            "在点击匿名模式或临时设置模式按钮时，选择是否需要使用组合键才令切换生效。防止误操作。"u8,
             UiHelpers.InputTextWidth.X,
             _config.IncognitoModifier,
             v =>
@@ -710,6 +706,9 @@ public sealed class SettingsTab : ITab<TabType>
         Checkbox("启用目录监听器"u8,
             "启用文件监听器后，Penumbra会自动监听指定目录中新出现的模组文件，并在检测到新模组时弹出导入这些模组的询问弹窗。"u8,
             _config.EnableDirectoryWatch, _fileWatcher.Toggle);
+        Checkbox("启用压缩包预览"u8,
+            "启用文件监听器后，自动预览压缩包（.rar、.zip、.7z）内的模组，并在检测到新模组时弹出导入这些模组的询问弹窗。"u8,
+            _config.EnableContainerPeeking, _fileWatcher.ToggleContainerPeeking);
         Checkbox("启用全自动导入"u8,
             "配合文件监听器，自动跳过询问弹窗并导入检测到的所有新模组。"u8,
             _config.EnableAutomaticModImport, v => _config.EnableAutomaticModImport = v);
@@ -729,11 +728,8 @@ public sealed class SettingsTab : ITab<TabType>
     /// <summary> Draw input for the default import path for a mod. </summary>
     private void DrawDefaultModImportPath()
     {
-        using var id      = Im.Id.Push("##dmi"u8);
-        var       spacing = new Vector2(Im.Style.GlobalScale * 3);
-        using var style   = ImStyleDouble.ItemSpacing.Push(spacing);
-
-        Im.Item.SetNextWidth(UiHelpers.InputTextMinusButton3);
+        using var id = Im.Id.Push("##dmi"u8);
+        Im.Item.SetNextWidth(UiHelpers.InputTextMinusButtonInner);
         if (ImEx.InputOnDeactivation.Text(StringU8.Empty, _config.DefaultModImportPath, out string newDirectory))
         {
             _config.DefaultModImportPath = newDirectory;
@@ -759,22 +755,19 @@ public sealed class SettingsTab : ITab<TabType>
             }, startDir, false);
         }
 
-        style.Pop();
-        LunaStyle.DrawAlignedHelpMarkerLabel("模组默认导入目录"u8,
+        LunaStyle.DrawAlignedHelpMarkerLabel("默认模组导入目录"u8,
             "设置首次使用文件选择器导入模组时打开的目录。"u8);
     }
 
     /// <summary> Draw input for the default export/backup path for mods. </summary>
     private void DrawDefaultModExportPath()
     {
-        using var id      = Im.Id.Push("##dme"u8);
-        var       spacing = new Vector2(Im.Style.GlobalScale * 3);
-        using var style   = ImStyleDouble.ItemSpacing.Push(spacing);
-        Im.Item.SetNextWidth(UiHelpers.InputTextMinusButton3);
+        using var id = Im.Id.Push("##dme"u8);
+        Im.Item.SetNextWidth(UiHelpers.InputTextMinusButtonInner);
         if (ImEx.InputOnDeactivation.Text(StringU8.Empty, _config.ExportDirectory, out string newDirectory))
             _modExportManager.UpdateExportDirectory(newDirectory);
 
-        Im.Line.Same();
+        Im.Line.SameInner();
         if (ImEx.Icon.Button(LunaStyle.FolderIcon, "通过对话框选择一个目录。"u8))
         {
             var startDir = _config.ExportDirectory.Length > 0 && Directory.Exists(_config.ExportDirectory)
@@ -789,7 +782,6 @@ public sealed class SettingsTab : ITab<TabType>
             }, startDir, false);
         }
 
-        style.Pop();
         LunaStyle.DrawAlignedHelpMarkerLabel("默认模组导出目录"u8,
             "设置用于备份模组与恢复备份的路径。\n"u8
           + "留空则使用根目录。"u8);
@@ -798,14 +790,12 @@ public sealed class SettingsTab : ITab<TabType>
     /// <summary> Draw input for the Automatic Mod import path. </summary>
     private void DrawFileWatcherPath()
     {
-        using var id      = Im.Id.Push("fw"u8);
-        var       spacing = new Vector2(Im.Style.GlobalScale * 3);
-        using var style   = ImStyleDouble.ItemSpacing.Push(spacing);
-        Im.Item.SetNextWidth(UiHelpers.InputTextMinusButton3);
+        using var id = Im.Id.Push("fw"u8);
+        Im.Item.SetNextWidth(UiHelpers.InputTextMinusButtonInner);
         if (ImEx.InputOnDeactivation.Text(StringU8.Empty, _config.WatchDirectory, out string newDirectory, maxLength: 256))
             _fileWatcher.UpdateDirectory(newDirectory);
 
-        Im.Line.Same();
+        Im.Line.SameInner();
         if (ImEx.Icon.Button(LunaStyle.FolderIcon, "通过对话框选择一个目录。"u8))
         {
             var startDir = _config.WatchDirectory.Length > 0 && Directory.Exists(_config.WatchDirectory)
@@ -820,7 +810,6 @@ public sealed class SettingsTab : ITab<TabType>
             }, startDir, false);
         }
 
-        style.Pop();
         LunaStyle.DrawAlignedHelpMarkerLabel("自动导入目录"u8,
             "选择文件监听器监控的目录。"u8);
     }
@@ -944,6 +933,7 @@ public sealed class SettingsTab : ITab<TabType>
         DrawCrashHandler();
         DrawMinimumDimensionConfig();
         DrawHdrRenderTargets();
+        DrawAuxiliaryDeviceMode();
         Checkbox("导入时自动清除重复文件"u8,
             "导入时自动清除模组中的重复文件。这将使模组文件的占用变小，但会删除（二进制完全相同的）文件。"u8,
             _config.AutoDeduplicateOnImport, v => _config.AutoDeduplicateOnImport = v);
@@ -1098,6 +1088,25 @@ public sealed class SettingsTab : ITab<TabType>
             "设置材质中漫反射颜色可用的动态范围，以避免产生视觉伪影。\n"u8
           + "更改此设置需要重启游戏。此设置仅在启用[启动时等待插件]时有效。"u8);
 #pragma warning restore CS0162 // Unreachable code detected
+    }
+
+    private void DrawAuxiliaryDeviceMode()
+    {
+        Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
+        using (var combo = Im.Combo.Begin("##auxiliaryDeviceMode"u8, _config.AuxiliaryDeviceMode.ToNameU8()))
+        {
+            if (combo)
+                foreach (var value in AuxiliaryDeviceMode.Values)
+                {
+                    if (Im.Selectable(value.ToNameU8(), _config.AuxiliaryDeviceMode == value))
+                        _config.AuxiliaryDeviceMode = value;
+
+                    Im.Tooltip.OnHover(value.Tooltip());
+                }
+        }
+
+        LunaStyle.DrawAlignedHelpMarkerLabel("Hardware Acceleration Mode for Texture Compression"u8,
+            "How to manage hardware acceleration for texture compression.\nChange this if you run into ReShade issues after compressing textures."u8);
     }
 
     /// <summary> Draw a checkbox for the HTTP API that creates and destroys the web server when toggled. </summary>

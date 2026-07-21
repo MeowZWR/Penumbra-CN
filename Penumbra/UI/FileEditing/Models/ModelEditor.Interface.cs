@@ -12,6 +12,7 @@ namespace Penumbra.UI.FileEditing.Models;
 
 public partial class ModelEditor
 {
+    public const int OffByOneOffset = 0;
     private const int MdlMaterialMaximum = ModelImporter.MaterialLimit;
 
     private const string MdlImportDocumentation =
@@ -437,7 +438,7 @@ public partial class ModelEditor
         if (!table)
             return false;
 
-        table.SetupColumn("name"u8,  TableColumnFlags.WidthFixed,   100 * Im.Style.GlobalScale);
+        table.SetupColumn("name"u8,  TableColumnFlags.WidthFixed,   150 * Im.Style.GlobalScale);
         table.SetupColumn("field"u8, TableColumnFlags.WidthStretch, 1);
 
         var file = Mdl;
@@ -521,7 +522,7 @@ public partial class ModelEditor
         var mesh         = Mdl.Meshes[meshIndex];
         var subMeshIndex = mesh.SubMeshIndex + subMeshOffset;
 
-        table.DrawFrameColumn($"属性 #{subMeshOffset + 1}");
+        table.DrawFrameColumn($"子网格 #{subMeshOffset + 1} 属性 ");
 
         table.NextColumn();
         var attributes = GetSubMeshAttributes(subMeshIndex);
@@ -559,33 +560,32 @@ public partial class ModelEditor
                 table.DrawDataPair("模型裁剪距离"u8,       Mdl.ModelClipOutDistance.ToString(CultureInfo.InvariantCulture));
                 table.DrawDataPair("阴影裁剪距离"u8,      Mdl.ShadowClipOutDistance.ToString(CultureInfo.InvariantCulture));
                 table.DrawDataPair("细节层次数量"u8,                     Mdl.LodCount);
-                table.DrawDataPair("Enable Index Buffer Streaming"u8, Mdl.EnableIndexBufferStreaming);
-                table.DrawDataPair("Enable Edge Geometry"u8,          Mdl.EnableEdgeGeometry);
+                table.DrawDataPair("启用索引缓冲流"u8, Mdl.EnableIndexBufferStreaming);
+                table.DrawDataPair("启用边缘几何"u8,          Mdl.EnableEdgeGeometry);
                 table.DrawDataPair("Flags 1"u8,                       Mdl.Flags1);
                 table.DrawDataPair("Flags 2"u8,                       Mdl.Flags2);
-                table.DrawDataPair("Vertex Declarations"u8,           Mdl.VertexDeclarations.Length);
-                table.DrawDataPair("Bone Bounding Boxes"u8,           Mdl.BoneBoundingBoxes.Length);
-                table.DrawDataPair("Bone Tables"u8,                   Mdl.BoneTables.Length);
-                table.DrawDataPair("Element IDs"u8,                   Mdl.ElementIds.Length);
-                table.DrawDataPair("Extra LoDs"u8,                    Mdl.ExtraLods.Length);
-                table.DrawDataPair("Meshes"u8,                        Mdl.Meshes.Length);
-                table.DrawDataPair("Shape Meshes"u8,                  Mdl.ShapeMeshes.Length);
-                table.DrawDataPair("LoDs"u8,                          Mdl.Lods.Length);
-                table.DrawDataPair("Vertex Declarations"u8,           Mdl.VertexDeclarations.Length);
-                table.DrawDataPair("Stack Size"u8,                    Mdl.StackSize);
+                table.DrawDataPair("顶点声明"u8,           Mdl.VertexDeclarations.Length);
+                table.DrawDataPair("骨骼包围盒"u8,           Mdl.BoneBoundingBoxes.Length);
+                table.DrawDataPair("骨骼表"u8,                   Mdl.BoneTables.Length);
+                table.DrawDataPair("元素 ID"u8,                   Mdl.ElementIds.Length);
+                table.DrawDataPair("额外细节层次"u8,                    Mdl.ExtraLods.Length);
+                table.DrawDataPair("网格"u8,                        Mdl.Meshes.Length);
+                table.DrawDataPair("形状网格"u8,                  Mdl.ShapeMeshes.Length);
+                table.DrawDataPair("细节层次"u8,                          Mdl.Lods.Length);
+                table.DrawDataPair("堆栈大小"u8,                    Mdl.StackSize);
                 foreach (var (lod, triCount) in LodTriCount.Index())
-                    table.DrawDataPair($"LOD #{lod + 1} Triangle Count", triCount);
+                    table.DrawDataPair($"细节层次 #{lod + 1} 三角形数量", triCount);
             }
         }
 
-        using (var materials = Im.Tree.Node("Materials"u8, TreeNodeFlags.DefaultOpen))
+        using (var materials = Im.Tree.Node("材质"u8, TreeNodeFlags.DefaultOpen))
         {
             if (materials)
                 foreach (var material in Mdl.Materials)
                     Im.Tree.Leaf(material);
         }
 
-        using (var attributes = Im.Tree.Node("Attributes"u8, TreeNodeFlags.DefaultOpen))
+        using (var attributes = Im.Tree.Node("属性"u8, TreeNodeFlags.DefaultOpen))
         {
             if (attributes)
                 for (var i = 0; i < Mdl.Attributes.Length; ++i)
@@ -593,7 +593,7 @@ public partial class ModelEditor
                     using var id        = Im.Id.Push(i);
                     ref var   attribute = ref Mdl.Attributes[i];
                     var       name      = attribute;
-                    if (Im.Input.Text("##attribute"u8, ref name, "Attribute Name..."u8) && name.Length > 0 && name != attribute)
+                    if (Im.Input.Text("##attribute"u8, ref name, "属性名称..."u8) && name.Length > 0 && name != attribute)
                     {
                         attribute = name;
                         ret       = true;
@@ -601,7 +601,7 @@ public partial class ModelEditor
                 }
         }
 
-        using (var bones = Im.Tree.Node("Bones"u8, TreeNodeFlags.DefaultOpen))
+        using (var bones = Im.Tree.Node("骨骼"u8, TreeNodeFlags.DefaultOpen))
         {
             if (bones)
                 for (var i = 0; i < Mdl.Bones.Length; ++i)
@@ -609,7 +609,7 @@ public partial class ModelEditor
                     using var id   = Im.Id.Push(i);
                     ref var   bone = ref Mdl.Bones[i];
                     var       name = bone;
-                    if (Im.Input.Text("##bone"u8, ref name, "Bone Name..."u8) && name.Length > 0 && name != bone)
+                    if (Im.Input.Text("##bone"u8, ref name, "骨骼名称..."u8) && name.Length > 0 && name != bone)
                     {
                         bone = name;
                         ret  = true;
@@ -617,7 +617,7 @@ public partial class ModelEditor
                 }
         }
 
-        using (var shapes = Im.Tree.Node("Shapes"u8, TreeNodeFlags.DefaultOpen))
+        using (var shapes = Im.Tree.Node("形状"u8, TreeNodeFlags.DefaultOpen))
         {
             if (shapes)
                 for (var i = 0; i < Mdl.Shapes.Length; ++i)
@@ -625,7 +625,7 @@ public partial class ModelEditor
                     using var id    = Im.Id.Push(i);
                     ref var   shape = ref Mdl.Shapes[i];
                     var       name  = shape.ShapeName;
-                    if (Im.Input.Text("##shape"u8, ref name, "Shape Name..."u8) && name.Length > 0 && name != shape.ShapeName)
+                    if (Im.Input.Text("##shape"u8, ref name, "形状名称..."u8) && name.Length > 0 && name != shape.ShapeName)
                     {
                         shape.ShapeName = name;
                         ret             = true;
@@ -635,7 +635,7 @@ public partial class ModelEditor
 
         if (Mdl.RemainingData.Length > 0)
         {
-            using var t = Im.Tree.Node($"Additional Data (Size: {Mdl.RemainingData.Length})###AdditionalData");
+            using var t = Im.Tree.Node($"额外数据 (大小: {Mdl.RemainingData.Length})###AdditionalData");
             if (t)
                 ImEx.HexViewer(Mdl.RemainingData);
         }

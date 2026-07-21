@@ -4,7 +4,7 @@ using Penumbra.Services;
 
 namespace Penumbra.UI.ManagementTab;
 
-public sealed class CleanupTab(CleanupService cleanup, Configuration config) : ITab<ManagementTabType>
+public sealed class CleanupTab(CleanupService cleanup, FileWatcher fileWatcher, Configuration config) : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
         => "通用清理"u8;
@@ -50,6 +50,13 @@ public sealed class CleanupTab(CleanupService cleanup, Configuration config) : I
                 "删除所有与当前安装的模组不对应的模组设置。"u8,
                 !enabled || cleanup.IsRunning))
             cleanup.CleanupAllUnusedSettings();
+        if (!enabled)
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {config.DeleteModModifier} 键以删除设置。");
+
+        if (ImEx.Button("清理提取的压缩包文件"u8, default,
+                "删除所有由文件监视器从压缩包中提取的临时文件。尚未导入的提取文件将丢失。"u8,
+                !enabled || cleanup.IsRunning))
+            fileWatcher.CleanExtracted();
         if (!enabled)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {config.DeleteModModifier} 键以删除设置。");
     }

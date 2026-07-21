@@ -263,7 +263,7 @@ public sealed class ModPanelChangedItemsTab(
         Im.Table.NextColumn();
         if (obj.Expandable)
         {
-            if (ImEx.Icon.Button(obj.Expanded ? LunaStyle.TreeExpandIcon : LunaStyle.TreeCollapseIcon,
+            if (ImEx.Icon.Button(obj.Expanded ? LunaStyle.TreeCollapseIcon : LunaStyle.TreeExpandIcon,
                     obj.Expanded     ? "隐藏使用相同模型的其他物品。"u8 :
                     obj.Children > 1 ? $"显示 {obj.Children} 个使用相同模型的其他物品。" :
                                        "显示一个使用相同模型的其他物品。"u8,

@@ -1,8 +1,6 @@
 using Dalamud.Interface;
-using Dalamud.Interface.ImGuiNotification;
 using ImSharp;
 using Luna;
-using Penumbra.Files;
 using Penumbra.Meta;
 using Penumbra.Mods;
 using Penumbra.Mods.Groups;
@@ -17,8 +15,9 @@ namespace Penumbra.UI.ModsTab.Groups;
 public sealed class ModGroupEditDrawer(
     ModManager modManager,
     Configuration config,
-    FilenameService filenames,
     DescriptionEditPopup descriptionPopup,
+    LayoutEditPopup layoutPopup,
+    ConditionEditPopup conditionPopup,
     ImcChecker imcChecker) : IUiService
 {
     private static ReadOnlySpan<byte> AcrossGroupsLabel
@@ -52,39 +51,43 @@ public sealed class ModGroupEditDrawer(
     private IModOption? _dragDropOption;
     private bool        _draggingAcross;
 
-    public void Draw(Mod mod)
+    public void Draw(GroupNameCache cache, Mod mod)
     {
         PrepareStyle();
 
         using var id = Im.Id.Push("ge"u8);
         foreach (var (groupIdx, group) in mod.Groups.Index())
-            DrawGroup(group, groupIdx);
+            DrawGroup(cache, group, groupIdx);
 
         while (ActionQueue.TryDequeue(out var action))
             action.Invoke();
     }
 
-    private void DrawGroup(IModGroup group, int idx)
+    private void DrawGroup(GroupNameCache cache, IModGroup group, int idx)
     {
         using var id    = Im.Id.Push(idx);
         using var frame = ImEx.FramedGroup($"组 #{idx + 1}");
-        DrawGroupNameRow(group, idx);
+        DrawGroupNameRow(cache, group, idx);
         group.EditDrawer(this).Draw();
     }
 
-    private void DrawGroupNameRow(IModGroup group, int idx)
+    private void DrawGroupNameRow(GroupNameCache cache, IModGroup group, int idx)
     {
         DrawGroupName(group);
         Im.Line.SameInner();
         DrawGroupMoveButtons(group, idx);
         Im.Line.SameInner();
-        DrawGroupOpenFile(group, idx);
-        Im.Line.SameInner();
         DrawGroupDescription(group);
+        Im.Line.SameInner();
+        DrawGroupLayout(group);
+        Im.Line.SameInner();
+        DrawGroupConditions(group);
         Im.Line.SameInner();
         DrawGroupDelete(group);
         Im.Line.SameInner();
         DrawGroupPriority(group);
+        Im.Line.SameInner();
+        DrawGroupPage(cache, group);
     }
 
     private void DrawGroupName(IModGroup group)
@@ -132,11 +135,40 @@ public sealed class ModGroupEditDrawer(
         Im.Tooltip.OnHover("组优先级。"u8);
     }
 
+    private void DrawGroupPage(GroupNameCache cache, IModGroup group)
+    {
+        Im.Item.SetNextWidth(PriorityWidth);
+        if (ImEx.InputOnDeactivation.Scalar("##GroupPage"u8, group.Page + 1, out var newPage))
+            ModManager.OptionEditor.SetPage(group, newPage - 1);
+        Im.Tooltip.OnHover(
+            "此组应放置的页面。如果此组有父组，此设置将被忽略。\n\n注意，此处显示的数字与 JSON 文件中存储的数字偏移了 1。");
+        Im.Line.SameInner();
+        ImEx.TextFrameAligned(cache.ShowPages ? cache.Pages[group.Page].Name.Utf8 : "(Unused)"u8);
+    }
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawGroupDescription(IModGroup group)
     {
-        if (ImEx.Icon.Button(LunaStyle.EditIcon, "编辑组描述。"u8))
+        if (ImEx.Icon.Button(LunaStyle.EditIcon, "编辑组描述。"u8,
+                textColor: group.Description.Length > 0 ? LunaStyle.FavoriteColor : ColorParameter.Default))
             descriptionPopup.Open(group);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DrawGroupLayout(IModGroup group)
+    {
+        if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "编辑组布局设置。"u8,
+                textColor: group.Layout is not 0 || group.ParentSetting is not null ? LunaStyle.FavoriteColor : ColorParameter.Default))
+            layoutPopup.Open(group);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DrawGroupConditions(IModGroup group)
+    {
+        if (ImEx.Icon.Button(LunaStyle.ConditionIcon, "编辑组条件。"u8,
+                textColor: group.Condition is not null ? LunaStyle.FavoriteColor : ColorParameter.Default))
+            conditionPopup.Open(group);
     }
 
     private void DrawGroupMoveButtons(IModGroup group, int idx)
@@ -161,27 +193,6 @@ public sealed class ModGroupEditDrawer(
         else
             Im.Tooltip.OnHover($"移动此组到组 #{idx + 2} 之下。");
     }
-
-    private void DrawGroupOpenFile(IModGroup group, int idx)
-    {
-        var fileName   = filenames.OptionGroupFile(group.Mod, idx, config.ReplaceNonAsciiOnImport);
-        var fileExists = File.Exists(fileName);
-        if (ImEx.Icon.Button(LunaStyle.OpenExternalIcon, !fileExists))
-            try
-            {
-                Process.Start(new ProcessStartInfo(fileName) { UseShellExecute = true });
-            }
-            catch (Exception e)
-            {
-                Penumbra.Messager.NotificationMessage(e, "无法打开编辑器。", NotificationType.Error);
-            }
-
-        if (fileExists)
-            Im.Tooltip.OnHover($"在您选择的文本编辑器中打开 {group.Name} 的 JSON 文件。");
-        else
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"{group.Name} 的 JSON 文件不存在。");
-    }
-
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DrawOptionPosition(IModGroup group, IModOption option, int optionIdx)
@@ -211,10 +222,37 @@ public sealed class ModGroupEditDrawer(
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void DrawOptionDescription(IModOption option)
+    internal void DrawOptionButtons(IModOption option)
     {
-        if (ImEx.Icon.Button(LunaStyle.EditIcon, "编辑选项描述。"u8))
+        DrawOptionDescription(option);
+        Im.Line.SameInner();
+        DrawOptionLayout(option);
+        Im.Line.SameInner();
+        DrawOptionConditions(option);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DrawOptionDescription(IModOption option)
+    {
+        if (ImEx.Icon.Button(LunaStyle.EditIcon, "编辑选项描述。"u8,
+                textColor: option.Description.Length > 0 ? LunaStyle.FavoriteColor : ColorParameter.Default))
             descriptionPopup.Open(option);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DrawOptionLayout(IModOption option)
+    {
+        if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "编辑选项布局设置。"u8,
+                textColor: option.Layout is not 0 || option.ColorAsInteger is not 0 ? LunaStyle.FavoriteColor : ColorParameter.Default))
+            layoutPopup.Open(option);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DrawOptionConditions(IModOption option)
+    {
+        if (ImEx.Icon.Button(LunaStyle.ConditionIcon, "编辑选项条件。"u8,
+                textColor: option.Condition is not null ? LunaStyle.FavoriteColor : ColorParameter.Default))
+            conditionPopup.Open(option);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -332,11 +370,11 @@ public sealed class ModGroupEditDrawer(
         var totalWidth = 400f * Im.Style.GlobalScale;
         _buttonSize         = new Vector2(Im.Style.FrameHeight);
         PriorityWidth       = 50 * Im.Style.GlobalScale;
-        AvailableWidth      = new Vector2(totalWidth + 3 * _spacing + 2 * _buttonSize.X + PriorityWidth, 0);
-        _groupNameWidth     = totalWidth - 3 * (_buttonSize.X + _spacing);
+        AvailableWidth      = new Vector2(totalWidth + 5 * _spacing + 4 * _buttonSize.X + PriorityWidth, 0);
+        _groupNameWidth     = totalWidth - 5 * (_buttonSize.X + _spacing);
         _spacing            = Im.Style.ItemInnerSpacing.X;
-        OptionIdxSelectable = Im.Font.CalculateSize("选项 #88."u8);
-        _optionNameWidth    = totalWidth - OptionIdxSelectable.X - _buttonSize.X - 2 * _spacing;
+        OptionIdxSelectable = Im.Font.CalculateSize("选项 #88。"u8);
+        _optionNameWidth    = totalWidth - OptionIdxSelectable.X - 4 * _buttonSize.X - 5 * _spacing;
         _deleteEnabled      = config.DeleteModModifier.IsActive();
     }
 }

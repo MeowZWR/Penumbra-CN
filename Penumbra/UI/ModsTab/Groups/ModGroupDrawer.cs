@@ -2,258 +2,281 @@ using ImSharp;
 using Luna;
 using Penumbra.Collections;
 using Penumbra.Collections.Manager;
+using Penumbra.Communication;
 using Penumbra.Mods;
 using Penumbra.Mods.Groups;
 using Penumbra.Mods.Settings;
 using Penumbra.Mods.SubMods;
+using Penumbra.Services;
 
 namespace Penumbra.UI.ModsTab.Groups;
 
-public sealed class ModGroupDrawer(Configuration config, CollectionManager collectionManager, SingleGroupCombo combo)
+public sealed class ModGroupDrawer(
+    Configuration config,
+    CollectionManager collectionManager,
+    SingleGroupCombo combo,
+    CommunicatorService communicator)
     : IUiService
 {
-    private readonly List<(IModGroup, int)> _blockGroupCache = [];
-    private          bool                   _temporary;
-    private          bool                   _locked;
-    private          TemporaryModSettings?  _tempSettings;
-    private          ModSettings?           _settings;
+    private float                 _currentIndent;
+    private float                 _labelExtend;
+    private float                 _comboWidth;
+    private bool                  _temporary;
+    private bool                  _locked;
+    private TemporaryModSettings? _tempSettings;
+    private ModSettingContext     _context;
 
-    public void Draw(Mod mod, ModSettings settings, TemporaryModSettings? tempSettings)
+    public void Draw(ModSettingsCache cache, Mod mod, ModSettings settings, TemporaryModSettings? tempSettings)
     {
-        if (mod.Groups.Count <= 0)
+        if (cache.Count is 0 || cache.ActivePages is 0)
             return;
 
-        _blockGroupCache.Clear();
-        _settings     = settings;
-        _tempSettings = tempSettings;
-        _temporary    = tempSettings is not null;
-        _locked       = (tempSettings?.Lock ?? 0) > 0;
-        var useDummy = true;
-        foreach (var (idx, group) in mod.Groups.Index())
+        _context       = new ModSettingContext(mod, tempSettings ?? settings);
+        _tempSettings  = tempSettings;
+        _temporary     = tempSettings is not null;
+        _locked        = (tempSettings?.Lock ?? 0) > 0;
+        _currentIndent = 0;
+
+        if (cache.ActivePages > 1 && config.DisplayPages)
         {
-            if (!group.IsOption)
-                continue;
+            Im.Dummy(UiHelpers.DefaultSpace);
+            using var tabBar = Im.TabBar.Begin("##pages"u8, TabBarFlags.FittingPolicyScroll);
+            if (!tabBar)
+                return;
 
-            switch (group.Behaviour)
+            foreach (var (id, page) in cache.Pages)
             {
-                case GroupDrawBehaviour.SingleSelection when group.Options.Count <= config.SingleGroupRadioMax:
-                case GroupDrawBehaviour.MultiSelection:
-                    _blockGroupCache.Add((group, idx));
-                    break;
+                if (page.Groups.Count is 0)
+                    continue;
 
-                case GroupDrawBehaviour.SingleSelection:
-                    if (useDummy)
-                    {
-                        Im.Dummy(UiHelpers.DefaultSpace);
-                        useDummy = false;
-                    }
+                using var _       = Im.Id.Push(id);
+                using var tabItem = tabBar.Item(page.Name, TabItemFlags.NoPushId);
+                if (!tabItem)
+                    continue;
 
-                    // 添加边界检查，防止数组越界
-                    Setting setting;
-                    if (settings.IsEmpty)
-                    {
-                        setting = group.DefaultSettings;
-                    }
-                    else if (idx >= 0 && idx < settings.Settings.Count)
-                    {
-                        setting = settings.Settings[idx];
-                    }
-                    else
-                    {
-                        // 如果索引超出范围，使用默认设置并记录错误
-                        Penumbra.Log.Warning($"模组 {mod.Name} 的设置索引 {idx} 超出范围 (0-{settings.Settings.Count - 1})，使用默认设置");
-                        setting = group.DefaultSettings;
-                    }
+                using var child = Im.Child.Begin("##child"u8, false, WindowFlags.NoSavedSettings);
+                if (!child)
+                    continue;
 
-                    DrawSingleGroupCombo(group, idx, setting);
-                    break;
-            }
-        }
-
-        useDummy = true;
-        foreach (var (group, idx) in _blockGroupCache)
-        {
-            if (useDummy)
-            {
+                _labelExtend = page.WidestLabel;
+                _comboWidth  = page.WidestCombo;
                 Im.Dummy(UiHelpers.DefaultSpace);
-                useDummy = false;
-            }
+                foreach (var group in page.Groups)
+                    DrawGroup(cache, group, false);
 
-            // 添加边界检查，防止数组越界
-            Setting option;
-            if (settings.IsEmpty)
-            {
-                option = group.DefaultSettings;
+                UiHelpers.DefaultLineSpace();
+                communicator.PostSettingsPanelDraw.Invoke(new PostSettingsPanelDraw.Arguments(mod));
             }
-            else if (idx >= 0 && idx < settings.Settings.Count)
-            {
-                option = settings.Settings[idx];
-            }
-            else
-            {
-                // 如果索引超出范围，使用默认设置并记录错误
-                Penumbra.Log.Warning($"模组 {mod.Name} 的设置索引 {idx} 超出范围 (0-{settings.Settings.Count - 1})，使用默认设置");
-                option = group.DefaultSettings;
-            }
-            if (group.Behaviour is GroupDrawBehaviour.MultiSelection)
-                DrawMultiGroup(group, idx, option);
-            else
-                DrawSingleGroupRadio(group, idx, option);
-        }
-    }
-
-    /// <summary>
-    /// Draw a single group selector as a combo box.
-    /// If a description is provided, add a help marker besides it.
-    /// </summary>
-    private void DrawSingleGroupCombo(IModGroup group, int groupIdx, Setting setting)
-    {
-        using var id             = Im.Id.Push(groupIdx);
-        using var disabled       = Im.Disabled(_locked);
-        combo.Draw(this, (SingleModGroup)group, groupIdx, setting);
-        if (group.Description.Length > 0)
-        {
-            LunaStyle.DrawHelpMarkerLabel(group.Name, group.Description);
         }
         else
         {
-            Im.Line.SameInner();
-            Im.Text(group.Name);
+            Im.Dummy(UiHelpers.DefaultSpace);
+            foreach (var (id, page) in cache.Pages)
+            {
+                if (page.Groups.Count is 0)
+                    continue;
+
+                using var _ = Im.Id.Push(id);
+                if (cache.Pages.Count > 1 && !Im.Tree.Header(page.Name, TreeNodeFlags.DefaultOpen))
+                    continue;
+
+                _labelExtend = page.WidestLabel;
+                _comboWidth  = page.WidestCombo;
+                foreach (var group in page.Groups)
+                    DrawGroup(cache, group, false);
+            }
+
+            UiHelpers.DefaultLineSpace();
+            communicator.PostSettingsPanelDraw.Invoke(new PostSettingsPanelDraw.Arguments(mod));
         }
     }
 
-    /// <summary>
-    /// Draw a single group selector as a set of radio buttons.
-    /// If a description is provided, add a help marker besides it.
-    /// </summary>
-    private void DrawSingleGroupRadio(IModGroup group, int groupIdx, Setting setting)
+    private void DrawGroup(ModSettingsCache cache, ModSettingsCache.ModGroupCache group, bool hasParent)
     {
-        using var id             = Im.Id.Push(groupIdx);
-        var       options        = group.Options;
-        var       selectedOption = setting.AsIndex;
-        using var g              = ImEx.FramedGroup(group.Name, LunaStyle.HelpMarker, group.Description);
-        DrawCollapseHandling(options, g.MinimumWidth, DrawOptions);
+        using var indent  = IndentGroup(cache, group.Indented);
+        var       setting = _context.Settings.IsEmpty ? group.Group.DefaultSettings : _context.Settings.Settings[group.Group.Index];
 
-        return;
+        if (DoDrawGroup(cache, group, setting, hasParent))
+            foreach (var child in group.Children)
+                DrawGroup(cache, child, true);
 
-        void DrawOptions()
+        if (indent is not null)
+            _currentIndent -= indent.CurrentIndent;
+    }
+
+    private bool DoDrawGroup(ModSettingsCache cache, ModSettingsCache.ModGroupCache group, Setting setting, bool hasParent)
+    {
+        using var id = Im.Id.Push(group.Group.Index);
+        if (group.IsCombo)
+            return DrawSingleGroupComboNew(cache, group, setting, hasParent);
+
+        if (group.IsSameLineOption)
+            return DrawToggleGroup(cache, group, setting, hasParent);
+
+        if (group.Behaviour is GroupDrawBehaviour.MultiSelection)
+            return DrawMultiGroupNew(cache, group, setting, hasParent);
+
+        return DrawSingleGroupRadioNew(cache, group, setting, hasParent);
+    }
+
+    private HeaderLine HeaderLineBase(ModSettingsCache cache, ModSettingsCache.ModGroupCache group)
+        => new()
         {
-            using var disabled = Im.Disabled(_locked);
-            for (var idx = 0; idx < group.Options.Count; ++idx)
+            LeftDistance              = cache.LeftSpacing,
+            RightDistance             = -1f,
+            ComboDistance             = cache.CenterSpacing,
+            FixedComboWidth           = _comboWidth,
+            FixedButtonWidth          = _labelExtend - _currentIndent,
+            LineColorExpanded         = cache.LineColorExpanded,
+            LineColorCollapsed        = cache.LineColorCollapsed,
+            TextColorExpanded         = cache.TextColorExpanded,
+            TextColorCollapsed        = cache.TextColorCollapsed,
+            ButtonBackgroundExpanded  = cache.FrameColorExpanded,
+            ButtonBackgroundCollapsed = cache.FrameColorCollapsed,
+            DefaultClosed             = group.Group.Layout.HasFlag(ModSettingsLayout.DefaultClosed),
+            ComboDisabled             = group.Disabled,
+            TooltipIcon               = LunaStyle.HelpMarker,
+            HideRightLine             = config.HideRightOptionGroupLine,
+        };
+
+    private bool DrawSingleGroupComboNew(ModSettingsCache cache, ModSettingsCache.ModGroupCache group, Setting setting, bool hasParent)
+    {
+        var line = HeaderLineBase(cache, group);
+        line.Collapsible = group.Children.Count > 0;
+        line.NoLabel     = group.HideHeader && hasParent;
+        return line.Combo(w => combo.Draw(this, group, setting, w), group.ComboWidth, group.Name, group.Description);
+    }
+
+    private bool DrawToggleGroup(ModSettingsCache cache, ModSettingsCache.ModGroupCache group, Setting setting, bool hasParent)
+    {
+        var line = HeaderLineBase(cache, group);
+        line.Collapsible = group.Children.Count > 0;
+        line.NoLabel     = group.HideHeader && hasParent;
+        if (group.IsCheckbox)
+            line.FixedComboWidth = group.ComboWidth;
+        return line.Combo(DrawCheckbox, group.ComboWidth, group.Name, group.Description);
+
+        void DrawCheckbox(float width)
+        {
+            using var i       = Im.Id.Push(0);
+            var       option  = group.Options[0];
+            var       enabled = setting.HasFlag(option.Data.Index);
+            if (!group.IsCheckbox)
             {
-                using var i      = Im.Id.Push(idx);
-                var       option = options[idx];
-                if (Im.RadioButton(option.Name, selectedOption == idx))
-                    SetModSetting(group, groupIdx, Setting.Single(idx));
+                ImEx.TextFramed(StringU8.Empty, new Vector2(width, 0), Rgba32.Transparent);
+                Im.Line.NoSpacing();
+                Im.Cursor.X -= width;
+            }
 
-                if (option.Description.Length is 0)
-                    continue;
+            using (Im.Disabled(option.Disabled))
+            {
+                using var c = ImGuiColor.Text.Push(option.Color);
+                if (Im.Checkbox(option.HideLabel ? "##check"u8 : option.Name, ref enabled))
+                    SetModSetting(group.Group, group.Group.Index, setting.SetBit(option.Data.Index, enabled));
+            }
 
+            if (option.Description.Length <= 0)
+                return;
+
+            if (option.HideLabel)
+            {
+                Im.Tooltip.OnHover(option.Description);
+            }
+            else
+            {
                 Im.Line.SameInner();
-                LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: Im.Item.Hovered());
+                LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: Im.Item.Hovered(HoveredFlags.AllowWhenDisabled));
             }
         }
     }
 
-    /// <summary>
-    /// Draw a multi group selector as a bordered set of checkboxes.
-    /// If a description is provided, add a help marker in the title.
-    /// </summary>
-    private void DrawMultiGroup(IModGroup group, int groupIdx, Setting setting)
+    private bool DrawSingleGroupRadioNew(ModSettingsCache cache, ModSettingsCache.ModGroupCache group, Setting setting, bool hasParent)
     {
-        using var id      = Im.Id.Push(groupIdx);
-        var       options = group.Options;
-        using (var g = ImEx.FramedGroup(group.Name, LunaStyle.HelpMarker, group.Description))
-        {
-            DrawCollapseHandling(options, g.MinimumWidth, DrawOptions);
-        }
+        var line = HeaderLineBase(cache, group);
+        line.Collapsible = true;
+        var options      = group.Options;
+        var drawChildren = hasParent && group.HideHeader || line.Basic(group.Name, group.Description);
+        if (drawChildren)
+            DrawOptions();
 
-        var label = new StringU8($"##multi{groupIdx}");
-        if (Im.Item.RightClicked())
-            Im.Popup.Open(label);
-
-        DrawMultiPopup(group, groupIdx, label);
-        return;
+        return drawChildren;
 
         void DrawOptions()
         {
-            using var disabled = Im.Disabled(_locked);
+            using var indent   = Im.Indent(cache.Indentation);
+            using var disabled = Im.Disabled(_locked || group.Disabled);
+            using var color    = Im.Color.Empty();
             for (var idx = 0; idx < options.Count; ++idx)
             {
-                using var i       = Im.Id.Push(idx);
-                var       option  = options[idx];
-                var       enabled = setting.HasFlag(idx);
+                using var i      = Im.Id.Push(idx);
+                var       option = options[idx];
 
-                if (Im.Checkbox(option.Name, ref enabled))
-                    SetModSetting(group, groupIdx, setting.SetBit(idx, enabled));
+                disabled.Push(option.Disabled);
+                color.Push(ImGuiColor.Text, option.Color);
+                Im.Cursor.X += cache.LeftSpacing;
+                if (Im.RadioButton(option.Name, idx == setting.AsIndex))
+                    SetModSetting(group.Group, group.Group.Index, Setting.Single(idx));
+                color.Pop();
+                disabled.Pop();
 
                 if (option.Description.Length > 0)
                 {
                     Im.Line.SameInner();
-                    LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: Im.Item.Hovered());
+                    LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: Im.Item.Hovered(HoveredFlags.AllowWhenDisabled));
                 }
+
+                if (option.Separator)
+                    Im.Separator();
+
+                using var _ = Im.Enabled();
+                foreach (var childGroup in option.Children)
+                    DrawGroup(cache, childGroup, true);
             }
         }
     }
 
-    private void DrawMultiPopup(IModGroup group, int groupIdx, StringU8 label)
+    private bool DrawMultiGroupNew(ModSettingsCache cache, ModSettingsCache.ModGroupCache group, Setting setting, bool hasParent)
     {
-        using var style = ImStyleSingle.PopupBorderThickness.Push(Im.Style.GlobalScale);
-        using var popup = Im.Popup.Begin(label);
-        if (!popup)
-            return;
+        var line = HeaderLineBase(cache, group);
+        line.Collapsible = true;
+        var options      = group.Options;
+        var drawChildren = hasParent && group.HideHeader || line.Basic(group.Name, group.Description);
+        if (drawChildren)
+            DrawOptions();
 
-        Im.Text(group.Name);
-        using var disabled = Im.Disabled(_locked);
-        Im.Separator();
-        if (Im.Selectable("启用全部"u8))
-            SetModSetting(group, groupIdx, Setting.AllBits(group.Options.Count));
+        return drawChildren;
 
-        if (Im.Selectable("禁用全部"u8))
-            SetModSetting(group, groupIdx, Setting.Zero);
-    }
-
-    private void DrawCollapseHandling(IReadOnlyList<IModOption> options, float minWidth, Action draw)
-    {
-        if (options.Count <= config.OptionGroupCollapsibleMin)
+        void DrawOptions()
         {
-            draw();
-        }
-        else
-        {
-            var collapseId     = Im.Id.Get("Collapse"u8);
-            var shown          = Im.State.Storage.GetBool(collapseId, true);
-            var buttonTextShow = new StringU8($"显示 {options.Count} 个选项");
-            var buttonTextHide = new StringU8($"隐藏 {options.Count} 个选项");
-            var buttonWidth = Math.Max(Im.Font.CalculateSize(buttonTextShow).X, Im.Font.CalculateSize(buttonTextHide).X)
-              + 2 * Im.Style.FramePadding.X;
-            minWidth = Math.Max(buttonWidth, minWidth);
-            if (shown)
+            using var indent   = Im.Indent(cache.Indentation);
+            using var disabled = Im.Disabled(_locked || group.Disabled);
+            using var color    = Im.Color.Empty();
+            for (var idx = 0; idx < options.Count; ++idx)
             {
-                var pos = Im.Cursor.Position;
-                Im.FrameDummy();
-                using (Im.Group())
+                using var i       = Im.Id.Push(idx);
+                var       option  = options[idx];
+                var       enabled = setting.HasFlag(option.Data.Index);
+
+                disabled.Push(option.Disabled);
+                color.Push(ImGuiColor.Text, option.Color);
+                Im.Cursor.X += cache.LeftSpacing;
+                if (Im.Checkbox(option.Name, ref enabled))
+                    SetModSetting(group.Group, group.Group.Index, setting.SetBit(option.Data.Index, enabled));
+                color.Pop();
+                disabled.Pop();
+
+                if (option.Description.Length > 0)
                 {
-                    draw();
+                    Im.Line.SameInner();
+                    LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: Im.Item.Hovered(HoveredFlags.AllowWhenDisabled));
                 }
 
-                var width  = Math.Max(Im.Item.Size.X, minWidth);
-                var endPos = Im.Cursor.Position;
-                Im.Cursor.Position = pos;
-                if (Im.Button(buttonTextHide, new Vector2(width, 0)))
-                    Im.State.Storage.SetBool(collapseId, !shown);
+                if (option.Separator)
+                    Im.Separator();
 
-                Im.Cursor.Position = endPos;
-            }
-            else
-            {
-                var optionWidth = options.Max(o => Im.Font.CalculateSize(o.Name).X)
-                  + Im.Style.ItemInnerSpacing.X
-                  + Im.Style.FrameHeight
-                  + Im.Style.FramePadding.X;
-                var width = Math.Max(optionWidth, minWidth);
-                if (Im.Button(buttonTextShow, new Vector2(width, 0)))
-                    Im.State.Storage.SetBool(collapseId, !shown);
+                using var _ = Im.Enabled();
+                foreach (var childGroup in option.Children)
+                    DrawGroup(cache, childGroup, true);
             }
         }
     }
@@ -266,7 +289,7 @@ public sealed class ModGroupDrawer(Configuration config, CollectionManager colle
     {
         if (_temporary || config.DefaultTemporaryMode)
         {
-            _tempSettings                     ??= new TemporaryModSettings(group.Mod, _settings);
+            _tempSettings                     ??= new TemporaryModSettings(group.Mod, _context.Settings);
             _tempSettings!.ForceInherit       =   false;
             _tempSettings!.Settings[groupIdx] =   setting;
             collectionManager.Editor.SetTemporarySettings(Current, group.Mod, _tempSettings);
@@ -275,5 +298,14 @@ public sealed class ModGroupDrawer(Configuration config, CollectionManager colle
         {
             collectionManager.Editor.SetModSetting(Current, group.Mod, groupIdx, setting);
         }
+    }
+
+    private Im.IndentDisposable? IndentGroup(ModSettingsCache cache, bool indent)
+    {
+        if (!indent)
+            return null;
+
+        _currentIndent += cache.Indentation;
+        return Im.Indent(cache.Indentation);
     }
 }

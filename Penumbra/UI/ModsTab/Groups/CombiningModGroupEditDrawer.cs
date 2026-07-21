@@ -21,7 +21,7 @@ public readonly struct CombiningModGroupEditDrawer(ModGroupEditDrawer editor, Co
             editor.DrawOptionName(option);
 
             Im.Line.SameInner();
-            editor.DrawOptionDescription(option);
+            editor.DrawOptionButtons(option);
 
             Im.Line.SameInner();
             editor.DrawOptionDelete(option);
@@ -41,7 +41,7 @@ public readonly struct CombiningModGroupEditDrawer(ModGroupEditDrawer editor, Co
 
         var validName = name.Length > 0;
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, validName
-                ? "向此组添加一个新选项。"u8
+                ? "添加一个新的选项到此组。"u8
                 : "请输入新选项的名称。"u8, !validName))
         {
             editor.ModManager.OptionEditor.CombiningEditor.AddOption(group, name);
@@ -52,7 +52,7 @@ public readonly struct CombiningModGroupEditDrawer(ModGroupEditDrawer editor, Co
     private void DrawContainerNames()
     {
         if (ImEx.Button("编辑容器名称"u8, new Vector2(400 * Im.Style.GlobalScale, 0),
-                "为组合组的数据容器添加可选名称。\n这些名称仅用于在编辑模组时方便识别，一般不会显示给用户。"u8))
+                "添加可选的名称到组合组的独立数据容器。\n这些只是为了更容易地识别，一般不会显示给用户。"u8))
             Im.Popup.Open("names"u8);
 
         var sizeX = group.OptionData.Count * (Im.Style.ItemInnerSpacing.X + Im.Style.FrameHeight) + 300 * Im.Style.GlobalScale;

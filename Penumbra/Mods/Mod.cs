@@ -1,5 +1,6 @@
 using Luna;
 using Luna.Generators;
+using Penumbra.Files;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Structs;
 using Penumbra.Meta.Manipulations;
@@ -19,6 +20,7 @@ public enum FeatureFlags : ulong
     Atch    = 1ul << 0,
     Shp     = 1ul << 1,
     Atr     = 1ul << 2,
+    Layout  = 1ul << 3,
     Invalid = 1ul << 62,
 }
 
@@ -56,15 +58,18 @@ public sealed class Mod : IMod, IFileSystemValue<Mod>
         => Name;
 
     // Meta Data
-    public string                Name                  { get; internal set; } = "New Mod";
-    public string                Author                { get; internal set; } = string.Empty;
-    public string                Description           { get; internal set; } = string.Empty;
-    public string                Version               { get; internal set; } = string.Empty;
-    public string                Website               { get; internal set; } = string.Empty;
-    public string                Image                 { get; internal set; } = string.Empty;
-    public IReadOnlyList<string> ModTags               { get; internal set; } = [];
-    public HashSet<CustomItemId> DefaultPreferredItems { get; internal set; } = [];
-    public FeatureFlags          RequiredFeatures      { get; internal set; } = 0;
+    public uint                    LoadedVersion         { get; internal set; } = ModMeta.CurrentFileVersion;
+    public Guid                    StableIdentifier      { get; internal set; } = Guid.NewGuid();
+    public string                  Name                  { get; internal set; } = "New Mod";
+    public string                  Author                { get; internal set; } = string.Empty;
+    public string                  Description           { get; internal set; } = string.Empty;
+    public string                  Version               { get; internal set; } = string.Empty;
+    public string                  Website               { get; internal set; } = string.Empty;
+    public string                  Image                 { get; internal set; } = string.Empty;
+    public IReadOnlyList<string>   ModTags               { get; internal set; } = [];
+    public HashSet<CustomItemId>   DefaultPreferredItems { get; internal set; } = [];
+    public FeatureFlags            RequiredFeatures      { get; internal set; } = 0;
+    public Dictionary<int, string> PageNames             { get; internal set; } = [];
 
 
     // Local Data
@@ -78,8 +83,25 @@ public sealed class Mod : IMod, IFileSystemValue<Mod>
     public bool                  Favorite              { get; internal set; }
 
     // Options
-    public readonly DefaultSubMod   Default;
-    public readonly List<IModGroup> Groups = [];
+    public readonly Dictionary<Guid, IModObject> SubObjects = [];
+    public readonly DefaultSubMod                Default;
+    public readonly IndexList<IModGroup>         Groups = [];
+
+    /// <summary> Add a group and all its options to this mod and its <see cref="SubObjects"/> dictionary. </summary>
+    /// <remarks> Throws if the GUID for any of the objects already exists in the mod. </remarks>
+    public void AddGroup(IModGroup? group, string filePath)
+    {
+        if (group is null)
+            return;
+
+        Groups.Add(group);
+        foreach (var obj in group.Options.Prepend<IModObject>(group))
+        {
+            if (!SubObjects.TryAdd(obj.Id, obj))
+                throw new InvalidMetaException(this, filePath,
+                    $"Multiple groups or options with the GUID {obj.Id} exist inside this mod.");
+        }
+    }
 
     /// <summary> Compute the required feature flags for this mod. </summary>
     public FeatureFlags ComputeRequiredFeatures()
@@ -95,6 +117,15 @@ public sealed class Mod : IMod, IFileSystemValue<Mod>
                 flags |= FeatureFlags.Shp;
         }
 
+        foreach (var group in Groups)
+        {
+            if (group.Layout is not 0 || group.ParentSetting is not null || group.Condition is not null)
+                flags |= FeatureFlags.Layout;
+            foreach(var option in group.Options)
+                if (option.ColorAsInteger is not 0 || option.Layout is not 0 || option.Condition is not null)
+                    flags |= FeatureFlags.Layout;
+        }
+
         return flags;
     }
 
@@ -108,7 +139,7 @@ public sealed class Mod : IMod, IFileSystemValue<Mod>
         foreach (var (groupIndex, group) in Groups.Index().Reverse().OrderByDescending(g => g.Item.Priority))
         {
             var config = settings.Settings[groupIndex];
-            group.AddData(config, dictRedirections, setManips);
+            group.AddData(settings, config, dictRedirections, setManips);
         }
 
         Default.AddTo(dictRedirections, setManips);

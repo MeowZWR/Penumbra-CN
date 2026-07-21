@@ -32,9 +32,14 @@ public class AddGroupDrawer : Luna.IUiService
 
     public void Draw(Mod mod, float width)
     {
-        var buttonWidth = new Vector2((width - Im.Style.ItemInnerSpacing.X) / 2, 0);
-        DrawBasicGroups(mod, width, buttonWidth);
-        DrawImcData(mod, buttonWidth);
+        using var tree        = Im.Tree.Node("添加组"u8, TreeNodeFlags.DefaultOpen);
+        if (tree)
+        {
+            var buttonWidth = new Vector2((width - Im.Style.ItemInnerSpacing.X) / 2, 0);
+            DrawBasicGroups(mod, width, buttonWidth);
+            DrawImcData(mod, buttonWidth);
+            UiHelpers.DefaultLineSpace();
+        }
     }
 
     private void DrawBasicGroups(Mod mod, float width, Vector2 buttonWidth)
@@ -52,8 +57,8 @@ public class AddGroupDrawer : Luna.IUiService
     private void DrawSingleGroupButton(Mod mod, Vector2 width)
     {
         if (!ImEx.Button("添加单选项组"u8, width, _groupNameValid
-                ? "向此模组添加一个新的单选项组。"u8
-                : "无法以此名称添加组。"u8, !_groupNameValid))
+                ? "添加一个新的单选项组到此模组。"u8
+                : "无法以此名称添加新的组。"u8, !_groupNameValid))
             return;
 
         _modManager.OptionEditor.AddModGroup(mod, GroupType.Single, _groupName);
@@ -64,8 +69,8 @@ public class AddGroupDrawer : Luna.IUiService
     private void DrawMultiGroupButton(Mod mod, Vector2 width)
     {
         if (!ImEx.Button("添加多选项组"u8, width, _groupNameValid
-                ? "向此模组添加一个新的多选项组。"u8
-                : "无法以此名称添加组。"u8, !_groupNameValid))
+                ? "添加一个新的多选项组到此模组。"u8
+                : "无法以此名称添加新的组。"u8, !_groupNameValid))
             return;
 
         _modManager.OptionEditor.AddModGroup(mod, GroupType.Multi, _groupName);
@@ -76,8 +81,8 @@ public class AddGroupDrawer : Luna.IUiService
     private void DrawCombiningGroupButton(Mod mod, Vector2 width)
     {
         if (!ImEx.Button("添加组合型选项组"u8, width, _groupNameValid
-                ? "为此模组添加一个新的组合选项组。"u8
-                : "无法添加以该名称命名的新组。"u8, !_groupNameValid))
+                ? "添加一个新的组合型选项组到此模组。"u8
+                : "无法以此名称添加新的组。"u8, !_groupNameValid))
             return;
 
         _modManager.OptionEditor.AddModGroup(mod, GroupType.Combining, _groupName);
@@ -126,10 +131,10 @@ public class AddGroupDrawer : Luna.IUiService
     private void DrawImcButton(Mod mod, Vector2 width)
     {
         if (ImEx.Button("添加IMC（变体）组"u8, width, !_groupNameValid
-                ? "无法以此名称添加组。"u8
+                ? "无法以此名称添加新的组。"u8
                 : _entryInvalid
-                    ? "相关的 IMC 条目无效。"u8
-                    : "向此模组添加一个新的多选组选项。"u8, !_groupNameValid || _entryInvalid))
+                    ? "关联的IMC条目无效。"u8
+                    : "添加一个新的IMC（变体）组到此模组。"u8, !_groupNameValid || _entryInvalid))
         {
             _modManager.OptionEditor.ImcEditor.AddModGroup(mod, _groupName, _imcIdentifier, _defaultEntry);
             _groupName      = string.Empty;
@@ -140,8 +145,8 @@ public class AddGroupDrawer : Luna.IUiService
         {
             Im.Line.SameInner();
             var text = _imcFileExists
-                ? "IMC 条目不存在"u8
-                : "IMC 文件不存在"u8;
+                ? "IMC条目不存在"u8
+                : "IMC文件不存在"u8;
             ImEx.TextFramed(text, width, Colors.PressEnterWarningBg);
         }
     }

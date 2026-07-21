@@ -4,6 +4,7 @@ using ImSharp;
 using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.Communication;
+using Penumbra.Files;
 using Penumbra.Mods;
 
 namespace Penumbra.UI.ManagementTab;
@@ -11,12 +12,7 @@ namespace Penumbra.UI.ManagementTab;
 public sealed class FailedModNotification(Services.MessageService service, UiNavigator navigator)
     : AmassingNotification<(string Mod, Exception Error)>(service), IService
 {
-    public void AddMissingMeta(Mod mod)
-        => AddObject((mod.ModPath.Name, new FileNotFoundException("未找到元数据。\n\n"
-          + "所述文件夹并非已安装的模组，请将 Penumbra 根目录留给 Penumbra 使用，勿在其中放置您自己的文件夹。\n\n"
-          + "删除此文件夹或将其移出根目录即可消除此警告。", Path.Combine(mod.ModPath.FullName, "meta.json"))));
-
-    public void AddInvalidMeta(Mod mod, Exception ex)
+    public void Add(Mod mod, Exception ex)
         => AddObject((mod.ModPath.Name, ex));
 
     public override NotificationType NotificationType
@@ -35,7 +31,7 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
         if (Im.Button("打开消息"u8, width))
             navigator.OpenTo(TabType.Messages);
         Im.Line.SameInner();
-        if (ImEx.Button("打开模组管理"u8, width, true))
+        if (ImEx.Button("打开模组管理"u8, width))
             navigator.OpenTo(ManagementTabType.BrokenMods);
     }
 
@@ -46,10 +42,24 @@ public sealed class FailedModNotification(Services.MessageService service, UiNav
     {
         public override string LogMessage { get; } = $"模组「{mod}」加载失败：\n{error}";
 
-        public override StringU8 StoredMessage { get; } = new(error is FileNotFoundException
-            ? $"[{mod}] 加载失败：未找到元数据。"
-            : $"[{mod}] 加载失败：读取元数据时出错。");
+        public override StringU8 StoredMessage { get; } = FromException(mod, error);
 
-        public override StringU8 StoredTooltip { get; } = new($"{error}");
+        private static StringU8 FromException(string mod, Exception error)
+            => error switch
+            {
+                MetaMissingException => new StringU8($"[{mod}] 加载失败：未找到元数据。"),
+                InvalidMetaException => new StringU8($"[{mod}] 加载失败：读取元数据时出错。"),
+                MissingFeatureException => new StringU8($"[{mod}] 加载失败：不支持所需的功能。"),
+                AggregateException { InnerExceptions.Count: 1 } aggregate => FromException(mod, aggregate.InnerExceptions.First()),
+                AggregateException { InnerExceptions.Count: > 1 } aggregate when aggregate.InnerExceptions.First() is InvalidMetaException
+                    or MissingFeatureException => FromException(mod, aggregate.InnerExceptions.First()),
+                _ => new StringU8($"[{mod}] 加载失败：{error.Message}"),
+            };
+
+        public override StringU8 StoredTooltip { get; } = new(
+            error is MetaMissingException
+                ? "所述文件夹并非已安装的模组，请将 Penumbra 根目录留给 Penumbra 使用，勿在其中放置您自己的文件夹。\n\n"
+              + "删除此文件夹或将其移出根目录即可消除此警告。"
+                : $"{error}");
     }
 }

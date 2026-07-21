@@ -21,15 +21,24 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
     public GroupDrawBehaviour Behaviour
         => GroupDrawBehaviour.SingleSelection;
 
-    public Mod         Mod             { get; }      = mod;
-    public string      Name            { get; set; } = "Option";
-    public string      Description     { get; set; } = string.Empty;
-    public string      Image           { get; set; } = string.Empty;
-    public ModPriority Priority        { get; set; }
-    public int         Page            { get; set; }
-    public Setting     DefaultSettings { get; set; }
+    public int Index { get; private set; } = -1;
 
-    public readonly List<SingleSubMod> OptionData = [];
+    public void SetIndex(int index)
+        => Index = index;
+
+    public Mod                            Mod             { get; }      = mod;
+    public Guid                           Id              { get; set; } = Guid.NewGuid();
+    public string                         Name            { get; set; } = "Option";
+    public string                         Description     { get; set; } = string.Empty;
+    public string                         Image           { get; set; } = string.Empty;
+    public ModPriority                    Priority        { get; set; }
+    public int                            Page            { get; set; }
+    public Setting                        DefaultSettings { get; set; }
+    public ModSettingsLayout              Layout          { get; set; }
+    public IModObject?                    ParentSetting   { get; set; }
+    public ICondition<ModSettingContext>? Condition       { get; set; }
+
+    public readonly IndexList<SingleSubMod> OptionData = [];
 
     public FullPath? FindBestMatch(Utf8GamePath gamePath)
     {
@@ -60,24 +69,6 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
     public bool IsOption
         => OptionData.Count > 1;
 
-    public static SingleModGroup? Load(Mod mod, JObject json)
-    {
-        var options = json["Options"];
-        var ret     = new SingleModGroup(mod);
-        if (!ModSaveGroup.ReadJsonBase(json, ret))
-            return null;
-
-        if (options != null)
-            foreach (var child in options.Children())
-            {
-                var subMod = new SingleSubMod(ret, child);
-                ret.OptionData.Add(subMod);
-            }
-
-        ret.DefaultSettings = ret.FixSetting(ret.DefaultSettings);
-        return ret;
-    }
-
     public MultiModGroup ConvertToMulti()
     {
         var multi = new MultiModGroup(Mod)
@@ -93,15 +84,20 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
         return multi;
     }
 
-    public int GetIndex()
-        => ModGroup.GetIndex(this);
-
     public IModGroupEditDrawer EditDrawer(ModGroupEditDrawer editDrawer)
         => new SingleModGroupEditDrawer(editDrawer, this);
 
-    public void AddData(Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, MetaDictionary manipulations)
+    public void AddData(ModSettings settings, Setting setting, Dictionary<Utf8GamePath, FullPath> redirections, MetaDictionary manipulations)
     {
-        if (OptionData.Count == 0)
+        if (OptionData.Count is 0)
+            return;
+
+        var context = new ModSettingContext(Mod, settings);
+        if (Condition is not null && !Condition.Evaluate(context))
+            return;
+
+        var option = OptionData[setting.AsIndex];
+        if (option.Condition is not null && !option.Condition.Evaluate(context))
             return;
 
         OptionData[setting.AsIndex].AddDataTo(redirections, manipulations);
@@ -114,33 +110,10 @@ public sealed class SingleModGroup(Mod mod) : IModGroup, ITexToolsGroup
     }
 
     public Setting FixSetting(Setting setting)
-        => OptionData.Count == 0 ? Setting.Zero : new Setting(Math.Min(setting.Value, (ulong)(OptionData.Count - 1)));
+        => OptionData.Count is 0 ? Setting.Zero : new Setting(Math.Min(setting.Value, (ulong)(OptionData.Count - 1)));
 
     public (int Redirections, int Swaps, int Manips) GetCounts()
         => ModGroup.GetCountsBase(this);
-
-    public void WriteJson(JsonTextWriter jWriter, JsonSerializer serializer, DirectoryInfo? basePath = null)
-    {
-        ModSaveGroup.WriteJsonBase(jWriter, this);
-        jWriter.WritePropertyName("Options");
-        jWriter.WriteStartArray();
-        foreach (var option in OptionData)
-        {
-            jWriter.WriteStartObject();
-            SubMod.WriteModOption(jWriter, option);
-            SubMod.WriteModContainer(jWriter, serializer, option, basePath ?? Mod.ModPath);
-            jWriter.WriteEndObject();
-        }
-
-        jWriter.WriteEndArray();
-    }
-
-    /// <summary> Create a group without a mod only for saving it in the creator. </summary>
-    internal static SingleModGroup CreateForSaving(string name)
-        => new(null!)
-        {
-            Name = name,
-        };
 
     IReadOnlyList<OptionSubMod> ITexToolsGroup.OptionData
         => OptionData;

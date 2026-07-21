@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Penumbra.Api.Enums;
 using Penumbra.Files;
 using Penumbra.Import.Structs;
+using Penumbra.Import.Textures;
 using Penumbra.Interop.Services;
 using Penumbra.Services;
 using Penumbra.UI.Classes;
@@ -77,6 +78,7 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     public bool UseCharacterCollectionInInspect      { get; set; } = true;
     public bool UseCharacterCollectionInTryOn        { get; set; } = true;
     public bool UseOwnerNameForCharacterCollection   { get; set; } = true;
+    public bool UseOwnerForHostiles                  { get; set; } = false;
     public bool UseNoModsInInspect                   { get; set; } = false;
     public bool HideChangedItemFilters               { get; set; } = false;
     public bool ReplaceNonAsciiOnImport              { get; set; } = false;
@@ -86,6 +88,7 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     public bool DefaultTemporaryMode                 { get; set; } = false;
     public bool EnableDirectoryWatch                 { get; set; } = false;
     public bool EnableAutomaticModImport             { get; set; } = false;
+    public bool EnableContainerPeeking               { get; set; } = true;
     public bool AutoDismissModImportSuccessReports   { get; set; } = true;
     public bool AlwaysShowDetailedModImport          { get; set; } = false;
     public bool PreventExportLoopback                { get; set; } = true;
@@ -117,8 +120,10 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     [ConfigProperty(EventName = "ShowRenameChanged")]
     private RenameField _showRename = RenameField.BothDataPrio;
 
+    [ConfigProperty(EventName = "AuxiliaryDeviceModeChanged")]
+    private AuxiliaryDeviceMode _auxiliaryDeviceMode = AuxiliaryDeviceMode.Singleton;
+
     public ChangedItemMode ChangedItemDisplay        { get; set; } = ChangedItemMode.GroupedCollapsed;
-    public int             OptionGroupCollapsibleMin { get; set; } = 5;
 
     public Vector2 MinimumSize = new(Constants.MinimumSizeX, Constants.MinimumSizeY);
 
@@ -134,6 +139,12 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
 
     public bool   OpenFoldersByDefault { get; set; } = false;
     public int    SingleGroupRadioMax  { get; set; } = 2;
+
+    [ConfigProperty]
+    private bool _hideRightOptionGroupLine = true;
+
+    [ConfigProperty]
+    private bool _displayPages = true;
     public string DefaultImportFolder  { get; set; } = string.Empty;
     public string QuickMoveFolder1     { get; set; } = string.Empty;
     public string QuickMoveFolder2     { get; set; } = string.Empty;
@@ -239,7 +250,7 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
     /// <summary> Contains some default values or boundaries for config values. </summary>
     public static class Constants
     {
-        public const int CurrentVersion = 13;
+        public const int CurrentVersion = 14;
         public const int MinimumSizeX   = 900;
         public const int MinimumSizeY   = 675;
     }
@@ -268,7 +279,7 @@ public partial class Configuration : IPluginConfiguration, ISavable, IService
 
     public void Save(Stream stream)
     {
-        using var writer  = new StreamWriter(stream);
+        using var writer  = new StreamWriter(stream, leaveOpen: true);
         using var jWriter = new JsonTextWriter(writer);
         jWriter.Formatting = Formatting.Indented;
         var serializer = new JsonSerializer { Formatting = Formatting.Indented };
