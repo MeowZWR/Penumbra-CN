@@ -71,13 +71,18 @@ jobs:
           git checkout -B cn origin/cn
           $ver = '${{ github.ref_name }}'
           $verBase = $ver -replace '-cn$', ''
+          $verObj = [version] $verBase
           $path = './repo.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
+          $testVer = [version] $json[0].TestingAssemblyVersion
           $json[0].AssemblyVersion = $verBase
-          $json[0].TestingAssemblyVersion = $verBase
-          $json[0].DownloadLinkInstall = $json.DownloadLinkInstall -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
-          $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
-          $json[0].DownloadLinkUpdate = $json.DownloadLinkUpdate -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
+          $json[0].DownloadLinkInstall = $json[0].DownloadLinkInstall -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
+          $json[0].DownloadLinkUpdate = $json[0].DownloadLinkUpdate -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
+          if ( $verObj -gt $testVer )
+          {
+            $json[0].TestingAssemblyVersion = $verBase
+            $json[0].DownloadLinkTesting = $json[0].DownloadLinkTesting -replace '[^/]+/Penumbra.zip',"$ver/Penumbra.zip"
+          }
           $content = $json | ConvertTo-Json -AsArray
           set-content -Path $path -Value $content
 
