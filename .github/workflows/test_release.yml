@@ -66,6 +66,8 @@ jobs:
 
       - name: Write out repo.json
         run: |
+          git fetch origin cn
+          git checkout -B cn origin/cn
           $verT = '${{ github.ref_name }}'
           $ver = $verT -replace '^testing_' -replace '-cn$'
           $path = './repo.json'
@@ -79,9 +81,6 @@ jobs:
         run: |
           git config --global user.name "Actions User"
           git config --global user.email "actions@github.com"
-          git fetch origin cn
-          git branch -f cn ${{ github.sha }}
-          git checkout cn
           git add repo.json
           git commit -m "[CI] Updating repo.json for ${{ github.ref_name }}" || true
           git push origin cn
