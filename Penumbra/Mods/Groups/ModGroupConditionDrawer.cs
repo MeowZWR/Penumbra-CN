@@ -4,8 +4,10 @@ namespace Penumbra.Mods.Groups;
 
 public sealed class ModGroupConditionDrawer : ConditionDrawer<ModSettingContext>, IUiService
 {
-    protected override void DrawCustom(ICondition<ModSettingContext> condition, ModSettingContext context)
+    protected override bool DrawCustom(ICondition<ModSettingContext>? condition, ModSettingContext context,
+        out ICondition<ModSettingContext>? replace)
     {
+        replace = null;
         switch (condition)
         {
             case SingleSettingCondition single:
@@ -18,5 +20,7 @@ public sealed class ModGroupConditionDrawer : ConditionDrawer<ModSettingContext>
             { }
                 break;
         }
+
+        return false;
     }
 }

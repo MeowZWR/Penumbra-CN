@@ -70,6 +70,18 @@ public sealed record MultiSettingAllCondition(string Group, string[] Options) : 
     /// <inheritdoc/>
     public ICondition<ModSettingContext> DeepCopy()
         => new MultiSettingAllCondition(Group, Options.ToArray());
+
+    /// <inheritdoc/>
+    public IEnumerable<ICondition<ModSettingContext>> Subconditions
+        => [];
+
+    /// <inheritdoc/>
+    public int RemoveSubconditions(Func<ICondition<ModSettingContext>, bool> predicate)
+        => 0;
+
+    /// <inheritdoc/>
+    public bool Equals(ICondition<ModSettingContext>? other)
+        => other is MultiSettingAllCondition c && Equals(c);
 }
 
 public sealed record MultiSettingAnyCondition(string Group, string[] Options) : ICondition<ModSettingContext>
@@ -128,6 +140,18 @@ public sealed record MultiSettingAnyCondition(string Group, string[] Options) : 
     /// <inheritdoc/>
     public ICondition<ModSettingContext> DeepCopy()
         => this with { Options = Options.ToArray() };
+
+    /// <inheritdoc/>
+    public IEnumerable<ICondition<ModSettingContext>> Subconditions
+        => [];
+
+    /// <inheritdoc/>
+    public int RemoveSubconditions(Func<ICondition<ModSettingContext>, bool> predicate)
+        => 0;
+
+    /// <inheritdoc/>
+    public bool Equals(ICondition<ModSettingContext>? other)
+        => other is MultiSettingAnyCondition c && Equals(c);
 }
 
 public sealed record SingleSettingCondition(string Group, string Option) : ICondition<ModSettingContext>
@@ -171,4 +195,16 @@ public sealed record SingleSettingCondition(string Group, string Option) : ICond
     /// <inheritdoc/>
     public ICondition<ModSettingContext> DeepCopy()
         => new SingleSettingCondition(Group, Option);
+
+    /// <inheritdoc/>
+    public IEnumerable<ICondition<ModSettingContext>> Subconditions
+        => [];
+
+    /// <inheritdoc/>
+    public int RemoveSubconditions(Func<ICondition<ModSettingContext>, bool> predicate)
+        => 0;
+
+    /// <inheritdoc/>
+    public bool Equals(ICondition<ModSettingContext>? other)
+        => other is SingleSettingCondition c && Equals(c);
 }
