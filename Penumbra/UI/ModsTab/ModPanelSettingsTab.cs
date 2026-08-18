@@ -64,16 +64,16 @@ public class ModPanelSettingsTab(
             _previewExpanded = _imagePanel.Config.Expanded;
 
         var totalAvailableWidth = Im.ContentRegion.Available.X;
-        var buttonWidth         = Im.Style.FrameHeight;
-        var maxAllowedWidth     = (totalAvailableWidth - buttonWidth) * ui.PreviewPanelRatio;
+        var gutterWidth         = PreviewCollapseGutterWidth;
+        var maxAllowedWidth     = (totalAvailableWidth - gutterWidth) * ui.PreviewPanelRatio;
         var safeMinWidth        = Math.Min(ui.PreviewPanelMinWidth, maxAllowedWidth);
         var safeMaxWidth        = Math.Min(ui.PreviewPanelMaxWidth, maxAllowedWidth);
-        var calculatedPreviewWidth = (totalAvailableWidth - buttonWidth) * ui.PreviewPanelRatio;
+        var calculatedPreviewWidth = (totalAvailableWidth - gutterWidth) * ui.PreviewPanelRatio;
         var previewWidth = _previewExpanded && ui.ShowModPreviewPanel
             ? Math.Clamp(calculatedPreviewWidth, safeMinWidth * UiHelpers.Scale, safeMaxWidth * UiHelpers.Scale)
             : 0;
         var mainWidth = ui.ShowModPreviewPanel
-            ? totalAvailableWidth - buttonWidth - (_previewExpanded ? previewWidth : 0)
+            ? totalAvailableWidth - gutterWidth - (_previewExpanded ? previewWidth : 0)
             : totalAvailableWidth;
 
         using (var mainPanel = Im.Child.Begin("##MainSettingsPanel"u8, new Vector2(mainWidth, -1), false, WindowFlags.NoScrollbar))
@@ -86,7 +86,7 @@ public class ModPanelSettingsTab(
             return;
 
         Im.Line.Same(0, 0);
-        DrawPreviewCollapseButton(previewWidth);
+        DrawPreviewCollapseButton();
         if (!_previewExpanded)
             return;
 
@@ -228,6 +228,27 @@ public class ModPanelSettingsTab(
         }
     }
 
+    private static float LabelButtonWidth(ReadOnlySpan<byte> label)
+        => Im.Font.CalculateButtonSize(label).X + 2 * Im.Style.FramePadding.X;
+
+    /// <summary>
+    /// Shared width of Turn Permanent / Turn Temporary, also used as the combined Apply + Copy width.
+    /// </summary>
+    private static float SettingsToggleButtonWidth()
+    {
+        var toggleWidth = Math.Max(LabelButtonWidth("设为永久"u8), LabelButtonWidth("设为临时"u8));
+        var smallWidth  = Math.Max(LabelButtonWidth("应用"u8), LabelButtonWidth("复制"u8));
+        return Math.Max(toggleWidth, smallWidth * 2 + Im.Style.ItemInnerSpacing.X);
+    }
+
+    /// <summary>
+    /// When the preview collapse button is visible and no scrollbar is taking that space, keep the same gap.
+    /// </summary>
+    private float SettingsButtonsRightPadding()
+        => config.Ui.ShowModPreviewPanel && Im.Scroll.MaximumY is 0
+            ? Im.Style.ScrollbarSize
+            : 0;
+
     private void DrawPresetRow()
     {
         using var id = Im.Id.Push("presets"u8);
@@ -239,10 +260,11 @@ public class ModPanelSettingsTab(
         if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "将当前设置复制到剪贴板作为可分享预设。"u8))
             SettingPresetData.FromMod(selection.Mod!, selection.Settings).ToClipboard();
 
-        var buttonSize      = Im.Font.CalculateButtonSize("设为永久"u8).X;
+        var buttonSize      = SettingsToggleButtonWidth();
         var smallButtonSize = new Vector2((buttonSize - Im.Style.ItemInnerSpacing.X) / 2, 0);
         Im.Line.Same(Im.ContentRegion.Available.X
-          - (2 * Im.Style.FrameHeight + 2 * Im.Style.ItemInnerSpacing.X + Im.Style.ItemSpacing.X + 250 * Im.Style.GlobalScale + buttonSize));
+          - (2 * Im.Style.FrameHeight + 2 * Im.Style.ItemInnerSpacing.X + Im.Style.ItemSpacing.X + 250 * Im.Style.GlobalScale + buttonSize
+                + SettingsButtonsRightPadding()));
         if (ImEx.Icon.Button(LunaStyle.SaveIcon, "将当前设置保存为此模组的新预设。"u8))
             Im.Popup.Open("presetName"u8);
 
@@ -339,23 +361,25 @@ public class ModPanelSettingsTab(
     private void DrawRemoveSettings()
     {
         var drawInherited = !selection.Inherited && !selection.Settings.IsEmpty;
-        var buttonSize    = Im.Font.CalculateButtonSize("设为永久"u8).X;
+        var buttonSize    = SettingsToggleButtonWidth();
+        var inheritSize   = LabelButtonWidth("继承设置"u8);
         var offset = drawInherited
-            ? buttonSize + Im.Font.CalculateButtonSize("继承设置"u8).X + Im.Style.ItemSpacing.X
+            ? buttonSize + inheritSize + Im.Style.ItemSpacing.X
             : buttonSize;
-        Im.Line.Same(Im.ContentRegion.Available.X - offset);
+        Im.Line.Same(Im.ContentRegion.Available.X - offset - SettingsButtonsRightPadding());
         var enabled = LunaStyle.Modifier.Destructive.Active;
         if (drawInherited)
         {
+            var inheritSizeVec = new Vector2(inheritSize, 0);
             var inherit = (enabled, _locked) switch
             {
-                (true, false) => ImEx.Button("继承设置"u8,
+                (true, false) => ImEx.Button("继承设置"u8, inheritSizeVec,
                     "从此合集移除当前设置，以便它可以继承设置。\n"u8
                   + "如果没有继承的合集为此模组设置了设置，它将被禁用。"u8),
-                (false, false) => ImEx.Button("继承设置"u8, default,
+                (false, false) => ImEx.Button("继承设置"u8, inheritSizeVec,
                     $"从此合集移除当前设置，以便它可以继承设置。\n按住 {LunaStyle.Modifier.Destructive} 以进行继承。",
                     true),
-                (_, true) => ImEx.Button("继承设置"u8, default,
+                (_, true) => ImEx.Button("继承设置"u8, inheritSizeVec,
                     "从此合集移除当前设置，以便它可以继承设置。\n设置当前被锁定，无法更改。"u8,
                     true),
             };
@@ -413,20 +437,32 @@ public class ModPanelSettingsTab(
         }
     }
 
-    private void DrawPreviewCollapseButton(float previewWidth)
-    {
-        var icon    = _previewExpanded ? ">" : "<";
-        var tooltip = _previewExpanded ? "隐藏预览面板" : "显示预览面板";
-        var originalPos = Im.Cursor.Position;
-        var buttonPosX = _previewExpanded
-            ? Im.Window.Width - previewWidth - Im.Style.FrameHeight
-            : Im.Window.Width - Im.Style.FrameHeight;
+    private static float PreviewCollapseGutterWidth
+        => MathF.Round(Im.Style.FrameHeight * 0.55f);
 
-        Im.Cursor.Position = new Vector2(buttonPosX, originalPos.Y);
-        var buttonHeight = Im.ContentRegion.Available.Y;
-        if (Im.Button(icon, new Vector2(Im.Style.FrameHeight * 0.75f, buttonHeight)))
+    private void DrawPreviewCollapseButton()
+    {
+        var gutterWidth = PreviewCollapseGutterWidth;
+        using var style = Im.Style.Push(ImStyleDouble.WindowPadding, Vector2.Zero)
+            .Push(ImStyleDouble.ItemSpacing, Vector2.Zero);
+        using var gutter = Im.Child.Begin("##previewCollapseGutter"u8, new Vector2(gutterWidth, -1), false,
+            WindowFlags.NoScrollbar | WindowFlags.NoBackground | WindowFlags.NoScrollWithMouse);
+        if (!gutter)
+            return;
+
+        var gutterMin    = Im.Cursor.ScreenPosition;
+        var gutterHeight = Im.ContentRegion.Available.Y;
+        var handleHeight = Im.Style.FrameHeight * 4;
+        Im.Dummy(new Vector2(gutterWidth, MathF.Max(0, MathF.Round((gutterHeight - handleHeight) * 0.5f))));
+
+        var clicked = Im.InvisibleButton("##handle"u8, new Vector2(gutterWidth, handleHeight));
+        var hovered = Im.Item.Hovered();
+        var active  = Im.Item.Active;
+        var handleRect = Im.Item.Bounds;
+        Im.Tooltip.OnHover(_previewExpanded ? "隐藏预览面板"u8 : "显示预览面板"u8);
+        if (clicked)
         {
-            _previewExpanded = !_previewExpanded;
+            _previewExpanded ^= true;
             if (config.Ui.SavePreviewPanelState)
             {
                 _imagePanel.Config.Expanded = _previewExpanded;
@@ -434,8 +470,30 @@ public class ModPanelSettingsTab(
             }
         }
 
-        Im.Cursor.Position = originalPos;
-        Im.Tooltip.OnHover(tooltip);
+        var drawList      = Im.Window.DrawList;
+        var lineX         = MathF.Round(gutterMin.X + gutterWidth * 0.5f);
+        var lineColor     = Im.Style[ImGuiColor.Separator];
+        var lineThickness = MathF.Max(1, Im.Style.GlobalScale);
+        var gutterMaxY    = gutterMin.Y + gutterHeight;
+        drawList.Shape.Line(new Vector2(lineX, gutterMin.Y), new Vector2(lineX, handleRect.Minimum.Y), lineColor, lineThickness);
+        drawList.Shape.Line(new Vector2(lineX, handleRect.Maximum.Y), new Vector2(lineX, gutterMaxY), lineColor, lineThickness);
+
+        var fill = active
+            ? Im.Style[ImGuiColor.ButtonActive]
+            : hovered
+                ? Im.Style[ImGuiColor.ButtonHovered]
+                : Im.Style[ImGuiColor.Button];
+        var rounding = MathF.Min(gutterWidth, handleHeight) * 0.5f;
+        drawList.Shape.RectangleFilled(handleRect, fill, rounding);
+        drawList.Shape.Rectangle(handleRect, Im.Style[ImGuiColor.Border], rounding, thickness: lineThickness);
+
+        var fontSize   = Im.Style.TextHeight;
+        var arrowScale = Math.Clamp(gutterWidth / fontSize * 0.75f, 0.5f, 1f);
+        var arrowPos = new Vector2(
+            handleRect.Minimum.X + (gutterWidth - fontSize) * 0.5f,
+            handleRect.Minimum.Y + (handleHeight - fontSize * arrowScale) * 0.5f);
+        var arrowColor = hovered || active ? Im.Style[ImGuiColor.Text] : Im.Style[ImGuiColor.TextDisabled];
+        drawList.Render.Arrow(arrowPos, arrowColor, _previewExpanded ? Direction.Right : Direction.Left, arrowScale);
     }
 
     private void DrawPreviewPanel(float width)
