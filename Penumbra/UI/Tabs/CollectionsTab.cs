@@ -17,7 +17,7 @@ public sealed class CollectionsTab : TwoPanelLayout, ITab<TabType>
     public CollectionsTab(TutorialService tutorial, CollectionButtonFooter leftFooter, CollectionSelector leftPanel, CollectionFilter filter,
         CollectionModeHeader rightHeader, CollectionPanel rightPanel, EphemeralConfig config)
     {
-        LeftHeader  = new FilterHeader<CollectionSelector.Entry>(filter, new StringU8("Filter..."u8));
+        LeftHeader  = new FilterHeader<CollectionSelector.Entry>(filter, new StringU8("筛选..."u8));
         LeftPanel   = leftPanel;
         LeftFooter  = leftFooter;
         RightHeader = rightHeader;
@@ -34,7 +34,7 @@ public sealed class CollectionsTab : TwoPanelLayout, ITab<TabType>
         => Im.Window.Width - 690 * Im.Style.GlobalScale;
 
     public override ReadOnlySpan<byte> Label
-        => "Collections"u8;
+        => "合集设置"u8;
 
     protected override void DrawLeftGroup(in TwoPanelWidth width)
     {

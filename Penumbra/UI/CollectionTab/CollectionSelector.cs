@@ -59,7 +59,7 @@ public sealed class CollectionSelector(
             {
                 _dragging = item.Collection;
                 source.SetPayload("Collection"u8);
-                Im.Text($"Assigning {(incognito.IncognitoMode ? item.AnonymousName : item.Name)} to...");
+                Im.Text($"分配 {(incognito.IncognitoMode ? item.AnonymousName : item.Name)} 到...");
             }
 
             if (ret)

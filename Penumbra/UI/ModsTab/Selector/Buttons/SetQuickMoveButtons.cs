@@ -12,12 +12,12 @@ public sealed class SetQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : Bas
     {
         for (var i = 0; i < UiConfig.NumQuickMoveFolders; ++i)
         {
-            if (Im.Menu.Item($"Set as Quick Move Folder #{i + 1}"))
+            if (Im.Menu.Item($"设置为快速移动折叠组 #{i + 1}"))
                 drawer.Config.Ui.SetQuickMoveFolder(i, data.FullPath);
             var value = drawer.Config.Ui.QuickMoveFolder(i);
             Im.Tooltip.OnHover(value.Length is 0
-                ? "Set this folder as a quick move location."u8
-                : $"Set this folder as a quick move location instead of {value}.");
+                ? "设置这个折叠组为快速移动的目标位置。"u8
+                : $"设置这个折叠组为快速移动的目标位置而不是 {value}。");
         }
 
         return false;

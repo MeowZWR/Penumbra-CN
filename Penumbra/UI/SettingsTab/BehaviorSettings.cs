@@ -13,17 +13,17 @@ public sealed class BehaviorSettings(BehaviorConfig config) : IUiService
 
     private void DrawGeneralBehavior()
     {
-        using var tree = Im.Tree.Node("General"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("常规"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Automatically Select Character-Associated Collection"u8,
-                "On every login, automatically select the collection associated with the current character as the current collection for editing."u8,
+        if (SettingsTab.Checkbox("自动选择角色关联合集"u8,
+                "每次登录时，自动选择与当前角色关联的合集作为当前编辑的合集。"u8,
                 config.AutoSelectCollection))
             config.AutoSelectCollection ^= true;
 
-        if (SettingsTab.Checkbox("Use Interface Collection for other Plugin UIs"u8,
-                "Use the collection assigned to your interface for other plugins requesting UI-textures and icons through Dalamud."u8,
+        if (SettingsTab.Checkbox("允许其他插件的UI使用界面合集"u8,
+                "允许其他卫月插件在调用UI材质时使用界面合集中的文件。"u8,
                 config.UseDalamudUiTextureRedirection))
             config.UseDalamudUiTextureRedirection ^= true;
 
@@ -32,43 +32,43 @@ public sealed class BehaviorSettings(BehaviorConfig config) : IUiService
 
     private void DrawCollectionAssociation()
     {
-        using var tree = Im.Tree.Node("Collection Association"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("合集关联"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Use Assigned Collections in Lobby"u8,
-                "If this is disabled, no mods are applied to characters in the lobby or at the aesthetician."u8,
+        if (SettingsTab.Checkbox("在登陆界面中使用合集"u8,
+                "如果禁用此选项，则不会对登陆界面或美容师中的角色应用任何模组。"u8,
                 config.ShowModsInLobby))
             config.ShowModsInLobby ^= true;
-        if (SettingsTab.Checkbox("Use Assigned Collections in Character Window"u8,
-                "Use the individual collection for your characters name or the Your Character collection in your main character window, if it is set."u8,
+        if (SettingsTab.Checkbox("在角色窗口中使用合集"u8,
+                "如果设置，则使用基于你的玩家名字命名的独立角色合集或你的角色组合集。"u8,
                 config.UseCharacterCollectionInMainWindow))
             config.UseCharacterCollectionInMainWindow ^= true;
-        if (SettingsTab.Checkbox("Use Assigned Collections in Adventurer Cards"u8,
-                "Use the appropriate individual collection for the adventurer card you are currently looking at, based on the adventurer's name."u8,
+        if (SettingsTab.Checkbox("在冒险者铭牌中使用合集"u8,
+                "根据冒险者的姓名，为其使用合适的合集。"u8,
                 config.UseCharacterCollectionsInCards))
             config.UseCharacterCollectionsInCards ^= true;
-        if (SettingsTab.Checkbox("Use Assigned Collections in Try-On Window"u8,
-                "Use the individual collection for your character's name in your try-on, dye preview or glamour plate window, if it is set."u8,
+        if (SettingsTab.Checkbox("在试穿窗口中使用合集"u8,
+                "如果设置，则使用基于你的角色名字的独立合集。"u8,
                 config.UseCharacterCollectionInTryOn))
             config.UseCharacterCollectionInTryOn ^= true;
-        if (SettingsTab.Checkbox("Use No Mods in Inspect Windows"u8,
-                "Use the empty collection for characters you are inspecting, regardless of the character.\n"u8
-              + "Takes precedence before the next option."u8, config.UseNoModsInInspect))
+        if (SettingsTab.Checkbox("在调查窗口中不使用模组"u8,
+                "使用空合集来调查角色，不管是什么角色。\n"u8
+              + "优先于下一个选项。"u8, config.UseNoModsInInspect))
             config.UseNoModsInInspect ^= true;
-        if (SettingsTab.Checkbox("Use Assigned Collections in Inspect Windows"u8,
-                "Use the appropriate individual collection for the character you are currently inspecting, based on their name."u8,
+        if (SettingsTab.Checkbox("在调查窗口中使用合集"u8,
+                "根据当前调查的角色的名称，为其使用符合角色名称的合集。"u8,
                 config.UseCharacterCollectionInInspect))
             config.UseCharacterCollectionInInspect ^= true;
-        if (SettingsTab.Checkbox("Use Assigned Collections based on Ownership"u8,
-                "Use the owner's name to determine the appropriate individual collection for mounts, companions, accessories and combat pets. This includes trust or squadron companions."u8,
+        if (SettingsTab.Checkbox("基于所有者使用合集"u8,
+                "使用所有者的名字来决定其坐骑、宠物、时尚配饰、战斗伙伴使用适当的角色合集。"u8,
                 config.UseOwnerNameForCharacterCollection))
             config.UseOwnerNameForCharacterCollection ^= true;
         if (config.UseOwnerNameForCharacterCollection)
             using (Im.Indent(Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X))
             {
-                if (SettingsTab.Checkbox("Include Hostile Owned Actors"u8,
-                        "Include any hostile actors that are owned by the character, such as enemies spawned for solo quests."u8,
+                if (SettingsTab.Checkbox("包含敌对所有者角色"u8,
+                        "包含任何由角色拥有的敌对角色，例如为单人任务生成的敌人。"u8,
                         config.UseOwnerForHostiles))
                     config.UseOwnerForHostiles ^= true;
             }

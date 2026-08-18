@@ -13,12 +13,12 @@ public sealed class EditingSettings(EditingConfig config) : IUiService
 
     private void DrawGeneralEditing()
     {
-        using var tree = Im.Tree.Node("General"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("常规"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Automatically Pin Mod in Editing Window"u8,
-                "Determines the default pinning behavior when opening a new Advanced Editing window.\n\nPinned: The editing window will stay on the mod it was on at the time of opening/pinning.\nUnpinned: When changing your selected mod in the main window, the editing window will follow the selection, unless a pinned window exists for the new selected mod."u8,
+        if (SettingsTab.Checkbox("高级编辑：在编辑窗口中自动固定模组"u8,
+                "决定打开新的高级编辑窗口时的默认固定行为。\n\n已固定：编辑窗口将始终锁定在打开或固定时所选的模组上，不会随主界面切换。\n未固定：当你在主窗口切换所选 Mod 时，编辑窗口将同步跟随切换（除非新选中的模组已经有一个已固定的编辑窗口）。"u8,
                 config.DefaultEditWindowModPinned))
             config.DefaultEditWindowModPinned ^= true;
         LunaStyle.DrawSeparator();
@@ -27,22 +27,22 @@ public sealed class EditingSettings(EditingConfig config) : IUiService
 
     private void DrawMaterialEditing()
     {
-        using var tree = Im.Tree.Node("Materials"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("材质"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Edit Raw Tile UV Transforms"u8,
-                "Edit the raw matrix components of tile UV transforms, instead of having them decomposed into scale, rotation and shear."u8,
+        if (SettingsTab.Checkbox("高级编辑：编辑原始Tile UV变换"u8,
+                "编辑Tile UV变换的原始矩阵组件，而不是将它们分解为缩放、旋转和剪切。"u8,
                 config.EditRawTileTransforms))
             config.EditRawTileTransforms ^= true;
 
-        if (SettingsTab.Checkbox("Always Highlight Color Row Pair when Hovering Selection Button"u8,
-                "Make the whole color row pair selection button highlight the pair in game, instead of just the crosshair, even without holding Control."u8,
+        if (SettingsTab.Checkbox("高级编辑：悬停选择按钮时始终高亮颜色组"u8,
+                "使整个颜色组选择按钮都能触发游戏内高亮反馈，而不仅限于悬停在拾取图标上。开启此项后，无需按住 Ctrl 键即可生效。"u8,
                 config.WholePairSelectorAlwaysHighlights))
             config.WholePairSelectorAlwaysHighlights ^= true;
 
-        if (SettingsTab.Checkbox("Unlock More Dye Chanels"u8,
-                "Although the vanilla game is limited to two dye channels, the current material file format supports four.\nThis option will allow the use of those four dye channels in the material editor.\nPlease note, though, that this has limited usefulness: at the time of writing, those four channels are only usable within the material editor."u8,
+        if (SettingsTab.Checkbox("高级编辑：解锁更多染料通道"u8,
+                "虽然原版游戏限制了两个染料通道，但当前材质文件格式支持四个。\n此选项将允许在材质编辑器中使用这四个染料通道。\n请注意，此选项有限制：目前，这四个通道只能在材质编辑器中使用。"u8,
                 config.AllDyeChannels))
             config.AllDyeChannels ^= true;
     }

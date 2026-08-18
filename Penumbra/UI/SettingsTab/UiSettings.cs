@@ -21,31 +21,31 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
 
     private void DrawWindowSettings()
     {
-        using var tree = Im.Tree.Node("Config Window"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("设置窗口"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Open Config Window at Game Start"u8,
-                "Whether the Penumbra main window should be open or closed after launching the game."u8,
+        if (SettingsTab.Checkbox("游戏启动时自动开启设置窗口"u8,
+                "游戏启动后，Penumbra主窗口应该打开还是关闭。"u8,
                 config.OpenWindowAtStart))
             config.OpenWindowAtStart ^= true;
 
-        if (SettingsTab.Checkbox("Hide Config Window when UI is Hidden"u8,
-                "Hide the Penumbra main window when you manually hide the in-game user interface."u8, config.HideUiWhenUiHidden))
+        if (SettingsTab.Checkbox("隐藏游戏UI时，隐藏设置窗口"u8,
+                "手动隐藏游戏UI时，隐藏Penumbra的主窗口。"u8, config.HideUiWhenUiHidden))
         {
             uiBuilder.DisableUserUiHide =  config.HideUiWhenUiHidden;
             config.HideUiWhenUiHidden   ^= true;
         }
 
-        if (SettingsTab.Checkbox("Hide Config Window when in Cutscenes"u8,
-                "Hide the Penumbra main window when you are currently watching a cutscene."u8, config.HideUiInCutscenes))
+        if (SettingsTab.Checkbox("进入过场动画时，隐藏设置窗口"u8,
+                "在观看过场动画时，隐藏Penumbra的主窗口。"u8, config.HideUiInCutscenes))
         {
             uiBuilder.DisableCutsceneUiHide =  config.HideUiInCutscenes;
             config.HideUiInCutscenes        ^= true;
         }
 
-        if (SettingsTab.Checkbox("Hide Config Window when in GPose"u8,
-                "Hide the Penumbra main window when you are currently in GPose mode."u8, config.HideUiInGPose))
+        if (SettingsTab.Checkbox("进入集体动作(GPose)模式时，隐藏设置窗口"u8,
+                "进入集体动作模式时，隐藏Penumbra主窗口。"u8, config.HideUiInGPose))
         {
             uiBuilder.DisableGposeUiHide =  config.HideUiInGPose;
             config.HideUiInGPose         ^= true;
@@ -55,32 +55,32 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
 
     private void DrawFilterSettings()
     {
-        using var tree = Im.Tree.Node("Filters"u8);
+        using var tree = Im.Tree.Node("筛选"u8);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Remember Mod Filters Across Sessions"u8,
-                "Whether filters in the Mods tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        if (SettingsTab.Checkbox("跨会话保留模组筛选"u8,
+                "是否让“模组列表”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
                 config.RememberModFilters))
             config.RememberModFilters ^= true;
-        if (SettingsTab.Checkbox("Remember Collection Filters Across Sessions"u8,
-                "Whether filters in the Collections tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        if (SettingsTab.Checkbox("跨会话保留合集筛选"u8,
+                "是否让“合集设置”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
                 config.RememberCollectionFilters))
             config.RememberCollectionFilters ^= true;
-        if (SettingsTab.Checkbox("Remember Changed Items Filters Across Sessions"u8,
-                "Whether filters in the Changed Items tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        if (SettingsTab.Checkbox("跨会话保留更改项目筛选"u8,
+                "是否让“更改项目”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
                 config.RememberChangedItemFilters))
             config.RememberChangedItemFilters ^= true;
-        if (SettingsTab.Checkbox("Remember Effective Changes Filters Across Sessions"u8,
-                "Whether filters in the Effective Changes tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        if (SettingsTab.Checkbox("跨会话保留有效更改筛选"u8,
+                "是否让“有效更改”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
                 config.RememberEffectiveChangesFilters))
             config.RememberEffectiveChangesFilters ^= true;
-        if (SettingsTab.Checkbox("Remember On-Screen Filters Across Sessions"u8,
-                "Whether filters in the On-Screen tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        if (SettingsTab.Checkbox("跨会话保留屏幕角色筛选"u8,
+                "是否让“屏幕角色”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
                 config.RememberOnScreenFilters))
             config.RememberOnScreenFilters ^= true;
-        if (SettingsTab.Checkbox("Remember Resource Manager Filters Across Sessions"u8,
-                "Whether filters in the Resource Manager tab should remember their input and start with their respective lists filtered identically to the last session."u8,
+        if (SettingsTab.Checkbox("跨会话保留资源管理器筛选"u8,
+                "是否让“资源管理器”选项卡中的过滤器记住输入内容，并在下次启动时保持与上次相同的过滤列表。"u8,
                 config.RememberResourceManagerFilters))
             config.RememberResourceManagerFilters ^= true;
         LunaStyle.DrawSeparator();
@@ -88,15 +88,15 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
 
     private void DrawDisplaySettings()
     {
-        using var tree = Im.Tree.Node("General Display"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("常规显示"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Hide Redraw Bar in Mod Panel"u8, "Hides the lower redraw buttons in the mod panel in your Mods tab."u8,
+        if (SettingsTab.Checkbox("在模组界面中隐藏重绘栏"u8, "隐藏模组选项卡下模组界面底部的重绘栏。"u8,
                 config.HideRedrawBar))
             config.HideRedrawBar ^= true;
-        if (SettingsTab.Checkbox("Hide Changed Item Filters"u8,
-                "Hides the category filter line in the Changed Items tab and the Changed Items mod panel."u8,
+        if (SettingsTab.Checkbox("隐藏更改项目筛选栏"u8,
+                "隐藏在更改项目（包括模组面板里的更改项目）选项卡中的一行筛选栏。"u8,
                 config.HideChangedItemFilters))
             config.HideChangedItemFilters ^= true;
 
@@ -105,16 +105,16 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
             config.ChangedItemDisplay = v;
             config.Save();
         });
-        LunaStyle.DrawAlignedHelpMarkerLabel("Mod Changed Item Display"u8,
-            "Configure how to display the changed items of a single mod in the mods info panel."u8);
-        if (SettingsTab.Checkbox("Omit Machinist Offhands in Changed Items"u8,
-                "Omits all Aetherotransformers (machinist offhands) in the changed items tabs because any change on them changes all of them at the moment.\n\n"u8
-              + "Changing this triggers a rediscovery of your mods so all changed items can be updated."u8,
+        LunaStyle.DrawAlignedHelpMarkerLabel("模组更改项目显示模式"u8,
+            "配置如何在模组信息面板中显示单个模组的更改项目。"u8);
+        if (SettingsTab.Checkbox("在更改项目中忽略机工副手"u8,
+                "在更改项目标签中忽略所有以太转换器（机工副手），因为对它们的任何更改都会同时更改所有这些项目。\n\n"u8
+              + "更改此选项会重新扫描您的模组，以便更新所有已更改的项目。"u8,
                 config.HideMachinistOffhandFromChangedItems))
             config.HideMachinistOffhandFromChangedItems ^= true;
 
-        if (SettingsTab.Checkbox("Hide Priority Numbers in Mod Selector"u8,
-                "Hides the bracketed non-zero priority numbers displayed in the mod selector when there is enough space for them."u8,
+        if (SettingsTab.Checkbox("隐藏模组选择器优先级数字标识"u8,
+                "如果模组选择器里的模组优先级不是0，而且有足够的空间显示，则在模组名称后添加优先级数字标识。勾选此选项后隐藏这个标识。"u8,
                 config.HidePrioritiesInSelector))
             config.HidePrioritiesInSelector ^= true;
         LunaStyle.DrawSeparator();
@@ -185,13 +185,13 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
 
     private void DrawModSelectorSettings()
     {
-        using var tree = Im.Tree.Node("Mod Selector Display"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("模组选择器显示"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
         DrawFolderSortType();
         DrawRenameSettings();
-        if (SettingsTab.Checkbox("Open Folders by Default"u8, "Whether to start with all folders collapsed or expanded in the mod selector."u8,
+        if (SettingsTab.Checkbox("默认展开折叠组"u8, "打开模组选择器时，默认展开全部折叠组，否则最小化全部折叠组。"u8,
                 config.OpenFoldersByDefault))
             config.OpenFoldersByDefault ^= true;
         LunaStyle.DrawSeparator();
@@ -204,7 +204,7 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
                 UiHelpers.InputTextWidth.X))
             config.SortMode = newSortMode!;
 
-        LunaStyle.DrawAlignedHelpMarkerLabel("Sort Mode"u8, "Choose the sort mode for the mod selector in the mods tab."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("模组排序方式"u8, "选择模组选项卡中模组选择器的默认排序方式。"u8);
     }
 
     private void DrawRenameSettings()
@@ -222,18 +222,18 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
                 }
         }
 
-        LunaStyle.DrawAlignedHelpMarkerLabel("Rename Fields in Mod Context Menu"u8,
-            "Select which of the two renaming input fields are visible when opening the right-click context menu of a mod in the mod selector."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("模组上下文菜单中的重命名字段"u8,
+            "选择在模组选择器中打开模组右键上下文菜单时可见的两个重命名输入字段中的哪一个。"u8);
     }
 
     private void DrawOptionGroupSettings()
     {
-        using var tree = Im.Tree.Node("Mod Configuration Display"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("模组配置显示"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
-        if (SettingsTab.Checkbox("Draw Tabs for Option Pages"u8,
-                "When this is on, pages set for options in a mod's metadata are drawn as a tab bar. When it is off, pages are drawn successively on the same page using sections of collapsing headers."u8,
+        if (SettingsTab.Checkbox("选项页使用标签栏显示"u8,
+                "启用后，模组元数据中为选项设置的页面将以标签栏显示。禁用后，页面将以可折叠标题分段的形式依次显示在同一页上。"u8,
                 config.DisplayPages))
             config.DisplayPages ^= true;
 
@@ -241,47 +241,47 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
         if (ImEx.InputOnDeactivation.Drag("##groupLine"u8, config.ModSettingLineScale,
                 out var newLine, "%.2f"u8, 0, 4, 0.005f, SliderFlags.AlwaysClamp))
             config.ModSettingLineScale = newLine;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Group Settings Line Factor"u8,
-            "The thickness of the tree line connecting group settings."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项组设置连线粗细系数"u8,
+            "连接选项组设置的树状线粗细。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##groupBorder"u8, config.ModSettingBorderScale,
                 out var newBorder, "%.2f"u8, 1, 4, 0.005f, SliderFlags.AlwaysClamp))
             config.ModSettingBorderScale = newBorder;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Group Settings Border Factor"u8,
-            "The thickness of the border around UI elements connected by the tree line in group settings."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项组设置边框粗细系数"u8,
+            "选项组设置中，由树状线连接的界面元素的边框粗细。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##vertSpace"u8, config.ModSettingItemSpacingFactor,
                 out var newFactor, "%.2f"u8, 0, 10, 0.01f, SliderFlags.AlwaysClamp))
             config.ModSettingItemSpacingFactor = newFactor;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Vertical Spacing between Option Groups Factor"u8,
-            "An additional factor applied to your regular ImGui style's item spacing in the vertical direction between the nodes in your mod settings tab.\n\n"u8
-          + "A value of 1 means that the normal item spacing is used."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项组之间垂直间距系数"u8,
+            "应用于模组设置选项卡中各节点之间垂直方向项目间距的额外系数。\n\n"u8
+          + "值为 1 表示使用正常的项目间距。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##groupAlign"u8, config.ModSettingLabelAlignment,
                 out var newAlignment, "%.2f"u8, 0, 1, 0.0005f, SliderFlags.AlwaysClamp))
             config.ModSettingLabelAlignment = newAlignment;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Group Label Text Alignment"u8,
-            "The alignment of the text in group labels. A value of 0 means the text is left-aligned, and a value of 1 means it is right-aligned. "u8
-          + "The caret is always left-aligned, and the tooltip icon is always right-aligned."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项组标签文本对齐"u8,
+            "选项组标签中文本的对齐方式。值为 0 表示左对齐，值为 1 表示右对齐。"u8
+          + "折叠箭头始终左对齐，提示图标始终右对齐。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##comboAlign"u8, config.ModSettingComboAlignment,
                 out var newCombo, "%.2f"u8, 0, 1, 0.0005f, SliderFlags.AlwaysClamp))
             config.ModSettingComboAlignment = newCombo;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Setting Combo Preview Text Alignment"u8,
-            "The alignment of the preview text in single select combos. A value of 0 means the text is left-aligned, and a value of 1 means it is right-aligned. "u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("设置下拉预览文本对齐"u8,
+            "单选项下拉菜单中预览文本的对齐方式。值为 0 表示左对齐，值为 1 表示右对齐。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##groupHomo"u8, config.ModSettingMaximumExtendLabelWidth,
                 out var newExtend, "%.0f"u8, -1))
             config.ModSettingMaximumExtendLabelWidth = newExtend;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Maximum Group Label Homogenization"u8,
-            "The maximum width in unscaled pixels that group labels are extended in the settings screen. "u8
-          + "Labels are sized according to the largest group label available, up to this value. "u8
-          + "If a group label requires more space than this, it is an outlier and other labels are not extended to its width."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项组标签最大齐宽"u8,
+            "设置界面中选项组标签扩展的最大未缩放像素宽度。"u8
+          + "标签宽度会按最大的组标签对齐，但不超过此值。"u8
+          + "如果某个组标签所需空间超过此值，则视为异常值，其他标签不会扩展到该宽度。"u8);
 
         DrawSingleSelectRadioMax();
     }
@@ -297,8 +297,8 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
             config.Save();
         }
 
-        LunaStyle.DrawAlignedHelpMarkerLabel("Upper Limit for Single-Selection Group Radio Buttons"u8,
-            "All Single-Selection Groups with more options than specified here will be displayed as Combo-Boxes at the top.\n"u8
-          + "All other Single-Selection Groups will be displayed as a set of Radio-Buttons."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("单选项组单选项显示上限"u8,
+            "如果单选项组的选项数量等于或多于此处设定的值，将收起变更为下拉菜单。\n"u8
+          + "少于此值的单选项组仍会展开显示。"u8);
     }
 }

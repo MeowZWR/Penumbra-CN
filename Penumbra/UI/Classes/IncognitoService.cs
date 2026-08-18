@@ -13,7 +13,7 @@ public class IncognitoService(TutorialService tutorial, Configuration config) : 
         var hold  = LunaStyle.Modifier.Misclick.Active;
         using (ImStyleBorder.Frame.Push(ColorId.FolderExpanded.Vector))
         {
-            var       tt    = IncognitoMode ? "Toggle incognito mode off."u8 : "Toggle incognito mode on."u8;
+            var       tt    = IncognitoMode ? "关闭隐身模式。"u8 : "开启隐身模式。"u8;
             var       icon  = IncognitoMode ? LunaStyle.IncognitoOn : LunaStyle.IncognitoOff;
             if (ImEx.Icon.Button(icon, tt, size: new Vector2(width, Im.Style.FrameHeight), textColor: ColorId.FolderExpanded.Value) && hold)
             {
@@ -23,7 +23,7 @@ public class IncognitoService(TutorialService tutorial, Configuration config) : 
         }
 
         if (!hold)
-            Im.Tooltip.OnHover($"\nHold {LunaStyle.Modifier.Misclick} while clicking to toggle.", HoveredFlags.AllowWhenDisabled, true);
+            Im.Tooltip.OnHover($"\n按住 {LunaStyle.Modifier.Misclick} 键点击切换。", HoveredFlags.AllowWhenDisabled, true);
 
         tutorial.OpenTutorial(BasicTutorialSteps.Incognito);
     }

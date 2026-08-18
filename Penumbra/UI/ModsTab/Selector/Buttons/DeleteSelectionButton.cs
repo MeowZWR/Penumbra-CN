@@ -20,9 +20,9 @@ public sealed class DeleteSelectionButton(ModFileSystemDrawer drawer) : BaseIcon
         var anySelected = drawer.FileSystem.Selection.DataNodes.Count > 0;
         var modifier    = Enabled;
 
-        Im.Text(anySelected ? "Delete the currently selected mods entirely from your drive\nThis can not be undone."u8 : "No mods selected."u8);
+        Im.Text(anySelected ? "从你的驱动器中完全删除当前选中的模组\n操作不可撤销。"u8 : "未选中模组。"u8);
         if (!modifier)
-            Im.Text($"Hold {LunaStyle.Modifier.Destructive} while clicking to delete the mods.");
+            Im.Text($"按住 {LunaStyle.Modifier.Destructive} 点击删除模组。");
     }
 
     /// <inheritdoc/>

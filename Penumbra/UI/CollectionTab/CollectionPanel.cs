@@ -52,11 +52,11 @@ public sealed class CollectionPanel(
     /// <summary> Draw the panel containing beginners information and simple assignments. </summary>
     public void DrawSimple()
     {
-        Im.TextWrapped("A collection is a set of mod configurations. You can have as many collections as you desire.\n"u8
-          + "The collection you are currently editing in the mod tab can be selected here and is highlighted.\n"u8);
+        Im.TextWrapped("合集是一组模组配置的集合。您可以拥有任意数量的合集。\n"u8
+          + "您当前在模组选项卡中正在编辑的合集可以在这里选择并高亮显示。\n"u8);
         Im.TextWrapped(
-            "There are functions you can assign these collections to, so different mod configurations apply for different things.\n"u8
-          + "You can assign an existing collection to such a function by clicking the function or dragging the collection over."u8);
+            "有可以分配这些合集的功能，因此不同的模组配置适用于不同的对象。\n"u8
+          + "您可以通过点击功能或拖动合集来将现有的合集分配给这些功能。"u8);
         Im.Separator();
 
         var buttonWidth = new Vector2(200 * Im.Style.GlobalScale, 2 * Im.Style.FrameHeightWithSpacing);
@@ -70,8 +70,8 @@ public sealed class CollectionPanel(
         DrawSimpleCollectionButton(CollectionType.MaleNonPlayerCharacter,   buttonWidth);
         DrawSimpleCollectionButton(CollectionType.FemaleNonPlayerCharacter, buttonWidth);
 
-        ImEx.TextMultiColored("Individual "u8, ColorId.NewMod.Value)
-            .Then("Assignments take precedence before anything else and only apply to one specific character or monster."u8)
+        ImEx.TextMultiColored("独立 "u8, ColorId.NewMod.Value)
+            .Then("分配优先级高于其他任何分配，并且只能应用于一个特定的角色或怪物。"u8)
             .End();
         Im.Dummy(1);
 
@@ -105,7 +105,7 @@ public sealed class CollectionPanel(
             if (first)
             {
                 Im.Separator();
-                Im.Text("Currently Active Advanced Assignments"u8);
+                Im.Text("当前激活的高级分配"u8);
                 first = false;
             }
 
@@ -139,29 +139,29 @@ public sealed class CollectionPanel(
         _individualAssignmentUi.DrawNewNpcCollection(width.X);
         Im.Line.Same();
         ImGuiComponents.HelpMarker(
-            "Battle- and Event NPCs may apply to more than one ID if they share the same name. This is language dependent. If you change your clients language, verify that your collections are still correctly assigned.");
+            "战斗和事件中的NPC可能会因为同名而应用于多个ID。这取决于您的语言设置。如果您更改了客户端语言，请检查您的合集是否仍然正确分配。");
         Im.Dummy(Vector2.One);
         Im.Separator();
         style.Push(ImStyleSingle.FrameBorderThickness, Im.Style.GlobalScale);
 
         DrawNewPlayer(width);
         Im.Line.Same();
-        Im.TextWrapped("Also check General Settings for UI characters and inheritance through ownership."u8);
+        Im.TextWrapped("同时检查常规设置中与玩家相关的用户界面选项以及继承关系。"u8);
         Im.Separator();
 
         DrawNewRetainer(width);
         Im.Line.Same();
-        Im.TextWrapped("Bell Retainers apply to Mannequins, but not to outdoor retainers, since those only carry their owners name."u8);
+        Im.TextWrapped("传唤铃雇员适用于人体模特，但不适用于户外雇员，因为后者只携带其主人的名字。"u8);
         Im.Separator();
 
         DrawNewNpc(width);
         Im.Line.Same();
-        Im.TextWrapped("Some NPCs are available as Battle - and Event NPCs and need to be setup for both if desired."u8);
+        Im.TextWrapped("部分NPC也会出现在战斗和事件中，如果想要两种场合都生效需要手动分别设置。"u8);
         Im.Separator();
 
         DrawNewOwned(width);
         Im.Line.Same();
-        Im.TextWrapped("Owned NPCs take precedence before unowned NPCs of the same type."u8);
+        Im.TextWrapped("属于玩家的NPC优先级高于不属于玩家的同类型NPC。"u8);
         Im.Separator();
 
         DrawIndividualCollections(width with { X = 200 * Im.Style.GlobalScale });
@@ -213,8 +213,8 @@ public sealed class CollectionPanel(
         Im.Dummy(Vector2.Zero);
         using (Im.Group())
         {
-            ImEx.TextFrameAligned("Name"u8);
-            ImEx.TextFrameAligned("Identifier"u8);
+            ImEx.TextFrameAligned("名称"u8);
+            ImEx.TextFrameAligned("标识符"u8);
         }
 
         Im.Line.Same();
@@ -230,7 +230,7 @@ public sealed class CollectionPanel(
             }
 
             if (_collections.DefaultNamed == collection)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "The Default collection can not be renamed."u8);
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "默认合集无法重命名。"u8);
 
             var identifier = collection.Identity.Identifier;
             var fileName   = saveService.FileNames.CollectionFile(collection);
@@ -243,7 +243,7 @@ public sealed class CollectionPanel(
                     }
                     catch (Exception ex)
                     {
-                        Penumbra.Messager.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}",
+                        Penumbra.Messager.NotificationMessage(ex, $"无法打开文件 {fileName}。", $"无法打开文件 {fileName}",
                             NotificationType.Warning);
                     }
             }
@@ -252,7 +252,7 @@ public sealed class CollectionPanel(
                 Im.Clipboard.Set(identifier);
 
             Im.Tooltip.OnHover(
-                $"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.\n\nRight-Click to copy identifier to clipboard.");
+                $"在您选择的 .json 编辑器中打开包含此设计的文件\n\t{fileName}\n。\n\n右键点击以复制标识符到剪贴板。");
         }
 
         Im.Dummy(Vector2.Zero);
@@ -272,20 +272,20 @@ public sealed class CollectionPanel(
 
         using (ImGuiColor.Text.Push(LunaStyle.DiscordColor))
         {
-            if (Im.Menu.Item("Use no mods."u8))
+            if (Im.Menu.Item("不使用模组"u8))
                 _active.SetCollection(ModCollection.Empty, type, _active.Individuals.GetGroup(identifier));
         }
 
         if (collection is not null && type.CanBeRemoved())
         {
             using var color = ImGuiColor.Text.Push(Colors.RegexWarningBorder);
-            if (Im.Menu.Item("Remove this assignment."u8))
+            if (Im.Menu.Item("移除此分配"u8))
                 _active.SetCollection(null, type, _active.Individuals.GetGroup(identifier));
         }
 
         foreach (var coll in _collections.OrderBy(c => c.Identity.Name))
         {
-            if (coll != collection && Im.Menu.Item($"Use {coll.Identity.Name}."))
+            if (coll != collection && Im.Menu.Item($"使用 {coll.Identity.Name}。"))
                 _active.SetCollection(coll, type, _active.Individuals.GetGroup(identifier));
         }
     }
@@ -337,7 +337,7 @@ public sealed class CollectionPanel(
             return;
 
         Im.DragDrop.SetPayload("DragIndividual"u8);
-        Im.Text($"Re-ordering {text}...");
+        Im.Text($"重新排序 {text}...");
         _draggedIndividualAssignment = _active.Individuals.Index(id);
     }
 
@@ -365,55 +365,55 @@ public sealed class CollectionPanel(
             Im.TextWrapped(type.ToDescription());
             switch (type)
             {
-                case CollectionType.Default: Im.Text("Overruled by any other Assignment."u8); break;
+                case CollectionType.Default: Im.Text("优先级低于所有其他分配。"u8); break;
                 case CollectionType.Yourself:
-                    ImEx.TextMultiColored("Overruled by "u8)
-                        .Then("Individual "u8, ColorId.NewMod.Value)
-                        .Then("Assignments."u8)
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
+                        .Then("分配。"u8)
                         .End();
                     break;
                 case CollectionType.MalePlayerCharacter:
-                    ImEx.TextMultiColored("Overruled by "u8)
-                        .Then("Male Racial Player"u8, LunaStyle.DiscordColor)
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("男性种族玩家"u8, LunaStyle.DiscordColor)
                         .Then(", "u8)
-                        .Then("Your Character"u8, ColorId.HandledConflictMod.Value)
-                        .Then(", or "u8)
-                        .Then("Individual "u8, ColorId.NewMod.Value)
-                        .Then("Assignments."u8)
+                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
+                        .Then("分配。"u8)
                         .End();
                     break;
                 case CollectionType.FemalePlayerCharacter:
-                    ImEx.TextMultiColored("Overruled by "u8)
-                        .Then("Female Racial Player"u8, LunaStyle.ReniColorActive)
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("女性种族玩家"u8, LunaStyle.ReniColorActive)
                         .Then(", "u8)
-                        .Then("Your Character"u8, ColorId.HandledConflictMod.Value)
-                        .Then(", or "u8)
-                        .Then("Individual "u8, ColorId.NewMod.Value)
-                        .Then("Assignments."u8)
+                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
+                        .Then("分配。"u8)
                         .End();
                     break;
                 case CollectionType.MaleNonPlayerCharacter:
-                    ImEx.TextMultiColored("Overruled by "u8)
-                        .Then("Male Racial NPC"u8, LunaStyle.DiscordColor)
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("男性种族NPC"u8, LunaStyle.DiscordColor)
                         .Then(", "u8)
-                        .Then("Children"u8, ColorId.FolderLine.Value)
+                        .Then("儿童"u8, ColorId.FolderLine.Value)
                         .Then(", "u8)
-                        .Then("Elderly"u8, Colors.MetaInfoText)
-                        .Then(", or "u8)
-                        .Then("Individual "u8, ColorId.NewMod.Value)
-                        .Then("Assignments."u8)
+                        .Then("老年人"u8, Colors.MetaInfoText)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
+                        .Then("分配。"u8)
                         .End();
                     break;
                 case CollectionType.FemaleNonPlayerCharacter:
-                    ImEx.TextMultiColored("Overruled by "u8)
-                        .Then("Female Racial NPC"u8, LunaStyle.ReniColorActive)
+                    ImEx.TextMultiColored("优先级低于 "u8)
+                        .Then("女性种族NPC"u8, LunaStyle.ReniColorActive)
                         .Then(", "u8)
-                        .Then("Children"u8, ColorId.FolderLine.Value)
+                        .Then("儿童"u8, ColorId.FolderLine.Value)
                         .Then(", "u8)
-                        .Then("Elderly"u8, Colors.MetaInfoText)
-                        .Then(", or "u8)
-                        .Then("Individual "u8, ColorId.NewMod.Value)
-                        .Then("Assignments."u8)
+                        .Then("老年人"u8, Colors.MetaInfoText)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
+                        .Then("分配。"u8)
                         .End();
                     break;
             }
@@ -435,8 +435,8 @@ public sealed class CollectionPanel(
 
     /// <summary> Respect incognito mode for names of collections. </summary>
     private string Name(ModCollection? collection)
-        => collection is null                 ? "Unassigned" :
-            collection == ModCollection.Empty ? "Use No Mods" :
+        => collection is null                 ? "未分配" :
+            collection == ModCollection.Empty ? "不使用模组" :
             incognito.IncognitoMode           ? collection.Identity.AnonymizedName : collection.Identity.Name;
 
     private void DrawIndividualButton(string intro, Vector2 width, string tooltip, char suffix, params ActorIdentifier[] identifiers)
@@ -448,34 +448,34 @@ public sealed class CollectionPanel(
         else
         {
             if (tooltip.Length == 0 && identifiers.Length > 0)
-                tooltip = $"The current target {identifiers[0].PlayerName} is not valid for an assignment.";
-            DrawButton(new StringU8($"{intro} (Unavailable)"), CollectionType.Individual, width, 0, ActorIdentifier.Invalid, suffix);
+                tooltip = $"当前目标 {identifiers[0].PlayerName} 无效，无法分配。";
+            DrawButton(new StringU8($"{intro} (无效)"), CollectionType.Individual, width, 0, ActorIdentifier.Invalid, suffix);
         }
 
         Im.Tooltip.OnHover(tooltip);
     }
 
     private void DrawCurrentCharacter(Vector2 width)
-        => DrawIndividualButton("Current Character", width, string.Empty, 'c', actors.GetCurrentPlayer());
+        => DrawIndividualButton("当前角色", width, string.Empty, 'c', actors.GetCurrentPlayer());
 
     private void DrawCurrentTarget(Vector2 width)
-        => DrawIndividualButton("Current Target", width, string.Empty, 't',
+        => DrawIndividualButton("当前目标", width, string.Empty, 't',
             actors.FromObject(targets.Target, false, true, true));
 
     private void DrawNewPlayer(Vector2 width)
-        => DrawIndividualButton("New Player", width, _individualAssignmentUi.PlayerTooltip, 'p',
+        => DrawIndividualButton("添加玩家分配", width, _individualAssignmentUi.PlayerTooltip, 'p',
             _individualAssignmentUi.PlayerIdentifiers.FirstOrDefault());
 
     private void DrawNewRetainer(Vector2 width)
-        => DrawIndividualButton("New Bell Retainer", width, _individualAssignmentUi.RetainerTooltip, 'r',
+        => DrawIndividualButton("添加传唤铃雇员分配", width, _individualAssignmentUi.RetainerTooltip, 'r',
             _individualAssignmentUi.RetainerIdentifiers.FirstOrDefault());
 
     private void DrawNewNpc(Vector2 width)
-        => DrawIndividualButton("New NPC", width, _individualAssignmentUi.NpcTooltip, 'n',
+        => DrawIndividualButton("添加NPC分配", width, _individualAssignmentUi.NpcTooltip, 'n',
             _individualAssignmentUi.NpcIdentifiers.FirstOrDefault());
 
     private void DrawNewOwned(Vector2 width)
-        => DrawIndividualButton("New Owned NPC", width, _individualAssignmentUi.OwnedTooltip, 'o',
+        => DrawIndividualButton("添加玩家所属NPC分配", width, _individualAssignmentUi.OwnedTooltip, 'o',
             _individualAssignmentUi.OwnedIdentifiers.FirstOrDefault());
 
     private void DrawIndividualCollections(Vector2 width)
@@ -519,7 +519,7 @@ public sealed class CollectionPanel(
         {
             Im.Dummy(Vector2.One);
             using var f = _nameFont.Push();
-            ImEx.TextFramed("Collection is not used."u8, Im.ContentRegion.Available with { Y = buttonHeight },
+            ImEx.TextFramed("合集未使用。"u8, Im.ContentRegion.Available with { Y = buttonHeight },
                 Colors.PressEnterWarningBg);
             Im.Dummy(Vector2.One);
             Im.Separator();
@@ -553,7 +553,7 @@ public sealed class CollectionPanel(
 
         using (ImStyleDouble.FramePadding.Push(Vector2.Zero))
         {
-            ImEx.TextFramed("In Use By"u8, Im.ContentRegion.Available with { Y = 0 }, 0);
+            ImEx.TextFramed("使用者"u8, Im.ContentRegion.Available with { Y = 0 }, 0);
         }
 
         using var style = ImStyleSingle.FrameBorderThickness.Push(Im.Style.GlobalScale)
@@ -582,7 +582,7 @@ public sealed class CollectionPanel(
 
         using (ImStyleDouble.FramePadding.Push(Vector2.Zero))
         {
-            ImEx.TextFramed("Inherited by"u8, Im.ContentRegion.Available with { Y = 0 }, 0);
+            ImEx.TextFramed("继承者"u8, Im.ContentRegion.Available with { Y = 0 }, 0);
         }
 
         using var f     = _nameFont.Push();
@@ -614,10 +614,10 @@ public sealed class CollectionPanel(
             return;
 
         table.SetupScrollFreeze(0, 1);
-        table.SetupColumn("Mod Name"u8,       TableColumnFlags.WidthStretch);
-        table.SetupColumn("Inherited From"u8, TableColumnFlags.WidthFixed, 5f * Im.Style.FrameHeight);
-        table.SetupColumn("State"u8,          TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
-        table.SetupColumn("Priority"u8,       TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
+        table.SetupColumn("模组名称"u8,       TableColumnFlags.WidthStretch);
+        table.SetupColumn("继承自"u8, TableColumnFlags.WidthFixed, 5f * Im.Style.FrameHeight);
+        table.SetupColumn("状态"u8,          TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
+        table.SetupColumn("优先级"u8,       TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
         table.HeaderRow();
 
         foreach (var (mod, (settings, parent)) in mods.Select(m => (m, collection.GetInheritedSettings(m.Index)))
@@ -648,8 +648,8 @@ public sealed class CollectionPanel(
 
         Im.Dummy(Vector2.One);
         if (Im.Button(collection.Settings.Unused.Count > 1
-                ? $"Clear all {collection.Settings.Unused.Count} unused settings from deleted mods."
-                : "Clear the currently unused setting from a deleted mods."u8, Im.ContentRegion.Available with { Y = 0 }))
+                ? $"清理所有 {collection.Settings.Unused.Count} 个已删除的模组的设置。"
+                : "清除当前未使用的已删除的模组设置。"u8, Im.ContentRegion.Available with { Y = 0 }))
             _collections.CleanUnavailableSettings(collection);
 
         Im.Dummy(Vector2.One);
@@ -661,16 +661,16 @@ public sealed class CollectionPanel(
 
         table.SetupScrollFreeze(0, 1);
         table.SetupColumn(StringU8.Empty,            TableColumnFlags.WidthFixed, UiHelpers.IconButtonSize.X);
-        table.SetupColumn("Unused Mod Identifier"u8, TableColumnFlags.WidthStretch);
-        table.SetupColumn("State"u8,                 TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
-        table.SetupColumn("Priority"u8,              TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
+        table.SetupColumn("未使用模组标识符"u8, TableColumnFlags.WidthStretch);
+        table.SetupColumn("状态"u8,                 TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
+        table.SetupColumn("优先级"u8,              TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
         table.HeaderRow();
         string? delete = null;
         foreach (var (name, settings) in collection.Settings.Unused.OrderBy(n => n.Key))
         {
             using var id = Im.Id.Push(name);
             table.NextColumn();
-            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this unused setting."u8))
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除这条已未使用的设置。"u8))
                 delete = name;
             table.NextColumn();
             ImEx.CopyOnClickSelectable(name);
@@ -725,10 +725,10 @@ public sealed class CollectionPanel(
                 (new StringU8($"♀ {race.ToShortName()} (NPC)"), color.ToVector());
         }
 
-        ret[CollectionType.MalePlayerCharacter]      = (new StringU8("♂ Player"u8), Vector4.Zero);
-        ret[CollectionType.FemalePlayerCharacter]    = (new StringU8("♀ Player"u8), Vector4.Zero);
-        ret[CollectionType.MaleNonPlayerCharacter]   = (new StringU8("♂ NPC"u8), Vector4.Zero);
-        ret[CollectionType.FemaleNonPlayerCharacter] = (new StringU8("♀ NPC"u8), Vector4.Zero);
+        ret[CollectionType.MalePlayerCharacter]      = (new StringU8("♂ 男性玩家"u8), Vector4.Zero);
+        ret[CollectionType.FemalePlayerCharacter]    = (new StringU8("♀ 女性玩家"u8), Vector4.Zero);
+        ret[CollectionType.MaleNonPlayerCharacter]   = (new StringU8("♂ 男性NPC"u8), Vector4.Zero);
+        ret[CollectionType.FemaleNonPlayerCharacter] = (new StringU8("♀ 女性NPC"u8), Vector4.Zero);
         return ret;
     }
 

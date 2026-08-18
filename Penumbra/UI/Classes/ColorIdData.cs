@@ -19,125 +19,124 @@ public readonly struct ColorIdData : IColorData<ColorId>
     public static StringU8 Parent { get; } = new("Penumbra"u8);
 
     private static readonly StringU8 OptionColorTooltip =
-        new("A color used for the selectable text or label for a mod option. "u8
-          + "The mod creator can associate one of these 8 colors (or none for default text), but you can choose the actual color."u8);
+        new("用于模组选项的可选文本或标签的颜色。模组作者可以从这 8 种颜色中选择一种（或选择无以使用默认文本），但你可以自行决定实际显示的颜色。"u8);
 
     private static ColorData<ColorId>[] CreateData()
     {
-        var modSelector  = "Mod Selector"u8;
-        var metadata     = "Metadata"u8;
-        var collections  = "Collections"u8;
-        var resourceTree = "On-Screen"u8;
-        var modSettings  = "Mod Settings"u8;
+        var modSelector  = "模组选择器"u8;
+        var metadata     = "元数据"u8;
+        var collections  = "合集"u8;
+        var resourceTree = "屏幕角色"u8;
+        var modSettings  = "模组设置"u8;
 
         var ret = new ColorData<ColorId>[ColorId.Values.Count];
         // Mod Selector
-        ret[(int)EnabledMod] = new ColorData<ColorId>(ImGuiColor.Text, "Enabled Mod"u8,
-            "A mod that is enabled by the currently selected collection."u8, modSelector);
-        ret[(int)DisabledMod] = new ColorData<ColorId>(0xFF686880, "Disabled Mod"u8,
-            "A mod that is disabled by the currently selected collection."u8, modSelector);
-        ret[(int)UndefinedMod] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "Mod With No Settings"u8,
-            "A mod that is not configured in the currently selected collection or any of the collections it inherits from, and thus implicitly disabled."u8,
+        ret[(int)EnabledMod] = new ColorData<ColorId>(ImGuiColor.Text, "启用的模组"u8,
+            "此模组在当前选中合集中已启用。"u8, modSelector);
+        ret[(int)DisabledMod] = new ColorData<ColorId>(0xFF686880, "禁用的模组"u8,
+            "此模组在当前选中合集中已禁用。"u8, modSelector);
+        ret[(int)UndefinedMod] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "未设置的模组"u8,
+            "此模组未在当前选择的合集或其继承的任何合集中配置，所以间接地禁用了。"u8,
             modSelector);
-        ret[(int)InheritedMod] = new ColorData<ColorId>(0xFFD0FFFF, "Mod Enabled By Inheritance"u8,
-            "A mod that is not configured in the currently selected collection, but enabled in a collection it inherits from."u8, modSelector);
-        ret[(int)InheritedDisabledMod] = new ColorData<ColorId>(0xFF688080, "Mod Disabled By Inheritance"u8,
-            "A mod that is not configured in the currently selected collection, but disabled in a collection it inherits from."u8, modSelector);
-        ret[(int)NewMod] = new ColorData<ColorId>(DalamudColor.SuccessForeground, "New Mod"u8,
-            "A mod that was newly imported or created during this session and has not been enabled yet."u8, modSelector);
-        ret[(int)ConflictingMod] = new ColorData<ColorId>(DalamudColor.WarningBackground, "Mod With Unresolved Conflicts"u8,
-            "An enabled mod that has conflicts with another enabled mod on the same priority level."u8, modSelector);
-        ret[(int)NewModTint] = new ColorData<ColorId>(DalamudColor.SuccessForeground, "New Mod Tint"u8,
-            "A mod that was newly imported or created during this session and has not been enabled yet. This color is used as a tint for the regular state colors."u8,
+        ret[(int)InheritedMod] = new ColorData<ColorId>(0xFFD0FFFF, "已在继承中启用的模组"u8,
+            "此模组未在当前选中的合集中配置，但在选中合集继承的合集中已启用。"u8, modSelector);
+        ret[(int)InheritedDisabledMod] = new ColorData<ColorId>(0xFF688080, "已在继承中禁用的模组"u8,
+            "此模组未在当前选中的合集中配置，但在选中合集继承的合集中已禁用。"u8, modSelector);
+        ret[(int)NewMod] = new ColorData<ColorId>(DalamudColor.SuccessForeground, "新模组"u8,
+            "此模组在此次Penumbra加载期间导入或创建，且尚未启用。"u8, modSelector);
+        ret[(int)ConflictingMod] = new ColorData<ColorId>(DalamudColor.WarningBackground, "未解决冲突的模组"u8,
+            "此模组已启用，但与另一个处于同一优先级的已启用模组发生冲突。"u8, modSelector);
+        ret[(int)NewModTint] = new ColorData<ColorId>(DalamudColor.SuccessForeground, "新模组色调"u8,
+            "一个在当前会话中刚刚导入或创建的模组，尚未启用。此颜色用作常规状态颜色的色调。"u8,
             modSelector);
-        ret[(int)HandledConflictMod] = new ColorData<ColorId>(0xFFD0FFD0, "Mod With Resolved Conflicts"u8,
-            "An enabled mod that has conflicts with another enabled mod on a different priority level."u8, modSelector);
+        ret[(int)HandledConflictMod] = new ColorData<ColorId>(0xFFD0FFD0, "已解决冲突的模组"u8,
+            "此模组已启用，但与另一个处于不同优先级的已启用模组发生冲突。"u8, modSelector);
         ret[(int)FolderExpanded] =
-            new ColorData<ColorId>(FolderLine, "Expanded Mod Folder"u8, "A mod folder that is currently expanded."u8, modSelector);
-        ret[(int)FolderCollapsed] = new ColorData<ColorId>(FolderLine, "Collapsed Mod Folder"u8,
-            "A mod folder that is currently collapsed."u8, modSelector);
-        ret[(int)FolderLine] = new ColorData<ColorId>(0xFFFFF0C0, "Expanded Mod Folder Line"u8,
-            "The line signifying which descendants belong to an expanded mod folder."u8, modSelector);
-        ret[(int)SelectorPriority] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "Mod Selector Priority"u8,
-            "The priority displayed for non-zero priority mods in the mod selector."u8, modSelector);
-        ret[(int)TemporaryModSettingsTint] = new ColorData<ColorId>(0x30FF0000, "Mod with Temporary Settings"u8,
-            "A mod that has temporary settings. This color is used as a tint for the regular state colors."u8, modSelector);
-        ret[(int)NoTint] = new ColorData<ColorId>(Rgba32.Transparent, "No Tint"u8,
-            "The default tint for all mods."u8, modSelector);
+            new ColorData<ColorId>(FolderLine, "已展开的折叠组"u8, "此折叠组已展开。"u8, modSelector);
+        ret[(int)FolderCollapsed] = new ColorData<ColorId>(FolderLine, "已最小化的折叠组"u8,
+            "此折叠组已最小化。"u8, modSelector);
+        ret[(int)FolderLine] = new ColorData<ColorId>(0xFFFFF0C0, "展开的折叠组的结构线"u8,
+            "表示哪些模组属于当前展开的折叠组的指示线。"u8, modSelector);
+        ret[(int)SelectorPriority] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "模组选择器优先级标识"u8,
+            "在模组选择器里模组名称后显示优先级非0数字。"u8, modSelector);
+        ret[(int)TemporaryModSettingsTint] = new ColorData<ColorId>(0x30FF0000, "具有临时设置的模组"u8,
+            "一个具有临时设置的模组。此颜色用作常规状态颜色的色调。"u8, modSelector);
+        ret[(int)NoTint] = new ColorData<ColorId>(Rgba32.Transparent, "无色调"u8,
+            "所有模组的默认色调。"u8, modSelector);
 
         // Meta stuff
-        ret[(int)ItemId] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "Item Id"u8,
-            "The numeric model id of the given item to the right of changed items."u8, metadata);
-        ret[(int)IncreasedMetaValue] = new ColorData<ColorId>(DalamudColor.SuccessBackground, "Increased Meta Manipulation Value"u8,
-            "An increased meta manipulation value for floats or an enabled toggle where the default is disabled."u8, metadata);
-        ret[(int)DecreasedMetaValue] = new ColorData<ColorId>(DalamudColor.ErrorBackground, "Decreased Meta Manipulation Value"u8,
-            "A decreased meta manipulation value for floats or a disabled toggle where the default is enabled."u8, metadata);
-        ret[(int)PredefinedTagAdd] = new ColorData<ColorId>(DalamudColor.SuccessBackground, "Predefined Tags: Add Tag"u8,
-            "A predefined tag that is not present on the current mod and can be added."u8, metadata);
-        ret[(int)PredefinedTagRemove] = new ColorData<ColorId>(DalamudColor.ErrorBackground, "Predefined Tags: Remove Tag"u8,
-            "A predefined tag that is already present on the current mod and can be removed."u8, metadata);
-        ret[(int)ChangedItemPreferenceStar] = new ColorData<ColorId>(0x30FFFFFF, "Preferred Changed Item Star"u8,
-            "The color of the star button in the mod panel's changed items tab to prioritize specific items."u8, metadata);
-        ret[(int)InGameHighlight] = new ColorData<ColorId>(0xFFEBCF89, "In-Game Highlight (Primary)"u8,
-            "An in-game element that has been highlighted for ease of editing."u8, metadata);
-        ret[(int)InGameHighlight2] = new ColorData<ColorId>(0xFF446CC0, "In-Game Highlight (Secondary)"u8,
-            "Another in-game element that has been highlighted for ease of editing."u8, metadata);
-        ret[(int)ModSpecificPreset] = new ColorData<ColorId>(DalamudColor.HealerGreen, "Mod-Specific Setting Preset"u8,
-            "The color of a setting preset specific to this mod as opposed to a generic setting preset in the preset combo."u8, metadata);
+        ret[(int)ItemId] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "物品ID"u8,
+            "更改项目右侧括号里显示的物品ID"u8, metadata);
+        ret[(int)IncreasedMetaValue] = new ColorData<ColorId>(DalamudColor.SuccessBackground, "增加的元数据操作值"u8,
+            "表示元数据操作设置的浮点值相对原始数值增加，或元数据选项的启用状态（默认状态是禁用时）。"u8, metadata);
+        ret[(int)DecreasedMetaValue] = new ColorData<ColorId>(DalamudColor.ErrorBackground, "减少的元数据操作值"u8,
+            "表示元数据操作设置的浮点值相对原始数值减少，或元数据选项的禁用状态（默认状态是启用时）。"u8, metadata);
+        ret[(int)PredefinedTagAdd] = new ColorData<ColorId>(DalamudColor.SuccessBackground, "预定义标签：添加标签"u8,
+            "当前MOD上不存在且可以添加的预定义标签。"u8, metadata);
+        ret[(int)PredefinedTagRemove] = new ColorData<ColorId>(DalamudColor.ErrorBackground, "预定义标签：删除标签"u8,
+            "当前MOD上已存在且可以删除的预定义标签。"u8, metadata);
+        ret[(int)ChangedItemPreferenceStar] = new ColorData<ColorId>(0x30FFFFFF, "首选更改项目星标"u8,
+            "模组面板的更改项目标签页中，用于优先处理特定项目的星标按钮颜色。"u8, metadata);
+        ret[(int)InGameHighlight] = new ColorData<ColorId>(0xFFEBCF89, "游戏中高亮"u8,
+            "为便于编辑而高亮显示的游戏中元素。"u8, metadata);
+        ret[(int)InGameHighlight2] = new ColorData<ColorId>(0xFF446CC0, "游戏内高亮（次要）"u8,
+            "另一个为便于编辑而高亮显示的游戏中元素。"u8, metadata);
+        ret[(int)ModSpecificPreset] = new ColorData<ColorId>(DalamudColor.HealerGreen, "模组专属设置预设"u8,
+            "在预设下拉菜单中，此模组专属设置预设（相对于通用设置预设）的颜色。"u8, metadata);
 
         // Collections
-        ret[(int)SelectedCollection] = new ColorData<ColorId>(0x6069C056, "Currently Selected Collection"u8,
-            "The collection that is currently selected and being edited."u8, collections);
-        ret[(int)RedundantAssignment] = new ColorData<ColorId>(DalamudColor.AttentionBackground, "Redundant Collection Assignment"u8,
-            "A collection assignment that currently has no effect as it is redundant with more general assignments."u8, collections);
-        ret[(int)NoModsAssignment] = new ColorData<ColorId>(0x50000080, "'Use No Mods' Collection Assignment"u8,
-            "A collection assignment set to not use any mods at all."u8, collections);
-        ret[(int)NoAssignment] = new ColorData<ColorId>(Rgba32.Transparent, "Unassigned Collection Assignment"u8,
-            "A collection assignment that is not configured to any collection and thus just has no specific treatment."u8, collections);
+        ret[(int)SelectedCollection] = new ColorData<ColorId>(0x6069C056, "当前选中合集的分配对象"u8,
+            "当前选中并正在编辑的合集，其影响的分配对象的颜色。"u8, collections);
+        ret[(int)RedundantAssignment] = new ColorData<ColorId>(DalamudColor.AttentionBackground, "多余的合集分配"u8,
+            "当前无效的合集分配对象，因为它已经被其他包含它的对象涵盖了。"u8, collections);
+        ret[(int)NoModsAssignment] = new ColorData<ColorId>(0x50000080, "合集分配设置为'不使用模组'"u8,
+            "此合集分配被设置为完全不使用任何模组。"u8, collections);
+        ret[(int)NoAssignment] = new ColorData<ColorId>(Rgba32.Transparent, "未分配合集的对象"u8,
+            "当前没有任何合集分配给该对象。"u8, collections);
 
         // Resource Tree
-        ret[(int)ResTreeLocalPlayer] = new ColorData<ColorId>(0xFFFFE0A0, "On-Screen: You"u8,
-            "You and what you own (mount, minion, accessory, pets and so on), in the On-Screen tab."u8, resourceTree);
-        ret[(int)ResTreePlayer] = new ColorData<ColorId>(0xFFC0FFC0, "On-Screen: Other Players"u8,
-            "Other players and what they own, in the On-Screen tab."u8, resourceTree);
-        ret[(int)ResTreeNetworked] = new ColorData<ColorId>(ImGuiColor.Text, "On-Screen: Non-Players (Networked)"u8,
-            "Non-player entities handled by the game server, in the On-Screen tab."u8, resourceTree);
-        ret[(int)ResTreeNonNetworked] = new ColorData<ColorId>(0xFFC0C0FF, "On-Screen: Non-Players (Local)"u8,
-            "Non-player entities handled locally, in the On-Screen tab."u8, resourceTree);
+        ret[(int)ResTreeLocalPlayer] = new ColorData<ColorId>(0xFFFFE0A0, "画面角色：你"u8,
+            "在画面角色选项卡中，你和属于你的东西(坐骑，时尚配饰，宠物等等)。"u8, resourceTree);
+        ret[(int)ResTreePlayer] = new ColorData<ColorId>(0xFFC0FFC0, "画面角色：其他玩家"u8,
+            "在画面角色选项卡中，其他玩家和属于他们的东西"u8, resourceTree);
+        ret[(int)ResTreeNetworked] = new ColorData<ColorId>(ImGuiColor.Text, "画面角色：NPC（网络）"u8,
+            "在画面角色选项卡中，由游戏服务器处理的NPC。"u8, resourceTree);
+        ret[(int)ResTreeNonNetworked] = new ColorData<ColorId>(0xFFC0C0FF, "画面角色：NPC（本地）"u8,
+            "在画面角色选项卡中，由本地处理的NPC。"u8, resourceTree);
 
         // Mod Settings
-        ret[(int)OptionColor1] = new ColorData<ColorId>(0xFFF8CD8E, "Selectable Color for Mod Option #1"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionColor2] = new ColorData<ColorId>(0xFFAAD898, "Selectable Color for Mod Option #2"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionColor3] = new ColorData<ColorId>(0xFF8AD1E6, "Selectable Color for Mod Option #3"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionColor4] = new ColorData<ColorId>(0xFF6B8CD9, "Selectable Color for Mod Option #4"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionColor5] = new ColorData<ColorId>(0xFFA38FD9, "Selectable Color for Mod Option #5"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionColor6] = new ColorData<ColorId>(0xFFDB9DB3, "Selectable Color for Mod Option #6"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionColor7] = new ColorData<ColorId>(0xFF6A5CC7, "Selectable Color for Mod Option #7"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionColor8] = new ColorData<ColorId>(0xFF6BB5A6, "Selectable Color for Mod Option #8"u8, OptionColorTooltip, modSettings);
-        ret[(int)OptionTreeLine] = new ColorData<ColorId>(ImGuiColor.Separator, "Option Group Dependency Tree Line"u8,
-            "The color for the line connecting option groups and nodes in the mod settings panel."u8, modSettings);
-        ret[(int)GroupLabelBackground] = new ColorData<ColorId>(ImGuiColor.TitleBackground, "Option Group Label Background (Non-Interactive)"u8,
-            "The color for the background of option group labels when they are not collapsible."u8, modSettings);
-        ret[(int)GroupLabelBorder] = new ColorData<ColorId>(OptionTreeLine, "Option Group Label Border (Non-Interactive)"u8,
-            "The color for the border around option group labels when they are not collapsible."u8, modSettings);
-        ret[(int)GroupLabelText] = new ColorData<ColorId>(ImGuiColor.Text, "Option Group Label Text (Non-Interactive)"u8,
-            "The color for the text in option group labels when they are not collapsible."u8, modSettings);
-        ret[(int)GroupLabelBackgroundExpanded] = new ColorData<ColorId>(ImGuiColor.Header, "Option Group Label Background (Expanded)"u8,
-            "The color for the background of option group labels when they are collapsible and currently expanded."u8, modSettings);
-        ret[(int)GroupLabelBorderExpanded] = new ColorData<ColorId>(OptionTreeLine, "Option Group Label Border (Expanded)"u8,
-            "The color for the border around option group labels when they are collapsible and currently expanded."u8, modSettings);
-        ret[(int)GroupLabelTextExpanded] = new ColorData<ColorId>(ImGuiColor.Text, "Option Group Label Text (Expanded)"u8,
-            "The color for the text in option group labels when they are collapsible and currently expanded."u8, modSettings);
-        ret[(int)GroupLabelBackgroundCollapsed] = new ColorData<ColorId>(ImGuiColor.Header, "Option Group Label Background (Collapsed)"u8,
-            "The color for the background of option group labels when they are currently collapsed."u8, modSettings);
-        ret[(int)GroupLabelBorderCollapsed] = new ColorData<ColorId>(OptionTreeLine, "Option Group Label Border (Collapsed)"u8,
-            "The color for the border around option group labels when they are currently collapsed."u8, modSettings);
-        ret[(int)GroupLabelTextCollapsed] = new ColorData<ColorId>(ImGuiColor.Text, "Option Group Label Text (Collapsed)"u8,
-            "The color for the text in option group labels when they are currently collapsed."u8, modSettings);
-        ret[(int)OptionBorder] = new ColorData<ColorId>(OptionTreeLine, "Option Checkbox/Radio Button/Combo Border"u8,
-            "The color of the border around option checkboxes, radio buttons or single select option group combos."u8, modSettings);
-        ret[(int)HiddenOptionIndicator] = new ColorData<ColorId>(0x00FFFFFF, "Hidden Option Indicator"u8,
-            "The color of an indicator line when a group or option has more options or group children than are displayed."u8, modSettings);
+        ret[(int)OptionColor1] = new ColorData<ColorId>(0xFFF8CD8E, "模组选项可选颜色 #1"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionColor2] = new ColorData<ColorId>(0xFFAAD898, "模组选项可选颜色 #2"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionColor3] = new ColorData<ColorId>(0xFF8AD1E6, "模组选项可选颜色 #3"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionColor4] = new ColorData<ColorId>(0xFF6B8CD9, "模组选项可选颜色 #4"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionColor5] = new ColorData<ColorId>(0xFFA38FD9, "模组选项可选颜色 #5"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionColor6] = new ColorData<ColorId>(0xFFDB9DB3, "模组选项可选颜色 #6"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionColor7] = new ColorData<ColorId>(0xFF6A5CC7, "模组选项可选颜色 #7"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionColor8] = new ColorData<ColorId>(0xFF6BB5A6, "模组选项可选颜色 #8"u8, OptionColorTooltip, modSettings);
+        ret[(int)OptionTreeLine] = new ColorData<ColorId>(ImGuiColor.Separator, "选项组依赖树连线"u8,
+            "模组设置面板中连接选项组与节点的连线颜色。"u8, modSettings);
+        ret[(int)GroupLabelBackground] = new ColorData<ColorId>(ImGuiColor.TitleBackground, "选项组标签背景（非交互）"u8,
+            "选项组标签不可折叠时的背景颜色。"u8, modSettings);
+        ret[(int)GroupLabelBorder] = new ColorData<ColorId>(OptionTreeLine, "选项组标签边框（非交互）"u8,
+            "选项组标签不可折叠时的边框颜色。"u8, modSettings);
+        ret[(int)GroupLabelText] = new ColorData<ColorId>(ImGuiColor.Text, "选项组标签文本（非交互）"u8,
+            "选项组标签不可折叠时的文本颜色。"u8, modSettings);
+        ret[(int)GroupLabelBackgroundExpanded] = new ColorData<ColorId>(ImGuiColor.Header, "选项组标签背景（展开）"u8,
+            "选项组可折叠且当前展开时，组标签的背景颜色。"u8, modSettings);
+        ret[(int)GroupLabelBorderExpanded] = new ColorData<ColorId>(OptionTreeLine, "选项组标签边框（展开）"u8,
+            "选项组可折叠且当前展开时，组标签的边框颜色。"u8, modSettings);
+        ret[(int)GroupLabelTextExpanded] = new ColorData<ColorId>(ImGuiColor.Text, "选项组标签（展开）"u8,
+            "选项组展开时，组标签文本的颜色。"u8, modSettings);
+        ret[(int)GroupLabelBackgroundCollapsed] = new ColorData<ColorId>(ImGuiColor.Header, "选项组标签背景（折叠）"u8,
+            "选项组当前折叠时，组标签的背景颜色。"u8, modSettings);
+        ret[(int)GroupLabelBorderCollapsed] = new ColorData<ColorId>(OptionTreeLine, "选项组标签边框（折叠）"u8,
+            "选项组当前折叠时，组标签的边框颜色。"u8, modSettings);
+        ret[(int)GroupLabelTextCollapsed] = new ColorData<ColorId>(ImGuiColor.Text, "选项组标签（折叠）"u8,
+            "选项组折叠时，组标签文本的颜色。"u8, modSettings);
+        ret[(int)OptionBorder] = new ColorData<ColorId>(OptionTreeLine, "选项复选框/单选按钮/下拉框边框"u8,
+            "选项复选框、单选按钮或单选项组下拉框周围边框的颜色。"u8, modSettings);
+        ret[(int)HiddenOptionIndicator] = new ColorData<ColorId>(0x00FFFFFF, "隐藏选项指示"u8,
+            "当组或选项存在未显示的更多选项或子组时，指示线的颜色。"u8, modSettings);
 
         foreach (var data in ret)
         {

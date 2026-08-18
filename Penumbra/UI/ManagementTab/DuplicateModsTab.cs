@@ -11,7 +11,7 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
     : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
-        => "Duplicate Mods"u8;
+        => "重复模组"u8;
 
     public ManagementTabType Identifier
         => ManagementTabType.DuplicateMods;
@@ -19,7 +19,7 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
     public void PostTabButton()
     {
         Im.Tooltip.OnHover(
-            "This tab shows mods with identical names and some additional data to discern which to keep if they are indeed identical."u8);
+            "这里列出了所有重名的模组。你可以通过显示的详细信息来对比，决定在内容重复时留下哪一个。"u8);
     }
 
     public void DrawContent()
@@ -36,12 +36,12 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
 
         table.SetupScrollFreeze(0, 1);
         table.SetupColumn(""u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 2 + Im.Style.ItemInnerSpacing.X);
-        table.SetupColumn("Mod Name"u8, TableColumnFlags.WidthStretch, 0.25f);
-        table.SetupColumn("Mod Directory"u8, TableColumnFlags.WidthStretch, 0.25f);
-        table.SetupColumn("Active"u8, TableColumnFlags.WidthFixed, cache.Active.CalculateSize().X);
-        table.SetupColumn("Import Date"u8, TableColumnFlags.WidthFixed, cache.Date.CalculateSize().X);
+        table.SetupColumn("模组名称"u8, TableColumnFlags.WidthStretch, 0.25f);
+        table.SetupColumn("模组目录"u8, TableColumnFlags.WidthStretch, 0.25f);
+        table.SetupColumn("激活"u8, TableColumnFlags.WidthFixed, cache.Active.CalculateSize().X);
+        table.SetupColumn("导入日期"u8, TableColumnFlags.WidthFixed, cache.Date.CalculateSize().X);
         table.SetupColumn("Path"u8, TableColumnFlags.WidthStretch, 0.5f);
-        table.SetupColumn("Notes"u8, TableColumnFlags.WidthFixed, cache.Notes.CalculateSize().X + Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X);
+        table.SetupColumn("备注"u8, TableColumnFlags.WidthFixed, cache.Notes.CalculateSize().X + Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X);
         table.HeaderRow();
 
         var       lastDrawnName = StringU8.Empty;
@@ -51,16 +51,16 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
         {
             using var id = Im.Id.Push(index);
             table.NextColumn();
-            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this mod. This is NOT revertible."u8, disabled))
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除此模组。此操作不可撤销。"u8, disabled))
             {
                 mods.DeleteMod(item.Mod);
                 cache.Dirty |= IManagedCache.DirtyFlags.Custom;
             }
 
             if (disabled)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {LunaStyle.Modifier.Destructive} to delete this mod.");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {LunaStyle.Modifier.Destructive} 键以删除此模组。");
             Im.Line.SameInner();
-            if (ImEx.Icon.Button(LunaStyle.FolderIcon, "Open this mod in the file explorer of your choice."u8))
+            if (ImEx.Icon.Button(LunaStyle.FolderIcon, "在文件资源管理器中打开此模组。"u8))
                 Process.Start(new ProcessStartInfo(item.Mod.ModPath.FullName) { UseShellExecute = true });
 
             if (lastDrawnName == item.Name)
@@ -83,13 +83,15 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
                 using var tt = Im.Tooltip.Begin();
                 foreach (var collection in item.Collections)
                 {
-                    Im.Text("Active in Collection "u8);
+                    Im.Text("在合集["u8);
                     Im.Line.NoSpacing();
                     Im.Text(collection.Identity.Name);
+                    Im.Line.NoSpacing();
+                    Im.Text("]中激活"u8);
                 }
             
                 if (item.MarkedActive > 0)
-                    Im.Text($"{item.MarkedActive} other Plugins mark this mod as active.");
+                    Im.Text($"{item.MarkedActive} 其他插件将此模组标记为激活。");
             }
             
             table.DrawFrameColumn(item.CreationDate);
@@ -113,9 +115,9 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
 
         public List<CacheItem> Items = [];
 
-        public readonly StringU8 Active = new("Active"u8);
+        public readonly StringU8 Active = new("激活"u8);
         public readonly StringU8 Date   = new("00/00/0000 00:00"u8);
-        public readonly StringU8 Notes  = new("Notes"u8);
+        public readonly StringU8 Notes  = new("备注"u8);
 
         public override void Update()
         {
@@ -133,7 +135,7 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
                     configUpdater.QueryUsage(mod, dict);
                     var creation          = new StringU8($"{DateTimeOffset.FromUnixTimeMilliseconds(mod.ImportDate):g}");
                     var activeCollections = collections.Where(c => c.GetActualSettings(mod.Index).Settings?.Enabled is true).ToArray();
-                    var notes = dict.Select(kvp => (new StringPair(kvp.Key.GetName().Name ?? "Unknown"), new StringPair(kvp.Value.Item2)))
+                    var notes = dict.Select(kvp => (new StringPair(kvp.Key.GetName().Name ?? "未知"), new StringPair(kvp.Value.Item2)))
                         .ToArray();
                     var markedActive = dict.Values.Count(v => v.Item1);
                     Items.Add(new CacheItem(nameU8, mod, new StringU8(mod.Identifier), creation, new StringU8(mod.Path.CurrentPath),

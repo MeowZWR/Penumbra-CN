@@ -77,7 +77,7 @@ public sealed class ModGroupEditDrawer(
     private void DrawGroup(GroupNameCache cache, IModGroup group, int idx)
     {
         using var id    = Im.Id.Push(idx);
-        using var frame = ImEx.FramedGroup($"Group #{idx + 1}");
+        using var frame = ImEx.FramedGroup($"组 #{idx + 1}");
         DrawGroupNameRow(cache, group, idx);
         group.EditDrawer(this).Draw();
     }
@@ -123,8 +123,8 @@ public sealed class ModGroupEditDrawer(
         }
 
         var tt = _isGroupNameValid
-            ? "Change the Group name."u8
-            : "Current name can not be used for this group."u8;
+            ? "更改组名称。"u8
+            : "当前名称不能用于此组。"u8;
         Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, tt);
     }
 
@@ -133,9 +133,9 @@ public sealed class ModGroupEditDrawer(
         if (ImEx.Icon.Button(LunaStyle.DeleteIcon, !LunaStyle.Modifier.Destructive))
             ActionQueue.Enqueue(() => ModManager.OptionEditor.DeleteModGroup(group));
 
-        Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "Delete this option group."u8);
+        Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "删除此选项组。"u8);
         if (!LunaStyle.Modifier.Destructive)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {LunaStyle.Modifier.Destructive} while clicking to delete.");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {LunaStyle.Modifier.Destructive} 点击删除。");
     }
 
     private void DrawGroupPriority(IModGroup group)
@@ -143,7 +143,7 @@ public sealed class ModGroupEditDrawer(
         Im.Item.SetNextWidth(PriorityWidth);
         if (ImEx.InputOnDeactivation.Scalar("##GroupPriority"u8, group.Priority.Value, out var newPriority))
             ModManager.OptionEditor.ChangeGroupPriority(group, new ModPriority(newPriority));
-        Im.Tooltip.OnHover("Group Priority"u8);
+        Im.Tooltip.OnHover("组优先级"u8);
     }
 
     private void DrawGroupPage(GroupNameCache cache, IModGroup group)
@@ -152,16 +152,16 @@ public sealed class ModGroupEditDrawer(
         if (ImEx.InputOnDeactivation.Scalar("##GroupPage"u8, group.Page + 1, out var newPage))
             ModManager.OptionEditor.SetPage(group, newPage - 1);
         Im.Tooltip.OnHover(
-            "The page this group is to be placed in. If this group has a parent, this setting is ignored.\n\nNote that the number seen here is offset by 1 compared to the number stored in the JSON file."u8);
+            "此组所在的页面。若该组有父组，则忽略此设置。\n\n注意此处显示的数字比 JSON 文件中存储的数字大 1。"u8);
         Im.Line.SameInner();
-        ImEx.TextFrameAligned(cache.ShowPages ? cache.Pages[group.Page].Name.Utf8 : "(Unused)"u8);
+        ImEx.TextFrameAligned(cache.ShowPages ? cache.Pages[group.Page].Name.Utf8 : "(未使用)"u8);
     }
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawGroupDescription(IModGroup group)
     {
-        if (ImEx.Icon.Button(LunaStyle.EditIcon, "Edit group description."u8,
+        if (ImEx.Icon.Button(LunaStyle.EditIcon, "编辑组描述。"u8,
                 textColor: group.Description.Length > 0 ? LunaStyle.FavoriteColor : ColorParameter.Default))
             descriptionPopup.Open(group);
         DrawDescriptionInteraction(group);
@@ -170,7 +170,7 @@ public sealed class ModGroupEditDrawer(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawGroupLayout(IModGroup group)
     {
-        if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "Edit group layout settings."u8,
+        if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "编辑组布局设置。"u8,
                 textColor: group.Layout is not 0 || group.ParentSetting is not null ? LunaStyle.FavoriteColor : ColorParameter.Default))
             layoutPopup.Open(group);
         DrawLayoutInteraction(group);
@@ -179,7 +179,7 @@ public sealed class ModGroupEditDrawer(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawGroupConditions(IModGroup group)
     {
-        if (ImEx.Icon.Button(LunaStyle.ConditionIcon, "Edit group conditions."u8,
+        if (ImEx.Icon.Button(LunaStyle.ConditionIcon, "编辑组条件。"u8,
                 textColor: group.Condition is not null ? LunaStyle.FavoriteColor : ColorParameter.Default))
             conditionPopup.Open(group);
 
@@ -193,9 +193,9 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.MoveModGroup(group, idx - 1));
 
         if (isFirst)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "Can not move this group further upwards."u8);
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "到顶了。"u8);
         else
-            Im.Tooltip.OnHover($"Move this group up to group {idx}.");
+            Im.Tooltip.OnHover($"将此组上移到组 {idx}。");
 
 
         Im.Line.SameInner();
@@ -204,16 +204,16 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.MoveModGroup(group, idx + 1));
 
         if (isLast)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "Can not move this group further downwards."u8);
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "到底了。"u8);
         else
-            Im.Tooltip.OnHover($"Move this group down to group {idx + 2}.");
+            Im.Tooltip.OnHover($"将此组下移到组 {idx + 2}。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DrawOptionPosition(IModGroup group, IModOption option, int optionIdx)
     {
         Im.Cursor.FrameAlign();
-        Im.Selectable($"Option #{optionIdx + 1}", size: OptionIdxSelectable);
+        Im.Selectable($"选项 #{optionIdx + 1}", size: OptionIdxSelectable);
         Target(group, optionIdx);
         Source(option);
     }
@@ -224,7 +224,7 @@ public sealed class ModGroupEditDrawer(
         var isDefaultOption = group.DefaultSettings.AsIndex == optionIdx;
         if (Im.RadioButton("##default"u8, isDefaultOption))
             ModManager.OptionEditor.ChangeModGroupDefaultOption(group, Setting.Single(optionIdx));
-        Im.Tooltip.OnHover($"Set {option.Name} as the default choice for this group.");
+        Im.Tooltip.OnHover($"将 {option.Name} 设为此组的默认选项。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -233,7 +233,7 @@ public sealed class ModGroupEditDrawer(
         var isDefaultOption = group.DefaultSettings.HasFlag(optionIdx);
         if (Im.Checkbox("##default"u8, ref isDefaultOption))
             ModManager.OptionEditor.ChangeModGroupDefaultOption(group, group.DefaultSettings.SetBit(optionIdx, isDefaultOption));
-        Im.Tooltip.OnHover($"{(isDefaultOption ? "Disable"u8 : "Enable"u8)} {option.Name} per default in this group.");
+        Im.Tooltip.OnHover($"{(isDefaultOption ? "禁用"u8 : "启用"u8)} {option.Name} 作为此组的默认状态。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -249,7 +249,7 @@ public sealed class ModGroupEditDrawer(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawOptionDescription(IModOption option)
     {
-        if (ImEx.Icon.Button(LunaStyle.EditIcon, "Edit option description."u8,
+        if (ImEx.Icon.Button(LunaStyle.EditIcon, "编辑选项描述。"u8,
                 textColor: option.Description.Length > 0 ? LunaStyle.FavoriteColor : ColorParameter.Default))
             descriptionPopup.Open(option);
         DrawDescriptionInteraction(option);
@@ -258,7 +258,7 @@ public sealed class ModGroupEditDrawer(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawOptionLayout(IModOption option)
     {
-        if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "Edit option layout settings."u8,
+        if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "编辑选项布局设置。"u8,
                 textColor: option.Layout is not 0 || option.ColorAsInteger is not 0 ? LunaStyle.FavoriteColor : ColorParameter.Default))
             layoutPopup.Open(option);
         DrawLayoutInteraction(option);
@@ -267,7 +267,7 @@ public sealed class ModGroupEditDrawer(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawOptionConditions(IModOption option)
     {
-        if (ImEx.Icon.Button(LunaStyle.ConditionIcon, "Edit option conditions."u8,
+        if (ImEx.Icon.Button(LunaStyle.ConditionIcon, "编辑选项条件。"u8,
                 textColor: option.Condition is not null ? LunaStyle.FavoriteColor : ColorParameter.Default))
             conditionPopup.Open(option);
         DrawConditionInteraction(option);
@@ -279,7 +279,7 @@ public sealed class ModGroupEditDrawer(
         Im.Item.SetNextWidth(PriorityWidth);
         if (ImEx.InputOnDeactivation.Scalar("##Priority"u8, option.Priority.Value, out var newValue))
             ModManager.OptionEditor.MultiEditor.ChangeOptionPriority(option, new ModPriority(newValue));
-        Im.Tooltip.OnHover("Option priority inside the mod."u8);
+        Im.Tooltip.OnHover("选项优先级。"u8);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -297,17 +297,17 @@ public sealed class ModGroupEditDrawer(
             ActionQueue.Enqueue(() => ModManager.OptionEditor.DeleteOption(option));
 
         if (LunaStyle.Modifier.Destructive)
-            Im.Tooltip.OnHover("Delete this option."u8);
+            Im.Tooltip.OnHover("删除此选项。"u8);
         else
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
-                $"Delete this option.\nHold {LunaStyle.Modifier.Destructive} while clicking to delete.");
+                $"删除此选项。\n按住 {LunaStyle.Modifier.Destructive} 点击删除。");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal string DrawNewOptionBase(IModGroup group, int count)
     {
         Im.Cursor.FrameAlign();
-        Im.Selectable($"Option #{count + 1}", size: OptionIdxSelectable);
+        Im.Selectable($"选项 #{count + 1}", size: OptionIdxSelectable);
         Target(group, count);
 
         Im.Line.SameInner();
@@ -318,7 +318,7 @@ public sealed class ModGroupEditDrawer(
         var newName = _newOptionGroup == group
             ? NewOptionName ?? string.Empty
             : string.Empty;
-        if (Im.Input.Text("##newOption"u8, ref newName, "Add new option..."u8))
+        if (Im.Input.Text("##newOption"u8, ref newName, "添加新选项..."u8))
         {
             NewOptionName   = newName;
             _newOptionGroup = group;
@@ -344,7 +344,7 @@ public sealed class ModGroupEditDrawer(
             _draggingAcross = across;
         }
 
-        Im.Text($"Dragging option {option.Name} from group {option.Group.Name}...");
+        Im.Text($"正在拖动组 {option.Group.Name} 的选项 {option.Name}...");
     }
 
     private void Target(IModGroup group, int optionIdx)
@@ -390,7 +390,7 @@ public sealed class ModGroupEditDrawer(
 
         using (Im.Disabled(@object.Description.Length is 0))
         {
-            if (!Im.Menu.Item("Clear"u8))
+            if (!Im.Menu.Item("清除"u8))
                 return;
 
             if (@object is IModGroup g)
@@ -408,7 +408,7 @@ public sealed class ModGroupEditDrawer(
 
         using (Im.Disabled(@object.Layout is 0))
         {
-            if (Im.Menu.Item("Copy"u8))
+            if (Im.Menu.Item("复制"u8))
             {
                 _copiedLayout  = @object.Layout;
                 _didCopyParent = @object is IModGroup;
@@ -419,7 +419,7 @@ public sealed class ModGroupEditDrawer(
 
         using (Im.Disabled(_copiedLayout is null))
         {
-            if (Im.Menu.Item("Paste"u8))
+            if (Im.Menu.Item("粘贴"u8))
             {
                 ModManager.OptionEditor.SetLayout(@object, _copiedLayout!.Value);
                 if (_didCopyParent && @object is IModGroup g && CycleChecker.Check(g, _copiedParent))
@@ -431,7 +431,7 @@ public sealed class ModGroupEditDrawer(
 
         using (Im.Disabled(@object.Layout is 0))
         {
-            if (Im.Menu.Item("Clear"u8))
+            if (Im.Menu.Item("清除"u8))
             {
                 ModManager.OptionEditor.SetLayout(@object, 0);
                 if (@object is IModGroup g)
@@ -450,19 +450,19 @@ public sealed class ModGroupEditDrawer(
             {
                 using (Im.Disabled(@object.Condition is null))
                 {
-                    if (Im.Menu.Item("Copy"u8))
+                    if (Im.Menu.Item("复制"u8))
                         _copiedCondition = @object.Condition!.DeepCopy();
                 }
 
                 using (Im.Disabled(_copiedCondition is null))
                 {
-                    if (Im.Menu.Item("Paste"u8))
+                    if (Im.Menu.Item("粘贴"u8))
                         ModManager.OptionEditor.SetCondition(@object, _copiedCondition!.DeepCopy(), false);
                 }
 
                 using (Im.Disabled(@object.Condition is null))
                 {
-                    if (Im.Menu.Item("Clear"u8))
+                    if (Im.Menu.Item("清除"u8))
                         ModManager.OptionEditor.SetCondition(@object, null, false);
                 }
             }
@@ -474,7 +474,7 @@ public sealed class ModGroupEditDrawer(
             {
                 drag.SetPayload("Condition"u8);
                 _dragDropCondition = @object;
-                Im.Text($"Dragging {@object.Name}'s condition...");
+                Im.Text($"正在拖动 {@object.Name} 的条件...");
             }
         }
 
@@ -495,7 +495,7 @@ public sealed class ModGroupEditDrawer(
         AvailableWidth      = new Vector2(totalWidth + 5 * _spacing + 4 * _buttonSize.X + PriorityWidth, 0);
         _groupNameWidth     = totalWidth - 5 * (_buttonSize.X + _spacing);
         _spacing            = Im.Style.ItemInnerSpacing.X;
-        OptionIdxSelectable = Im.Font.CalculateSize("Option #88."u8);
+        OptionIdxSelectable = Im.Font.CalculateSize("选项 #88。"u8);
         _optionNameWidth    = totalWidth - OptionIdxSelectable.X - 4 * _buttonSize.X - 5 * _spacing;
     }
 }

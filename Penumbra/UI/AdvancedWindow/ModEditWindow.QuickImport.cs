@@ -40,7 +40,7 @@ public partial class ModEditWindow
 
     private void DrawQuickImportTab(bool optionChanged)
     {
-        using var tab = Im.TabBar.BeginItem("Import from Screen"u8);
+        using var tab = Im.TabBar.BeginItem("从画面导入"u8);
         if (!tab)
         {
             _quickImportActions.Clear();
@@ -71,8 +71,8 @@ public partial class ModEditWindow
         var quickImportEnabled = canQuickImport && (!resourceNode.Protected || LunaStyle.Modifier.Destructive);
         if (ImEx.Icon.Button(LunaStyle.ImportIcon,
                 canQuickImport
-                    ? $"Add a copy of this file to {quickImport.OptionName}.{(!quickImportEnabled ? $"\nHold {LunaStyle.Modifier.Destructive} while clicking to add." : string.Empty)}"
-                    : $"Cannot add a copy of this file to {quickImport.OptionName}:\n{quickImport.NonExecutableReason.Tooltip()}",
+                    ? $"添加此文件副本到 {quickImport.OptionName}.{(!quickImportEnabled ? $"\n按住 {LunaStyle.Modifier.Destructive} 同时点击来添加" : string.Empty)}"
+                    : $"无法添加此文件副本到 {quickImport.OptionName}:\n{quickImport.NonExecutableReason.Tooltip()}",
                 !quickImportEnabled))
         {
             quickImport.Execute();
@@ -82,7 +82,7 @@ public partial class ModEditWindow
 
     public class QuickImportAction
     {
-        public const string FallbackOptionName = "the current option";
+        public const string FallbackOptionName = "当前选项";
 
         private readonly string                         _optionName;
         private readonly Utf8GamePath                   _gamePath;
@@ -219,27 +219,27 @@ public partial class ModEditWindow
         [Tooltip(Omit: true)]
         None = 0,
 
-        [Tooltip("You have unsaved changes in the File Redirections tab.")]
+        [Tooltip("文件重定向标签页中有未保存的更改。")]
         EditorDirty,
 
-        [Tooltip("There is no mod to copy this file to.\n\nThis should not happen. If you see this message, please ask the Penumbra support.")]
+        [Tooltip("没有可复制此文件的目标模组。\n\n这不应该发生。若你看到此消息，请向 Penumbra 支持求助。")]
         NoTargetMod,
 
-        [Tooltip("There is no source file to copy.")]
+        [Tooltip("没有可复制的源文件。")]
         NoFile,
 
-        [Tooltip("The game path that shall be redirected to the imported file is unknown.")]
+        [Tooltip("导入文件要重定向到的游戏路径未知。")]
         NoGamePath,
 
         [Tooltip(
-            "This file is reserved because it is too generically used to change.\n\nPlease manually edit the parent file to reference another path for this slot, and manually import this file at the new path.")]
+            "此文件因使用过于通用而被保留，无法直接更改。\n\n请手动编辑父文件，为此槽位引用另一条路径，再将此文件导入到新路径。")]
         GamePathReserved,
 
-        [Tooltip("The current option already has a file installed at this game path.")]
+        [Tooltip("当前选项已在此游戏路径安装了文件。")]
         GamePathAlreadyInUse,
 
         [Tooltip(
-            "There is already a file at the location this file would be copied.\n\nIf this is the result of a previous import that you want to redo, please move it or delete it.\nOtherwise, please import the file manually.")]
+            "此文件将被复制到的位置已存在文件。\n\n若这是你想重做的先前导入，请先移动或删除该文件。\n否则请手动导入此文件。")]
         FileAlreadyExists,
     }
 }

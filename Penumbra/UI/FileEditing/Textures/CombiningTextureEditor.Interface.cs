@@ -13,26 +13,26 @@ public partial class CombiningTextureEditor
 {
     private static readonly (StringU8, StringU8)[] SaveAsStrings =
     {
-        (new StringU8("As Is"u8),
-            new StringU8("Save the current texture with its own format without additional conversion or compression, if possible."u8)),
-        (new StringU8("RGBA (Uncompressed)"u8),
+        (new StringU8("保持现状 (As Is)"u8),
+            new StringU8("尽量按当前纹理的原始格式保存，不进行额外的转换或压缩。"u8)),
+        (new StringU8("RGBA (无压缩)"u8),
             new StringU8(
-                "Save the current texture as an uncompressed BGRA bitmap.\nThis requires the most space but technically offers the best quality."u8)),
-        (new StringU8("BC1 (Simple Compression for Opaque RGB)"u8),
+                "将当前纹理保存为未压缩的 BGRA 位图。\n虽然占用空间最大，但在技术上能提供最佳画质。"u8)),
+        (new StringU8("BC1 (不透明 RGB 简单压缩)"u8),
             new StringU8(
-                "Save the current texture compressed via BC1/DXT1 compression.\nThis offers a 8:1 compression ratio and is quick with acceptable quality, but only supports RGB, without Alpha.\n\nCan be used for diffuse maps and equipment textures to save extra space."u8)),
-        (new StringU8("BC3 (Simple Compression for RGBA)"u8),
+                "使用 BC1/DXT1 算法压缩纹理。\n提供 8:1 的压缩比，速度快且画质尚可，但仅支持 RGB 通道，不支持透明度 (Alpha)。\n\n常用于漫反射贴图 (Diffuse) 和装备纹理以节省空间。"u8)),
+        (new StringU8("BC3 (带有 Alpha 的简单压缩)"u8),
             new StringU8(
-                "Save the current texture compressed via BC3/DXT5 compression.\nThis offers a 4:1 compression ratio and is quick with acceptable quality, and fully supports RGBA.\n\nGeneric format that can be used for most textures."u8)),
-        (new StringU8("BC4 (Simple Compression for Opaque Grayscale)"u8),
+                "使用 BC3/DXT5 算法压缩纹理。\n提供 4:1 的压缩比，速度快且画质尚可，完全支持 RGBA 通道。\n\n通用格式，适用于绝大多数纹理。"u8)),
+        (new StringU8("BC4 (不透明灰度简单压缩)"u8),
             new StringU8(
-                "Save the current texture compressed via BC4 compression.\nThis offers a 8:1 compression ratio and has almost indistinguishable quality, but only supports Grayscale, without Alpha.\n\nCan be used for face paints and legacy marks."u8)),
-        (new StringU8("BC5 (Simple Compression for Opaque RG)"u8),
+                "使用 BC4 算法压缩纹理。\n提供 8:1 的压缩比，画质几乎无损，但仅支持灰度图，不支持透明度。\n\n常用于面部彩绘 (Face paints) 和旧版印记 (Legacy marks)。"u8)),
+        (new StringU8("BC5 (不透明 RG 简单压缩)"u8),
             new StringU8(
-                "Save the current texture compressed via BC5 compression.\nThis offers a 4:1 compression ratio and has almost indistinguishable quality, but only supports RG, without B or Alpha.\n\nRecommended for index maps, unrecommended for normal maps."u8)),
-        (new StringU8("BC7 (Complex Compression for RGBA)"u8),
+                "使用 BC5 算法压缩纹理。\n提供 4:1 的压缩比，画质几乎无损，但仅支持 RG 通道，不支持 B 或透明度。\n\n推荐用于索引贴图 (Index maps)，不推荐用于法线贴图。"u8)),
+        (new StringU8("BC7 (高质量通用压缩)"u8),
             new StringU8(
-                "Save the current texture compressed via BC7 compression.\nThis offers a 4:1 compression ratio and has almost indistinguishable quality, but may take a while.\n\nGeneric format that can be used for most textures."u8)),
+                "使用 BC7 算法压缩纹理。\n提供 4:1 的压缩比，画质极高（几乎无损），但转换耗时可能较长。\n\n现代通用格式，适用于绝大多数纹理。"u8)),
     };
 
     private bool _overlayCollapsed = true;
@@ -55,12 +55,12 @@ public partial class CombiningTextureEditor
                     if (!GetFirstTexture(m.Files, out var file))
                         return false;
 
-                    Im.Text($"Dragging texture for editing: {Path.GetFileName(file)}");
+                    Im.Text($"拖拽纹理进行编辑: {Path.GetFileName(file)}");
                     return true;
                 });
             var childWidth = GetChildWidth();
             var imageSize  = new Vector2(childWidth.X - Im.Style.FramePadding.X * 2);
-            DrawInputChild("Input Texture"u8, _left, childWidth, imageSize);
+            DrawInputChild("输入纹理"u8, _left, childWidth, imageSize);
             Im.Line.Same();
             if (_inModEditWindow)
             {
@@ -79,7 +79,7 @@ public partial class CombiningTextureEditor
             if (!_overlayCollapsed)
             {
                 Im.Line.Same();
-                DrawInputChild("Overlay Texture"u8, _right, childWidth, imageSize);
+                DrawInputChild("叠加纹理"u8, _right, childWidth, imageSize);
             }
         }
         catch (Exception e)
@@ -117,12 +117,12 @@ public partial class CombiningTextureEditor
             {
                 if (tex != _left || _inModEditWindow)
                 {
-                    TextureDrawer.PathInputBox(_textures, tex, ref tex.TmpPath, "##input"u8, "Import Image..."u8,
-                        "Can import game paths as well as your own files."u8, _context?.Mod?.ModPath.FullName, _fileDialog,
+                    TextureDrawer.PathInputBox(_textures, tex, ref tex.TmpPath, "##input"u8, "导入图像..."u8,
+                        "既可以导入游戏内部路径，也可以导入您自己的本地文件。"u8, _context?.Mod?.ModPath.FullName, _fileDialog,
                         _config.Io.DefaultModImportPath);
                     if (_textureSelectCombo is not null
                      && _textureSelectCombo.Draw("##combo"u8,
-                            "Select the textures included in this mod on your drive or the ones they replace from the game files."u8, tex.Path,
+                            "请选择此模组文件夹内包含的纹理，或选择它们在游戏文件中所替换的原始纹理。"u8, tex.Path,
                             _context?.Mod?.ModPath.FullName.Length + 1 ?? 0, out var newPath)
                      && newPath != tex.Path)
                         tex.Load(_textures, newPath);
@@ -131,7 +131,7 @@ public partial class CombiningTextureEditor
                 if (tex.OriginalBaseImage.MipMaps > 1)
                 {
                     Im.Item.SetNextWidthScaled(75.0f);
-                    if (Im.Drag("Scaling"u8, ref tex.LevelOfDetail, $"\u00F7 {1 << tex.LevelOfDetail}", 0, tex.OriginalBaseImage.MipMaps - 1,
+                    if (Im.Drag("缩放"u8, ref tex.LevelOfDetail, $"\u00F7 {1 << tex.LevelOfDetail}", 0, tex.OriginalBaseImage.MipMaps - 1,
                             0.1f, SliderFlags.NoInput))
                         tex.SelectLevelOfDetail(_textures);
                 }
@@ -174,19 +174,19 @@ public partial class CombiningTextureEditor
     private void RedrawOnSaveBox()
     {
         var redraw = _config.Ephemeral.ForceRedrawOnFileChange;
-        if (Im.Checkbox("Redraw on Save"u8, ref redraw))
+        if (Im.Checkbox("保存时重绘"u8, ref redraw))
         {
             _config.Ephemeral.ForceRedrawOnFileChange = redraw;
             _config.Ephemeral.Save();
         }
 
-        Im.Tooltip.OnHover("Force a redraw of your player character whenever you save a file here."u8);
+        Im.Tooltip.OnHover("每当您在此保存文件时，强制重新绘制您的玩家角色。"u8);
     }
 
     private void MipMapInput()
     {
         Im.Checkbox("##mipMaps"u8, ref _addMipMaps);
-        Im.Tooltip.OnHover("Add the appropriate number of MipMaps to the file."u8);
+        Im.Tooltip.OnHover("为文件添加适当数量的 MipMaps。"u8);
     }
 
     private bool _forceTextureStartPath = true;
@@ -214,34 +214,34 @@ public partial class CombiningTextureEditor
 
             if (_inModEditWindow)
             {
-                if (ImEx.Button("Save in place"u8, buttonSize2,
+                if (ImEx.Button("覆盖原文件保存"u8, buttonSize2,
                         isActive
-                            ? "This saves the texture in place. This is not revertible."u8
-                            : $"This saves the texture in place. This is not revertible. Hold {LunaStyle.Modifier.Destructive} to save.",
+                            ? "将纹理保存并覆盖原文件。此操作不可撤销。"u8
+                            : $"将纹理保存并覆盖原文件。此操作不可撤销。按住 {LunaStyle.Modifier.Destructive} 键以保存。",
                         !isActive
                      || !canSaveInPlace
                      || _center.IsLeftCopy && _currentSaveAs is (int)CombinedTexture.TextureSaveType.AsIs && _left.LevelOfDetail is 0))
                     SaveRequested?.Invoke();
 
                 Im.Line.Same();
-                if (Im.Button("Save as TEX"u8, buttonSize2))
+                if (Im.Button("保存为 TEX"u8, buttonSize2))
                     OpenSaveAsDialog(".tex");
             }
 
-            if (Im.Button("Export as TGA"u8, buttonSize3))
+            if (Im.Button("导出为 TGA"u8, buttonSize3))
                 OpenSaveAsDialog(".tga");
             Im.Line.Same();
-            if (Im.Button("Export as PNG"u8, buttonSize3))
+            if (Im.Button("导出为 PNG"u8, buttonSize3))
                 OpenSaveAsDialog(".png");
             Im.Line.Same();
-            if (Im.Button("Export as DDS"u8, buttonSize3))
+            if (Im.Button("导出为 DDS"u8, buttonSize3))
                 OpenSaveAsDialog(".dds");
             Im.Line.New();
 
             var canConvertInPlace = canSaveInPlace && _left.Type is TextureType.Tex or TextureType.Dds && _center.IsLeftCopy;
 
-            if (ImEx.Button("Convert to BC7"u8, buttonSize3,
-                    "This converts the texture to BC7 format in place. This is not revertible."u8,
+            if (ImEx.Button("转换为 BC7"u8, buttonSize3,
+                    "将此纹理直接转换为 BC7 格式。此操作不可撤销。"u8,
                     !canConvertInPlace || _left.Format is DXGIFormat.BC7Typeless or DXGIFormat.BC7UNorm or DXGIFormat.BC7UNormSRGB))
             {
                 _nextSaveAs     = CombinedTexture.TextureSaveType.BC7;
@@ -250,8 +250,8 @@ public partial class CombiningTextureEditor
             }
 
             Im.Line.Same();
-            if (ImEx.Button("Convert to BC3"u8, buttonSize3,
-                    "This converts the texture to BC3 format in place. This is not revertible."u8,
+            if (ImEx.Button("转换为 BC3"u8, buttonSize3,
+                    "将此纹理直接转换为 BC3 格式。此操作不可撤销。"u8,
                     !canConvertInPlace || _left.Format is DXGIFormat.BC3Typeless or DXGIFormat.BC3UNorm or DXGIFormat.BC3UNormSRGB))
             {
                 _nextSaveAs     = CombinedTexture.TextureSaveType.BC3;
@@ -260,8 +260,8 @@ public partial class CombiningTextureEditor
             }
 
             Im.Line.Same();
-            if (ImEx.Button("Convert to RGBA"u8, buttonSize3,
-                    "This converts the texture to RGBA format in place. This is not revertible."u8,
+            if (ImEx.Button("转换为 RGBA"u8, buttonSize3,
+                    "将此纹理直接转换为 RGBA 格式。此操作不可撤销。"u8,
                     !canConvertInPlace
                  || _left.Format is DXGIFormat.B8G8R8A8UNorm or DXGIFormat.B8G8R8A8Typeless or DXGIFormat.B8G8R8A8UNormSRGB))
             {
@@ -276,14 +276,14 @@ public partial class CombiningTextureEditor
             case TaskStatus.WaitingForActivation:
             case TaskStatus.WaitingToRun:
             case TaskStatus.Running:
-                ImEx.TextFramed("Computing..."u8, Im.ContentRegion.Available with { Y = 0 }, Colors.PressEnterWarningBg);
+                ImEx.TextFramed("计算中..."u8, Im.ContentRegion.Available with { Y = 0 }, Colors.PressEnterWarningBg);
                 break;
             case TaskStatus.Canceled:
             case TaskStatus.Faulted:
             {
-                Im.Text("Could not save file:"u8);
+                Im.Text("无法保存文件："u8);
                 using var color = ImGuiColor.Text.Push(new Vector4(1, 0, 0, 1));
-                Im.TextWrapped(_center.SaveTask.Exception?.ToString() ?? "Unknown Error");
+                Im.TextWrapped(_center.SaveTask.Exception?.ToString() ?? "未知错误");
                 break;
             }
             default: Im.Dummy(new Vector2(1, Im.Style.FrameHeight)); break;
@@ -295,18 +295,18 @@ public partial class CombiningTextureEditor
         {
             using var color = ImGuiColor.Text.Push(ImGuiColor.Text.Get().HalfBlend(Rgba32.Yellow));
             Im.TextWrapped(
-                $"This texture is a solid surface of color {solidColor}.");
+                $"此纹理为纯色表面，颜色为 {solidColor}。");
             if (Texture.SolidTextures.TryGetValue(solidColor, out var path))
             {
-                Im.TextWrapped($"Consider using a file swap to {path}.");
+                Im.TextWrapped($"建议使用文件替换到 {path}。");
                 Im.Line.Same();
                 color.Pop();
-                if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Copy this path to your clipboard."u8))
+                if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "将此路径复制到剪贴板。"u8))
                     Im.Clipboard.Set(path);
             }
             else if (width > 32 || height > 32)
             {
-                Im.TextWrapped($"Consider scaling it down to at most 32 \u00D7 32 pixels.");
+                Im.TextWrapped($"建议将其缩小到最多 32 \u00D7 32 像素。");
             }
 
             Im.Line.New();
@@ -320,7 +320,7 @@ public partial class CombiningTextureEditor
     private void OpenSaveAsDialog(string defaultExtension)
     {
         var fileName = Path.GetFileNameWithoutExtension(_left.Path.Length > 0 ? _left.Path : _right.Path);
-        _fileDialog.OpenSavePicker("Save Texture as TEX, DDS, PNG or TGA...", "Textures{.png,.dds,.tex,.atex,.tga},.tex,.atex,.dds,.png,.tga", fileName,
+        _fileDialog.OpenSavePicker("保存纹理为 TEX, DDS, PNG 或 TGA...", "Textures{.png,.dds,.tex,.atex,.tga},.tex,.atex,.dds,.png,.tga", fileName,
             defaultExtension,
             (a, b) =>
             {
@@ -366,10 +366,10 @@ public partial class CombiningTextureEditor
     private void DrawOverlayCollapseButton()
     {
         var (icon, iconPosition, label, tooltip) = _overlayCollapsed
-            ? RefTuple.Create(LunaStyle.CollapseLeftIcon, ImEx.Icon.IconFlags.BeforeLabel, "Show Overlay"u8,
-                "Show a third panel in which you can import an additional texture as an overlay for the primary texture."u8)
-            : RefTuple.Create(LunaStyle.ExpandRightIcon, ImEx.Icon.IconFlags.AfterLabel, "Hide Overlay"u8,
-                "Hide the overlay texture panel and clear the currently loaded overlay texture, if any."u8);
+            ? RefTuple.Create(LunaStyle.CollapseLeftIcon, ImEx.Icon.IconFlags.BeforeLabel, "显示叠加层"u8,
+                "显示一个第三面板，您可以在其中导入额外的纹理作为主纹理的叠加层。"u8)
+            : RefTuple.Create(LunaStyle.ExpandRightIcon, ImEx.Icon.IconFlags.AfterLabel, "隐藏叠加层"u8,
+                "隐藏叠加纹理面板并清除当前加载的叠加纹理（如果存在）。"u8);
         Im.Dummy(Im.ContentRegion.Available.X - ImEx.Icon.CalculateLabeledButtonSize(icon, label).X);
         Im.Line.NoSpacing();
         if (ImEx.Icon.LabeledButton(icon, label, tooltip, iconFlags: iconPosition))

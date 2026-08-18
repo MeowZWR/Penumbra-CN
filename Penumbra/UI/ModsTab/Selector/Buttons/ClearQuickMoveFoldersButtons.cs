@@ -16,9 +16,9 @@ public sealed class ClearQuickMoveFoldersButtons(ModFileSystemDrawer drawer) : B
             if (value.Length <= 0)
                 continue;
 
-            if (Im.Menu.Item($"Clear Quick Move Folder #{i + 1}"))
+            if (Im.Menu.Item($"清理快速移动折叠组 #{i + 1}"))
                 drawer.Config.Ui.SetQuickMoveFolder(i, string.Empty);
-            Im.Tooltip.OnHover($"Clear the current quick move assignment of {value}.");
+            Im.Tooltip.OnHover($"清理当前快速移动分配的折叠组 {value}。");
         }
 
         return false;

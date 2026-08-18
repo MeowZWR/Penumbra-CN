@@ -25,7 +25,7 @@ public sealed class SettingsTab(
         => TabType.Settings;
 
     public ReadOnlySpan<byte> Label
-        => "Settings"u8;
+        => "插件设置"u8;
 
     public void PostTabButton()
     {
@@ -42,7 +42,7 @@ public sealed class SettingsTab(
 
         main.DrawHeader();
 
-        using (var header = Im.Tree.HeaderId("General"u8))
+        using (var header = Im.Tree.HeaderId("常规"u8))
         {
             if (header)
             {
@@ -51,7 +51,7 @@ public sealed class SettingsTab(
             }
         }
 
-        using (var header = Im.Tree.HeaderId("Penumbra Behavior"u8))
+        using (var header = Im.Tree.HeaderId("Penumbra 行为"u8))
         {
             if (header)
             {
@@ -60,7 +60,7 @@ public sealed class SettingsTab(
             }
         }
 
-        using (var header = Im.Tree.HeaderId("User Interface"u8))
+        using (var header = Im.Tree.HeaderId("用户界面"u8))
         {
             if (header)
             {
@@ -72,12 +72,12 @@ public sealed class SettingsTab(
         }
 
 
-        using (var header = Im.Tree.HeaderId("Mod Import/Export"u8))
+        using (var header = Im.Tree.HeaderId("模组导入/导出"u8))
         {
             if (header)
             {
                 io.Draw();
-                using (var node = Im.Tree.Node("Mod Migration"u8))
+                using (var node = Im.Tree.Node("模组迁移"u8))
                 {
                     if (node)
                         migrationDrawer.Draw();
@@ -87,7 +87,7 @@ public sealed class SettingsTab(
             }
         }
 
-        using (var header = Im.Tree.HeaderId("File Editing"u8))
+        using (var header = Im.Tree.HeaderId("文件编辑"u8))
         {
             if (header)
             {
@@ -96,7 +96,7 @@ public sealed class SettingsTab(
             }
         }
 
-        using (var header = Im.Tree.HeaderId("Advanced"u8))
+        using (var header = Im.Tree.HeaderId("高级"u8))
         {
             if (header)
             {
@@ -121,7 +121,7 @@ public sealed class SettingsTab(
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
-        using var header = Im.Tree.Node("Colors"u8);
+        using var header = Im.Tree.Node("配色"u8);
         if (!header)
             return;
 
@@ -151,14 +151,14 @@ public sealed class SettingsTab(
         SupportButton.ReniGuide(Penumbra.Messager, width);
 
         Im.Cursor.Position = new Vector2(xPos, 3 * Im.Style.FrameHeightWithSpacing);
-        if (Im.Button("Restart Tutorial"u8, new Vector2(width, 0)))
+        if (Im.Button("重新开始教程"u8, new Vector2(width, 0)))
         {
             config.Ephemeral.TutorialStep = 0;
             config.Ephemeral.Save();
         }
 
         Im.Cursor.Position = new Vector2(xPos, 4 * Im.Style.FrameHeightWithSpacing);
-        if (Im.Button("Show Changelogs"u8, new Vector2(width, 0)))
+        if (Im.Button("显示更新日志"u8, new Vector2(width, 0)))
             penumbra.ForceChangelogOpen();
 
         Im.Cursor.Position = new Vector2(xPos, 5 * Im.Style.FrameHeightWithSpacing);
@@ -167,12 +167,12 @@ public sealed class SettingsTab(
 
     private void DrawPredefinedTagsSection()
     {
-        using var node = Im.Tree.Node("Tagging"u8, TreeNodeFlags.DefaultOpen);
+        using var node = Im.Tree.Node("标签设置"u8, TreeNodeFlags.DefaultOpen);
         if (!node)
             return;
 
-        var tagIdx = TagButtons.Draw("Predefined Tags: "u8,
-            "Predefined tags that can be added or removed from mods with a single click."u8, predefinedTagManager,
+        var tagIdx = TagButtons.Draw("预定义标签："u8,
+            "可以一键添加到模组或从模组中移除的预定义标签。"u8, predefinedTagManager,
             out var editedTag);
 
         if (tagIdx >= 0)

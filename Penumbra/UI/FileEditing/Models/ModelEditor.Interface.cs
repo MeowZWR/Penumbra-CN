@@ -53,7 +53,7 @@ public partial class ModelEditor
 
         ret |= DrawModelMaterialDetails(disabled);
 
-        if (Im.Tree.Header($"Meshes ({Mdl.Meshes.Length})###meshes"))
+        if (Im.Tree.Header($"网格 ({Mdl.Meshes.Length})###meshes"))
             for (var i = 0; i < Mdl.LodCount; ++i)
                 ret |= DrawModelLodDetails(i, disabled);
 
@@ -67,8 +67,8 @@ public partial class ModelEditor
         if (disabled || Mdl.Version is not MdlFile.V5)
             return;
 
-        if (!ImEx.Button("Update MDL Version from V5 to V6"u8, Colors.PressEnterWarningBg, default, Im.ContentRegion.Available with { Y = 0 },
-                "Try using this if the bone weights of a pre-Dawntrail model seem wrong.\n\nThis is not revertible."u8))
+        if (!ImEx.Button("将 MDL 版本从 V5 更新至 V6"u8, Colors.PressEnterWarningBg, default, Im.ContentRegion.Available with { Y = 0 },
+                "如果发现 7.0 版本之前的模型骨骼权重显示异常，请尝试使用此功能。\n\n注意：此操作不可撤销。"u8))
             return;
 
         Mdl.ConvertV5ToV6();
@@ -77,7 +77,7 @@ public partial class ModelEditor
 
     private void DrawImportExport(bool disabled)
     {
-        if (!Im.Tree.Header("Import / Export"u8))
+        if (!Im.Tree.Header("导入/导出"u8))
             return;
 
         var childSize = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
@@ -100,18 +100,18 @@ public partial class ModelEditor
                 if (!GetFirstModel(m.Files, out var file))
                     return false;
 
-                Im.Text($"Dragging model for editing: {Path.GetFileName(file)}");
+                Im.Text($"拖拽模型进行编辑: {Path.GetFileName(file)}");
                 return true;
             });
 
-        using (ImEx.FramedGroup("Import"u8, LunaStyle.ImportIcon, default, StringU8.Empty, ColorParameter.Default, ColorParameter.Default,
+        using (ImEx.FramedGroup("导入"u8, LunaStyle.ImportIcon, default, StringU8.Empty, ColorParameter.Default, ColorParameter.Default,
                    size))
         {
-            Im.Checkbox("Keep current materials"u8,  ref ImportKeepMaterials);
-            Im.Checkbox("Keep current attributes"u8, ref ImportKeepAttributes);
+            Im.Checkbox("保留当前材质"u8,  ref ImportKeepMaterials);
+            Im.Checkbox("保留当前属性"u8, ref ImportKeepAttributes);
 
-            if (ImEx.Button("Import from glTF"u8, Vector2.Zero, "Imports a glTF file, overriding the content of this mdl."u8, PendingIo))
-                _fileDialog.OpenFilePicker("Load model from glTF.", "glTF{.gltf,.glb}", (success, paths) =>
+            if (ImEx.Button("从 glTF 导入"u8, Vector2.Zero, "导入一个 glTF 文件，覆盖当前 mdl 的内容。"u8, PendingIo))
+                _fileDialog.OpenFilePicker("从 glTF 加载模型。", "glTF{.gltf,.glb}", (success, paths) =>
                 {
                     if (success && paths.Count > 0)
                         Import(paths[0]);
@@ -128,12 +128,12 @@ public partial class ModelEditor
     private void DrawExport(Vector2 size, bool _)
     {
         using var id = Im.Id.Push("export"u8);
-        using var frame = ImEx.FramedGroup("Export"u8, LunaStyle.FileExportIcon, default, StringU8.Empty, ColorParameter.Default,
+        using var frame = ImEx.FramedGroup("导出"u8, LunaStyle.FileExportIcon, default, StringU8.Empty, ColorParameter.Default,
             ColorParameter.Default, size);
 
         if (GamePaths is null)
         {
-            Im.Text(IoExceptions.Count is 0 ? "Resolving model game paths."u8 : "Failed to resolve model game paths."u8);
+            Im.Text(IoExceptions.Count is 0 ? "解析模型游戏路径。"u8 : "解析模型游戏路径失败。"u8);
 
             return;
         }
@@ -141,18 +141,18 @@ public partial class ModelEditor
         DrawGamePathCombo();
 
         Im.Checkbox("##exportGeneratedMissingBones"u8, ref ExportConfig.GenerateMissingBones);
-        LunaStyle.DrawAlignedHelpMarkerLabel("Generate Missing Bones"u8,
-            "WARNING: Enabling this option can result in unusable exported meshes.\n"u8
-          + "It is primarily intended to allow exporting models weighted to bones that do not exist.\n"u8
-          + "Before enabling, ensure dependencies are enabled in the current collection, and EST metadata is correctly configured."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("生成缺失骨骼"u8,
+            "警告：启用此选项可能导致导出的网格无法使用。\n"u8
+          + "此功能主要用于导出那些绑定了不存在骨骼权重的模型。\n"u8
+          + "在启用之前，请确保当前合集中启用了依赖项，并且已正确配置 EST 元数据。"u8);
 
         var gamePath = GamePathIndex >= 0 && GamePathIndex < GamePaths.Count
             ? GamePaths[GamePathIndex]
             : _customGamePath;
 
-        if (ImEx.Button("Export to glTF"u8, Vector2.Zero, "Exports this mdl file to glTF, for use in 3D authoring applications."u8,
+        if (ImEx.Button("导出为 glTF"u8, Vector2.Zero, "将此 mdl 文件导出为 glTF，用于 3D 创作应用程序。"u8,
                 PendingIo || gamePath.IsEmpty))
-            _fileDialog.OpenSavePicker("Save model as glTF.", ".glb", Path.GetFileNameWithoutExtension(gamePath.Filename().ToString()),
+            _fileDialog.OpenSavePicker("保存模型为 glTF。", ".glb", Path.GetFileNameWithoutExtension(gamePath.Filename().ToString()),
                 ".glb", (valid, path) =>
                 {
                     if (!valid)
@@ -174,7 +174,7 @@ public partial class ModelEditor
             return;
 
         var size = Im.ContentRegion.Available with { Y = 0 };
-        using var frame = ImEx.FramedGroup("Exceptions"u8, LunaStyle.ErrorIcon, default, StringU8.Empty, ColorParameter.Default,
+        using var frame = ImEx.FramedGroup("异常"u8, LunaStyle.ErrorIcon, default, StringU8.Empty, ColorParameter.Default,
             LunaStyle.ErrorForeground, size);
 
         var spaceAvail = Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X - 100;
@@ -201,7 +201,7 @@ public partial class ModelEditor
             return;
 
         var size = Im.ContentRegion.Available with { Y = 0 };
-        using var frame = ImEx.FramedGroup("Warnings"u8, LunaStyle.WarningIcon, default, StringU8.Empty, ColorParameter.Default,
+        using var frame = ImEx.FramedGroup("警告"u8, LunaStyle.WarningIcon, default, StringU8.Empty, ColorParameter.Default,
             LunaStyle.WarningForeground, size);
 
         var spaceAvail = Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X - 100;
@@ -235,8 +235,8 @@ public partial class ModelEditor
             return;
         }
 
-        Im.Text("No associated game path detected. Valid game paths are currently necessary for exporting."u8);
-        if (!Im.Input.Text("##customInput"u8, ref _customPath, "Enter custom game path..."u8))
+        Im.Text("未检测到关联的游戏路径。目前导出仍需要有效的游戏路径。"u8);
+        if (!Im.Input.Text("##customInput"u8, ref _customPath, "输入自定义游戏路径..."u8))
             return;
 
         if (!Utf8GamePath.FromString(_customPath, out _customGamePath))
@@ -247,7 +247,7 @@ public partial class ModelEditor
     private void DrawComboButton()
     {
         var preview     = GamePaths![GamePathIndex].Path.Span;
-        var labelWidth  = Im.Font.CalculateSize("Game Path"u8).X + Im.Style.ItemInnerSpacing.X;
+        var labelWidth  = Im.Font.CalculateSize("游戏路径"u8).X + Im.Style.ItemInnerSpacing.X;
         var buttonWidth = Im.ContentRegion.Available.X - labelWidth - Im.Style.ItemSpacing.X;
         if (GamePaths!.Count == 1)
         {
@@ -258,12 +258,12 @@ public partial class ModelEditor
             using var group = Im.Group();
             Im.Button(preview, new Vector2(buttonWidth, 0));
             Im.Line.Same(0, Im.Style.ItemInnerSpacing.X);
-            Im.Text("Game Path"u8);
+            Im.Text("游戏路径"u8);
         }
         else
         {
             Im.Item.SetNextWidth(buttonWidth);
-            using var combo = Im.Combo.Begin("Game Path"u8, preview);
+            using var combo = Im.Combo.Begin("游戏路径"u8, preview);
             if (combo.Success)
                 foreach (var (index, path) in GamePaths.Index())
                 {
@@ -276,12 +276,12 @@ public partial class ModelEditor
 
         if (Im.Item.RightClicked())
             Im.Clipboard.Set(preview);
-        Im.Tooltip.OnHover("Right-Click to copy to clipboard."u8, HoveredFlags.AllowWhenDisabled);
+        Im.Tooltip.OnHover("右键点击复制到剪贴板。"u8, HoveredFlags.AllowWhenDisabled);
     }
 
     private static void DrawDocumentationLink(string address)
     {
-        var text  = "Documentation →"u8;
+        var text  = "文档 →"u8;
         var width = Im.Font.CalculateButtonSize(text).X;
         // Draw the link button. We set the background colour to transparent to mimic the look of a link.
         using var color = ImGuiColor.Button.Push(Vector4.Zero);
@@ -299,7 +299,7 @@ public partial class ModelEditor
         var invalidMaterialCount = Mdl.Materials.Count(material => !ValidateMaterial(material));
 
         var oldPos = Im.Cursor.Y;
-        var header = Im.Tree.Header("Materials"u8);
+        var header = Im.Tree.Header("材质"u8);
         var newPos = Im.Cursor.Position;
         if (invalidMaterialCount > 0)
         {
@@ -339,7 +339,7 @@ public partial class ModelEditor
 
         table.NextColumn();
         Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
-        Im.Input.Text("##newMaterial"u8, ref _modelNewMaterial, "Add new material..."u8, maxLength: Utf8GamePath.MaxGamePathLength,
+        Im.Input.Text("##newMaterial"u8, ref _modelNewMaterial, "添加新材质..."u8, maxLength: Utf8GamePath.MaxGamePathLength,
             flags: inputFlags);
         var validName = ValidateMaterial(_modelNewMaterial);
         table.NextColumn();
@@ -362,7 +362,7 @@ public partial class ModelEditor
     {
         using var id  = Im.Id.Push(materialIndex);
         var       ret = false;
-        table.DrawFrameColumn($"Material #{materialIndex + 1}");
+        table.DrawFrameColumn($"材质 #{materialIndex + 1}");
 
         var temp = materials[materialIndex];
         table.NextColumn();
@@ -385,14 +385,14 @@ public partial class ModelEditor
         {
             var modifierActive = LunaStyle.Modifier.Destructive.Active;
             if (ImEx.Icon.Button(LunaStyle.DeleteIcon,
-                    "Delete this material.\nAny meshes targeting this material will be updated to use material #1."u8, !modifierActive))
+                    "删除此材质。\n任何使用此材质的网格都将更新为使用材质 #1。"u8, !modifierActive))
             {
                 RemoveMaterial(materialIndex);
                 ret = true;
             }
 
             if (!modifierActive)
-                Im.Tooltip.OnHover($"\nHold {LunaStyle.Modifier.Destructive} to delete.");
+                Im.Tooltip.OnHover($"\n按住 {LunaStyle.Modifier.Destructive} 删除。");
         }
 
         table.NextColumn();
@@ -407,14 +407,14 @@ public partial class ModelEditor
     {
         ImEx.Icon.Draw(FontAwesomeIcon.TimesCircle.Icon(), Rgba32.Red);
         Im.Tooltip.OnHover(
-            "Materials must be either relative (e.g. \"/filename.mtrl\")\n"u8
-          + "or absolute (e.g. \"bg/full/path/to/filename.mtrl\"),\n"u8
-          + "and must end in \".mtrl\"."u8);
+            "材质路径必须是相对路径（如 \"/filename.mtrl\")\n"u8
+          + "或绝对路径（如 \"bg/full/path/to/filename.mtrl\"），\n"u8
+          + "且必须以 \".mtrl\" 结尾。"u8);
     }
 
     private bool DrawModelLodDetails(int lodIndex, bool disabled)
     {
-        using var lodNode = Im.Tree.Node($"Level of Detail #{lodIndex + OffByOneOffset}", TreeNodeFlags.DefaultOpen);
+        using var lodNode = Im.Tree.Node($"细节层次 #{lodIndex + OffByOneOffset}", TreeNodeFlags.DefaultOpen);
         if (!lodNode)
             return false;
 
@@ -429,7 +429,7 @@ public partial class ModelEditor
 
     private bool DrawModelMeshDetails(int meshIndex, bool disabled)
     {
-        using var meshNode = Im.Tree.Node($"Mesh #{meshIndex + OffByOneOffset}", TreeNodeFlags.DefaultOpen);
+        using var meshNode = Im.Tree.Node($"网格 #{meshIndex + OffByOneOffset}", TreeNodeFlags.DefaultOpen);
         if (!meshNode)
             return false;
 
@@ -445,13 +445,13 @@ public partial class ModelEditor
         var mesh = file.Meshes[meshIndex];
 
         // Vertex elements
-        table.DrawFrameColumn("Vertex Elements"u8);
+        table.DrawFrameColumn("顶点元素"u8);
 
         table.NextColumn();
         DrawVertexElementDetails(file.VertexDeclarations[meshIndex].VertexElements);
 
         // Mesh material
-        table.DrawFrameColumn("Material"u8);
+        table.DrawFrameColumn("材质"u8);
 
         table.NextColumn();
         var ret = DrawMaterialCombo(meshIndex, disabled);
@@ -465,7 +465,7 @@ public partial class ModelEditor
 
     private static void DrawVertexElementDetails(MdlStructs.VertexElement[] vertexElements)
     {
-        using var node = Im.Tree.Node("Click to expand"u8);
+        using var node = Im.Tree.Node("点击展开"u8);
         if (!node)
             return;
 
@@ -477,8 +477,8 @@ public partial class ModelEditor
         if (!table)
             return;
 
-        table.SetupColumn("Usage"u8);
-        table.SetupColumn("Type"u8);
+        table.SetupColumn("用途"u8);
+        table.SetupColumn("类型"u8);
         table.SetupColumn("Stream"u8);
         table.SetupColumn("Offset"u8);
         table.HeaderRow();
@@ -522,14 +522,14 @@ public partial class ModelEditor
         var mesh         = Mdl.Meshes[meshIndex];
         var subMeshIndex = mesh.SubMeshIndex + subMeshOffset;
 
-        table.DrawFrameColumn($"Submesh #{subMeshOffset + OffByOneOffset} Attributes ");
+        table.DrawFrameColumn($"子网格 #{subMeshOffset + OffByOneOffset} 属性 ");
 
         table.NextColumn();
         var attributes = GetSubMeshAttributes(subMeshIndex);
 
         if (attributes is null)
         {
-            attributes = ["invalid attribute data"];
+            attributes = ["无效的属性数据"];
             disabled   = true;
         }
 
@@ -546,7 +546,7 @@ public partial class ModelEditor
 
     private bool DrawOtherModelDetails()
     {
-        using var header = Im.Tree.HeaderId("Further Content"u8);
+        using var header = Im.Tree.HeaderId("其他内容"u8);
         if (!header)
             return false;
 
@@ -555,38 +555,38 @@ public partial class ModelEditor
         {
             if (table)
             {
-                table.DrawDataPair("Version"u8,                       $"0x{Mdl.Version:X}");
+                table.DrawDataPair("版本"u8,                       $"0x{Mdl.Version:X}");
                 table.DrawDataPair("Radius"u8,                        Mdl.Radius.ToString(CultureInfo.InvariantCulture));
-                table.DrawDataPair("Model Clip Out Distance"u8,       Mdl.ModelClipOutDistance.ToString(CultureInfo.InvariantCulture));
-                table.DrawDataPair("Shadow Clip Out Distance"u8,      Mdl.ShadowClipOutDistance.ToString(CultureInfo.InvariantCulture));
-                table.DrawDataPair("LOD Count"u8,                     Mdl.LodCount);
-                table.DrawDataPair("Enable Index Buffer Streaming"u8, Mdl.EnableIndexBufferStreaming);
-                table.DrawDataPair("Enable Edge Geometry"u8,          Mdl.EnableEdgeGeometry);
+                table.DrawDataPair("模型裁剪距离"u8,       Mdl.ModelClipOutDistance.ToString(CultureInfo.InvariantCulture));
+                table.DrawDataPair("阴影裁剪距离"u8,      Mdl.ShadowClipOutDistance.ToString(CultureInfo.InvariantCulture));
+                table.DrawDataPair("细节层次数量"u8,                     Mdl.LodCount);
+                table.DrawDataPair("启用索引缓冲流"u8, Mdl.EnableIndexBufferStreaming);
+                table.DrawDataPair("启用边缘几何"u8,          Mdl.EnableEdgeGeometry);
                 table.DrawDataPair("Flags 1"u8,                       Mdl.Flags1);
                 table.DrawDataPair("Flags 2"u8,                       Mdl.Flags2);
-                table.DrawDataPair("Vertex Declarations"u8,           Mdl.VertexDeclarations.Length);
-                table.DrawDataPair("Bone Bounding Boxes"u8,           Mdl.BoneBoundingBoxes.Length);
-                table.DrawDataPair("Bone Tables"u8,                   Mdl.BoneTables.Length);
-                table.DrawDataPair("Element IDs"u8,                   Mdl.ElementIds.Length);
-                table.DrawDataPair("Extra LoDs"u8,                    Mdl.ExtraLods.Length);
-                table.DrawDataPair("Meshes"u8,                        Mdl.Meshes.Length);
-                table.DrawDataPair("Shape Meshes"u8,                  Mdl.ShapeMeshes.Length);
-                table.DrawDataPair("LoDs"u8,                          Mdl.Lods.Length);
-                table.DrawDataPair("Vertex Declarations"u8,           Mdl.VertexDeclarations.Length);
-                table.DrawDataPair("Stack Size"u8,                    Mdl.StackSize);
+                table.DrawDataPair("顶点声明"u8,           Mdl.VertexDeclarations.Length);
+                table.DrawDataPair("骨骼包围盒"u8,           Mdl.BoneBoundingBoxes.Length);
+                table.DrawDataPair("骨骼表"u8,                   Mdl.BoneTables.Length);
+                table.DrawDataPair("元素 ID"u8,                   Mdl.ElementIds.Length);
+                table.DrawDataPair("额外细节层次"u8,                    Mdl.ExtraLods.Length);
+                table.DrawDataPair("网格"u8,                        Mdl.Meshes.Length);
+                table.DrawDataPair("形状网格"u8,                  Mdl.ShapeMeshes.Length);
+                table.DrawDataPair("细节层次"u8,                          Mdl.Lods.Length);
+                table.DrawDataPair("顶点声明"u8,           Mdl.VertexDeclarations.Length);
+                table.DrawDataPair("堆栈大小"u8,                    Mdl.StackSize);
                 foreach (var (lod, triCount) in LodTriCount.Index())
-                    table.DrawDataPair($"LOD #{lod + 1} Triangle Count", triCount);
+                    table.DrawDataPair($"细节层次 #{lod + 1} 三角形数量", triCount);
             }
         }
 
-        using (var materials = Im.Tree.Node("Materials"u8, TreeNodeFlags.DefaultOpen))
+        using (var materials = Im.Tree.Node("材质"u8, TreeNodeFlags.DefaultOpen))
         {
             if (materials)
                 foreach (var material in Mdl.Materials)
                     Im.Tree.Leaf(material);
         }
 
-        using (var attributes = Im.Tree.Node("Attributes"u8, TreeNodeFlags.DefaultOpen))
+        using (var attributes = Im.Tree.Node("属性"u8, TreeNodeFlags.DefaultOpen))
         {
             if (attributes)
                 for (var i = 0; i < Mdl.Attributes.Length; ++i)
@@ -594,7 +594,7 @@ public partial class ModelEditor
                     using var id        = Im.Id.Push(i);
                     ref var   attribute = ref Mdl.Attributes[i];
                     var       name      = attribute;
-                    if (Im.Input.Text("##attribute"u8, ref name, "Attribute Name..."u8) && name.Length > 0 && name != attribute)
+                    if (Im.Input.Text("##attribute"u8, ref name, "属性名称..."u8) && name.Length > 0 && name != attribute)
                     {
                         attribute = name;
                         ret       = true;
@@ -602,7 +602,7 @@ public partial class ModelEditor
                 }
         }
 
-        using (var bones = Im.Tree.Node("Bones"u8, TreeNodeFlags.DefaultOpen))
+        using (var bones = Im.Tree.Node("骨骼"u8, TreeNodeFlags.DefaultOpen))
         {
             if (bones)
                 for (var i = 0; i < Mdl.Bones.Length; ++i)
@@ -610,7 +610,7 @@ public partial class ModelEditor
                     using var id   = Im.Id.Push(i);
                     ref var   bone = ref Mdl.Bones[i];
                     var       name = bone;
-                    if (Im.Input.Text("##bone"u8, ref name, "Bone Name..."u8) && name.Length > 0 && name != bone)
+                    if (Im.Input.Text("##bone"u8, ref name, "骨骼名称..."u8) && name.Length > 0 && name != bone)
                     {
                         bone = name;
                         ret  = true;
@@ -618,7 +618,7 @@ public partial class ModelEditor
                 }
         }
 
-        using (var shapes = Im.Tree.Node("Shapes"u8, TreeNodeFlags.DefaultOpen))
+        using (var shapes = Im.Tree.Node("形状"u8, TreeNodeFlags.DefaultOpen))
         {
             if (shapes)
                 for (var i = 0; i < Mdl.Shapes.Length; ++i)
@@ -626,7 +626,7 @@ public partial class ModelEditor
                     using var id    = Im.Id.Push(i);
                     ref var   shape = ref Mdl.Shapes[i];
                     var       name  = shape.ShapeName;
-                    if (Im.Input.Text("##shape"u8, ref name, "Shape Name..."u8) && name.Length > 0 && name != shape.ShapeName)
+                    if (Im.Input.Text("##shape"u8, ref name, "形状名称..."u8) && name.Length > 0 && name != shape.ShapeName)
                     {
                         shape.ShapeName = name;
                         ret             = true;
@@ -636,7 +636,7 @@ public partial class ModelEditor
 
         if (Mdl.RemainingData.Length > 0)
         {
-            using var t = Im.Tree.Node($"Additional Data (Size: {Mdl.RemainingData.Length})###AdditionalData");
+            using var t = Im.Tree.Node($"额外数据 (大小: {Mdl.RemainingData.Length})###AdditionalData");
             if (t)
                 ImEx.HexViewer(Mdl.RemainingData);
         }

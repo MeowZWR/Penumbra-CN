@@ -7,7 +7,7 @@ namespace Penumbra.UI.ManagementTab;
 public sealed class CleanupTab(CleanupService cleanup, FileWatcher fileWatcher) : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
-        => "General Cleanup"u8;
+        => "通用清理"u8;
 
     public ManagementTabType Identifier
         => ManagementTabType.Cleanup;
@@ -24,7 +24,7 @@ public sealed class CleanupTab(CleanupService cleanup, FileWatcher fileWatcher) 
             Im.ProgressBar((float)cleanup.Progress, ImEx.ScaledVectorX(200, Im.Style.FrameHeight),
                 $"{cleanup.Progress * 100}%");
             Im.Line.Same();
-            if (Im.Button("Cancel##FileCleanup"u8))
+            if (Im.Button("取消##FileCleanup"u8))
                 cleanup.Cancel();
         }
         else
@@ -32,32 +32,32 @@ public sealed class CleanupTab(CleanupService cleanup, FileWatcher fileWatcher) 
             Im.Line.New();
         }
 
-        if (ImEx.Button("Clear Unused Local Mod Data Entries"u8, default,
-                "Delete all local mod data entries that do not correspond to currently installed mods."u8,
+        if (ImEx.Button("清理未使用的本地模组数据文件"u8, default,
+                "删除所有与当前安装的模组不对应的本地模组数据文件。"u8,
                 !enabled || cleanup.IsRunning))
             cleanup.CleanUnusedLocalData();
         if (!enabled)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {LunaStyle.Modifier.Destructive} while clicking to delete entries.");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {LunaStyle.Modifier.Destructive} 点击以删除条目。");
 
-        if (ImEx.Button("Clear Backup Files"u8, default,
-                "Delete all backups of .json configuration files in your configuration folder and all backups of mod group files in your mod directory, as well as the management log file."u8,
+        if (ImEx.Button("清理备份文件"u8, default,
+                "删除所有配置文件夹中的 .json 配置文件备份和模组文件夹中的模组组文件备份，以及管理日志文件。"u8,
                 !enabled || cleanup.IsRunning))
             cleanup.CleanBackupFiles();
         if (!enabled)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {LunaStyle.Modifier.Destructive} while clicking to delete files.");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {LunaStyle.Modifier.Destructive} 点击以删除文件。");
 
-        if (ImEx.Button("Clear All Unused Settings"u8, default,
-                "Remove all mod settings in all of your collections that do not correspond to currently installed mods."u8,
+        if (ImEx.Button("清理所有未使用的设置"u8, default,
+                "删除所有合集中与当前安装的模组不对应的模组设置。"u8,
                 !enabled || cleanup.IsRunning))
             cleanup.CleanupAllUnusedSettings();
         if (!enabled)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {LunaStyle.Modifier.Destructive} while clicking to remove settings.");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {LunaStyle.Modifier.Destructive} 点击以删除设置。");
 
-        if (ImEx.Button("Clear Extracted Archive Files"u8, default,
-                "Delete all temporary files extracted from archives by the File Watcher. Extracted files that have not yet been imported will be lost."u8,
+        if (ImEx.Button("清理提取的压缩包文件"u8, default,
+                "删除所有由文件监视器从压缩包中提取的临时文件。尚未导入的提取文件将丢失。"u8,
                 !enabled || cleanup.IsRunning))
             fileWatcher.CleanExtracted();
         if (!enabled)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {LunaStyle.Modifier.Destructive} while clicking to delete files.");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {LunaStyle.Modifier.Destructive} 点击以删除文件。");
     }
 }

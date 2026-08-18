@@ -46,7 +46,7 @@ public class CollectionSelectHeader(
         tutorial.OpenTutorial(BasicTutorialSteps.CollectionSelectors);
 
         if (!_activeCollections.CurrentCollectionInUse)
-            ImEx.TextFramed("The currently selected collection is not used in any way."u8, Im.ContentRegion.Available with { Y = 0 },
+            ImEx.TextFramed("当前选中的合集未在任何地方使用。"u8, Im.ContentRegion.Available with { Y = 0 },
                 Colors.PressEnterWarningBg);
     }
 
@@ -67,9 +67,9 @@ public class CollectionSelectHeader(
         }
 
         Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
-            "Toggle the temporary settings mode, where all changes you do create temporary settings first and need to be made permanent if desired."u8,
+            "切换临时设置模式，在此模式下，您所做的所有更改将首先创建为临时设置，如果需要，可以将其设为永久设置。"u8,
             true);
-        LunaStyle.Modifier.Misclick.TooltipLineBreak("toggle"u8);
+        LunaStyle.Modifier.Misclick.TooltipLineBreak("切换"u8);
     }
 
     private enum CollectionState
@@ -97,11 +97,11 @@ public class CollectionSelectHeader(
         var collection = _activeCollections.Default;
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => new CollectionTuple(collection, "None"u8, "The base collection is configured to use no mods."u8, true),
+            CollectionState.Empty => new CollectionTuple(collection, "无"u8, "基础合集已被配置为不使用模组。"u8, true),
             CollectionState.Selected => new CollectionTuple(collection, collection.Identity.Name,
-                "The configured base collection is already selected as the current collection."u8, true),
+                "已将配置的基础合集选择为当前操作的合集。"u8, true),
             CollectionState.Available => new CollectionTuple(collection, collection.Identity.Name,
-                $"Select the configured base collection {collection.Identity.Name} as the current collection.", false),
+                $"选择被配置给基础合集使用的合集[{collection.Identity.Name}]作为当前可操作的合集。", false),
             _ => throw new Exception("Can not happen."),
         };
     }
@@ -111,12 +111,12 @@ public class CollectionSelectHeader(
         var collection = resolver.PlayerCollection();
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => new CollectionTuple(collection, "None"u8, "The loaded player character is configured to use no mods."u8,
+            CollectionState.Empty => new CollectionTuple(collection, "无"u8, "加载的玩家角色已被配置为不使用模组。"u8,
                 true),
             CollectionState.Selected => new CollectionTuple(collection, collection.Identity.Name,
-                "The collection configured to apply to the loaded player character is already selected as the current collection."u8, true),
+                "配置为用于当前玩家角色的合集已被选择为当前操作合集。"u8, true),
             CollectionState.Available => new CollectionTuple(collection, collection.Identity.Name,
-                $"Select the collection {collection.Identity.Name} that applies to the loaded player character as the current collection.",
+                $"选择分配给当前玩家的合集[{collection.Identity.Name}]作为当前可操作的合集。",
                 false),
             _ => throw new Exception("Can not happen."),
         };
@@ -127,12 +127,12 @@ public class CollectionSelectHeader(
         var collection = _activeCollections.Interface;
         return CheckCollection(collection) switch
         {
-            CollectionState.Empty => new CollectionTuple(collection, "None"u8, "The interface collection is configured to use no mods."u8,
+            CollectionState.Empty => new CollectionTuple(collection, "无"u8, "界面合集已被配置为不使用模组。"u8,
                 true),
             CollectionState.Selected => new CollectionTuple(collection, collection.Identity.Name,
-                "The configured interface collection is already selected as the current collection."u8, true),
+                "配置为用于游戏界面的合集已被选择为当前操作合集。"u8, true),
             CollectionState.Available => new CollectionTuple(collection, collection.Identity.Name,
-                $"Select the configured interface collection {collection.Identity.Name} as the current collection.", false),
+                $"选择分配给界面的合集[{collection.Identity.Name}]作为当前可操作的合集。", false),
             _ => throw new Exception("Can not happen."),
         };
     }
@@ -142,10 +142,10 @@ public class CollectionSelectHeader(
         var collection = selection.Mod is null ? null : selection.Collection;
         return CheckCollection(collection, true) switch
         {
-            CollectionState.Unavailable => new CollectionTuple(null, "Not Inherited"u8,
-                "The settings of the selected mod are not inherited from another collection."u8, true),
+            CollectionState.Unavailable => new CollectionTuple(null, "未继承"u8,
+                "选中的模组的设置未继承自其他合集。"u8, true),
             CollectionState.Available => new CollectionTuple(collection, collection!.Identity.Name,
-                $"Select the collection {collection.Identity.Name} from which the selected mod inherits its settings as the current collection.",
+                $"当前选中模组设置继承自[{collection.Identity.Name}]，点击切换到此合集作为当前可操作的合集。",
                 false),
             _ => throw new Exception("Can not happen."),
         };
@@ -184,7 +184,7 @@ public class CollectionSelectHeader(
         tutorial.OpenTutorial(BasicTutorialSteps.CollectionSelectors);
 
         if (!_activeCollections.CurrentCollectionInUse)
-            ImEx.TextFramed("The currently selected collection is not used in any way."u8, Im.ContentRegion.Available with { Y = 0 },
+            ImEx.TextFramed("当前选中的合集未在任何地方使用。"u8, Im.ContentRegion.Available with { Y = 0 },
                 Colors.PressEnterWarningBg);
     }
 }
