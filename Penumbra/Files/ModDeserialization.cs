@@ -86,6 +86,9 @@ public static class ModDeserialization
 
         using var context = new Context(mod);
         var       meta    = IJsonParsable.ReadJson<ModMetaData>(files, metaPath, false, context).Changes;
+        if (mod.LoadedVersion > ModSerialization.CurrentFileVersion)
+            throw new InvalidMetaException(mod, metaPath,
+                $"The mod version {mod.LoadedVersion} is higher than the highest version supported by this Penumbra version ({ModSerialization.CurrentFileVersion}).");
         MigrateGroups(files, context);
 
         return meta;
@@ -97,7 +100,7 @@ public static class ModDeserialization
             return;
 
         GroupDeserialization.ReadDefaultContainerFile(files, context);
-        foreach (var groupFile in files.FileNames.GetOptionGroupFiles(context.Mod))
+        foreach (var groupFile in files.FileNames.Migration.GetOptionGroupFiles(context.Mod))
         {
             if (GroupDeserialization.ReadGroupFile(files, context, groupFile) is { } group)
                 context.Mod.AddGroup(group, groupFile.FullName);

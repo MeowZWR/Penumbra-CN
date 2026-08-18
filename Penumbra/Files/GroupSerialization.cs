@@ -4,7 +4,6 @@ using Luna;
 using Penumbra.Mods;
 using Penumbra.Mods.Groups;
 using Penumbra.Mods.SubMods;
-using Penumbra.UI.Classes;
 
 namespace Penumbra.Files;
 
@@ -80,8 +79,8 @@ public static class GroupSerialization
                 j.WriteEndObject();
                 j.WritePropertyName("DefaultEntry"u8);
                 imc.DefaultEntry.WriteJson(j);
-                j.WriteBoolIf("AllVariants"u8,    imc.AllVariants,    false);
-                j.WriteBoolIf("OnlyAttributes"u8, imc.OnlyAttributes, false);
+                j.WriteIfNot("AllVariants"u8,    imc.AllVariants,    false);
+                j.WriteIfNot("OnlyAttributes"u8, imc.OnlyAttributes, false);
                 if (imc.OptionData.Count > 0)
                 {
                     j.WriteStartArray("Options"u8);

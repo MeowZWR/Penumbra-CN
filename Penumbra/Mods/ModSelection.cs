@@ -50,6 +50,7 @@ public class ModSelection : EventBase<ModSelection.Arguments, ModSelection.Prior
     public Mod?                  Mod               { get; private set; }
     public ModSettings?          OwnSettings       { get; private set; }
     public TemporaryModSettings? TemporarySettings { get; private set; }
+    public bool                  Inherited         { get; private set; }
 
     public void SelectMod(Mod? mod)
     {
@@ -112,6 +113,7 @@ public class ModSelection : EventBase<ModSelection.Arguments, ModSelection.Prior
             Settings    = ModSettings.Empty;
             Collection  = ModCollection.Empty;
             OwnSettings = null;
+            Inherited   = false;
         }
         else
         {
@@ -120,6 +122,7 @@ public class ModSelection : EventBase<ModSelection.Arguments, ModSelection.Prior
             OwnSettings                = _collections.Current.GetOwnSettings(Mod.Index);
             TemporarySettings          = _collections.Current.GetTempSettings(Mod.Index);
             Settings                   = settings ?? ModSettings.Empty;
+            Inherited                  = Collection != _collections.Current;
         }
     }
 
@@ -131,7 +134,7 @@ public class ModSelection : EventBase<ModSelection.Arguments, ModSelection.Prior
         /// <seealso cref="Penumbra.UI.AdvancedWindow.ModEditWindowFactory"/>
         ModEditWindow = 0,
 
-        /// <seealso cref="UI.ModsTab.Groups.GroupNameCache.OnSelectionChange"/>
+        /// <seealso cref="UI.ModsTab.Settings.GroupNameCache.OnSelectionChange"/>
         GroupNameCache = 0,
     }
 

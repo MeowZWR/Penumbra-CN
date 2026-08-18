@@ -21,9 +21,9 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
     public void Draw()
     {
         using var id = Im.Id.Push("##Inheritance"u8);
-        ImEx.TextMultiColored("选择的合集"u8)
-            .Then(Name(_active.Current), ColorId.SelectedCollection.Value().FullAlpha().Color)
-            .Then(" 继承自："u8)
+        ImEx.TextMultiColored("The Selected Collection "u8)
+            .Then(Name(_active.Current), ColorId.SelectedCollection.Value.FullAlpha())
+            .Then(" inherits from:"u8)
             .End();
         Im.Dummy(Vector2.One);
 
@@ -35,7 +35,7 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
 
         DrawNewInheritanceSelection();
         Im.Line.Same();
-        if (Im.Button("查看关于继承功能的更多说明"u8, Im.ContentRegion.Available with { Y = 0 }))
+        if (Im.Button("More Information about Inheritance"u8, Im.ContentRegion.Available with { Y = 0 }))
             Im.Popup.Open("InheritanceHelp"u8);
 
         DrawHelpPopup();
@@ -55,36 +55,36 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
     {
         using var group = Im.Group();
         Im.TextWrapped(
-            "继承是一种跨多个合集使用模组基线的方法，只需添加单个模组而不需要修改所有合集。"u8);
+            "Inheritance is a way to use a baseline of mods across multiple collections, without needing to change all those collections if you want to add a single mod."u8);
         Im.TextWrapped(
-            "你可以在左边的组合框中添加合集名称来设置继承关系。\n继承顺序很重要，拖动已添加的合集名称来对它们进行重新排序。\n你也可以将合集名称拖拽到垃圾桶图标上进行删除操作。"u8);
+            "You can select inheritances from the combo below to add them.\nSince the order of inheritances is important, you can reorder them here via drag and drop.\nYou can also delete inheritances by dragging them onto the trash can."u8);
     }
 
     private static void DrawHelpPopup()
         => ImEx.HelpPopup("InheritanceHelp"u8, new Vector2(1000 * Im.Style.GlobalScale, 20 * Im.Style.TextHeightWithSpacing), () =>
         {
             Im.Line.New();
-            Im.Text("合集中的每个模组都可以具有三种基础状态：‘启用’，‘禁用’，‘未配置’。"u8);
-            Im.BulletText("如果模组是‘启用’或‘禁用’，不管该合集有没有继承自其他合集，此模组都只会使用自己的设置。"u8);
+            Im.Text("Every mod in a collection can have three basic states: 'Enabled', 'Disabled' and 'Unconfigured'."u8);
+            Im.BulletText("If the mod is 'Enabled' or 'Disabled', it does not matter if the collection inherits from other collections."u8);
             Im.BulletText(
-                "如果模组是‘未配置’的，则按此处显示的顺序来检查那些有继承的合集，包括次级继承。"u8);
+                "If the mod is unconfigured, those inherited-from collections are checked in the order displayed here, including sub-inheritances."u8);
             Im.BulletText(
-                "如果发现某个被继承合集中的模组为‘启用’或‘禁用’，来自该合集的设置将被使用。"u8);
-            Im.BulletText("如果未找到此类合集，则该模组将被视为已禁用。"u8);
+                "If a collection is found in which the mod is either 'Enabled' or 'Disabled', the settings from this collection will be used."u8);
+            Im.BulletText("If no such collection is found, the mod will be treated as disabled."u8);
             Im.BulletText(
-                "左侧框中高亮显示的合集（注意其颜色），不会生效，因为它已经在继承合集的次级继承中了。"u8);
+                "Highlighted collections in the left box are never reached because they are already checked in a sub-inheritance before."u8);
             Im.Line.New();
-            Im.Text("例子"u8);
-            Im.BulletText("合集A：启用了两个模组 - Bibo+和紧身小背心。"u8);
+            Im.Text("Example"u8);
+            Im.BulletText("Collection A has the Bibo+ body and a Hempen Camise mod enabled."u8);
             Im.BulletText(
-                "合集B：继承自A，未配置Bibo+，启用了紧身小背心但设置与A不同。"u8);
-            Im.BulletText("合集C：继承自A，禁用Bibo+，未配置紧身小背心。"u8);
-            Im.BulletText("合集D：继承自C，其次继承自B，模组均未配置。"u8);
+                "Collection B inherits from A, leaves Bibo+ unconfigured, but has the Hempen Camise enabled with different settings than A."u8);
+            Im.BulletText("Collection C also inherits from A, has Bibo+ explicitly disabled and the Hempen Camise unconfigured."u8);
+            Im.BulletText("Collection D inherits from C and then B and leaves everything unconfigured."u8);
             using var indent = Im.Indent();
-            Im.BulletText("合集B - 使用来自A的Bibo+设置和自己的紧身小背心设置。"u8);
-            Im.BulletText("合集C - 禁用Bibo+，使用A的紧身小背心设置。"u8);
+            Im.BulletText("B uses Bibo+ settings from A and its own Hempen Camise settings."u8);
+            Im.BulletText("C has Bibo+ disabled and uses A's Hempen Camise settings."u8);
             Im.BulletText(
-                "合集D - 禁用Bibo+，使用A的紧身小背心设置而不是B的。因为是以D -> (C -> A) -> (B -> A)的顺序来遍历合集。"u8);
+                "D has Bibo+ disabled and uses A's Hempen Camise settings, not B's. It traversed the collections in Order D -> (C -> A) -> (B -> A)."u8);
         });
 
 
@@ -111,7 +111,7 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
         foreach (var inheritance in collection.Inheritance.FlatHierarchy.Skip(1))
         {
             // Draw the child, already seen collections are colored as conflicts.
-            using var color = ImGuiColor.Text.Push(ColorId.HandledConflictMod.Value(),
+            using var color = ImGuiColor.Text.Push(ColorId.HandledConflictMod.Vector,
                 _seenInheritedCollections.Contains(inheritance));
             _seenInheritedCollections.Add(inheritance);
 
@@ -137,7 +137,7 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
     /// <summary> Draw a single primary inherited collection. </summary>
     private void DrawInheritance(ModCollection collection)
     {
-        using var color = ImGuiColor.Text.Push(ColorId.HandledConflictMod.Value(),
+        using var color = ImGuiColor.Text.Push(ColorId.HandledConflictMod.Vector,
             _seenInheritedCollections.Contains(collection));
         _seenInheritedCollections.Add(collection);
         using var tree = Im.Tree.Node($"{Name(collection)}###{collection.Identity.Name}", TreeNodeFlags.NoTreePushOnOpen);
@@ -175,7 +175,7 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
         // Prevent hovering from highlighting the button.
         using var color = ImGuiColor.ButtonActive.Push(buttonColor)
             .Push(ImGuiColor.ButtonHovered, buttonColor);
-        ImEx.Icon.Button(LunaStyle.DeleteIcon, "将主继承拖到此处可将其从列表中删除。"u8, size);
+        ImEx.Icon.Button(LunaStyle.DeleteIcon, "Drag primary inheritance here to remove it from the list."u8, size);
 
         using var target = Im.DragDrop.Target();
         if (target.Success && target.IsDropping(InheritanceDragDropLabel))
@@ -219,11 +219,11 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
         var inheritance = InheritanceManager.CheckValidInheritance(_active.Current, _newInheritance);
         var tt = inheritance switch
         {
-            InheritanceManager.ValidInheritance.Empty     => "没有可以继承的合集。",
-            InheritanceManager.ValidInheritance.Valid     => $"使选择的合集继承自这个合集。",
-            InheritanceManager.ValidInheritance.Self      => "合集不能自我继承。",
-            InheritanceManager.ValidInheritance.Contained => "已经从这个合集继承了。",
-            InheritanceManager.ValidInheritance.Circle    => "从这个合集继承会导致死循环。",
+            InheritanceManager.ValidInheritance.Empty     => "No valid collection to inherit from selected.",
+            InheritanceManager.ValidInheritance.Valid     => $"Let the Selected Collection inherit from this collection.",
+            InheritanceManager.ValidInheritance.Self      => "The collection can not inherit from itself.",
+            InheritanceManager.ValidInheritance.Contained => "Already inheriting from this collection.",
+            InheritanceManager.ValidInheritance.Circle    => "Inheriting from this collection would lead to cyclic inheritance.",
             _                                             => string.Empty,
         };
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, inheritance is not InheritanceManager.ValidInheritance.Valid)
@@ -287,7 +287,7 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
 
         source.SetPayload(InheritanceDragDropLabel);
         _movedInheritance = collection;
-        Im.Text($"移动 {(_movedInheritance != null ? Name(_movedInheritance) : "未知")}...");
+        Im.Text($"Moving {(_movedInheritance != null ? Name(_movedInheritance) : "Unknown")}...");
     }
 
     /// <summary>
@@ -306,7 +306,7 @@ public class InheritanceUi(CollectionManager collectionManager, IncognitoService
         }
 
         Im.Tooltip.OnHover(
-            $"Ctrl + 右键单击 将选择的合集切换到这个合集。{(withDelete ? "\nCtrl + Shift + 右键单击 删除这个继承。" : StringU8.Empty)}");
+            $"Control + Right-Click to switch the Selected Collection to this one.{(withDelete ? "\nControl + Shift + Right-Click to remove this inheritance."u8 : StringU8.Empty)}");
     }
 
     private string Name(ModCollection collection)

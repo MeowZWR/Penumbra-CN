@@ -34,7 +34,7 @@ public sealed class CollectionSelector(
     public void DragTargetAssignment(CollectionType type, ActorIdentifier identifier)
     {
         using var target = Im.DragDrop.Target();
-        if (!target.Success || _dragging is null || !target.IsDropping("合集"u8))
+        if (!target.Success || _dragging is null || !target.IsDropping("Collection"u8))
             return;
 
         active.SetCollection(_dragging, type, active.Individuals.GetGroup(identifier));
@@ -45,7 +45,7 @@ public sealed class CollectionSelector(
     {
         Im.Cursor.Y += Im.Style.FramePadding.Y;
         var       cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(filter, collections, communicator));
-        using var color = ImGuiColor.Header.Push(ColorId.SelectedCollection.Value());
+        using var color = ImGuiColor.Header.Push(ColorId.SelectedCollection.Vector);
         foreach (var item in cache)
         {
             Im.Cursor.X += Im.Style.FramePadding.X;
@@ -58,8 +58,8 @@ public sealed class CollectionSelector(
             if (source)
             {
                 _dragging = item.Collection;
-                source.SetPayload("合集"u8);
-                Im.Text($"分配 {(incognito.IncognitoMode ? item.AnonymousName : item.Name)} 到...");
+                source.SetPayload("Collection"u8);
+                Im.Text($"Assigning {(incognito.IncognitoMode ? item.AnonymousName : item.Name)} to...");
             }
 
             if (ret)

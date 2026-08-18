@@ -13,7 +13,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
     {
         Buttons.AddButton(new AddButton(collectionManager.Storage),                                             100);
         Buttons.AddButton(new DuplicateButton(collectionManager.Storage, collectionManager.Active),             50);
-        Buttons.AddButton(new DeleteButton(collectionManager.Storage, collectionManager.Active, configuration), 0);
+        Buttons.AddButton(new DeleteButton(collectionManager.Storage, collectionManager.Active), 0);
     }
 
     public int Count
@@ -28,7 +28,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
             => true;
 
         public override void DrawTooltip()
-            => Im.Text("新建一个空合集。"u8);
+            => Im.Text("Add a new, empty collection."u8);
 
         public override void OnClick()
             => Im.Popup.Open("NewCollection"u8);
@@ -42,7 +42,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
         }
     }
 
-    public sealed class DeleteButton(CollectionStorage collections, ActiveCollections active, Configuration config)
+    public sealed class DeleteButton(CollectionStorage collections, ActiveCollections active)
         : BaseIconButton<AwesomeIcon>
     {
         public override AwesomeIcon Icon
@@ -53,15 +53,15 @@ public sealed class CollectionButtonFooter : ButtonFooter
 
         public override bool Enabled
             => collections.DefaultNamed != active.Current
-             && config.DeleteModModifier.IsActive();
+             && LunaStyle.Modifier.Destructive.Active;
 
         public override void DrawTooltip()
         {
-            Im.Text("删除当前合集。"u8);
+            Im.Text("Delete the current collection."u8);
             if (collections.DefaultNamed == active.Current)
-                Im.Text("默认合集不能被删除。"u8);
-            else if (!config.DeleteModModifier.IsActive())
-                Im.Text($"按住 {config.DeleteModModifier} 点击删除当前合集。");
+                Im.Text("The default collection cannot be deleted."u8);
+            else if (!LunaStyle.Modifier.Destructive.Active)
+                Im.Text($"Hold {LunaStyle.Modifier.Destructive} to delete the current collection.");
         }
 
         public override void OnClick()
@@ -77,7 +77,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
             => true;
 
         public override void DrawTooltip()
-            => Im.Text("复制当前选中的合集到新的合集。"u8);
+            => Im.Text("Duplicate the currently selected collection to a new one."u8);
 
         public override void OnClick()
             => Im.Popup.Open("DuplicateCollection"u8);

@@ -12,7 +12,7 @@ using FileMode = Penumbra.Interop.Structs.FileMode;
 
 namespace Penumbra.Interop.Hooks.ResourceLoading;
 
-public unsafe class ResourceLoader : IDisposable, Luna.IService
+public unsafe class ResourceLoader : IDisposable, IService
 {
     private readonly ResourceService          _resources;
     private readonly FileReadService          _fileReadService;
@@ -58,7 +58,7 @@ public unsafe class ResourceLoader : IDisposable, Luna.IService
 
     private int PapResourceHandler(void* self, byte* path, int length)
     {
-        if (!_config.EnableMods || !Utf8GamePath.FromPointer(path, MetaDataComputation.CiCrc32, out var gamePath))
+        if (!_config.Main.EnableMods || !Utf8GamePath.FromPointer(path, MetaDataComputation.CiCrc32, out var gamePath))
             return length;
 
         var resolvedData = _resolvedData.Value;
@@ -180,7 +180,7 @@ public unsafe class ResourceLoader : IDisposable, Luna.IService
     private void ResourceHandler(ref ResourceCategory category, ref ResourceType type, ref int hash, ref Utf8GamePath path,
         Utf8GamePath original, GetResourceParameters* parameters, ref bool sync, ref ResourceHandle* returnValue)
     {
-        if (!_config.EnableMods || returnValue is not null)
+        if (!_config.Main.EnableMods || returnValue is not null)
             return;
 
         CompareHash(ComputeHash(path.Path, parameters), hash, path);
@@ -351,7 +351,7 @@ public unsafe class ResourceLoader : IDisposable, Luna.IService
     /// <summary>
     /// Catch weird errors with invalid decrements of the reference count.
     /// </summary>
-    private static void DecRefProtection(ResourceHandle* handle, ref bool? returnValue)
+    private static void DecRefProtection(ResourceHandle* handle, ref byte? returnValue)
     {
         if (handle->RefCount is not 0)
             return;
@@ -366,7 +366,7 @@ public unsafe class ResourceLoader : IDisposable, Luna.IService
             // ignored
         }
 
-        returnValue = true;
+        returnValue = 1;
     }
 
     private void ResourceDestructorHandler(in ResourceHandleDestructor.Arguments arguments)

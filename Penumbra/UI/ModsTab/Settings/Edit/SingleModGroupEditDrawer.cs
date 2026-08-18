@@ -2,9 +2,9 @@ using ImSharp;
 using Luna;
 using Penumbra.Mods.Groups;
 
-namespace Penumbra.UI.ModsTab.Groups;
+namespace Penumbra.UI.ModsTab.Settings;
 
-public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiModGroup group) : IModGroupEditDrawer
+public readonly struct SingleModGroupEditDrawer(ModGroupEditDrawer editor, SingleModGroup group) : IModGroupEditDrawer
 {
     public void Draw()
     {
@@ -14,7 +14,7 @@ public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiM
             editor.DrawOptionPosition(group, option, optionIdx);
 
             Im.Line.SameInner();
-            editor.DrawOptionDefaultMultiBehaviour(group, option, optionIdx);
+            editor.DrawOptionDefaultSingleBehaviour(group, option, optionIdx);
 
             Im.Line.SameInner();
             editor.DrawOptionName(option);
@@ -26,7 +26,7 @@ public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiM
             editor.DrawOptionDelete(option);
 
             Im.Line.SameInner();
-            editor.DrawOptionPriority(option);
+            Im.Dummy(new Vector2(editor.PriorityWidth, 0));
         }
 
         DrawNewOption();
@@ -35,16 +35,20 @@ public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiM
 
     private void DrawConvertButton()
     {
-        var g = group;
-        var e = editor.ModManager.OptionEditor.MultiEditor;
-        if (Im.Button("转换为单选项组"u8, editor.AvailableWidth))
-            editor.ActionQueue.Enqueue(() => e.ChangeToSingle(g));
+        var convertible = group.Options.Count <= IModGroup.MaxMultiOptions;
+        var g           = group;
+        var e           = editor.ModManager.OptionEditor.SingleEditor;
+        if (ImEx.Button("转换为多选项组"u8, editor.AvailableWidth, !convertible))
+            editor.ActionQueue.Enqueue(() => e.ChangeToMulti(g));
+        if (!convertible)
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
+                "由于选项数量超过了最大限制，无法转换为多选项组。"u8);
     }
 
     private void DrawNewOption()
     {
         var count = group.Options.Count;
-        if (count >= IModGroup.MaxMultiOptions)
+        if (count >= int.MaxValue)
             return;
 
         var name = editor.DrawNewOptionBase(group, count);
@@ -54,7 +58,7 @@ public readonly struct MultiModGroupEditDrawer(ModGroupEditDrawer editor, MultiM
                 ? "向此组添加一个新选项"u8
                 : "请输入新选项的名称"u8, !validName))
         {
-            editor.ModManager.OptionEditor.MultiEditor.AddOption(group, name);
+            editor.ModManager.OptionEditor.SingleEditor.AddOption(group, name);
             editor.NewOptionName = null;
         }
     }

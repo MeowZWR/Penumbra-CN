@@ -57,23 +57,24 @@ public class ResourceTreeViewer(
         if (!_task.IsCompleted)
         {
             Im.Line.New();
-            Im.Text("正在计算角色列表..."u8);
+            Im.Text("Calculating character list..."u8);
         }
         else if (_task.Exception != null)
         {
             Im.Line.New();
-            Im.Text($"计算角色列表时出错：\n\n{_task.Exception}", Colors.RegexWarningBorder);
+            Im.Text($"Error during calculation of character list:\n\n{_task.Exception}", Colors.RegexWarningBorder);
         }
         else if (_task.IsCompletedSuccessfully)
         {
-            var debugMode = config.DebugMode;
+            var debugMode = config.Advanced.DebugMode;
             foreach (var (index, tree) in _task.Result.Index())
             {
                 var category = Classify(tree);
-                if (!_categoryFilter.HasFlag(category) || !tree.Name.Contains(config.Filters.OnScreenCharacterFilter, StringComparison.OrdinalIgnoreCase))
+                if (!_categoryFilter.HasFlag(category)
+                 || !tree.Name.Contains(config.Filters.OnScreenCharacterFilter, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                using (ImGuiColor.Text.Push(CategoryColor(category).Value()))
+                using (ImGuiColor.Text.Push(CategoryColor(category).Vector))
                 {
                     var isOpen = Im.Tree.Header($"{(incognito.IncognitoMode ? tree.AnonymizedName : tree.Name)}###{index}",
                         index is 0 ? TreeNodeFlags.DefaultOpen : 0);
@@ -86,54 +87,50 @@ public class ResourceTreeViewer(
 
                 using var id = Im.Id.Push(index);
 
-                ImEx.TextFrameAligned($"合集：{(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
-
-                var isOtherPlayer = tree.PlayerRelated && !tree.LocalPlayerRelated;
-                if (!isOtherPlayer)
+                ImEx.TextFrameAligned($"Collection: {(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
+                Im.Line.Same();
+                if (ImEx.Button("Export Character Pack"u8,
+                        "Note that this recomputes the current data of the actor if it still exists, and does not use the cached data."u8))
                 {
-                    Im.Line.Same();
-                    if (ImEx.Button("导出角色包"u8,
-                            "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
+                    pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, null, _note).ContinueWith(t =>
                     {
-                        pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, null, _note).ContinueWith(t =>
-                        {
-                            var (success, text) = t.Result;
+                        var (success, text) = t.Result;
 
-                            if (success)
-                                Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
-                            else
-                                Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
-                        });
-                        _note = string.Empty;
-                    }
-
-                    Im.Line.SameInner();
-                    if (ImEx.Button("导出到..."u8,
-                            "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
-                        fileDialog.OpenSavePicker("导出角色包...",
-                            $"Penumbra Mod Packs{{.pcp,.pmp}},{config.PcpSettings.PcpExtension},Any File{{.*}}",
-                            PcpService.ModName(tree.Name, _note, DateTime.Now),
-                            config.PcpSettings.PcpExtension,
-                            (selected, path) =>
-                            {
-                                if (!selected)
-                                    return;
-
-                                pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, path, _note).ContinueWith(t =>
-                                {
-                                    var (success, text) = t.Result;
-
-                                    if (success)
-                                        Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
-                                    else
-                                        Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
-                                });
-                                _note = string.Empty;
-                            }, config.ExportDirectory, false);
-                    Im.Line.SameInner();
-                    Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
-                    Im.Input.Text("##note"u8, ref _note, "导出备注..."u8);
+                        if (success)
+                            Penumbra.Messager.NotificationMessage($"Created {text}.", NotificationType.Success, false);
+                        else
+                            Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
+                    });
+                    _note = string.Empty;
                 }
+
+                Im.Line.SameInner();
+                if (ImEx.Button("Export To..."u8,
+                        "Note that this recomputes the current data of the actor if it still exists, and does not use the cached data."u8))
+                    fileDialog.OpenSavePicker("Export PCP...",
+                        $"Penumbra Mod Packs{{.pcp,.pmp}},{config.Io.PcpExtension},Any File{{.*}}",
+                        PcpService.ModName(tree.Name, _note, DateTime.Now),
+                        config.Io.PcpExtension,
+                        (selected, path) =>
+                        {
+                            if (!selected)
+                                return;
+
+                            pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, path, _note).ContinueWith(t =>
+                            {
+                                var (success, text) = t.Result;
+
+                                if (success)
+                                    Penumbra.Messager.NotificationMessage($"Created {text}.", NotificationType.Success, false);
+                                else
+                                    Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
+                            });
+                            _note = string.Empty;
+                        }, config.Io.ExportDirectory, false);
+                Im.Line.SameInner();
+                Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
+                Im.Input.Text("##note"u8, ref _note, "Export note..."u8);
+
 
                 using var table = Im.Table.Begin("##ResourceTree"u8, 4,
                     TableFlags.SizingFixedFit | TableFlags.RowBackground);
@@ -141,8 +138,8 @@ public class ResourceTreeViewer(
                     continue;
 
                 table.SetupColumn(StringU8.Empty,  TableColumnFlags.WidthStretch, 0.2f);
-                table.SetupColumn("游戏路径"u8,   TableColumnFlags.WidthStretch, 0.3f);
-                table.SetupColumn("实际路径"u8, TableColumnFlags.WidthStretch, 0.5f);
+                table.SetupColumn("Game Path"u8,   TableColumnFlags.WidthStretch, 0.3f);
+                table.SetupColumn("Actual Path"u8, TableColumnFlags.WidthStretch, 0.5f);
                 table.SetupColumn(StringU8.Empty, TableColumnFlags.WidthFixed,
                     actionCapacity * 3 * Im.Style.GlobalScale + (actionCapacity + 1) * Im.Style.FrameHeight);
                 table.HeaderRow();
@@ -160,12 +157,12 @@ public class ResourceTreeViewer(
         using var style = ImGuiColor.Text.Push(ImGuiColors.DalamudOrange);
 
         Im.TextWrapped(
-            "Dalamud 检测到您的 FFXIV 安装目录存在被修改的游戏文件。任何通过 TexTools 安装的模组都会导致此提示。"u8);
-        Im.TextWrapped("Penumbra 及部分其他插件假定您的 FFXIV 安装目录为未修改状态以正常工作。"u8);
+            "Dalamud is reporting your FFXIV installation has modified game files. Any mods installed through TexTools will produce this message."u8);
+        Im.TextWrapped("Penumbra and some other plugins assume your FFXIV installation is unmodified in order to work."u8);
         Im.TextWrapped(
-            "当前显示的数据可能不准确，这可能会影响依赖这些数据的功能，例如角色包的导入/导出，或其他插件提供的模组同步功能。"u8);
+            "Data displayed here may be inaccurate because of this, which, in turn, can break functionality relying on it, such as Character Pack exports/imports, or mod synchronization functions provided by other plugins."u8);
         Im.TextWrapped(
-            "请退出游戏，打开 XIVLauncher，点击登录旁的箭头并选择“修复游戏文件”以解决此问题。修复后，请勿再使用 TexTools 安装模组。您的插件配置和 Penumbra 启用的模组不会丢失。"u8);
+            "Exit the game, open XIVLauncher, click the arrow next to Log In and select \"repair game files\" to resolve this issue. Afterwards, do not install any mods with TexTools. Your plugin configurations will remain, as will mods enabled in Penumbra."u8);
 
         Im.Separator();
     }
@@ -175,7 +172,7 @@ public class ResourceTreeViewer(
         var yOffset = (ChangedItemDrawer.TypeFilterIconSize.Y - Im.Style.FrameHeight) / 2f;
         Im.Cursor.Y += yOffset;
 
-        if (Im.Button("刷新角色列表"u8))
+        if (Im.Button("Refresh Character List"u8))
             _task = RefreshCharacterList();
 
         var checkSpacing = Im.Style.ItemInnerSpacing.X;
@@ -187,7 +184,7 @@ public class ResourceTreeViewer(
             foreach (var category in TreeCategory.Values)
             {
                 using var id = Im.Id.Push((int)category);
-                using var c  = ImGuiColor.CheckMark.Push(CategoryColor(category).Value());
+                using var c  = ImGuiColor.CheckMark.Push(CategoryColor(category).Vector);
                 Im.Checkbox(StringU8.Empty, ref _categoryFilter, category);
                 Im.Tooltip.OnHover(CategoryFilterDescription(category));
                 Im.Line.Same(0.0f, checkSpacing);
@@ -212,7 +209,7 @@ public class ResourceTreeViewer(
             var fieldWidth = (Im.ContentRegion.Available.X - checkSpacing * 2.0f - Im.Style.FrameHeightWithSpacing) / 2.0f;
             Im.Item.SetNextWidth(fieldWidth);
             var filter = config.Filters.OnScreenCharacterFilter;
-            if (Im.Input.Text("##TreeNameFilter"u8, ref filter, "按角色/实体名称筛选..."u8))
+            if (Im.Input.Text("##TreeNameFilter"u8, ref filter, "Filter by Character/Entity Name..."u8))
             {
                 filterChanged                          = true;
                 config.Filters.OnScreenCharacterFilter = filter;
@@ -221,7 +218,7 @@ public class ResourceTreeViewer(
             Im.Line.Same(0, checkSpacing);
             Im.Item.SetNextWidth(fieldWidth);
             filter = config.Filters.OnScreenItemFilter;
-            if (Im.Input.Text("##NodeFilter"u8, ref filter, "按物品/部件名称或路径筛选..."u8))
+            if (Im.Input.Text("##NodeFilter"u8, ref filter, "Filter by Item/Part Name or Path..."u8))
             {
                 filterChanged                     = true;
                 config.Filters.OnScreenItemFilter = filter;
@@ -256,24 +253,26 @@ public class ResourceTreeViewer(
     private void DrawNodes(in Im.TableDisposable table, IEnumerable<ResourceNode> resourceNodes, int level, nint pathHash,
         ChangedItemIconFlag parentFilterIconFlag)
     {
-        var debugMode   = config.DebugMode;
+        var debugMode   = config.Advanced.DebugMode;
         var frameHeight = Im.Style.FrameHeight;
 
         foreach (var (index, resourceNode) in resourceNodes.Index())
         {
             var nodePathHash = unchecked(pathHash + resourceNode.ResourceHandle);
-
-            var visibility = GetNodeVisibility(nodePathHash, resourceNode, parentFilterIconFlag);
+            var visibility   = GetNodeVisibility(nodePathHash, resourceNode, parentFilterIconFlag);
             if (visibility == NodeVisibility.Hidden)
                 continue;
 
             using var mutedColor = ImGuiColor.Text.Push(Im.Style[ImGuiColor.Text].WithAlpha(0.5f), resourceNode.Internal);
 
-            var filterIcon = resourceNode.IconFlag != 0 ? resourceNode.IconFlag : parentFilterIconFlag;
+            var filterIcon = resourceNode.IconFlag is not 0 ? resourceNode.IconFlag : parentFilterIconFlag;
 
             using var id = Im.Id.Push(index);
             table.NextColumn();
             var unfolded = _unfolded.Contains(nodePathHash);
+            if (level is 0 && index is not 0)
+                table.DrawHorizontalSeparator();
+
             using (Im.Indent(level))
             {
                 var hasVisibleChildren = resourceNode.Children.Any(child
@@ -331,7 +330,7 @@ public class ResourceTreeViewer(
                 using var tt = Im.Tooltip.Begin();
                 using var c  = Im.Color.PushDefault(ImGuiColor.Text);
                 Im.Text(allPaths);
-                Im.Text("\n点击复制到剪贴板。"u8);
+                Im.Text("\nClick to copy to clipboard."u8);
             }
 
             table.NextColumn();
@@ -343,7 +342,7 @@ public class ResourceTreeViewer(
                     var       modName = $"[{(hasMod ? mod!.Name : resourceNode.ModName)}]";
                     var       textPos = Im.Cursor.X + Im.Font.CalculateSize(modName).X + Im.Style.ItemInnerSpacing.X;
                     using var group   = Im.Group();
-                    using (ImGuiColor.Text.Push((hasMod ? ColorId.NewMod : ColorId.DisabledMod).Value()))
+                    using (ImGuiColor.Text.Push((hasMod ? ColorId.NewMod : ColorId.DisabledMod).Vector))
                     {
                         Im.Selectable(modName, false, SelectableFlags.AllowOverlap, Im.ContentRegion.Available with { Y = frameHeight });
                     }
@@ -375,7 +374,7 @@ public class ResourceTreeViewer(
                     navigator.OpenTo(mod);
 
                 Im.Tooltip.OnHover(default,
-                    $"{resourceNode.FullPath.ToPath()}\n\n点击复制到剪贴板。{(hasMod ? "\nCtrl + 右键点击跳转到模组。" : string.Empty)}{GetAdditionalDataSuffix(resourceNode.AdditionalData)}",
+                    $"{resourceNode.FullPath.ToPath()}\n\nClick to copy to clipboard.{(hasMod ? "\nControl + Right-Click to jump to mod." : string.Empty)}{GetAdditionalDataSuffix(resourceNode.AdditionalData)}",
                     true);
             }
             else
@@ -400,7 +399,7 @@ public class ResourceTreeViewer(
 
         string GetAdditionalDataSuffix(CiByteString data)
         {
-            return !debugMode || data.IsEmpty ? string.Empty : $"\n\n附加数据：{data}";
+            return !debugMode || data.IsEmpty ? string.Empty : $"\n\nAdditional Data: {data}";
         }
 
         NodeVisibility GetNodeVisibility(nint nodePathHash, ResourceNode node, ChangedItemIconFlag parentFilterIcon)
@@ -465,14 +464,14 @@ public class ResourceTreeViewer(
                 _writableCache.Add(resourceNode.FullPath, writable);
             }
 
-            if (ImEx.Icon.Button(LunaStyle.SaveIcon, "导出此文件。"u8, resourceNode.FullPath.FullName.Length is 0 || writable is null,
+            if (ImEx.Icon.Button(LunaStyle.SaveIcon, "Export this file."u8, resourceNode.FullPath.FullName.Length is 0 || writable is null,
                     buttonSize))
             {
                 var fullPathStr = resourceNode.FullPath.FullName;
                 var ext = resourceNode.PossibleGamePaths.Length == 1
                     ? Path.GetExtension(resourceNode.GamePath.ToString())
                     : Path.GetExtension(fullPathStr);
-                fileDialog.OpenSavePicker($"导出 {Path.GetFileName(fullPathStr)} 到...", ext, Path.GetFileNameWithoutExtension(fullPathStr),
+                fileDialog.OpenSavePicker($"Export {Path.GetFileName(fullPathStr)} to...", ext, Path.GetFileNameWithoutExtension(fullPathStr),
                     ext,
                     (success, name) =>
                     {
@@ -497,24 +496,24 @@ public class ResourceTreeViewer(
     private static ReadOnlySpan<byte> GetPathStatusLabel(ResourceNode.PathStatus status)
         => status switch
         {
-            ResourceNode.PathStatus.External    => "(由外部工具管理)"u8,
-            ResourceNode.PathStatus.NonExistent => "(未找到)"u8,
-            _                                   => "(不可用)"u8,
+            ResourceNode.PathStatus.External    => "(managed by external tools)"u8,
+            ResourceNode.PathStatus.NonExistent => "(not found)"u8,
+            _                                   => "(unavailable)"u8,
         };
 
     private static ReadOnlySpan<byte> GetPathStatusDescription(ResourceNode.PathStatus status)
         => status switch
         {
-            ResourceNode.PathStatus.External => "该文件的实际路径不可用，因为它由外部工具管理。"u8,
+            ResourceNode.PathStatus.External => "The actual path to this file is unavailable, because it is managed by external tools."u8,
             ResourceNode.PathStatus.NonExistent =>
-                "该文件的实际路径不可用，因为它在加载后可能已被移动或删除。"u8,
-            _ => "该文件的实际路径不可用。"u8,
+                "The actual path to this file is unavailable, because it seems to have been moved or deleted since it was loaded."u8,
+            _ => "The actual path to this file is unavailable."u8,
         };
 
     private static void HeaderInteraction(ResourceTree tree)
     {
         Im.Tooltip.OnHover(default,
-            $"对象索引：        {tree.GameObjectIndex}\n对象地址：      0x{tree.GameObjectAddress:X16}\n绘制对象地址： 0x{tree.DrawObjectAddress:X16}",
+            $"Object Index:        {tree.GameObjectIndex}\nObject Address:      0x{tree.GameObjectAddress:X16}\nDraw Object Address: 0x{tree.DrawObjectAddress:X16}",
             true, Im.Font.Mono);
         if (tree.GameObjectAddress == nint.Zero)
             return;
@@ -523,16 +522,16 @@ public class ResourceTreeViewer(
         if (context)
         {
             using var text = Im.Color.PushDefault(ImGuiColor.Text);
-            if (Im.Menu.Item("复制游戏对象地址"u8))
+            if (Im.Menu.Item("Copy Game Object Address"u8))
                 Im.Clipboard.Set($"0x{tree.GameObjectAddress:X}");
-            if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("检查游戏对象"u8))
+            if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("Inspect Game Object"u8))
                 Penumbra.Dynamis.InspectObject(tree.GameObjectAddress, $"{tree.Name} Game Object");
             if (tree.DrawObjectAddress != nint.Zero)
             {
-                if (Im.Menu.Item("复制绘制对象地址"u8))
+                if (Im.Menu.Item("Copy Draw Object Address"u8))
                     Im.Clipboard.Set($"0x{tree.DrawObjectAddress:X}");
-                if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("检查绘制对象"u8))
-                    Penumbra.Dynamis.InspectObject(tree.DrawObjectAddress, $"{tree.Name} 绘制对象");
+                if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("Inspect Draw Object"u8))
+                    Penumbra.Dynamis.InspectObject(tree.DrawObjectAddress, $"{tree.Name} Draw Object");
             }
         }
     }
@@ -540,7 +539,7 @@ public class ResourceTreeViewer(
     private static void ResourceInteraction(ResourceNode node)
     {
         Im.Tooltip.OnHover(default,
-            $"资源类型：   {node.Type}\n对象地址：  0x{node.ObjectAddress:X16}\n资源句柄： 0x{node.ResourceHandle:X16}\n长度：          0x{node.Length:X16}",
+            $"Resource Type:   {node.Type}\nObject Address:  0x{node.ObjectAddress:X16}\nResource Handle: 0x{node.ResourceHandle:X16}\nLength:          0x{node.Length:X16}",
             true, Im.Font.Mono);
 
         if (node.ResourceHandle == nint.Zero)
@@ -550,16 +549,16 @@ public class ResourceTreeViewer(
         if (context)
         {
             using var text = Im.Color.PushDefault(ImGuiColor.Text);
-            if (Im.Menu.Item("复制资源句柄地址"u8))
+            if (Im.Menu.Item("Copy Resource Handle Address"u8))
                 Im.Clipboard.Set($"0x{node.ResourceHandle:X}");
-            if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("检查资源句柄"u8))
-                Penumbra.Dynamis.InspectObject(node.ResourceHandle, $"{node.Name} 资源句柄");
+            if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("Inspect Resource Handle"u8))
+                Penumbra.Dynamis.InspectObject(node.ResourceHandle, $"{node.Name} Resource Handle");
             if (node.ObjectAddress != nint.Zero)
             {
-                if (Im.Menu.Item("复制对象地址"u8))
+                if (Im.Menu.Item("Copy Object Address"u8))
                     Im.Clipboard.Set($"0x{node.ObjectAddress:X}");
                 if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("Inspect Object"u8))
-                    Penumbra.Dynamis.InspectObject(node.ObjectAddress, $"{node.Name} 对象");
+                    Penumbra.Dynamis.InspectObject(node.ObjectAddress, $"{node.Name} Object");
             }
         }
     }
@@ -594,10 +593,10 @@ public class ResourceTreeViewer(
     private static ReadOnlySpan<byte> CategoryFilterDescription(TreeCategory category)
         => category switch
         {
-            TreeCategory.LocalPlayer  => "显示你和从属于你的对象（坐骑、宠物、时尚配饰、战斗伙伴等等）。"u8,
-            TreeCategory.Player       => "显示其他玩家和从属于他们的对象"u8,
-            TreeCategory.Networked    => "显示由游戏服务器处理的NPC对象。"u8,
-            TreeCategory.NonNetworked => "显示由本地处理的NPC对象。"u8,
+            TreeCategory.LocalPlayer  => "Show you and what you own (mount, minion, accessory, pets and so on)."u8,
+            TreeCategory.Player       => "Show other players and what they own."u8,
+            TreeCategory.Networked    => "Show non-player entities handled by the game server."u8,
+            TreeCategory.NonNetworked => "Show non-player entities handled locally."u8,
             _                         => throw new ArgumentException(),
         };
 

@@ -23,7 +23,7 @@ public class PreviewConfig
     [JsonIgnore] private float _tempSpacing = float.NaN;
 
     // 处理预览面板比例的编辑与保存
-    public bool DrawRatioSelector(Configuration config, float min = 0.1f, float max = 0.5f)
+    public bool DrawRatioSelector(UiConfig config, float min = 0.1f, float max = 0.5f)
     {
         if (float.IsNaN(_tempRatio))
             _tempRatio = config.PreviewPanelRatio;
@@ -34,7 +34,6 @@ public class PreviewConfig
         if (Im.Item.DeactivatedAfterEdit && _tempRatio != config.PreviewPanelRatio)
         {
             config.PreviewPanelRatio = _tempRatio;
-            config.Save();
             return true;
         }
         
@@ -42,7 +41,7 @@ public class PreviewConfig
     }
 
     // 处理预览面板最小宽度的编辑与保存
-    public bool DrawMinWidthSelector(Configuration config, float min = 100f, float max = 800f)
+    public bool DrawMinWidthSelector(UiConfig config, float min = 100f, float max = 800f)
     {
         if (float.IsNaN(_tempMinWidth))
             _tempMinWidth = config.PreviewPanelMinWidth;
@@ -53,7 +52,6 @@ public class PreviewConfig
         if (Im.Item.DeactivatedAfterEdit && _tempMinWidth != config.PreviewPanelMinWidth)
         {
             config.PreviewPanelMinWidth = _tempMinWidth;
-            config.Save();
             return true;
         }
         
@@ -61,7 +59,7 @@ public class PreviewConfig
     }
 
     // 处理预览面板最大宽度的编辑与保存
-    public bool DrawMaxWidthSelector(Configuration config, float min = 200f, float max = 1000f)
+    public bool DrawMaxWidthSelector(UiConfig config, float min = 200f, float max = 1000f)
     {
         if (float.IsNaN(_tempMaxWidth))
             _tempMaxWidth = config.PreviewPanelMaxWidth;
@@ -72,7 +70,6 @@ public class PreviewConfig
         if (Im.Item.DeactivatedAfterEdit && _tempMaxWidth != config.PreviewPanelMaxWidth)
         {
             config.PreviewPanelMaxWidth = _tempMaxWidth;
-            config.Save();
             return true;
         }
         
@@ -80,7 +77,7 @@ public class PreviewConfig
     }
 
     // 处理预览图片最小宽度的编辑与保存
-    public bool DrawImageMinWidthSelector(Configuration config, float min = 100f, float max = 800f)
+    public bool DrawImageMinWidthSelector(UiConfig config, float min = 100f, float max = 800f)
     {
         if (float.IsNaN(_tempImageMinWidth))
             _tempImageMinWidth = config.PreviewImageMinWidth;
@@ -91,7 +88,6 @@ public class PreviewConfig
         if (Im.Item.DeactivatedAfterEdit && _tempImageMinWidth != config.PreviewImageMinWidth)
         {
             config.PreviewImageMinWidth = _tempImageMinWidth;
-            config.Save();
             return true;
         }
         
@@ -99,7 +95,7 @@ public class PreviewConfig
     }
 
     // 处理图片间距的编辑与保存
-    public bool DrawSpacingSelector(Configuration config, float min = 0f, float max = 10f)
+    public bool DrawSpacingSelector(UiConfig config, float min = 0f, float max = 10f)
     {
         if (float.IsNaN(_tempSpacing))
             _tempSpacing = config.PreviewPanelImageSpacing;
@@ -110,7 +106,6 @@ public class PreviewConfig
         if (Im.Item.DeactivatedAfterEdit && _tempSpacing != config.PreviewPanelImageSpacing)
         {
             config.PreviewPanelImageSpacing = _tempSpacing;
-            config.Save();
             return true;
         }
         

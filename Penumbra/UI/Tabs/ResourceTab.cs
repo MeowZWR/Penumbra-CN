@@ -18,7 +18,7 @@ public sealed class ResourceTab(Configuration config, ResourceManagerService res
         => "资源管理器"u8;
 
     public bool IsVisible
-        => config.DebugMode;
+        => config.Advanced.DebugMode;
 
     public readonly ResourceFilter Filter = new(config);
 
@@ -26,7 +26,7 @@ public sealed class ResourceTab(Configuration config, ResourceManagerService res
     {
         public ResourceFilter(Configuration config)
         {
-            if (config.RememberResourceManagerFilters)
+            if (config.Ui.RememberResourceManagerFilters)
                 Set(new StringU8(config.Filters.ResourceManagerFilter));
             FilterChanged += () => config.Filters.ResourceManagerFilter = Text.ToString();
         }

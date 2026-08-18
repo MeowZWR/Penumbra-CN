@@ -166,7 +166,7 @@ public sealed class DebugTab : Window, ITab<TabType>
         => "插件调试"u8;
 
     public bool IsVisible
-        => _config is { DebugMode: true, Ephemeral.DebugSeparateWindow: false };
+        => _config is { Advanced.DebugMode: true, Ephemeral.DebugSeparateWindow: false };
 
     public TabType Identifier
         => TabType.Debug;
@@ -220,7 +220,7 @@ public sealed class DebugTab : Window, ITab<TabType>
         {
             if (collection.HasCache)
             {
-                using var color = ImGuiColor.Text.Push(ColorId.FolderExpanded.Value());
+                using var color = ImGuiColor.Text.Push(ColorId.FolderExpanded.Vector);
                 using var node =
                     Im.Tree.Node($"{collection.Identity.Name} (Change Counter {collection.Counters.Change})###{collection.Identity.Name}");
                 if (!node)
@@ -285,7 +285,7 @@ public sealed class DebugTab : Window, ITab<TabType>
             }
             else
             {
-                using var color = ImGuiColor.Text.Push(ColorId.UndefinedMod.Value());
+                using var color = ImGuiColor.Text.Push(ColorId.UndefinedMod.Vector);
                 Im.Tree.Leaf($"{collection.Identity.Name} (Change Counter {collection.Counters.Change})");
             }
         }
@@ -317,7 +317,7 @@ public sealed class DebugTab : Window, ITab<TabType>
                 table.DrawDataPair("    has Cache"u8,                 _collectionManager.Active.Default.HasCache.ToString());
                 table.DrawDataPair("Mod Manager BasePath"u8,          _modManager.BasePath.Name);
                 table.DrawDataPair("Mod Manager BasePath-Full"u8,     _modManager.BasePath.FullName);
-                table.DrawDataPair("Mod Manager BasePath IsRooted"u8, Path.IsPathRooted(_config.ModDirectory).ToString());
+                table.DrawDataPair("Mod Manager BasePath IsRooted"u8, Path.IsPathRooted(_config.Main.ModDirectory).ToString());
                 table.DrawDataPair("Mod Manager BasePath Exists"u8,   Directory.Exists(_modManager.BasePath.FullName).ToString());
                 table.DrawDataPair("Mod Manager Valid"u8,             _modManager.Valid.ToString());
                 table.DrawDataPair("Web Server Enabled"u8,            _httpApi.Enabled.ToString());
@@ -328,7 +328,7 @@ public sealed class DebugTab : Window, ITab<TabType>
         {
             if (tree)
             {
-                var active = _config.DeleteModModifier.IsActive();
+                var active = LunaStyle.Modifier.Destructive.Active;
                 if (ImEx.Button("Move ALL Mod Tags to Local Tags"u8, default, "THIS IS NOT REVERTIBLE!"u8, !active))
                     foreach (var mod in _modManager)
                     {
@@ -342,7 +342,11 @@ public sealed class DebugTab : Window, ITab<TabType>
                     }
 
                 if (!active)
-                    Im.Tooltip.OnHover($"\nHold {_config.DeleteModModifier} to click.");
+                    Im.Tooltip.OnHover($"\nHold {LunaStyle.Modifier.Destructive} to click.");
+
+                using var tree2 = Im.Tree.Node("Base64 Tester"u8, TreeNodeFlags.DefaultOpen);
+                if (tree2)
+                    Base64Tester.Draw();
             }
         }
 
@@ -1200,13 +1204,10 @@ public sealed class DebugTab : Window, ITab<TabType>
         => DrawContent();
 
     public override bool DrawConditions()
-        => _config is { DebugMode: true, Ephemeral.DebugSeparateWindow: true };
+        => _config is { Advanced.DebugMode: true, Ephemeral.DebugSeparateWindow: true };
 
     public override void OnClose()
-    {
-        _config.Ephemeral.DebugSeparateWindow = false;
-        _config.Ephemeral.Save();
-    }
+        => _config.Ephemeral.DebugSeparateWindow = false;
 
     public static void DrawCopyableAddress(ReadOnlySpan<byte> label, nint address)
     {

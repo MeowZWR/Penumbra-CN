@@ -97,7 +97,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             _editor.LoadMod(mod, -1, 0).Wait();
             SizeConstraints = new WindowSizeConstraints
             {
-                MinimumSize = new Vector2(940, 600),
+                MinimumSize = new Vector2(1240, 600),
                 MaximumSize = 4000 * Vector2.One,
             };
             _selectedFiles.Clear();
@@ -157,25 +157,25 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         });
         sb.Append(Mod!.Name);
         if (subMods > 1)
-            sb.Append($"   |   {subMods} 选项");
+            sb.Append($"   |   {subMods} Options");
 
         if (size > 0)
-            sb.Append($"   |   {_editor.Files.Available.Count} 文件 ({FormattingFunctions.HumanReadableSize(size)})");
+            sb.Append($"   |   {_editor.Files.Available.Count} Files ({FormattingFunctions.HumanReadableSize(size)})");
 
         if (unused > 0)
-            sb.Append($"   |   {unused} 未使用的文件");
+            sb.Append($"   |   {unused} Unused Files");
 
         if (_editor.Files.Missing.Count > 0)
-            sb.Append($"   |   {_editor.Files.Missing.Count} 丢失的文件");
+            sb.Append($"   |   {_editor.Files.Missing.Count} Missing Files");
 
         if (redirections > 0)
-            sb.Append($"   |   {redirections} 重定向");
+            sb.Append($"   |   {redirections} Redirections");
 
         if (manipulations > 0)
-            sb.Append($"   |   {manipulations} 元数据操作");
+            sb.Append($"   |   {manipulations} Manipulations");
 
         if (swaps > 0)
-            sb.Append($"   |   {swaps} 替换");
+            sb.Append($"   |   {swaps} Swaps");
 
         _allowReduplicate = redirections != _editor.Files.Available.Count || _editor.Files.Missing.Count > 0 || unused > 0;
         sb.Append(WindowBaseLabel);
@@ -229,7 +229,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         DrawQuickImportTab(optionChanged);
         _modelTab.Draw();
         _materialTab.Draw();
-        using (var tab = tabBar.Item("纹理"u8))
+        using (var tab = tabBar.Item("Textures"u8))
         {
             if (tab)
                 _textureEditor.DrawPanel(false);
@@ -238,7 +238,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         _newTextureTab.Draw();
 #endif
         _shaderPackageTab.Draw();
-        using (var tab = tabBar.Item("道具转换"u8))
+        using (var tab = tabBar.Item("Item Swap"u8))
         {
             if (tab)
                 _itemSwapTab.DrawContent();
@@ -253,7 +253,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
     private static readonly FrozenDictionary<GenderRace, StringU8> RaceCodeNames = GenderRace.Values.ToFrozenDictionary(v => v, v =>
     {
         if (v is GenderRace.Unknown)
-            return new StringU8("所有种族和性别"u8);
+            return new StringU8("All Races and Genders"u8);
 
         var (gender, race) = v.Split();
         return new StringU8($"({v.ToRaceCode()}) {race.ToNameU8()} {gender.ToNameU8()} ");
@@ -285,44 +285,44 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             DrawRaceCodeCombo(buttonSize);
             Im.Line.Same();
             Im.Item.SetNextWidth(buttonSize.X);
-            Im.Input.Text("##suffixFrom"u8, ref _materialSuffixFrom, "此后缀..."u8);
+            Im.Input.Text("##suffixFrom"u8, ref _materialSuffixFrom, "From..."u8);
             Im.Line.Same();
             Im.Item.SetNextWidth(buttonSize.X);
-            Im.Input.Text("##suffixTo"u8, ref _materialSuffixTo, "改为..."u8);
+            Im.Input.Text("##suffixTo"u8, ref _materialSuffixTo, "To..."u8);
             Im.Line.Same();
             var disabled = !MdlMaterialEditor.ValidString(_materialSuffixTo);
             Utf8StringHandler<TextStringHandlerBuffer> tt = _materialSuffixTo.Length is 0
-                ? "请输入目标后缀。"
+                ? "Please enter a target suffix."
                 : _materialSuffixFrom == _materialSuffixTo
-                    ? "原后缀与新后缀不能相同。"
+                    ? "The source and target are identical."
                     : disabled
-                        ? "后缀无效。"
+                        ? "The suffix is invalid."
                         : _materialSuffixFrom.Length is 0
                             ? _raceCode is GenderRace.Unknown
-                                ? "将所有皮肤材质后缀替换为目标后缀。"
-                                : "将指定种族的皮肤材质后缀替换为目标后缀。"
+                                ? "Convert all skin material suffices to the target."
+                                : "Convert all skin material suffices for the given race code to the target."
                             : _raceCode is GenderRace.Unknown
-                                ? $"将所有皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'."
-                                : $"将指定种族的皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'.";
-            if (ImEx.Button("修改材质后缀"u8, buttonSize, tt, disabled))
+                                ? $"Convert all skin material suffices that are currently '{_materialSuffixFrom}' to '{_materialSuffixTo}'."
+                                : $"Convert all skin material suffices for the given race code that are currently '{_materialSuffixFrom}' to '{_materialSuffixTo}'.";
+            if (ImEx.Button("Change Material Suffix"u8, buttonSize, tt, disabled))
                 editor.MdlMaterialEditor.ReplaceAllMaterials(_materialSuffixTo, _materialSuffixFrom, _raceCode);
 
             var anyChanges = editor.MdlMaterialEditor.ModelFiles.Any(m => m.Changed);
-            if (ImEx.Button("保存所有修改"u8, buttonSize,
-                    anyChanges ? "不可逆地重写当前应用于模型文件的所有修改。"u8 : "还未做任何修改。"u8,
+            if (ImEx.Button("Save All Changes"u8, buttonSize,
+                    anyChanges ? "Irreversibly rewrites all currently applied changes to model files."u8 : "No changes made yet."u8,
                     !anyChanges))
                 editor.MdlMaterialEditor.SaveAllModels(editor.Compactor);
 
             Im.Line.Same();
-            if (ImEx.Button("撤销所有修改"u8, buttonSize,
-                    anyChanges ? "撤销当前进行的和未保存的所有修改。"u8 : "还未做任何修改。"u8, !anyChanges))
+            if (ImEx.Button("Revert All Changes"u8, buttonSize,
+                    anyChanges ? "Revert all currently made and unsaved changes."u8 : "No changes made yet."u8, !anyChanges))
                 editor.MdlMaterialEditor.RestoreAllModels();
 
             Im.Line.SameInner();
             LunaStyle.DrawAlignedHelpMarker(
-                "模型文件引用了它们应该使用的皮肤材质。这个皮肤材质一般都是同一种。不过mod作者们可能会采用不同的材质来区分体型。\n"u8
-              + "此选项允许你将所有模型文件的一个后缀修改为另一个后缀，比如将所有的后缀b改为bibo。这会修改文件，因此请注意此操作有风险。\n"u8
-              + "如果你不知道这个模组当前使用的后缀是什么，你可以将'将此后缀...'留空，它会将所有后缀替换为'改为'里面的内容，而不仅仅是匹配的后缀。\n"u8);
+                "Model files refer to the skin material they should use. This skin material is always the same, but modders have started using different suffices to differentiate between body types.\n"u8
+              + "This option allows you to switch the suffix of all model files to another. This changes the files, so you do this on your own risk.\n"u8
+              + "If you do not know what the currently used suffix of this mod is, you can leave 'From' blank and it will replace all suffices with 'To', instead of only the matching ones."u8);
         }
     }
 
@@ -331,13 +331,13 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         if (_editor.Files.Missing.Count is 0)
             return;
 
-        using var tab = Im.TabBar.BeginItem("丢失的文件"u8);
+        using var tab = Im.TabBar.BeginItem("Missing Files"u8);
         if (!tab)
             return;
 
         using var id = Im.Id.Push(Mod!.Identifier);
         Im.Line.New();
-        if (Im.Button("从模组中删除丢失的文件"u8))
+        if (Im.Button("Remove Missing Files from Mod"u8))
             _editor.FileEditor.RemoveMissingPaths(Mod!, _editor.Option!);
 
         using var child = Im.Child.Begin("##unusedFiles"u8, Im.ContentRegion.Available, true);
@@ -354,20 +354,20 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
     private void DrawDuplicatesTab()
     {
-        using var tab = Im.TabBar.BeginItem("重复项"u8);
+        using var tab = Im.TabBar.BeginItem("Duplicates"u8);
         if (!tab)
             return;
 
         using var id = Im.Id.Push(Mod!.Identifier);
         if (_editor.Duplicates.Worker.IsCompleted)
         {
-            if (ImEx.Button("查找重复项"u8, Vector2.Zero,
-                    "在这个模组中搜索相同的文件，这可能需要花上一段时间。"u8))
+            if (ImEx.Button("Scan for Duplicates"u8, Vector2.Zero,
+                    "Search for identical files in this mod. This may take a while."u8))
                 _editor.Duplicates.StartDuplicateCheck(_editor.Files.Available);
         }
         else
         {
-            if (ImEx.Button("取消查找重复项"u8, Vector2.Zero, "取消当前查找操作..."u8))
+            if (ImEx.Button("Cancel Scanning for Duplicates"u8, Vector2.Zero, "Cancel the current scanning operation..."u8))
                 _editor.Duplicates.Clear();
         }
 
@@ -377,10 +377,10 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
                 new Vector2(300 * Im.Style.GlobalScale, Im.Style.FrameHeight),
                 $"{_editor.ModNormalizer.Step} / {_editor.ModNormalizer.TotalSteps}");
         }
-        else if (ImEx.Button("重新复制文件并将模组标准化"u8, Vector2.Zero,
-                     "尝试为每个游戏路径操作创建一个唯一副本并将其按[Groupname]/[Optionname]/[GamePath]排列。\n"u8
-                   + "如果成功，还将删除所有未使用的文件和目录。\n"u8
-                   + "注意，失败后不会破坏模组，而是应该恢复到其原始状态，但无论如何，请注意此操作有风险。"u8,
+        else if (ImEx.Button("Re-Duplicate and Normalize Mod"u8, Vector2.Zero,
+                     "Tries to create a unique copy of a file for every game path manipulated and put them in [Groupname]/[Optionname]/[GamePath] order.\n"u8
+                   + "This will also delete all unused files and directories if it succeeds.\n"u8
+                   + "Care was taken that a failure should not destroy the mod but revert to its original state, but you use this at your own risk anyway."u8,
                      !_allowReduplicate && !LunaStyle.Modifier.Destructive))
         {
             _editor.ModNormalizer.Normalize(Mod!);
@@ -396,17 +396,17 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         if (_editor.Duplicates.Duplicates.Count is 0)
         {
             Im.Line.New();
-            Im.Text("未找到重复项。"u8);
+            Im.Text("No duplicates found."u8);
             return;
         }
 
-        if (Im.Button("删除并重定向重复项"u8))
+        if (Im.Button("Delete and Redirect Duplicates"u8))
             _editor.Duplicates.DeleteDuplicates(_editor.Files, _editor.Mod!, _editor.Option!, true);
 
         if (_editor.Duplicates.SavedSpace > 0)
         {
             Im.Line.Same();
-            Im.Text($"从你的硬盘释放 {FormattingFunctions.HumanReadableSize(_editor.Duplicates.SavedSpace)} 。");
+            Im.Text($"Frees up {FormattingFunctions.HumanReadableSize(_editor.Duplicates.SavedSpace)} from your hard drive.");
         }
 
         using var child = Im.Child.Begin("##duptable"u8, Im.ContentRegion.Available, true);
@@ -464,7 +464,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         using (ImStyleDouble.ItemSpacing.Push(Vector2.Zero).Push(ImStyleSingle.FrameRounding, 0))
         {
             var width = new Vector2((Im.ContentRegion.Available.X - spacingX - frameHeight) / 3, 0);
-            if (ImEx.Button("默认选项"u8, width, "切换到模组的默认选项。\n这将重置未保存的更改。"u8,
+            if (ImEx.Button("Default Option"u8, width, "Switch to the default option for the mod.\nThis resets unsaved changes."u8,
                     _editor.Option is DefaultSubMod))
             {
                 _editor.LoadOption(-1, 0).Wait();
@@ -472,7 +472,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             }
 
             Im.Line.Same();
-            if (ImEx.Button("刷新数据"u8, width, "刷新当前选项的数据。\n这将重置未保存的更改。"u8))
+            if (ImEx.Button("Refresh Data"u8, width, "Refresh data for the current option.\nThis resets unsaved changes."u8))
             {
                 _editor.LoadMod(_editor.Mod!, _editor.GroupIdx, _editor.DataIdx).Wait();
                 ret = true;
@@ -492,10 +492,10 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             using (ImGuiColor.Button.Push(Im.Style[ImGuiColor.ButtonActive], ModPinned))
             {
                 if (ImEx.Icon.Button(LunaStyle.PinIcon, _parent.UnpinnedWindow == this
-                            ? $"将 {Mod?.Name} 固定到此编辑窗口。\n固定后，在其他 Mod 上打开高级编辑时将开启新窗口。"
+                            ? $"Pin {Mod?.Name} to this editing window.\nOpening Advanced Editing on another mod will then open another window."
                             : _parent.UnpinnedWindow?.Mod is not { } mod
-                                ? $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的 Mod。"
-                                : $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的 Mod。\n\n这会将现有的未固定窗口固定到 {mod.Name}。",
+                                ? $"Unpin {Mod?.Name} from this editing window.\nThis window will then follow your selected mod in the main window."
+                                : $"Unpin {Mod?.Name} from this editing window.\nThis window will then follow your selected mod in the main window.\n\nThis will pin an existing unpinned window to {mod.Name}.",
                         false, new Vector2(frameHeight + spacingX, frameHeight)))
                     _parent.UnpinWindow(this, _parent.UnpinnedWindow != this);
             }
@@ -509,28 +509,28 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
     private void DrawSwapTab()
     {
-        using var tab = Im.TabBar.BeginItem("文件替换"u8);
+        using var tab = Im.TabBar.BeginItem("File Swaps"u8);
         if (!tab)
             return;
 
         using var id        = Im.Id.Push(Mod!.Identifier);
         var       setsEqual = !_editor.SwapEditor.Changes;
-        var       tt        = setsEqual ? "未暂存任何修改" : "应用当前暂存的修改到此选项。";
+        var       tt        = setsEqual ? "No changes staged."u8 : "Apply the currently staged changes to the option."u8;
         Im.Line.New();
-        if (ImEx.Button("应用修改"u8, Vector2.Zero, tt, setsEqual))
+        if (ImEx.Button("Apply Changes"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Apply(_editor.Option!);
 
         Im.Line.Same();
-        tt = setsEqual ? "未暂存任何修改" : "撤销当前暂存的所有修改。";
-        if (ImEx.Button("撤销修改"u8, Vector2.Zero, tt, setsEqual))
+        tt = setsEqual ? "No changes staged."u8 : "Revert all currently staged changes."u8;
+        if (ImEx.Button("Revert Changes"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Revert(_editor.Option!);
 
         var otherSwaps = _editor.Mod!.TotalSwapCount - _editor.Option!.FileSwaps.Count;
         if (otherSwaps > 0)
         {
             Im.Line.Same();
-            ImEx.TextFramed($"{otherSwaps} 文件替换已经在其他选项中设置过了。", Vector2.Zero,
-                ColorId.RedundantAssignment.Value().Color);
+            ImEx.TextFramed($"There are {otherSwaps} file swaps configured in other options.", Vector2.Zero,
+                ColorId.RedundantAssignment.Value);
         }
 
         using var child = Im.Child.Begin("##swaps"u8, Im.ContentRegion.Available, true);
@@ -552,7 +552,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         {
             id.Push(idx++);
             table.NextColumn();
-            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除此替换。"u8))
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this swap."u8))
                 _editor.SwapEditor.Remove(gamePath);
 
             table.NextColumn();
@@ -577,7 +577,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
          && _newSwapValue.Length > 0
          && _newSwapValue != _newSwapKey
          && !_editor.SwapEditor.Swaps.ContainsKey(newPath);
-        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, "添加一个新的文件替换到此选项。"u8, !addable))
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, "Add a new file swap to this option."u8, !addable))
         {
             _editor.SwapEditor.Add(newPath, new FullPath(_newSwapValue));
             _newSwapKey   = string.Empty;
@@ -586,10 +586,10 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         table.NextColumn();
         Im.Item.SetNextWidthFull();
-        Im.Input.Text("##swapKey"u8, ref _newSwapValue, "加载此文件..."u8, maxLength: Utf8GamePath.MaxGamePathLength);
+        Im.Input.Text("##swapKey"u8, ref _newSwapValue, "Load this file..."u8, maxLength: Utf8GamePath.MaxGamePathLength);
         table.NextColumn();
         Im.Item.SetNextWidthFull();
-        Im.Input.Text("##swapValue"u8, ref _newSwapKey, "... 替换为此文件。"u8, maxLength: Utf8GamePath.MaxGamePathLength);
+        Im.Input.Text("##swapValue"u8, ref _newSwapKey, "... instead of this file."u8, maxLength: Utf8GamePath.MaxGamePathLength);
     }
 
     public ModEditWindow(FileDialogService fileDialog, ItemSwapTab itemSwapTab, IDataManager gameData,
@@ -610,17 +610,16 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         _communicator      = communicator;
         _dragDropManager   = dragDropManager;
         _parent            = parent;
-        _fileDialog        = fileDialog;
         _metaDrawers       = metaDrawers;
         _overviewTable     = new OverviewTable(_editor);
         _optionSelect      = new OptionSelectCombo(editor, this);
 
-        _materialTab      = CreateFileEditor("材质(颜色集)", ".mtrl", ResourceType.Mtrl);
-        _modelTab         = CreateFileEditor("模型",    ".mdl",  ResourceType.Mdl);
-        _shaderPackageTab = CreateFileEditor("着色器",   ".shpk", ResourceType.Shpk);
-        _pbdTab           = CreateFileEditor("变形器", ".pbd",  ResourceType.Pbd);
+        _materialTab      = CreateFileEditor("Materials", ".mtrl", ResourceType.Mtrl);
+        _modelTab         = CreateFileEditor("Models",    ".mdl",  ResourceType.Mdl);
+        _shaderPackageTab = CreateFileEditor("Shaders",   ".shpk", ResourceType.Shpk);
+        _pbdTab           = CreateFileEditor("Deformers", ".pbd",  ResourceType.Pbd);
 #if false
-        _newTextureTab = CreateFileEditor("纹理", ".tex,.atex", ResourceType.Tex);
+        _newTextureTab = CreateFileEditor("Textures (2)", ".tex,.atex", ResourceType.Tex);
 #endif
 
         _textureEditor = textureEditorFactory.CreateForModEditWindow(new ModEditFileEditingContext(activeCollections, editor, null));

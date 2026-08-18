@@ -38,8 +38,8 @@ public partial class ModCreator(
     {
         try
         {
-            var newDir = CreateModFolder(basePath, newName, Config.ReplaceNonAsciiOnImport, true);
-            var mod = dataEditor.CreateMeta(newDir, newName, author ?? Config.DefaultModAuthor, description, "1.0", string.Empty, tags);
+            var newDir = CreateModFolder(basePath, newName, Config.Io.ReplaceNonAsciiOnImport, true);
+            var mod = dataEditor.CreateMeta(newDir, newName, author ?? Config.Io.DefaultModAuthor, description, "1.0", string.Empty, tags);
             CreateDefaultFiles(mod);
             return mod;
         }
@@ -136,7 +136,7 @@ public partial class ModCreator(
         }
 
         DeleteDeleteList(deleteList, delete);
-        if (removeDefaultValues && !Config.KeepDefaultMetaChanges)
+        if (removeDefaultValues && !Config.Advanced.KeepDefaultMetaChanges)
             changes |= ModMetaEditor.DeleteDefaultValues(mod, metaFileManager, null);
 
         if (!changes)
@@ -206,7 +206,7 @@ public partial class ModCreator(
     {
         var newModFolderBase = NewOptionDirectory(parentFolder, subFolderName, onlyAscii);
         var newModFolder     = newModFolderBase.FullName.ObtainUniqueFile();
-        return newModFolder.Length == 0 ? null : new DirectoryInfo(newModFolder);
+        return newModFolder.Length is 0 ? null : new DirectoryInfo(newModFolder);
     }
 
     /// <summary> Create the data for a given sub mod from its data and the folder it is based on. </summary>
@@ -253,7 +253,7 @@ public partial class ModCreator(
     {
         var mod = new Mod(baseDir);
 
-        var files   = SaveService.FileNames.GetOptionGroupFiles(mod).ToList();
+        var files   = SaveService.FileNames.Migration.GetOptionGroupFiles(mod).ToList();
         var idx     = 0;
         var reorder = false;
         foreach (var groupFile in files)

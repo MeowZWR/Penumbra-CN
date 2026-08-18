@@ -102,7 +102,7 @@ public partial class MaterialEditor
             UpdateColorTablePreview();
         }
 
-        var uiChannelCount = StainService.GetUiChannelCount(_config);
+        var uiChannelCount = StainService.GetUiChannelCount(_config.Editing);
         for (var i = 0; i < uiChannelCount; ++i)
         {
             Im.Line.Same();
@@ -276,7 +276,7 @@ public partial class MaterialEditor
 
     private void ColorTablePairHighlightButton(int pairIdx, bool disabled)
     {
-        var wholePairSelectorHighlight = (_config.WholePairSelectorAlwaysHighlights || Im.Io.KeyControl) && Im.Item.Hovered();
+        var wholePairSelectorHighlight = (_config.Editing.WholePairSelectorAlwaysHighlights || Im.Io.KeyControl) && Im.Item.Hovered();
 
         ImEx.Icon.Button(LunaStyle.OnHoverIcon,
             "在角色上高亮显示这一对行（如果可以）。\n\n高亮颜色可以在 Penumbra 的设置中进行配置。"u8,
@@ -498,7 +498,7 @@ public partial class MaterialEditor
     private bool CtTileTransformMatrix(HalfMatrix2x2 value, float floatSize, bool twoRowLayout, Action<HalfMatrix2x2> setter)
     {
         var ret = false;
-        if (_config.EditRawTileTransforms)
+        if (_config.Editing.EditRawTileTransforms)
         {
             var tmp = value;
             Im.Item.SetNextWidth(floatSize);

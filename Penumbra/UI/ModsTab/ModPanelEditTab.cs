@@ -9,7 +9,7 @@ using Penumbra.Mods.Groups;
 using Penumbra.Mods.Manager;
 using Penumbra.Mods.Settings;
 using Penumbra.Services;
-using Penumbra.UI.ModsTab.Groups;
+using Penumbra.UI.ModsTab.Settings;
 
 namespace Penumbra.UI.ModsTab;
 
@@ -18,10 +18,9 @@ public class ModPanelEditTab(
     ModFileSystem fileSystem,
     ModSelection selection,
     CommunicatorService communicator,
-    Services.MessageService messager,
+    Services.PenumbraMessager messager,
     FilenameService filenames,
     ModExportManager modExportManager,
-    Configuration config,
     PredefinedTagManager predefinedTagManager,
     ModGroupEditDrawer groupEditDrawer,
     DescriptionEditPopup descriptionPopup,
@@ -40,7 +39,7 @@ public class ModPanelEditTab(
         => selection.Mod!;
 
     public ReadOnlySpan<byte> Label
-        => "模组编辑"u8;
+        => "Edit Mod"u8;
 
     public ModPanelTab Identifier
         => ModPanelTab.Edit;
@@ -107,7 +106,7 @@ public class ModPanelEditTab(
         EditLocalData();
         UiHelpers.DefaultLineSpace();
 
-        if (Input.Text("模组路径（用于排序）"u8, Input.Path, Input.None, Leaf.FullPath, out var newPath, UiHelpers.InputTextWidth.X))
+        if (Input.Text("Mod Path"u8, Input.Path, Input.None, Leaf.FullPath, out var newPath, UiHelpers.InputTextWidth.X))
             try
             {
                 fileSystem.RenameAndMove(Leaf, newPath);
@@ -124,7 +123,7 @@ public class ModPanelEditTab(
         UiHelpers.DefaultLineSpace();
         var sharedTagsEnabled     = predefinedTagManager.Enabled;
         var sharedTagButtonOffset = sharedTagsEnabled ? Im.Style.FrameHeight + Im.Style.FramePadding.X : 0;
-        var tagIdx = TagButtons.Draw("模组标签： "u8, "点击标签进行编辑，或添加新标签。空标签将被移除。"u8, Mod.ModTags,
+        var tagIdx = TagButtons.Draw("Mod Tags: "u8, "Edit tags by clicking them, or add new tags. Empty tags are removed."u8, Mod.ModTags,
             out var editedTag, rightEndOffset: sharedTagButtonOffset);
         if (tagIdx >= 0)
             modManager.DataEditor.ChangeModTag(Mod, tagIdx, editedTag);
@@ -133,17 +132,17 @@ public class ModPanelEditTab(
             predefinedTagManager.DrawAddFromSharedTagsAndUpdateTags(Mod, false);
 
         UiHelpers.DefaultLineSpace();
-        if (Im.Tree.Header("组编辑"u8))
+        if (Im.Tree.Header("Group Editing"u8))
         {
             UiHelpers.DefaultLineSpace();
             DrawGroupNameEdit(cache);
 
             addGroupDrawer.Draw(Mod, UiHelpers.InputTextWidth.X);
 
-            if (Im.RadioButton("组编辑模式"u8, !_groupReorderMode))
+            if (Im.RadioButton("Group Edit Mode"u8, !_groupReorderMode))
                 _groupReorderMode = false;
             Im.Line.SameInner();
-            if (Im.RadioButton("组排序模式"u8, _groupReorderMode))
+            if (Im.RadioButton("Group Reorder Mode"u8, _groupReorderMode))
                 _groupReorderMode = true;
 
             UiHelpers.DefaultLineSpace();
@@ -171,23 +170,23 @@ public class ModPanelEditTab(
         if (!table)
             return;
 
-        table.SetupColumn("索引"u8,             TableColumnFlags.WidthFixed, Im.Font.CalculateSize("组 #00  "u8).X);
-        table.SetupColumn("组"u8,             TableColumnFlags.WidthStretch);
-        table.SetupColumn("类型"u8,              TableColumnFlags.WidthFixed, Im.Font.CalculateSize("合并  "u8).X);
-        table.SetupColumn("选项"u8,           TableColumnFlags.WidthFixed, Im.Font.CalculateSize("1000 选项  "u8).X);
-        table.SetupColumn("优先级##actions"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 2);
-        table.SetupColumn("页面"u8,              TableColumnFlags.WidthFixed, Im.Style.TextHeight * 2);
+        table.SetupColumn("Index"u8,             TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Group #00  "u8).X);
+        table.SetupColumn("Group"u8,             TableColumnFlags.WidthStretch);
+        table.SetupColumn("Type"u8,              TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Combining  "u8).X);
+        table.SetupColumn("Options"u8,           TableColumnFlags.WidthFixed, Im.Font.CalculateSize("1000 Options  "u8).X);
+        table.SetupColumn("Priority##actions"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 2);
+        table.SetupColumn("Page"u8,              TableColumnFlags.WidthFixed, Im.Style.TextHeight * 2);
         table.SetupColumn("##actions"u8,         TableColumnFlags.WidthFixed, Im.Style.FrameHeight);
         table.HeaderRow();
 
-        var        active   = config.DeleteModModifier.IsActive();
+        var        active   = LunaStyle.Modifier.Destructive.Active;
         using var  clip     = new Im.ListClipper(mod.Groups.Count, Im.Style.FrameHeightWithSpacing);
         IModGroup? deletion = null;
         foreach (var i in clip)
         {
             using var id    = Im.Id.Push(i);
             var       group = mod.Groups[i];
-            table.DrawFrameColumn($"组 #{i + 1:D2}");
+            table.DrawFrameColumn($"Group #{i + 1:D2}");
 
             table.NextColumn();
             Im.Selectable(group.Name);
@@ -197,7 +196,7 @@ public class ModPanelEditTab(
                 {
                     source.SetPayload("##group"u8);
                     _draggedGroup = group;
-                    Im.Text($"拖拽组 #{i + 1} - {group.Name}...");
+                    Im.Text($"Dragging group #{i + 1} - {group.Name}...");
                 }
             }
 
@@ -213,7 +212,7 @@ public class ModPanelEditTab(
 
             table.DrawFrameColumn($"{group.Type}");
 
-            table.DrawFrameColumn($"{group.Options.Count} 个选项");
+            table.DrawFrameColumn($"{group.Options.Count} Option{(group.Options.Count is not 1 ? "s"u8 : StringU8.Empty)}");
 
             table.NextColumn();
             Im.Item.SetNextWidth(2 * Im.Style.FrameHeight);
@@ -222,18 +221,24 @@ public class ModPanelEditTab(
 
             table.NextColumn();
             Im.Item.SetNextWidth(2 * Im.Style.TextHeight);
-            if (ImEx.InputOnDeactivation.Drag("##page"u8, group.Page, out var newPage, 0, null, 0.02f))
-                modManager.OptionEditor.SetPage(group, newPage);
+            if (ImEx.InputOnDeactivation.Drag("##page"u8, group.Page + 1, out var newPage, 0, null, 0.02f))
+                modManager.OptionEditor.SetPage(group, newPage - 1);
 
-            Im.Tooltip.OnHover(group.Mod.PageNames.TryGetValue(group.Page, out var name) ? name : $"页 {group.Page + 1}");
-
+            if (Im.Item.Hovered())
+            {
+                using var tt = Im.Tooltip.Begin();
+                Im.Text(group.Mod.PageNames.TryGetValue(group.Page, out var name) ? name : $"Page {group.Page + 1}");
+                LunaStyle.DrawSeparator();
+                Im.Text(
+                    "The page this group is to be placed in. If this group has a parent, this setting is ignored.\n\nNote that the number seen here is offset by 1 compared to the number stored in the JSON file."u8);
+            }
 
             table.NextColumn();
-            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "删除此选项组。"u8, !active))
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this option group."u8, !active))
                 deletion = group;
 
             if (!active)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {config.DeleteModModifier} 删除。");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {LunaStyle.Modifier.Destructive} to delete.");
         }
 
         if (deletion is not null)
@@ -245,14 +250,14 @@ public class ModPanelEditTab(
     {
         var buttonSize   = new Vector2(150 * Im.Style.GlobalScale, 0);
         var folderExists = Directory.Exists(Mod.ModPath.FullName);
-        if (ImEx.Button("打开模组目录"u8, buttonSize, folderExists
-                ? $"在您选择的文件浏览器中打开 \"{Mod.ModPath.FullName}\"。"
-                : $"模组目录 \"{Mod.ModPath.FullName}\" 不存在。", !folderExists))
+        if (ImEx.Button("Open Mod Directory"u8, buttonSize, folderExists
+                ? $"Open \"{Mod.ModPath.FullName}\" in the file explorer of your choice."
+                : $"Mod directory \"{Mod.ModPath.FullName}\" does not exist.", !folderExists))
             Process.Start(new ProcessStartInfo(Mod.ModPath.FullName) { UseShellExecute = true });
 
         Im.Line.Same();
-        if (ImEx.Button("重新加载模组"u8, buttonSize, "从其文件重新加载当前模组。\n"u8
-              + "如果模组目录或元数据文件不存在，或者新模组名称为空，则模组会被删除。"u8,
+        if (ImEx.Button("Reload Mod"u8, buttonSize, "Reload the current mod from its files.\n"u8
+              + "If the mod directory or meta file do not exist anymore or if the new mod name is empty, the mod is deleted instead."u8,
                 false))
             modManager.ReloadMod(Mod);
 
@@ -265,56 +270,56 @@ public class ModPanelEditTab(
     private void BackupButtons(Vector2 buttonSize)
     {
         var backup = new ModBackup(modExportManager, Mod);
-        if (ImEx.Button("备份模组"u8, buttonSize, ModBackup.CreatingBackup
-                ? "正在备份模组。"
+        if (ImEx.Button("Export Mod"u8, buttonSize, ModBackup.CreatingBackup
+                ? "Already exporting a mod."
                 : backup.Exists
-                    ? $"用当前模组覆盖当前备份的模组 \"{backup.Name}\"。"
-                    : $"创建当前模组的备份压缩包到 \"{backup.Name}\"。", ModBackup.CreatingBackup))
+                    ? $"Overwrite current exported mod \"{backup.Name}\" with current mod."
+                    : $"Create exported archive of current mod at \"{backup.Name}\".", ModBackup.CreatingBackup))
             _ = backup.CreateAsync();
 
         if (Im.Item.RightClicked())
             Im.Popup.Open("context"u8);
 
         Im.Line.Same();
-        if (ImEx.Button("删除备份"u8, buttonSize, backup.Exists
-                ? $"删除存在的备份文件：\"{backup.Name}\"（点击时按住{config.DeleteModModifier}）。"
-                : $"备份文件\"{backup.Name}\"不存在。", !backup.Exists || !config.DeleteModModifier.IsActive()))
+        if (ImEx.Button("Delete Export"u8, buttonSize, backup.Exists
+                ? $"Delete existing mod export \"{backup.Name}\" (hold {LunaStyle.Modifier.Destructive} while clicking)."
+                : $"Exported mod \"{backup.Name}\" does not exist.", !backup.Exists || !LunaStyle.Modifier.Destructive.Active))
             backup.Delete();
 
         Im.Line.Same();
-        if (ImEx.Button("从备份恢复"u8, buttonSize, backup.Exists
-                ? $"从备份文件：\"{backup.Name}\" 恢复模组（点击时按住{config.DeleteModModifier}）。"
-                : $"备份文件\"{backup.Name}\"不存在。", !backup.Exists || !config.DeleteModModifier.IsActive()))
+        if (ImEx.Button("Restore From Export"u8, buttonSize, backup.Exists
+                ? $"Restore mod from exported file \"{backup.Name}\" (hold {LunaStyle.Modifier.Destructive} while clicking)."
+                : $"Exported mod \"{backup.Name}\" does not exist.", !backup.Exists || !LunaStyle.Modifier.Destructive.Active))
             backup.Restore(modManager);
         if (backup.Exists)
         {
             Im.Line.Same();
             ImEx.Icon.Draw(FontAwesomeIcon.CheckCircle.Icon());
-            Im.Tooltip.OnHover($"备份已存在于 \"{backup.Name}\"。");
+            Im.Tooltip.OnHover($"Export exists in \"{backup.Name}\".");
         }
 
         using var context = Im.Popup.Begin("context"u8);
         if (!context)
             return;
 
-        if (Im.Selectable("打开备份目录"u8))
+        if (Im.Selectable("Open Backup Directory"u8))
             Process.Start(new ProcessStartInfo(modExportManager.ExportDirectory.FullName) { UseShellExecute = true });
     }
 
     /// <summary> Anything about editing the regular meta information about the mod. </summary>
     private void EditRegularMeta()
     {
-        if (Input.Text("模组名称"u8, Input.Name, Input.None, Mod.Name, out var newName, UiHelpers.InputTextWidth.X))
+        if (Input.Text("Name"u8, Input.Name, Input.None, Mod.Name, out var newName, UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModName(Mod, newName);
 
-        if (Input.Text("作者"u8, Input.Author, Input.None, Mod.Author, out var newAuthor, UiHelpers.InputTextWidth.X))
+        if (Input.Text("Author"u8, Input.Author, Input.None, Mod.Author, out var newAuthor, UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModAuthor(Mod, newAuthor);
 
-        if (Input.Text("版本"u8, Input.Version, Input.None, Mod.Version, out var newVersion,
+        if (Input.Text("Version"u8, Input.Version, Input.None, Mod.Version, out var newVersion,
                 UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModVersion(Mod, newVersion);
 
-        if (Input.Text("网址"u8, Input.Website, Input.None, Mod.Website, out var newWebsite,
+        if (Input.Text("Website"u8, Input.Website, Input.None, Mod.Website, out var newWebsite,
                 UiHelpers.InputTextWidth.X))
             modManager.DataEditor.ChangeModWebsite(Mod, newWebsite);
 
@@ -322,20 +327,20 @@ public class ModPanelEditTab(
         if (ImEx.GuidInput("##modGuid"u8, ref guid, UiHelpers.InputTextMinusButtonInner) && guid.HasValue)
             modManager.DataEditor.ForceIdentifier(Mod, guid.Value);
         Im.Line.SameInner();
-        if (ImEx.Icon.Button(LunaStyle.RefreshIcon, "为这个模组设置一个新的GUID。"u8))
+        if (ImEx.Icon.Button(LunaStyle.RefreshIcon, "Set a new GUID for this mod."u8))
             modManager.DataEditor.ForceIdentifier(Mod, Guid.NewGuid());
         Im.Line.SameInner();
-        ImEx.TextFrameAligned("稳定标识符（GUID）"u8);
+        ImEx.TextFrameAligned("Stable Identifier (GUID)"u8);
 
         var reducedSize = new Vector2(UiHelpers.InputTextMinusButtonInner, 0);
-        if (Im.Button("编辑描述"u8, reducedSize))
+        if (Im.Button("Edit Description"u8, reducedSize))
             descriptionPopup.Open(Mod);
 
         Im.Line.SameInner();
         var fileExists = File.Exists(filenames.ModMetaPath(Mod));
         var tt = fileExists
-            ? "在您选择的文本编辑器中打开元数据json文件。"u8
-            : "元数据json文件不存在。"u8;
+            ? "Open the metadata JSON file in the text editor of your choice."u8
+            : "The metadata JSON file does not exist."u8;
         using (Im.Id.Push("meta"u8))
         {
             if (ImEx.Icon.Button(LunaStyle.FileExportIcon, tt, !fileExists))
@@ -356,18 +361,18 @@ public class ModPanelEditTab(
             new Vector2(UiHelpers.InputTextMinusButtonInner, 0), ImGuiColor.FrameBackground.Get(0.5f));
         if (Im.Item.Clicked())
             Im.Clipboard.Set($"{Mod.ImportDate}");
-        Im.Tooltip.OnHover($"点击复制时间戳: {Mod.ImportDate}");
+        Im.Tooltip.OnHover($"Click to copy timestamp: {Mod.ImportDate}");
 
         Im.Line.SameInner();
-        var canRefresh = config.DeleteModModifier.IsActive();
+        var canRefresh = LunaStyle.Modifier.Destructive.Active;
         if (ImEx.Icon.Button(LunaStyle.RefreshIcon, canRefresh
-                    ? "重置导入日期为当前日期和时间。"u8
-                    : $"重置导入日期为当前日期和时间。\n点击时按住 {config.DeleteModModifier} 刷新。",
+                    ? "Reset the import date to the current date and time."u8
+                    : $"Reset the import date to the current date and time.\nHold {LunaStyle.Modifier.Destructive} while clicking to refresh.",
                 !canRefresh))
             modManager.DataEditor.ChangeModImportDate(Mod, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
         Im.Line.SameInner();
-        Im.Text("导入日期"u8);
+        Im.Text("Import Date"u8);
     }
 
     private void DrawConfigEditDate()
@@ -377,18 +382,18 @@ public class ModPanelEditTab(
             new Vector2(UiHelpers.InputTextMinusButtonInner, 0), ImGuiColor.FrameBackground.Get(0.5f));
         if (Im.Item.Clicked())
             Im.Clipboard.Set($"{Mod.LastConfigEdit}");
-        Im.Tooltip.OnHover($"点击复制时间戳：{Mod.LastConfigEdit}");
+        Im.Tooltip.OnHover($"Click to copy timestamp: {Mod.LastConfigEdit}");
 
         Im.Line.SameInner();
-        var canRefresh = config.IncognitoModifier.IsActive();
+        var canRefresh = LunaStyle.Modifier.Misclick.Active;
         if (ImEx.Icon.Button(LunaStyle.RefreshIcon, canRefresh
-                    ? "重置最后一次配置编辑日期为当前日期和时间。"u8
-                    : $"重置最后一次配置编辑日期为当前日期和时间。\n点击时按住 {config.IncognitoModifier} 刷新。",
+                    ? "Reset the last config edit date to the current date and time."u8
+                    : $"Reset the last config edit date to the current date and time.\nHold {LunaStyle.Modifier.Misclick} while clicking to refresh.",
                 !canRefresh))
             modManager.DataEditor.ChangeLastConfigEdit(Mod, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
         Im.Line.SameInner();
-        Im.Text("最后一次配置编辑"u8);
+        Im.Text("Last Config Edit"u8);
     }
 
     /// <summary> A text input for the new directory name and a button to apply the move. </summary>
@@ -415,18 +420,18 @@ public class ModPanelEditTab(
 
             var (disabled, tt) = _state switch
             {
-                NewDirectoryState.Identical      => (true, "当前目录名称与新目录名称相同。"),
-                NewDirectoryState.Empty          => (true, "请先输入新目录名称。"),
-                NewDirectoryState.NonExisting    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}。"),
-                NewDirectoryState.ExistsEmpty    => (false, $"将模组从 {mod.ModPath.Name} 移动到 {_currentModDirectory}。"),
-                NewDirectoryState.ExistsNonEmpty => (true, $"{_currentModDirectory} 已存在并且不是空目录。"),
-                NewDirectoryState.ExistsAsFile   => (true, $"{_currentModDirectory} 已经以文件形式存在。"),
+                NewDirectoryState.Identical      => (true, "Current directory name is identical to new one."),
+                NewDirectoryState.Empty          => (true, "Please enter a new directory name first."),
+                NewDirectoryState.NonExisting    => (false, $"Move mod from {mod.ModPath.Name} to {_currentModDirectory}."),
+                NewDirectoryState.ExistsEmpty    => (false, $"Move mod from {mod.ModPath.Name} to {_currentModDirectory}."),
+                NewDirectoryState.ExistsNonEmpty => (true, $"{_currentModDirectory} already exists and is not empty."),
+                NewDirectoryState.ExistsAsFile   => (true, $"{_currentModDirectory} exists as a file."),
                 NewDirectoryState.ContainsInvalidSymbols => (true,
-                    $"{_currentModDirectory} 包含不被游戏接受的非法字符。"),
-                _ => (true, "未知错误。"),
+                    $"{_currentModDirectory} contains invalid symbols for FFXIV."),
+                _ => (true, "Unknown error."),
             };
             Im.Line.Same();
-            if (ImEx.Button("重命名模组目录"u8, buttonSize, tt, disabled) && _currentModDirectory is not null)
+            if (ImEx.Button("Rename Mod Directory"u8, buttonSize, tt, disabled) && _currentModDirectory is not null)
             {
                 modManager.MoveModDirectory(mod, _currentModDirectory);
                 Reset();
@@ -434,8 +439,8 @@ public class ModPanelEditTab(
 
             Im.Line.SameInner();
             LunaStyle.DrawAlignedHelpMarker(StringU8.Empty,
-                "模组目录名称用于对应存储的设置和排序顺序，它不会影响任何显示内容。\n"u8
-              + "目前，这不能用于预先存在的文件夹，并且不支持合并或覆盖。"u8);
+                "The mod directory name is used to correspond stored settings and sort orders, otherwise it has no influence on anything that is displayed.\n"u8
+              + "This can currently not be used on pre-existing folders and does not support merges or overwriting."u8);
         }
     }
 

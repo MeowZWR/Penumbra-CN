@@ -19,7 +19,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModSelection sele
     private readonly List<(ModCollection, ModCollection, uint, ModState)> _cache = [];
 
     public ReadOnlySpan<byte> Label
-        => "模组合集"u8;
+        => "Collections"u8;
 
     public ModPanelTab Identifier
         => ModPanelTab.Collections;
@@ -31,25 +31,36 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModSelection sele
         Im.Line.New();
         switch (direct)
         {
-            case 1:  Im.Text("此模组已在 1 个合集中直接配置。"u8); break;
-            case 0:  Im.Text("此模组未在任何合集中使用。"u8, Colors.RegexWarningBorder); break;
-            default: Im.Text($"此模组已在 {direct} 个合集中直接配置。"); break;
+            case 1:  Im.Text("This Mod is directly configured in 1 collection."u8); break;
+            case 0:  Im.Text("This mod is entirely unused."u8, Colors.RegexWarningBorder); break;
+            default: Im.Text($"This Mod is directly configured in {direct} collections."); break;
         }
-        if (inherited > 0)
-            Im.Text($"也通过继承关系在 {inherited} {(inherited == 1 ? "个合集" : "个合集")}中被使用。");
 
-        Im.Line.New();
-        Im.Separator();
-        Im.Line.New();
+        if (inherited > 0)
+            Im.Text($"It is also implicitly used in {inherited} {(inherited == 1 ? "collection" : "collections")} through inheritance.");
+
+        if (ImEx.Button("Inherit in All Collections"u8, default, StringU8.Empty, !LunaStyle.Modifier.Destructive))
+            foreach (var collection in manager.Storage)
+                manager.Editor.SetModInheritance(collection, selection.Mod!, true);
+        LunaStyle.Modifier.Destructive.Tooltip("inherit");
+
+        Im.Line.Same();
+        if (ImEx.Button("Disable in All Collections"u8, default, StringU8.Empty, !LunaStyle.Modifier.Destructive))
+            foreach (var collection in manager.Storage)
+                manager.Editor.SetModState(collection, selection.Mod!, false);
+        LunaStyle.Modifier.Destructive.Tooltip("disable");
+
+
+        LunaStyle.DrawSeparator();
         using var table = Im.Table.Begin("##modCollections"u8, 3, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
             return;
 
-        var size           = Im.Font.CalculateSize(ToText(ModState.Unconfigured)).X + 20 * Im.Style.GlobalScale;
+        var size           = Im.Font.CalculateSize(ModState.Unconfigured.StringU8).X + 20 * Im.Style.GlobalScale;
         var collectionSize = 200 * Im.Style.GlobalScale;
-        table.SetupColumn("合集"u8,     TableColumnFlags.WidthFixed, collectionSize);
-        table.SetupColumn("状态"u8,          TableColumnFlags.WidthFixed, size);
-        table.SetupColumn("继承自"u8, TableColumnFlags.WidthFixed, collectionSize);
+        table.SetupColumn("Collection"u8,     TableColumnFlags.WidthFixed, collectionSize);
+        table.SetupColumn("State"u8,          TableColumnFlags.WidthFixed, size);
+        table.SetupColumn("Inherited From"u8, TableColumnFlags.WidthFixed, collectionSize);
         table.HeaderRow();
 
         foreach (var (idx, (collection, parent, color, state)) in _cache.Index())
@@ -58,7 +69,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModSelection sele
             table.DrawColumn(collection.Identity.Name);
 
             table.NextColumn();
-            Im.Text(ToText(state), color);
+            Im.Text(state.StringU8, color);
 
             using (var context = Im.Popup.BeginContextItem("Context"u8))
             {
@@ -68,7 +79,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModSelection sele
                     Im.Separator();
                     using (Im.Disabled(state is ModState.Enabled && parent == collection))
                     {
-                        if (Im.Menu.Item("启用"u8))
+                        if (Im.Menu.Item("Enable"u8))
                         {
                             if (parent != collection)
                                 manager.Editor.SetModInheritance(collection, selection.Mod!, false);
@@ -78,7 +89,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModSelection sele
 
                     using (Im.Disabled(state is ModState.Disabled && parent == collection))
                     {
-                        if (Im.Menu.Item("禁用"u8))
+                        if (Im.Menu.Item("Disable"u8))
                         {
                             if (parent != collection)
                                 manager.Editor.SetModInheritance(collection, selection.Mod!, false);
@@ -88,7 +99,7 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModSelection sele
 
                     using (Im.Disabled(parent != collection))
                     {
-                        if (Im.Menu.Item("继承"u8))
+                        if (Im.Menu.Item("Inherit"u8))
                             manager.Editor.SetModInheritance(collection, selection.Mod!, true);
                     }
                 }
@@ -99,29 +110,20 @@ public class ModPanelCollectionsTab(CollectionManager manager, ModSelection sele
         }
     }
 
-    private static ReadOnlySpan<byte> ToText(ModState state)
-        => state switch
-        {
-            ModState.Unconfigured => "未配置"u8,
-            ModState.Enabled      => "已启用"u8,
-            ModState.Disabled     => "已禁用"u8,
-            _                     => "未知"u8,
-        };
-
     private (int Direct, int Inherited) CountUsage(Mod mod)
     {
         _cache.Clear();
-        var undefined      = ColorId.UndefinedMod.Value();
-        var enabled        = ColorId.EnabledMod.Value();
-        var inherited      = ColorId.InheritedMod.Value();
-        var disabled       = ColorId.DisabledMod.Value();
-        var disInherited   = ColorId.InheritedDisabledMod.Value();
+        var undefined      = ColorId.UndefinedMod.Value;
+        var enabled        = ColorId.EnabledMod.Value;
+        var inherited      = ColorId.InheritedMod.Value;
+        var disabled       = ColorId.DisabledMod.Value;
+        var disInherited   = ColorId.InheritedDisabledMod.Value;
         var directCount    = 0;
         var inheritedCount = 0;
         foreach (var collection in manager.Storage)
         {
             var (settings, parent) = collection.GetInheritedSettings(mod.Index);
-            var (color, text) = settings == null
+            var (color, text) = settings is null
                 ? (undefined, ModState.Unconfigured)
                 : settings.Enabled
                     ? (parent == collection ? enabled : inherited, ModState.Enabled)

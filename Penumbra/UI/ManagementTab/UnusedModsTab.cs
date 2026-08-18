@@ -11,17 +11,16 @@ namespace Penumbra.UI.ManagementTab;
 public sealed class UnusedModsTab(
     ModConfigUpdater modConfigUpdater,
     ModManager manager,
-    Configuration config,
     ModExportManager exports,
     UiNavigator navigator) : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
-        => "未使用模组"u8;
+        => "Unused Mods"u8;
 
     public ManagementTabType Identifier
         => ManagementTabType.UnusedMods;
 
-    private readonly Table _table       = new(modConfigUpdater, manager, config, exports, navigator);
+    private readonly Table _table       = new(modConfigUpdater, manager, exports, navigator);
     private          int   _defaultDays = 30;
 
     public void PostTabButton()
@@ -30,10 +29,10 @@ public sealed class UnusedModsTab(
             return;
 
         using var tt = Im.Tooltip.Begin();
-        ImEx.TextMultiColored("此处显示了当前未启用，或在"u8)
-            .Then("任意"u8, ColorId.NewMod.Value()).Then("合集中存在临时设置的模组。"u8).End();
+        ImEx.TextMultiColored("Here you can list mods that are not currently enabled or have temporary settings in "u8)
+            .Then("any "u8, ColorId.NewMod.Value).Then(" collection."u8).End();
         Im.Text(
-            "其他调用 Penumbra API 的插件可以将模组标记为“使用中”以隐藏它们，或者在保持显示的同时为其添加自定义备注。"u8);
+            "Other Plugins subscribing to Penumbras API can mark mods as 'in use' so that they do not appear, or add custom notes to them while still displaying them."u8);
     }
 
     public void DrawContent()
@@ -42,18 +41,18 @@ public sealed class UnusedModsTab(
         if (!child)
             return;
 
-        if (Im.Checkbox("隐藏所有具有备注的模组"u8, _table.HideNodes))
+        if (Im.Checkbox("Hide All Mods with Notes"u8, _table.HideNodes))
             _table.HideNodes ^= true;
         Im.Line.Same();
-        if (Im.Button("显示所有未使用的模组"u8))
+        if (Im.Button("Show All Inactive Mods"u8))
             _table.UnusedCap = TimeSpan.Zero;
 
         Im.Line.Same();
-        if (Im.Button("显示未启用的模组，且未配置天数超过"u8))
+        if (Im.Button("Show Inactive Mods Not Configured in"u8))
             _table.UnusedCap = TimeSpan.FromDays(_defaultDays);
         Im.Line.SameInner();
         Im.Item.SetNextWidthScaled(40);
-        Im.Drag("天"u8, ref _defaultDays, 0, null, 0.1f, SliderFlags.AlwaysClamp);
+        Im.Drag("Days"u8, ref _defaultDays, 0, null, 0.1f, SliderFlags.AlwaysClamp);
 
         _table.Draw();
     }
@@ -61,10 +60,9 @@ public sealed class UnusedModsTab(
     private sealed class Table(
         ModConfigUpdater modConfigUpdater,
         ModManager manager,
-        Configuration config,
         ModExportManager exports,
         UiNavigator navigator) : TableBase<CacheItem, Table.Cache>(new StringU8("unused"u8),
-        new ButtonColumn(manager, config, exports),
+        new ButtonColumn(manager, exports),
         new NameColumn(navigator), new LastEditColumn(), new ModSizeColumn(), new PathColumn(), new NotesColumn())
     {
         public bool HideNodes
@@ -112,16 +110,14 @@ public sealed class UnusedModsTab(
 
         protected override void PreDraw(in Cache cache)
         {
-            var buttons = (ButtonColumn)Columns[0];
-            buttons.DeleteList.Clear();
-            var disabled = !config.DeleteModModifier.IsActive();
+            var disabled = !LunaStyle.Modifier.Destructive.Active;
             Im.Line.Same();
-            if (ImEx.Button("更新视图"u8,
-                    "列表不会自动刷新。点击此处可以更新当前显示的模组列表，且不会更改时间限制设置。"u8))
+            if (ImEx.Button("Update View"u8,
+                    "The table does not automatically update, so click this to update the visible mods without changing the time limit."u8))
                 cache.Dirty |= IManagedCache.DirtyFlags.Custom;
 
             Im.Line.Same();
-            if (ImEx.Button("删除所有可见模组"u8, default, "删除当前列表显示的所有模组。此操作**不可逆**，请谨慎操作！"u8,
+            if (ImEx.Button("Delete All Visible Mods"u8, default, "Delete all mods that are currently visible. This is NOT reversible."u8,
                     disabled))
                 foreach (var (mod, globalIndex) in cache.GetItemsWithIndices().ToList())
                 {
@@ -130,25 +126,24 @@ public sealed class UnusedModsTab(
                 }
 
             if (disabled)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\n按住 {config.DeleteModModifier} 键以进行删除。");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\nHold {LunaStyle.Modifier.Destructive} to delete the mods.");
         }
 
         protected override void PostDraw(in Cache cache)
         {
             base.PostDraw(in cache);
             var buttons = (ButtonColumn)Columns[0];
-            foreach (var item in buttons.DeleteList)
-                cache.DeleteSingleItem(item);
-            buttons.DeleteList.Clear();
+            while (buttons.DeleteList.TryDequeue(out var index))
+                cache.DeleteSingleItem(index);
 
             if (cache.Loading)
                 return;
 
-            Im.Text($"{cache.Count}/{cache.AllItems.Count} 个可见模组，共 {manager.Count} 个模组。");
+            Im.Text($"{cache.Count}/{cache.AllItems.Count} visible of {manager.Count} total Mods.");
             if (buttons.Exporting is { } mod)
             {
                 Im.Line.Same();
-                Im.Text($"正在导出并删除模组：{mod.Name}");
+                Im.Text($"Exporting and deleting mod: {mod.Name}");
                 Im.Line.Same();
                 ImEx.Spinner("s"u8, Im.Style.TextHeight / 3, 2, Im.Color.Get(ImGuiColor.Text));
             }
@@ -244,18 +239,16 @@ public sealed class UnusedModsTab(
 
     private sealed class ButtonColumn : BasicColumn<CacheItem>
     {
-        public readonly HashSet<int> DeleteList = [];
+        public readonly ConcurrentQueue<int> DeleteList = [];
 
         private readonly ModManager       _manager;
-        private readonly Configuration    _config;
         private readonly ModExportManager _exports;
 
         public Mod? Exporting { get; private set; }
 
-        public ButtonColumn(ModManager manager, Configuration config, ModExportManager exports)
+        public ButtonColumn(ModManager manager, ModExportManager exports)
         {
             _manager =  manager;
-            _config  =  config;
             _exports =  exports;
             Label    =  StringU8.Empty;
             Flags    |= TableColumnFlags.NoSort;
@@ -263,42 +256,42 @@ public sealed class UnusedModsTab(
 
         public override void DrawColumn(in CacheItem item, int globalIndex)
         {
-            var inactive      = !_config.DeleteModModifier.IsActive();
+            var inactive      = !LunaStyle.Modifier.Destructive.Active;
             var exportingThis = Exporting == item.Mod;
-            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "从 Penumbra 和本地驱动器中删除此模组。此操作**不可逆**，请谨慎操作！"u8,
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this mod from Penumbra and your drive. This is NOT reversible."u8,
                     inactive || exportingThis))
             {
                 _manager.DeleteMod(item.Mod);
-                DeleteList.Add(globalIndex);
+                DeleteList.Enqueue(globalIndex);
             }
 
             if (inactive)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\n按住 {_config.DeleteModModifier} 键以进行删除。");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\nHold {LunaStyle.Modifier.Destructive} to delete.");
             if (exportingThis)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "\n正在导出并删除此模组，请稍候。"u8);
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "\nCurrently exporting and deleting this mod, please wait."u8);
 
             Im.Line.SameInner();
 
             var exporting = Exporting is not null;
             if (ImEx.Icon.Button(LunaStyle.BackupDeleteIcon,
-                    "将此模组导出到导出目录，压缩后删除。"u8, inactive || exporting))
+                    "Export this mod to your export directory, compressing it, and then delete it from Penumbra."u8, inactive || exporting))
             {
                 Exporting = item.Mod;
                 _exports.CreateAsync(Exporting).ContinueWith(_ =>
                 {
                     _manager.DeleteMod(Exporting);
-                    DeleteList.Add(globalIndex);
+                    DeleteList.Enqueue(globalIndex);
                     Exporting = null;
                 });
             }
 
             if (inactive)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\n按住 {_config.DeleteModModifier} 键以进行删除。");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\nHold {LunaStyle.Modifier.Destructive} to delete.");
             if (exporting)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "正在导出并删除模组，请稍候。"u8);
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "Already exporting and deleting a mod, please wait."u8);
 
             Im.Line.SameInner();
-            if (ImEx.Icon.Button(LunaStyle.FolderIcon, "在文件资源管理器中打开此模组的目录。"u8))
+            if (ImEx.Icon.Button(LunaStyle.FolderIcon, "Open the mod directory in the file explorer of your choice."u8))
                 Process.Start(new ProcessStartInfo(item.Mod.ModPath.FullName) { UseShellExecute = true });
         }
 
@@ -312,9 +305,9 @@ public sealed class UnusedModsTab(
 
         public NameColumn(UiNavigator navigator)
         {
-            _navigator = navigator;
-            Label         =  new StringU8("模组名称"u8);
-            Flags         |= TableColumnFlags.WidthStretch;
+            _navigator =  navigator;
+            Label      =  new StringU8("Mod Name"u8);
+            Flags      |= TableColumnFlags.WidthStretch;
         }
 
         protected override string ComparisonText(in CacheItem item, int globalIndex)
@@ -334,7 +327,7 @@ public sealed class UnusedModsTab(
             Im.Tooltip.OnHover(item.DirectoryName);
             if (Im.Font.CalculateSize(item.ModName).X >= content)
                 Im.Tooltip.OnHover(item.ModName);
-            Im.Tooltip.OnHover("\n点击以移动到模组。"u8);
+            Im.Tooltip.OnHover("\nClick to move to mod."u8);
             if (clicked)
                 _navigator.MoveTo(item.Mod);
         }
@@ -344,7 +337,7 @@ public sealed class UnusedModsTab(
     {
         public PathColumn()
         {
-            Label =  new StringU8("模组路径"u8);
+            Label =  new StringU8("Mod Path"u8);
             Flags |= TableColumnFlags.WidthStretch;
         }
 
@@ -372,7 +365,7 @@ public sealed class UnusedModsTab(
     {
         public LastEditColumn()
         {
-            Label = new StringU8("最后配置编辑"u8);
+            Label = new StringU8("Last Config Edit"u8);
         }
 
         public override long ToValue(in CacheItem item, int globalIndex)
@@ -385,13 +378,13 @@ public sealed class UnusedModsTab(
             => item.Duration.Utf16;
 
         public override float ComputeWidth(IEnumerable<CacheItem> _)
-            => Im.Font.CalculateSize("最后配置编辑"u8).X + ImEx.Table.ArrowWidth + Im.Style.CellPadding.X * 2;
+            => Im.Font.CalculateSize("Last Config Edit"u8).X + ImEx.Table.ArrowWidth + Im.Style.CellPadding.X * 2;
 
         public override void DrawColumn(in CacheItem item, int globalIndex)
         {
             Im.Cursor.FrameAlign();
             base.DrawColumn(in item, globalIndex);
-            Im.Tooltip.OnHover($"点击以复制时间戳：{item.Mod.LastConfigEdit}");
+            Im.Tooltip.OnHover($"Click to copy Timestamp: {item.Mod.LastConfigEdit}");
             if (Im.Item.Clicked())
                 Im.Clipboard.Set($"{item.Mod.LastConfigEdit}");
         }
@@ -401,7 +394,7 @@ public sealed class UnusedModsTab(
     {
         public ModSizeColumn()
         {
-            Label = new StringU8("磁盘大小"u8);
+            Label = new StringU8("Size On Disk"u8);
         }
 
         public override long ToValue(in CacheItem item, int globalIndex)
@@ -414,7 +407,7 @@ public sealed class UnusedModsTab(
             => item.ModSizeString.Utf16;
 
         public override float ComputeWidth(IEnumerable<CacheItem> _)
-            => Im.Font.CalculateSize("磁盘大小"u8).X + ImEx.Table.ArrowWidth + Im.Style.CellPadding.X * 2;
+            => Im.Font.CalculateSize("Size On Disk"u8).X + ImEx.Table.ArrowWidth + Im.Style.CellPadding.X * 2;
 
         public override void DrawColumn(in CacheItem item, int globalIndex)
         {
@@ -425,18 +418,18 @@ public sealed class UnusedModsTab(
 
     private sealed class NotesColumn : TextColumn<CacheItem>
     {
-        private static readonly StringU8 Notes = new("备注"u8);
+        private static readonly StringU8 Notes = new("Notes"u8);
 
         public NotesColumn()
         {
-            Label = new StringU8("备注"u8);
+            Label = new StringU8("Notes"u8);
         }
 
         public override bool WouldBeVisible(in CacheItem item, int globalIndex)
         {
             if (item.Notes.Length is 0)
                 return Filter.WouldBeVisible(string.Empty);
-            if (Filter.WouldBeVisible("备注"))
+            if (Filter.WouldBeVisible("Notes"))
                 return true;
 
             return item.Notes.Any(n => Filter.WouldBeVisible(n.Item1.Utf16) || Filter.WouldBeVisible(n.Item2.Utf16));
@@ -466,7 +459,7 @@ public sealed class UnusedModsTab(
         }
 
         protected override string ComparisonText(in CacheItem item, int globalIndex)
-            => item.Notes.Length is 0 ? string.Empty : "备注";
+            => item.Notes.Length is 0 ? string.Empty : "Notes";
 
         protected override StringU8 DisplayText(in CacheItem item, int globalIndex)
             => item.Notes.Length is 0 ? StringU8.Empty : Notes;
@@ -517,10 +510,10 @@ public sealed class UnusedModsTab(
         ImEx.Icon.DrawAligned(LunaStyle.InfoIcon, LunaStyle.FavoriteColor);
         var hovered = Im.Item.Hovered();
         Im.Line.SameInner();
-        Im.Text("备注"u8);
+        Im.Text("Notes"u8);
         if (!hovered && !Im.Item.Hovered())
             return;
-        
+
         using var tt = Im.Tooltip.Begin();
         DrawNote(notes[0]);
         foreach (var note in notes.Skip(1))
@@ -528,9 +521,9 @@ public sealed class UnusedModsTab(
             Im.Separator();
             DrawNote(note);
         }
-        
+
         return;
-        
+
         static void DrawNote((StringPair, StringPair) note)
         {
             using (Im.Group())

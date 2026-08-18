@@ -19,7 +19,7 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
     {
         _modManager  = modManager;
         _collections = collections;
-        if (config.RememberModFilters)
+        if (config.Ui.RememberModFilters)
         {
             _stateFilter = config.Filters.ModTypeFilter;
             Set(config.Filters.ModFilter);
@@ -41,37 +41,37 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
             return;
 
         using var tt             = Im.Tooltip.Begin();
-        var       highlightColor = ColorId.NewMod.Value().ToVector();
-        Im.Text("根据输入的文本筛选模组，按空格分词，在模组完整路径或名称中查找包含这些文本的模组。"u8);
-        ImEx.TextMultiColored("输入 "u8).Then("c:[string]"u8, highlightColor).Then(" 可按修改了指定物品的模组进行筛选。"u8).End();
-        ImEx.TextMultiColored("输入 "u8).Then("t:[string]"u8, highlightColor).Then(" 可按已设置的指定标签筛选模组。"u8).End();
+        var       highlightColor = ColorId.NewMod.Vector;
+        Im.Text("Filter mods for those where their full paths or names contain the given strings, split by spaces."u8);
+        ImEx.TextMultiColored("Enter "u8).Then("c:[string]"u8, highlightColor).Then(" to filter for mods changing specific items."u8).End();
+        ImEx.TextMultiColored("Enter "u8).Then("t:[string]"u8, highlightColor).Then(" to filter for mods set to specific tags."u8).End();
         ImEx.TextMultiColored("Enter "u8).Then("n:[string]"u8, highlightColor)
-            .Then(" 只按模组名称进行筛选（不考虑路径）。"u8).End();
-        ImEx.TextMultiColored("输入 "u8).Then("a:[string]"u8, highlightColor).Then(" 可按指定作者筛选模组。"u8).End();
-        ImEx.TextMultiColored("输入 "u8).Then("s:[string]"u8, highlightColor).Then(
-                $" 可按所更改物品的类别筛选模组（使用 1-{ChangedItemFlagExtensions.NumCategories + 1} 或类别名称的一部分）。")
+            .Then(" to filter for mods names without considering the paths."u8).End();
+        ImEx.TextMultiColored("Enter "u8).Then("a:[string]"u8, highlightColor).Then(" to filter for mods by specific authors."u8).End();
+        ImEx.TextMultiColored("Enter "u8).Then("s:[string]"u8, highlightColor).Then(
+                $" to filter for mods by the categories of the items they change (use 1-{ChangedItemFlagExtensions.NumCategories + 1} or a partial category name).")
             .End();
-        ImEx.TextMultiColored("输入 "u8).Then("f:[string]"u8, highlightColor)
+        ImEx.TextMultiColored("Enter "u8).Then("f:[string]"u8, highlightColor)
             .Then(
-                " 可在模组名称、路径、描述、标签、更改的物品，以及分组或选项的名称和描述中搜索包含该文本的模组。"u8)
+                " to filter for mods containing the text in name, path, description, tags, changed items, or group- or option names or descriptions."u8)
             .End();
         Im.Line.New();
-        ImEx.TextMultiColored("使用 "u8).Then("None"u8, highlightColor).Then(" 作为占位值，只会匹配为空的列表或名称。"u8)
+        ImEx.TextMultiColored("Use "u8).Then("None"u8, highlightColor).Then(" as a placeholder value that only matches empty lists or names."u8)
             .End();
-        Im.Text("默认情况下，模组需要分别满足所有给定的条件。"u8);
-        ImEx.TextMultiColored("在搜索词前加上 "u8).Then("'-'"u8, highlightColor)
-            .Then(" 只会匹配不符合该条件的模组。"u8).End();
-        ImEx.TextMultiColored("在搜索词前加上 "u8).Then("'?'"u8, highlightColor)
-            .Then(" 用于“或”条件，即模组只要匹配任意一个以 '?' 开头的条件即可。"u8).End();
-        ImEx.TextMultiColored("将包含空格的文本包在 "u8).Then("\"[string with space]\""u8, highlightColor)
-            .Then(" 中，以匹配这段完整文本。"u8).End();
+        Im.Text("Regularly, a mod has to match all supplied criteria separately."u8);
+        ImEx.TextMultiColored("Put a "u8).Then("'-'"u8, highlightColor)
+            .Then(" in front of a search token to search only for mods not matching the criterion."u8).End();
+        ImEx.TextMultiColored("Put a "u8).Then("'?'"u8, highlightColor)
+            .Then(" in front of a search token to search for mods matching at least one of the '?'-criteria."u8).End();
+        ImEx.TextMultiColored("Wrap spaces in "u8).Then("\"[string with space]\""u8, highlightColor)
+            .Then(" to match this exact combination of words."u8).End();
         Im.Line.New();
-        Im.Text("示例：'t:Tag1 t:\"Tag2\" -t:Tag3 -a:None s:Body -c:Hempen ?c:Camise ?n:Top' 将匹配满足以下条件的任意模组："u8);
-        Im.BulletText("包含标签 'tag1' 和 'tag2'；"u8);
-        Im.BulletText("不包含标签 'tag3'；"u8);
-        Im.BulletText("已设置任意作者（对 None 取反等同于“任意”）；"u8);
-        Im.BulletText("修改了“Body”类别中的任意一个物品；"u8);
-        Im.BulletText("并且要么有名称中包含 'camise' 的变更物品，要么模组名称中包含 'top'。"u8);
+        Im.Text("Example: 't:Tag1 t:\"Tag 2\" -t:Tag3 -a:None s:Body -c:Hempen ?c:Camise ?n:Top' will match any mod that"u8);
+        Im.BulletText("contains the tags 'tag1' and 'tag2',"u8);
+        Im.BulletText("does not contain the tag 'tag3',"u8);
+        Im.BulletText("has any author set (negating None means Any),"u8);
+        Im.BulletText("changes an item of the 'Body' category,"u8);
+        Im.BulletText("and either contains a changed item with 'camise' in it's name, or has 'top' in the mod's name."u8);
     }
 
     public override bool DrawFilter(ReadOnlySpan<byte> label, Vector2 availableRegion)
@@ -96,13 +96,13 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
             Clear();
         }
 
-        Im.Tooltip.OnHover("按模组激活的状态进行筛选。\n中键点击清除所有筛选, 包括文本筛选."u8);
+        Im.Tooltip.OnHover("Filter mods for their activation status.\nMiddle-Click to clear all filters, including the text-filter."u8);
 
         var changes = false;
         if (combo)
         {
             using var style = ImStyleDouble.ItemSpacing.PushY(3 * Im.Style.GlobalScale);
-            changes |= Im.Checkbox("全部"u8, ref _stateFilter, ModTypeFilterExtensions.UnfilteredStateMods);
+            changes |= Im.Checkbox("Everything"u8, ref _stateFilter, ModTypeFilterExtensions.UnfilteredStateMods);
             Im.Dummy(new Vector2(0, 5 * Im.Style.GlobalScale));
             foreach (var (onFlag, offFlag, name) in ModTypeFilterExtensions.TriStatePairs)
                 changes |= ImEx.TriStateCheckbox(name, ref _stateFilter, onFlag, offFlag);

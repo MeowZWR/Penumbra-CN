@@ -16,7 +16,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
         if (ModMerger.MergeFromMod is null)
             return;
 
-        using var tab = Im.TabBar.BeginItem("合并模组"u8);
+        using var tab = Im.TabBar.BeginItem("Merge Mods"u8);
         if (!tab)
             return;
 
@@ -43,26 +43,26 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
     {
         using var bigGroup     = Im.Group();
         var       minComboSize = 300 * Im.Style.GlobalScale;
-        var       textSize     = Im.Font.CalculateSize($"合并 {ModMerger.MergeFromMod!.Name} 到 ").X;
+        var       textSize     = Im.Font.CalculateSize($"Merge {ModMerger.MergeFromMod!.Name} into ").X;
 
         Im.Cursor.FrameAlign();
 
         using (Im.Group())
         {
-            Im.Text("合并"u8);
+            Im.Text("Merge "u8);
             Im.Line.NoSpacing();
             if (size - textSize < minComboSize)
             {
-                Im.Text("选择的模组"u8, ColorId.FolderLine.Value());
+                Im.Text("selected mod"u8, ColorId.FolderLine.Vector);
                 Im.Tooltip.OnHover(ModMerger.MergeFromMod!.Name);
             }
             else
             {
-                Im.Text(ModMerger.MergeFromMod!.Name, ColorId.FolderLine.Value());
+                Im.Text(ModMerger.MergeFromMod!.Name, ColorId.FolderLine.Vector);
             }
 
             Im.Line.NoSpacing();
-            Im.Text("到"u8);
+            Im.Text(" into"u8);
         }
 
         Im.Line.Same();
@@ -78,10 +78,10 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
                 : LunaStyle.DiscordColor;
             using var style = ImStyleBorder.Frame.Push(color);
             Im.Item.SetNextWidth(buttonWidth);
-            Im.Input.Text("##optionGroupInput"u8, ref ModMerger.OptionGroupName, "目标选项组"u8);
+            Im.Input.Text("##optionGroupInput"u8, ref ModMerger.OptionGroupName, "Target Option Group"u8);
             Im.Tooltip.OnHover(
-                "这是合并到目标模组中现有的或新建的选项组名称。将选项组和选项名称都留空则会将其合并到default option中。\n"u8
-              + "红色边框表示现有的选项组，蓝色边框表示新的选项组。"u8);
+                "The name of the new or existing option group to find or create the option in. Leave both group and option name blank for the default option.\n"u8
+              + "A red border indicates an existing option group, a blue border indicates a new one."u8);
             Im.Line.Same();
 
 
@@ -92,31 +92,31 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
                     : LunaStyle.DiscordColor;
             style.Push(ImGuiColor.Border, color);
             Im.Item.SetNextWidth(buttonWidth);
-            Im.Input.Text("##optionInput"u8, ref ModMerger.OptionName, "目标选项名称"u8);
+            Im.Input.Text("##optionInput"u8, ref ModMerger.OptionName, "Target Option Name"u8);
             Im.Tooltip.OnHover(
-                "这是合并到目标模组中现有的或新建的选项名称。将选项组和选项名称都留空则会将其合并到default option中。\n"u8
-              + "红色边框表示现有的选项，蓝色边框表示新的选项。"u8);
+                "The name of the new or existing option to merge this mod into. Leave both group and option name blank for the default option.\n"u8
+              + "A red border indicates an existing option, a blue border indicates a new one."u8);
         }
 
         if (ModMerger.MergeFromMod.HasOptions)
-            Im.Tooltip.OnHover("如果被合并模组没有真正的选项（默认选项或者只有一个单选项都不算），你必须为其在目标模组中分配一个选项。"u8,
+            Im.Tooltip.OnHover("You can only specify a target option if the source mod has no true options itself."u8,
                 HoveredFlags.AllowWhenDisabled);
 
-        if (ImEx.Button("合并"u8, new Vector2(size, 0),
-                ModMerger.CanMerge ? StringU8.Empty : "请选择一个不同于当前模组的目标模组。"u8, !ModMerger.CanMerge))
+        if (ImEx.Button("Merge"u8, new Vector2(size, 0),
+                ModMerger.CanMerge ? StringU8.Empty : "Please select a target mod different from the current mod."u8, !ModMerger.CanMerge))
             ModMerger.Merge();
     }
 
     private void DrawMergeIntoDesc()
     {
         Im.TextWrapped(ModMerger.MergeFromMod!.HasOptions
-            ? "当前选择的模组有选项。\n\n这意味着，所有这些选项都将合并到目标中，如果合并选项时由于重定向已经存在于现有选项中，则所有更改将会被撤销并中断。"u8
-            : "当前选择的模组没有真正的选项（默认选项或者只有一个单选项都不算）。\n\n这意味着，你可以选择一个现有的选项或创建新的选项，将其所有更改合并到目标模组中。合并到现有选项失败时，所有更改将会被撤销。"u8);
+            ? "The currently selected mod has options.\n\nThis means, that all of those options will be merged into the target. If merging an option is not possible due to the redirections already existing in an existing option, it will revert all changes and break."u8
+            : "The currently selected mod has no true options.\n\nThis means that you can select an existing or new option to merge all its changes into in the target mod. On failure to merge into an existing option, all changes will be reverted."u8);
     }
 
     private void DrawCombo(float width)
     {
-        if (combo.Draw("##ModSelection"u8, ModMerger.MergeToMod?.Name ?? "选择目标模组...", StringU8.Empty, width,
+        if (combo.Draw("##ModSelection"u8, ModMerger.MergeToMod?.Name ?? "Select the target Mod...", StringU8.Empty, width,
                 out var cacheMod))
             ModMerger.MergeToMod = cacheMod.Item;
     }
@@ -125,37 +125,37 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
     {
         using var group = Im.Group();
         Im.Item.SetNextWidth(size);
-        Im.Input.Text("##newModInput"u8, ref _newModName, "新模组名称..."u8);
-        Im.Tooltip.OnHover("为新创建的模组命名一个名称，不需要具备唯一性。"u8);
+        Im.Input.Text("##newModInput"u8, ref _newModName, "New Mod Name..."u8);
+        Im.Tooltip.OnHover("Choose a name for the newly created mod. This does not need to be unique."u8);
         var tt = _newModName.Length is 0
-            ? "请先输入新建模组的名称。"u8
+            ? "Please enter a name for the newly created mod first."u8
             : ModMerger.SelectedOptions.Count is 0
-                ? "请至少选择一个选项进行拆分。"u8
+                ? "Please select at least one option to split off."u8
                 : StringU8.Empty;
         if (ImEx.Button(
-                $"拆分 {ModMerger.SelectedOptions.Count} 个选项###SplitOff",
+                $"Split Off {ModMerger.SelectedOptions.Count} Option{(ModMerger.SelectedOptions.Count > 1 ? "s"u8 : StringU8.Empty)}###SplitOff",
                 new Vector2(size, 0), tt, tt.Length > 0))
             ModMerger.SplitIntoMod(_newModName);
 
         Im.Dummy(Vector2.One);
         var buttonSize = new Vector2((size - 2 * Im.Style.ItemSpacing.X) / 3, 0);
-        if (Im.Button("全选"u8, buttonSize))
+        if (Im.Button("Select All"u8, buttonSize))
             ModMerger.SelectedOptions.UnionWith(ModMerger.MergeFromMod!.AllDataContainers);
         Im.Line.Same();
-        if (Im.Button("取消全选"u8, buttonSize))
+        if (Im.Button("Unselect All"u8, buttonSize))
             ModMerger.SelectedOptions.Clear();
         Im.Line.Same();
-        if (Im.Button("反选"u8, buttonSize))
+        if (Im.Button("Invert Selection"u8, buttonSize))
             ModMerger.SelectedOptions.SymmetricExceptWith(ModMerger.MergeFromMod!.AllDataContainers);
         DrawOptionTable(size);
     }
 
     private static void DrawSplitOffDesc()
     {
-        Im.TextWrapped("在这里，你可以创建当前所选模组的副本或部分副本。\n\n"u8
-          + "选择你想要复制的选项，输入新模组名称并点击拆分按钮。\n\n"u8
-          + "你可以右键点击选项组来选择或取消选择该组中的所有选项，也可以使用表格上方的三个按钮进行快速操作。\n\n"u8
-          + "只有选中的文件才会被复制到新的模组中，选项和选项组名称将会在新模组中保留，如果未选择'默认选项'，则新模组的'默认选项'将留空。"u8);
+        Im.TextWrapped("Here you can create a copy or a partial copy of the currently selected mod.\n\n"u8
+          + "Select as many of the options you want to copy over, enter a new mod name and click Split Off.\n\n"u8
+          + "You can right-click option groups to select or unselect all options from that specific group, and use the three buttons above the table for quick manipulation of your selection.\n\n"u8
+          + "Only required files will be copied over to the new mod. The names of options and groups will be retained. If the Default option is not selected, the new mods default option will be empty."u8);
     }
 
     private void DrawOptionTable(float size)
@@ -177,11 +177,11 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
             return;
 
         table.SetupColumn("##Selected"u8,   TableColumnFlags.WidthFixed, Im.Style.FrameHeight);
-        table.SetupColumn("选项"u8,       TableColumnFlags.WidthStretch);
-        table.SetupColumn("选项组"u8, TableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
-        table.SetupColumn("#文件数"u8,       TableColumnFlags.WidthFixed, 50 * Im.Style.GlobalScale);
-        table.SetupColumn("#替换数"u8,       TableColumnFlags.WidthFixed, 50 * Im.Style.GlobalScale);
-        table.SetupColumn("#元数据数"u8,      TableColumnFlags.WidthFixed, 50 * Im.Style.GlobalScale);
+        table.SetupColumn("Option"u8,       TableColumnFlags.WidthStretch);
+        table.SetupColumn("Option Group"u8, TableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
+        table.SetupColumn("#Files"u8,       TableColumnFlags.WidthFixed, 50 * Im.Style.GlobalScale);
+        table.SetupColumn("#Swaps"u8,       TableColumnFlags.WidthFixed, 50 * Im.Style.GlobalScale);
+        table.SetupColumn("#Manips"u8,      TableColumnFlags.WidthFixed, 50 * Im.Style.GlobalScale);
         table.HeaderRow();
         foreach (var (idx, option) in options.Index())
         {
@@ -205,12 +205,12 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
                 using var popup = Im.Popup.BeginContextItem("##groupContext"u8);
                 if (popup)
                 {
-                    if (Im.Menu.Item("全选"u8))
+                    if (Im.Menu.Item("Select All"u8))
                         // ReSharper disable once PossibleMultipleEnumeration
                         foreach (var opt in group.DataContainers)
                             Handle(opt, true);
 
-                    if (Im.Menu.Item("取消全选"u8))
+                    if (Im.Menu.Item("Unselect All"u8))
                         // ReSharper disable once PossibleMultipleEnumeration
                         foreach (var opt in group.DataContainers)
                             Handle(opt, false);

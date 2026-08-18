@@ -73,7 +73,7 @@ public static class GroupDeserialization
 
     public static void ReadDefaultContainerFile(SaveService saveService, ModDeserialization.Context context)
     {
-        var file = saveService.FileNames.OptionGroupFile(context.Mod, -1, false);
+        var file = saveService.FileNames.Migration.OptionGroupFile(context.Mod, -1, false);
         if (!File.Exists(file))
         {
             context.Mod.Default.Files.Clear();
@@ -507,7 +507,7 @@ public static class GroupDeserialization
 
         if (j.ArrayProperty("Layout"u8, out _, true))
         {
-            @object.Layout = j.ReadFlagEnumArray<ModSettingsLayout>()?.Reduce(@object) ?? ModSettingsLayout.None;
+            @object.Layout = j.ReadFlagEnumArray<ModSettingsLayout>(true)?.Reduce(@object) ?? ModSettingsLayout.None;
             return true;
         }
 

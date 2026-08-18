@@ -12,7 +12,7 @@ public class PenumbraChangelog : IUiService
     public PenumbraChangelog(Configuration config)
     {
         _config   = config;
-        Changelog = new Changelog("Penumbra 更新日志", ConfigData, Save);
+        Changelog = new Changelog("Penumbra Changelog", ConfigData, Save);
 
         Add5_7_0(Changelog);
         Add5_7_1(Changelog);
@@ -72,128 +72,167 @@ public class PenumbraChangelog : IUiService
     #region Changelogs
 
     private static void Add1_7_0_0(Changelog log)
-        => log.NextVersion("版本 1.7.0.0"u8)
-            .RegisterImportant("更新到此版本时，所有已安装的 mod 将迁移到新的元数据版本。"u8)
-            .RegisterEntry("本版本移除了选项组与默认选项的独立 JSON 文件，改为再次将全部信息存入 meta.json。"u8, 1)
-            .RegisterEntry("旧文件应会被移至备份；迁移前还会创建一份包含所有 mod JSON 的永久归档，以防出错时需要恢复。"u8, 1)
-            .RegisterHighlight("所有 mod 将获得稳定的 GUID 标识符，每个选项组与选项也会各有一个 GUID。"u8)
-            .RegisterEntry("mod GUID 目前尚未使用；待作者为其 mod 建立稳定标识后，日后可用于验证依赖等用途。"u8, 1)
-            .RegisterEntry("选项 GUID 已在单个 mod 内用于多项新功能。"u8, 1)
-            .RegisterHighlight("Mod 作者获得多项非常灵活的新选项："u8)
-            .RegisterEntry("选项组现会尊重从 TexTools 导入的数值型「页面」（Page）字段（当然也可在 Penumbra 中设置）。"u8, 1)
-            .RegisterEntry("若存在多个含有实际可见选项的页面，这些页面会在设置标签页中以子标签形式显示。"u8, 2)
-            .RegisterEntry("默认情况下，页面命名为「页面 #」，但可在组编辑中为数值页面指定自定义名称。"u8, 2)
-            .RegisterEntry("选项组现可挂靠到其他组或选项下，从而显示在对应组或选项的正下方。"u8, 1)
-            .RegisterEntry("使用挂靠时有多种布局选项——可选择是否缩进该组，以及是否显示组标题。"u8, 2)
-            .RegisterEntry("凡有选项或其他组挂靠其下的组标题现均可折叠，且可将组设为默认折叠。"u8, 1)
-            .RegisterHighlight("整个选项组以及单个选项均可基于本 mod 内的设置指定任意条件。"u8, 1)
-            .RegisterEntry("若条件未满足，该选项或组将不会生效（无论其设置如何），并根据设置选择完全不显示，或以禁用状态显示。"u8, 2)
-            .RegisterEntry("此外，选项可被指定 8 种颜色之一（由用户定义，而非作者定义），并可设置为在其后添加分隔线。"u8, 1)
-            .RegisterHighlight("为支持上述新功能，设置标签页 UI 已大幅改动。欢迎反馈如何进一步改进显示效果。"u8)
-            .RegisterEntry("随之而来的变化是：在不考虑挂靠或页面的情况下，选项组现在始终按正确顺序显示，而不再先按显示类型筛选。"u8, 1)
-            .RegisterHighlight("任务生成的敌对 NPC 等不再受所有权（Ownership）设置影响，除非另行启用相关选项。"u8)
-            .RegisterHighlight("用于自动导入 mod 的文件监视器现可设置为窥探压缩包内部，识别其中的 mod 压缩包并安装打包的 mod（感谢 Stoia 与 Ny！）。"u8)
-            .RegisterEntry("「启用/禁用/继承全部子项」右键菜单按钮现已加入防误触。"u8)
-            .RegisterEntry("支持信息中新增了若干插件，以及所有调用特定 IPC 函数的插件。"u8)
-            .RegisterEntry("应普遍需求，高级编辑的模型标签页现改用从 0 开始的索引，而不再从 1 开始。"u8)
-            .RegisterEntry("使用文件系统监视器时，并发的 mod 安装通知数量限制为 3 条。"u8)
-            .RegisterEntry("多项反序列化与序列化函数已改用 System.Text.JSON，速度显著提升。"u8)
-            .RegisterEntry("在多种情况下对语法损坏的 JSON 文件采用了新的恢复策略（感谢 Ny！）。"u8)
-            .RegisterEntry("「Failed to Load Resource」日志警告将不再因 EasyEyes 故意使用的失败路径而触发。"u8)
-            .RegisterEntry("针对导入时涉及文件夹外文件的部分漏洞增加了防护。"u8)
-            .RegisterEntry("修复了更改选项时临时设置失效的问题。"u8)
-            .RegisterEntry("修复了自动备份功能的若干问题。"u8)
-            .RegisterEntry("修复了合集继承显示与更新的问题。"u8)
-            .RegisterEntry("修复了文件冗余保存的若干问题。"u8)
-            .RegisterEntry("修复了模型导出时材质后缀的问题。"u8)
-            .RegisterEntry("修复了通过资源树解析饰品皮肤材质时的崩溃。"u8)
-            .RegisterEntry("修复了 mod 选择器中文件夹树连线的问题。"u8)
-            .RegisterEntry("修复了编辑颜色表时数值未钳制的问题。"u8)
-            .RegisterEntry("修复了「移至快速文件夹」按钮选中状态的问题。"u8)
-            .RegisterHighlight("新增用于管理无法正确加载的损坏 mod 的管理标签页。(1.6.1.9)"u8)
-            .RegisterEntry("修复了 mod 压缩包内文件夹分隔符的问题。(1.6.1.9)"u8)
-            .RegisterEntry("特定动画现会正确关联到角色。(1.6.1.7)"u8)
-            .RegisterEntry("仅大小写变化时，文件夹与 mod 现也可重命名。(1.6.1.6)"u8)
-            .RegisterEntry("mod 不会在短时间内被意外重复导入。(1.6.1.6)"u8)
-            .RegisterEntry("备份文件现已从 PMP 导出中排除。(1.6.1.6)"u8);
+        => log.NextVersion("Version 1.7.0.0"u8)
+            .RegisterImportant("When updating to this version, all installed mods will migrate to a new meta version."u8)
+            .RegisterEntry(
+                "This version gets rid of the group- and default option JSON files and instead stores all this information in the meta.json again."u8,
+                1)
+            .RegisterEntry(
+                "The old files should be moved to backups, there should also be a permanent archive with all JSONs from your mods be created beforehand in case of any errors."u8,
+                1)
+            .RegisterHighlight("All mods will be supplied stable GUID identifiers, and every option group and option will also get a GUID."u8)
+            .RegisterEntry(
+                "While the mod GUID is currently unused, when mod creators establish stable identifiers for their mods, they could be use to verify dependencies or similar later on."u8,
+                1)
+            .RegisterEntry("The option GUIDs are already used within a single mod for several new features."u8, 1)
+            .RegisterHighlight("Mod Creators have several new very versatile options:"u8)
+            .RegisterEntry(
+                "Option Groups now respect the numerical 'Page' entry from TexTools imports (and it can of course be set in Penumbra, too)."u8,
+                1)
+            .RegisterEntry("If there is more than one page with actual visible options, pages are displayed as sub-tabs in the Settings tab."u8,
+                2)
+            .RegisterEntry("By default, Pages are named 'Page #', but you can assign custom names to the numerical values in Group Editing."u8,
+                2)
+            .RegisterEntry("You can choose whether pages are displayed as tabs or via collapsing headers in the settings."u8, 2)
+            .RegisterEntry(
+                "Option Groups can now be parented to other Groups or Options, causing them to be displayed right below said Group or Option."u8,
+                1)
+            .RegisterEntry(
+                "There are several layout options when using parenting - you can choose to indent the group or not, and you can choose whether to show the group header or not."u8,
+                2)
+            .RegisterEntry(
+                "All Group Headers with options or other groups parented to them can now be collapsed - and groups can be set to be collapsed by default."u8,
+                1)
+            .RegisterHighlight("Entire Groups and single Options can have arbitrary conditions on settings within this mod assigned."u8, 1)
+            .RegisterEntry(
+                "If conditions are not fulfilled, the Option or Group will not apply (regardless of its settings), and will either not display at all, or display as disabled, depending on settings."u8,
+                2)
+            .RegisterEntry(
+                "Additionally, Options can have one of 8 (user-, not creator-defined) colors assigned, and can be set to add a separator line after them."u8,
+                1)
+            .RegisterHighlight(
+                "To support all these new options, the Settings tab UI has been changed considerably. I would like some feedback on how to improve the display here."u8)
+            .RegisterEntry(
+                "One consequence is that, barring parenting or pages, groups are now always displayed in the correct order, not first filtered for their display type."u8,
+                1)
+            .RegisterHighlight(
+                "Hostile NPCs like those spawned by quests are no longer considered by Ownership settings unless a separate setting is enabled."u8)
+            .RegisterHighlight(
+                "The file watcher for auto import of mods can now be set to peek into archives, recognize mod archives inside those archives, and install the packed mods (thanks Stoia and Ny!)."u8)
+            .RegisterEntry("The Enable/Disable/Inherit All Descendants context menu buttons now have misclick prevention."u8)
+            .RegisterEntry("The popup to edit option descriptions is now resizable."u8)
+            .RegisterHighlight(
+                "Configurable colors in Penumbra can now be set to reference other colors (like ImGui or Dalamud colors, or other Penumbra colors). Some colors do this in their default options."u8)
+            .RegisterEntry(
+                "Color configuration should be migrated and anything that was left on the old default values should be migrated to new defaults, and into a different file."u8,
+                1)
+            .RegisterEntry("The On-Screen tab now has separator lines after top-level entry groups, i.e. approximately per slot."u8)
+            .RegisterEntry("Added several plugins, and all plugins that call specific IPC functions, to the support info blob."u8)
+            .RegisterEntry("The advanced editing model tab now uses 0-based indexing instead of 1-based, by popular demand."u8)
+            .RegisterEntry("Limited the number of concurrent mod installation notifications when using the file system watcher to 3."u8)
+            .RegisterEntry("Moved several deserialization and serialization functions to System.Text.JSON for considerable speed increases."u8)
+            .RegisterEntry("Use a new recovery strategy for syntactically broken JSON files in several situations (Thanks Ny!)"u8)
+            .RegisterEntry(
+                "The 'Failed to Load Resource' log warning will no longer trigger on the deliberately failing path used by EasyEyes."u8)
+            .RegisterEntry("Added safeguards against some import vulnerabilities concerning out-of-folder files."u8)
+            .RegisterEntry("Fixed an issue with temporary settings breaking when options are changed."u8)
+            .RegisterEntry("Fixed several issues with the automatic backup functionality."u8)
+            .RegisterEntry("Fixed an issue with collection inheritance display and update."u8)
+            .RegisterEntry("Fixed several issues with redundant saving of files."u8)
+            .RegisterEntry("Fixed an issue with material suffices during model export."u8)
+            .RegisterEntry("Fiexd a crash when resolving accessory skin materials with the resource tree."u8)
+            .RegisterEntry("Fixed an issue with the folder tree lines in the mod selector."u8)
+            .RegisterEntry("Fixed an issue with unclamped values when editing color tables."u8)
+            .RegisterEntry("Fixed an issue with the Move to Quick Folder button selection."u8)
+            .RegisterHighlight("Added a management tab for broken mods that can not correctly load. (1.6.1.9)"u8)
+            .RegisterEntry("Fixed an issue with folder separators within mod archives. (1.6.1.9)"u8)
+            .RegisterEntry("Specific animations will now correctly associate to characters. (1.6.1.7)"u8)
+            .RegisterEntry("Folders and mods can now be renamed when only capitalization changes. (1.6.1.6)"u8)
+            .RegisterEntry("Mods will not accidentally import more than once in quick succession. (1.6.1.6)"u8)
+            .RegisterEntry("Backup files are now excluded from PMP exports. (1.6.1.6)"u8);
 
     private static void Add1_6_1_0(Changelog log)
-        => log.NextVersion("版本 1.6.1.0"u8)
-            .RegisterHighlight("Penumbra 已适配游戏版本 7.50 与 Dalamud API 15。"u8)
-            .RegisterEntry("在找到更稳妥的实现方式之前，HDR 启动选项已暂时关闭。"u8, 1)
-            .RegisterHighlight("Mod 文件系统新增功能："u8)
-            .RegisterEntry("现可在 mod 文件系统中添加分隔线；右键分隔线可设置颜色、与文件夹或文件一同参与排序时的归类方式，以及具体排序规则。"u8,1)
-            .RegisterEntry("微调了 mod 文件系统中文件夹的右键菜单：在「编辑文件夹」子菜单中，可为指定文件夹单独设置颜色与排序模式。"u8,1)
-            .RegisterEntry("高级材质编辑中新增一项默认关闭的设置，可显示理论上支持的全部四个染色通道。多出的两个通道目前仅在本材质编辑器中有用，日后可能会在 Glamourer 中增加支持（感谢 Ny！）。"u8)
-            .RegisterEntry("导入压缩包时，无效字符改为用下划线替换，而不再直接删除。"u8)
-            .RegisterEntry("新版元数据编辑区域的标签页样式更易辨认。"u8)
-            .RegisterEntry("修正了部分颠倒的折叠箭头图标。"u8)
-            .RegisterEntry("修正了部分元数据编辑界面的标签文案。"u8)
-            .RegisterEntry("将与「禁止文件」相关的表述统一更名为「保留文件」，以使其听起来不那么吓人。"u8);
+        => log.NextVersion("Version 1.6.1.0"u8)
+            .RegisterHighlight("Penumbra has been updated for game version 7.50 and Dalamud API 15."u8)
+            .RegisterEntry("The HDR launch option had to be disabled until a way to make it work more robustly can be found."u8, 1)
+            .RegisterHighlight("Added some new features to the mod filesystem:"u8)
+            .RegisterEntry(
+                "You can now add separator lines to your mod filesystem. You can edit these lines by right-clicking them to choose their color, whether they are sorted among folders or files, and how they are sorted."u8,
+                1)
+            .RegisterEntry(
+                "The context menu for folders in the mod filesystem has been slightly edited. Using the 'Edit Folder' sub menu you can now specify individual colors and sort-modes for specific folders only."u8,
+                1)
+            .RegisterEntry(
+                "Added a default-off setting to show all four theoretically supported dye channels in advanced material editing. The two additional channels will only be useful in the material editor itself for the time being, but there might be support implemented for them in Glamourer at a later time (Thanks Ny!)."u8)
+            .RegisterEntry("Importing archives now replaces invalid symbols with underscores instead of removing them."u8)
+            .RegisterEntry("Made the new meta edit tabs more obviously tabs."u8)
+            .RegisterEntry("Fixed some inverted caret icons."u8)
+            .RegisterEntry("Fixed some Meta Edit labels."u8)
+            .RegisterEntry("Anything related to 'forbidden files' has been renamed to 'reserved files' to make it sound less scary."u8);
 
     private static void Add1_6_0_0(Changelog log)
-        => log.NextVersion("版本 1.6.0.0"u8)
+        => log.NextVersion("Version 1.6.0.0"u8)
             .RegisterImportant(
-                "本次更新更换了整套 UI 后端 —— 这是过去数月一直在做的工作。\n希望不会给用户带来明显差异，但由于所有涉及 ImGui 的代码都已修改，可能会出现新的或旧有的问题。\n如果发现配置丢失，您可以在 %AppData%\\XIVLauncherCN\\backups\\Penumbra 中找到备份设置进行恢复。"u8)
-            .RegisterEntry("Penumbra 现在会记住 mod 的完整选择状态以及哪些文件夹已展开、哪些未展开。"u8, 1)
+                "The entire UI backend was changed with this update - this is what I was working on for the past months.\nHopefully, this should not cause many noticeable differences for users, but since every single line concerning ImGui has been changed, new or old bugs may crop up."u8)
+            .RegisterEntry("Penumbra should now remember the full selection of mods and which folders are expanded and which are not."u8, 1)
             .RegisterEntry(
-                "Penumbra 现在会记住大部分您输入的筛选状态——若希望筛选在每次打开时重置，也可在设置中关闭此功能。"u8,
+                "Penumbra can now remember most filter states you enter - this can also be disabled in the settings if you prefer filters to reset."u8,
                 1)
             .RegisterEntry(
-                "将 mod 拖入游戏进行安装时，不再需要拖到 mod 选择器或保持 Penumbra 窗口打开，只需拖入游戏窗口即可。"u8,
+                "Dragging mods into the game to install them should no longer need to drop them into the mod selector, or having the Penumbra window open. Dragging into the game window should be enough."u8,
                 1)
-            .RegisterEntry("多项 UI 控件已更加精确、一致。"u8, 1)
+            .RegisterEntry("Many UI widgets should be more precise and consistent."u8, 1)
             .RegisterEntry(
-                "mod 导入弹窗已改为 Dalamud 通知形式；仅在点击通知查看详情时才会打开弹窗（感谢 Ny！）。"u8)
+                "The mod import popup has been relegated to a Dalamud notification. The popup itself only opens when further details are requested on the notification (Thanks Ny!)."u8)
             .RegisterEntry(
-                "设置中可让通知保持显示直至手动关闭，或始终像以往一样打开详细弹窗。"u8, 1)
-            .RegisterEntry("通知会汇总多次导入活动，而不会弹出多个弹窗。"u8,       1)
-            .RegisterHighlight("现已支持同时打开多个高级编辑窗口（感谢 Ny！）。"u8)
-            .RegisterEntry("默认情况下，每个打开的标签页都会固定到为其打开时所对应的 mod。"u8, 1)
+                "There are settings to keep the notification open until dismissed, or to always open the detailed popup as before."u8, 1)
+            .RegisterEntry("The notification should also gather multiple import activities without creating multiple popups."u8,       1)
+            .RegisterHighlight("Made it possible to have multiple Advanced Editing windows open at once (Thanks Ny!)."u8)
+            .RegisterEntry("By default, every tab opened is pinned to the mod it was opened for."u8, 1)
             .RegisterEntry(
-                "您可以取消固定窗口，或选择默认不固定窗口的标签页。此时窗口会像以往一样跟随当前选中的 mod，但将无法再打开更多窗口。"u8,
+                "You can unpin a window, or choose a setting that windows are unpinned by default. Then it will follow the currently selected mod as before. But this prevents you from opening further windows."u8,
                 1)
-            .RegisterHighlight("新增「管理」标签页。"u8)
-            .RegisterEntry("管理标签页用于帮助用户清理未使用的 mod。"u8, 1)
+            .RegisterHighlight("A new 'Management' tab was added."u8)
+            .RegisterEntry("The management tab is supposed to help users get rid of unused mods."u8, 1)
             .RegisterEntry(
-                "未使用 mod 面板可筛选未在任何合集中启用的 mod，并按最近配置变更时间排序（现已记录该时间，此前未记录）。"u8,
+                "The Unused Mods panel can filter for mods not enabled in any collection and sort them by their last config changes (which are now tracked, but have not been tracked before)."u8,
                 1)
             .RegisterEntry(
-                "新增 IPC，允许其他插件在查询未启用 mod 时添加备注或将它们标为活跃。"u8, 1)
+                "New IPC was added so that other plugins can register to add notes when inactive mods are queried or mark them as active."u8, 1)
             .RegisterEntry(
-                "「禁止文件」标签页可用于检查并移除因稳定性问题而不再被 Penumbra 允许的文件重定向。若启用这些文件会触发通知，且可能需要更新 mod 以保留功能。"u8,
+                "The Forbidden Files tab can be used to check for and remove file redirection that Penumbra does not allow anymore due to stability issues. Those files will cause a notification if enabled and may need mod updates to retain functionality."u8,
                 1)
-            .RegisterEntry("其他管理标签页可用于清理和优化 mod，但目前仍为开发中。"u8, 1)
-            .RegisterEntry("重复 mod 面板会检查是否存在多个同名 mod。"u8,                                  1)
-            .RegisterEntry("清理功能已从高级设置移至通用清理面板。"u8,                 1)
-            .RegisterEntry("mod 编辑标签页中新增了可快速重排选项组顺序的模式。"u8)
-            .RegisterEntry("纹理编辑标签页新增了多项模式与功能，并有所改进（感谢 Ny！）。"u8)
-            .RegisterEntry("挂载点 BLD 和 BL2 已识别为双剑（Twinblades）。"u8)
-            .RegisterEntry("使用物品交换创建 mod 时会尝试保留相关的 ATR 与 SHP 元数据编辑。"u8)
-            .RegisterEntry("多设计（Multi-design）操作现在会尊重临时设置模式。"u8)
-            .RegisterEntry("修复了材质与 avfx 文件子文件资源重定向的多项线程问题。"u8)
+            .RegisterEntry("Other management tabs are available to clean up and optimize mods, but are currently Work-in-Progress."u8, 1)
+            .RegisterEntry("The Duplicate Mods panel checks for multiple mods with the same name."u8,                                  1)
+            .RegisterEntry("Cleanup functions have been moved from Advanced Settings to the General Cleanup panel."u8,                 1)
+            .RegisterEntry("A mode to quickly reorder option groups in the mod edit tab has been added."u8)
+            .RegisterEntry("Multiple new modes and features for the texture editing tab have been added and improved (Thanks Ny!)."u8)
+            .RegisterEntry("The attachment points BLD and BL2 have been identified as Twinblades."u8)
+            .RegisterEntry("Creating mods using item swap will try to keep relevant ATR and SHP meta edits."u8)
+            .RegisterEntry("Multi-design actions should now respect temporary settings mode."u8)
+            .RegisterEntry("Fixed multiple threading issues with subfile resource redirections for materials and avfx files."u8)
             .RegisterEntry(
-                "更新 Penumbra 时会显示通知，提示用户若遇到问题可先重启游戏再反馈。"u8)
-            .RegisterEntry("在高级编辑标签页的文件组合框中增加了部分右键菜单选项。"u8)
-            .RegisterEntry("将本地 mod 数据从「每个 mod 一个文件」改为合并为单一文件，并普遍改善启动速度。"u8)
-            .RegisterEntry("改进了对无效 IMC 编辑的处理。"u8)
-            .RegisterEntry("修复了 Penumbra 崩溃处理器的若干问题，使其更加健壮。"u8)
-            .RegisterEntry("修复了过场动画或 NPC 道具上的挂载点问题。"u8)
-            .RegisterEntry("修复了交换跟宠时的相关问题。"u8)
-            .RegisterHighlight("纹理压缩 IPC 增加对其他块压缩类型的支持 (1.5.1.12)。"u8)
+                "Added a notification when updating Penumbra that prompts users to restart the game if they encounter any issues before reporting them."u8)
+            .RegisterEntry("Added some right-click context menu options to file combos in the advanced editing tabs."u8)
+            .RegisterEntry("Moved local mod data from a file per mod to a single file and generally improve startup times."u8)
+            .RegisterEntry("Improved handling of invalid IMC edits."u8)
+            .RegisterEntry("Fixed some issues with the Penumbra crash handler that should make it more durable."u8)
+            .RegisterEntry("Fixed issues with attachment points in cutscenes or on NPC props."u8)
+            .RegisterEntry("Fixed an issue with swapping minions."u8)
+            .RegisterHighlight("Add support for other block compression types in the texture compression IPC (1.5.1.12)."u8)
             .RegisterHighlight(
-                "新增 IPC，在 Penumbra 设置标签页中展示其他插件的 Penumbra 相关设置（感谢 Ny！）(1.5.1.9)。"u8)
-            .RegisterEntry("修复材料高级编辑标签页中的多处问题（感谢 Ny！）(1.5.1.9)。"u8)
-            .RegisterEntry("新增 IPC，可重绘指定合集的成员（感谢 Karou！）(1.5.1.8)。"u8)
-            .RegisterEntry("修复其他插件通过 API 设置过场索引时的问题 (1.5.1.7)。"u8)
+                "Added IPC to provide Penumbra-related settings of other plugins in the Penumbra Settings tab (Thanks Ny!) (1.5.1.9)."u8)
+            .RegisterEntry("Fixed multiple issues in the advanced editing tab for materials (Thanks Ny!) (1.5.1.9)."u8)
+            .RegisterEntry("Added IPC to redraw members of a specific collection (Thanks Karou!) (1.5.1.8)."u8)
+            .RegisterEntry("Fixed an issue when other plugins set a cutscene index through API (1.5.1.7)."u8)
             .RegisterHighlight(
-                "新增文件监视器，在文件保存到已配置目录时自动尝试安装 mod（感谢 Stoia！）(1.5.1.7)。"u8)
+                "Added a file watcher that automatically tries to install mods when saved into a configured directory (Thanks Stoia!) (1.5.1.7)."u8)
             .RegisterEntry(
-                "默认名称的合集现不可重命名或删除，并在选择器中排在顶部 (1.5.1.3)。"u8)
-            .RegisterEntry("屏幕内标签页中不再对外部路径进行脱敏 (1.5.1.2)。"u8)
-            .RegisterEntry("增加对云同步目录的检测 (1.5.1.2)。"u8)
-            .RegisterEntry("保存 PCP 文件时增加更多选项 (1.5.1.1)。"u8)
-            .RegisterEntry("当重定向文件的扩展名不匹配时增加警告 (1.5.1.1)。"u8);
+                "The default-named collection is now prevented from being renamed or deleted and sorted at the top of the selector (1.5.1.3)."u8)
+            .RegisterEntry("Stopped redacting external paths in On-Screen tabs (1.5.1.2)."u8)
+            .RegisterEntry("Added checks for cloud synced directories (1.5.1.2)."u8)
+            .RegisterEntry("Added more options when saving PCP files (1.5.1.1)."u8)
+            .RegisterEntry("Added warnings for file redirections if the extensions do not match (1.5.1.1)."u8);
 
     private static void Add1_5_1_0(Changelog log)
         => log.NextVersion("Version 1.5.1.0"u8)
@@ -1289,20 +1328,11 @@ public class PenumbraChangelog : IUiService
         => log.NextVersion(""u8);
 
     private (int, ChangeLogDisplayType) ConfigData()
-        => (_config.Ephemeral.LastSeenVersion, _config.ChangeLogDisplayType);
+        => (_config.Ephemeral.LastSeenVersion, _config.Main.ChangeLogDisplayType);
 
     private void Save(int version, ChangeLogDisplayType type)
     {
-        if (_config.Ephemeral.LastSeenVersion != version)
-        {
-            _config.Ephemeral.LastSeenVersion = version;
-            _config.Ephemeral.Save();
-        }
-
-        if (_config.ChangeLogDisplayType != type)
-        {
-            _config.ChangeLogDisplayType = type;
-            _config.Save();
-        }
+        _config.Ephemeral.LastSeenVersion = version;
+        _config.Main.ChangeLogDisplayType = type;
     }
 }
