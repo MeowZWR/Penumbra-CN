@@ -11,6 +11,9 @@ using Penumbra.UI.AdvancedWindow.Meta;
 using Penumbra.UI.Classes;
 using Penumbra.UI.FileEditing;
 using Penumbra.UI.FileEditing.Textures;
+#if DEBUG
+using Penumbra.UI.ManagementTab;
+#endif
 
 namespace Penumbra.UI.AdvancedWindow;
 
@@ -32,6 +35,9 @@ public sealed class ModEditWindowFactory(
     FileEditorRegistry fileEditorRegistry,
     CombiningTextureEditorFactory textureEditorFactory,
     ModMergerFactory modMergerFactory,
+#if DEBUG
+    TextureOptimization textureOptimization,
+#endif
     ModSelection modSelection) : WindowFactory<ModEditWindow>(log, windowSystem), IUiService, IDisposable
 {
     public const string UnpinnedWindowLabel = "//UnpinnedWindow";
@@ -96,7 +102,11 @@ public sealed class ModEditWindowFactory(
         var editor = editorFactory.Create();
         return new ModEditWindow(fileDialog, itemSwapTabFactory.Create(), gameData, config, editor, resourceTreeFactory, metaFileManager,
             activeCollections, modMergerFactory.CreateTab(editor), communicator, dragDropManager, resourceTreeViewerFactory, framework,
-            CreateMetaDrawers(editor.MetaEditor), fileEditorRegistry, textureEditorFactory, index, this);
+            CreateMetaDrawers(editor.MetaEditor), fileEditorRegistry, textureEditorFactory,
+#if DEBUG
+            textureOptimization,
+#endif
+            index, this);
     }
 
     private MetaDrawers CreateMetaDrawers(ModMetaEditor metaEditor)
