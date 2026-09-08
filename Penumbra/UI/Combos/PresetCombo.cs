@@ -44,7 +44,7 @@ public sealed class PresetCombo : FilterComboBase<PresetCombo.CacheItem>, IUiSer
 
     public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, float width)
     {
-        if (base.Draw(label, Selected is null ? "Select Preset..."u8 : _selectedName, StringU8.Empty, width,
+        if (base.Draw(label, Selected is null ? "选择预设..."u8 : _selectedName, StringU8.Empty, width,
                 out var newItem))
         {
             Selected      = newItem.Preset;

@@ -1,4 +1,3 @@
-#if DEBUG
 using ImSharp;
 using Lumina.Data.Files;
 using Lumina.Extensions;
@@ -12,7 +11,7 @@ using Penumbra.UI.ManagementTab;
 
 namespace Penumbra.UI.AdvancedWindow;
 
-/// <summary> DEBUG-only advanced editor tab: scan and batch-restrict texture dimensions for the current mod. </summary>
+/// <summary> Advanced editor tab: scan and batch-restrict texture dimensions for the current mod. </summary>
 public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptimization optimization)
 {
     private readonly List<Candidate> _candidates = [];
@@ -399,4 +398,3 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
         _busy        = false;
     }
 }
-#endif

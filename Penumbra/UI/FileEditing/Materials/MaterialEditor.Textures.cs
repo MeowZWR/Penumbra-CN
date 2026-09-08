@@ -16,10 +16,8 @@ public partial class MaterialEditor
     public readonly HashSet<uint> SamplerIds       = new(16);
     public          float         TextureLabelWidth;
     private         bool          _samplersPinned;
-#if DEBUG
     private string _texturePathReplaceSearch  = string.Empty;
     private string _texturePathReplaceReplace = string.Empty;
-#endif
 
     private void UpdateTextures()
     {
@@ -114,9 +112,8 @@ public partial class MaterialEditor
 
         var       frameHeight = Im.Style.FrameHeight;
         var       ret         = false;
-#if DEBUG
-        ret |= DrawTexturePathReplaceDebug(disabled);
-#endif
+        if (_config.Advanced.EnableExtendedFeatures)
+            ret |= DrawTexturePathReplaceDebug(disabled);
         using var table       = Im.Table.Begin("##Textures"u8, 3);
 
         table.SetupColumn(StringU8.Empty, TableColumnFlags.WidthFixed, frameHeight);
@@ -170,27 +167,37 @@ public partial class MaterialEditor
         return ret;
     }
 
-#if DEBUG
     private bool DrawTexturePathReplaceDebug(bool disabled)
     {
-        using var tree = Im.Tree.Node("Debug: 批量替换纹理路径文本"u8);
-        if (!tree)
-            return false;
-
-        Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
-        Im.Input.Text("查找文本##TexturePathReplaceSearch"u8, ref _texturePathReplaceSearch, flags: disabled ? InputTextFlags.ReadOnly : InputTextFlags.None);
-        Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
-        Im.Input.Text("替换为##TexturePathReplaceReplace"u8, ref _texturePathReplaceReplace, flags: disabled ? InputTextFlags.ReadOnly : InputTextFlags.None);
-
-        using var dis = Im.Disabled(disabled || _texturePathReplaceSearch.Length == 0);
-        if (!Im.Button("替换当前材质中的匹配路径文本"u8))
-            return false;
-
-        var ret            = false;
         var textureIndices = new HashSet<int>();
         foreach (var (_, textureIndex, _, _, _) in Textures)
             textureIndices.Add(textureIndex);
 
+        var matchCount = 0;
+        if (_texturePathReplaceSearch.Length > 0)
+        {
+            foreach (var textureIndex in textureIndices)
+            {
+                if (Mtrl.Textures[textureIndex].Path.Contains(_texturePathReplaceSearch))
+                    ++matchCount;
+            }
+        }
+
+        var buttonLabel = $"替换 {matchCount} 个匹配项";
+        var buttonWidth = Im.Font.CalculateButtonSize(buttonLabel).X;
+        var flags       = disabled ? InputTextFlags.ReadOnly : InputTextFlags.None;
+        var width       = (Im.ContentRegion.Available.X - buttonWidth - 2 * Im.Style.ItemSpacing.X) * 0.5f;
+        Im.Item.SetNextWidth(width);
+        Im.Input.Text("##TexturePathReplaceSearch"u8, ref _texturePathReplaceSearch, "查找..."u8, flags: flags);
+        Im.Line.Same();
+        Im.Item.SetNextWidth(width);
+        Im.Input.Text("##TexturePathReplaceReplace"u8, ref _texturePathReplaceReplace, "替换为..."u8, flags: flags);
+        Im.Line.Same();
+        using var dis = Im.Disabled(disabled || matchCount == 0);
+        if (!Im.Button(buttonLabel))
+            return false;
+
+        var ret = false;
         foreach (var textureIndex in textureIndices)
         {
             var path    = Mtrl.Textures[textureIndex].Path;
@@ -204,7 +211,6 @@ public partial class MaterialEditor
 
         return ret;
     }
-#endif
 
     private static bool ComboTextureAddressMode(ReadOnlySpan<byte> label, ref TextureAddressMode value)
     {

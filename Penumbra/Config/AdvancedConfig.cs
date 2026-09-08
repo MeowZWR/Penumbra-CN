@@ -25,6 +25,13 @@ public sealed partial class AdvancedConfig : ConfigurationFile<FilenameService>
     private bool _debugMode = false;
 #endif
 
+    [ConfigProperty]
+#if DEBUG
+    private bool _enableExtendedFeatures = true;
+#else
+    private bool _enableExtendedFeatures = false;
+#endif
+
     [ConfigProperty(EventName = "UseCrashHandlerChanged")]
     private bool? _useCrashHandler = null;
 
@@ -60,6 +67,7 @@ public sealed partial class AdvancedConfig : ConfigurationFile<FilenameService>
     protected override void AddData(Utf8JsonWriter j)
     {
         j.WriteBoolean("DebugMode"u8, DebugMode);
+        j.WriteBoolean("EnableExtendedFeatures"u8, EnableExtendedFeatures);
         j.WriteIfNot("MinimumSizeX"u8, MinimumSize.X, MinimumSizeX);
         j.WriteIfNot("MinimumSizeY"u8, MinimumSize.Y, MinimumSizeY);
         if (UseCrashHandler.HasValue)
@@ -77,6 +85,7 @@ public sealed partial class AdvancedConfig : ConfigurationFile<FilenameService>
     protected override void LoadData(in JsonElement j)
     {
         DebugMode = j.PropertyOrDefault("DebugMode"u8, DebugMode);
+        EnableExtendedFeatures = j.PropertyOrDefault("EnableExtendedFeatures"u8, EnableExtendedFeatures);
         MinimumSize = new Vector2(j.PropertyOrDefault("MinimumSizeX"u8, MinimumSize.X), j.PropertyOrDefault("MinimumSizeY"u8, MinimumSize.Y));
         UseCrashHandler = j.TryReadProperty("UseCrashHandler"u8, out bool? v) ? v : UseCrashHandler;
         AuxiliaryDeviceMode = j.EnumOrDefault("AuxiliaryDeviceMode"u8, AuxiliaryDeviceMode);

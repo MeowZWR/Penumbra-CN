@@ -53,6 +53,7 @@ public sealed class AdvancedSettings(
         DrawWaitForPluginsReflection();
         DrawEnableHttpApiBox();
         DrawEnableDebugModeBox();
+        DrawEnableExtendedFeaturesBox();
         Im.Separator();
         DrawReloadResourceButton();
         DrawReloadFontsButton();
@@ -203,6 +204,15 @@ public sealed class AdvancedSettings(
                 "[DEBUG] 启用调试和资源管理器选项卡，操作一些额外数据。在插件加载时也会自动打开设置窗口。"u8,
                 config.DebugMode))
             config.DebugMode ^= true;
+    }
+
+    /// <summary> Draw a checkbox to toggle extended features. </summary>
+    private void DrawEnableExtendedFeaturesBox()
+    {
+        if (SettingsTab.Checkbox("启用扩展功能"u8,
+                "[DEBUG] 启用扩展功能选项卡，包含一些额外的功能和设置。"u8,
+                config.EnableExtendedFeatures))
+            config.EnableExtendedFeatures ^= true;
     }
 
     /// <summary> Draw a button that reloads resident resources. </summary>

@@ -20,10 +20,8 @@ using Penumbra.UI.AdvancedWindow.Meta;
 using Penumbra.UI.Classes;
 using Penumbra.UI.FileEditing;
 using Penumbra.UI.FileEditing.Textures;
-using MdlMaterialEditor = Penumbra.Mods.Editor.MdlMaterialEditor;
-#if DEBUG
 using Penumbra.UI.ManagementTab;
-#endif
+using MdlMaterialEditor = Penumbra.Mods.Editor.MdlMaterialEditor;
 
 namespace Penumbra.UI.AdvancedWindow;
 
@@ -50,10 +48,8 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
     private readonly FileEditor _newTextureTab;
 #endif
 
-    private readonly CombiningTextureEditor _textureEditor;
-#if DEBUG
+    private readonly CombiningTextureEditor        _textureEditor;
     private readonly ModEditTextureOptimizationTab _textureOptimizationTab;
-#endif
 
     private Vector2 _iconSize = Vector2.Zero;
     private bool    _allowReduplicate;
@@ -112,9 +108,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             _shaderPackageTab.Reset();
             _modMergeTab.ModMerger.ResetMod();
             _pbdTab.Reset();
-#if DEBUG
             _textureOptimizationTab.Reset();
-#endif
             _itemSwapTab.UpdateMod(mod, _activeCollections.Current.GetInheritedSettings(mod.Index).Settings);
             UpdateModels();
         });
@@ -204,9 +198,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             _modelTab.Reset();
             _shaderPackageTab.Reset();
             _pbdTab.Reset();
-#if DEBUG
             _textureOptimizationTab.Reset();
-#endif
 #if false
             _newTextureTab.Reset();
 #endif
@@ -246,9 +238,8 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             if (tab)
                 _textureEditor.DrawPanel(false);
         }
-#if DEBUG
-        _textureOptimizationTab.Draw();
-#endif
+        if (_config.Advanced.EnableExtendedFeatures)
+            _textureOptimizationTab.Draw();
 #if false
         _newTextureTab.Draw();
 #endif
@@ -613,9 +604,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         CommunicatorService communicator, IDragDropManager dragDropManager,
         ResourceTreeViewerFactory resourceTreeViewerFactory, IFramework framework,
         MetaDrawers metaDrawers, FileEditorRegistry fileEditorRegistry, CombiningTextureEditorFactory textureEditorFactory,
-#if DEBUG
         TextureOptimization textureOptimization,
-#endif
         int index, ModEditWindowFactory parent)
         : base(WindowBaseLabel, index)
     {
@@ -641,9 +630,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 #endif
 
         _textureEditor = textureEditorFactory.CreateForModEditWindow(new ModEditFileEditingContext(activeCollections, editor, null));
-#if DEBUG
         _textureOptimizationTab = new ModEditTextureOptimizationTab(editor, textureOptimization);
-#endif
 
         _resourceTreeFactory = resourceTreeFactory;
         _quickImportViewer   = resourceTreeViewerFactory.Create(1, OnQuickImportRefresh, DrawQuickImportActions);

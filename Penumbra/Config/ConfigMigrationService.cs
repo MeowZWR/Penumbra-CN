@@ -194,6 +194,7 @@ public class ConfigMigrationService(
                 minSize.PropertyOrDefault("Y"u8,           config.Advanced.MinimumSize.Y))
             : config.Advanced.MinimumSize;
         config.Advanced.DebugMode               = json.PropertyOrDefault("DebugMode"u8,               config.Advanced.DebugMode);
+        config.Advanced.EnableExtendedFeatures  = json.PropertyOrDefault("EnableExtendedFeatures"u8,  config.Advanced.EnableExtendedFeatures);
         config.Advanced.AutoDeduplicateOnImport = json.PropertyOrDefault("AutoDeduplicateOnImport"u8, config.Advanced.AutoDeduplicateOnImport);
         config.Advanced.AutoReduplicateUiOnImport =
             json.PropertyOrDefault("AutoReduplicateUiOnImport"u8, config.Advanced.AutoReduplicateUiOnImport);
