@@ -56,7 +56,9 @@ public readonly struct ColorIdData : IColorData<ColorId>
         ret[(int)FolderCollapsed] = new ColorData<ColorId>(FolderLine, "已最小化的折叠组"u8,
             "此折叠组已最小化。"u8, modSelector);
         ret[(int)FolderLine] = new ColorData<ColorId>(0xFFFFF0C0, "展开的折叠组的结构线"u8,
-            "表示哪些模组属于当前展开的折叠组的指示线。"u8, modSelector);
+            "表示哪些模组属于当前展开的折叠组的奇数行指示线。"u8, modSelector);
+        ret[(int)AlternatingFolderLine] = new ColorData<ColorId>(FolderLine, "展开的折叠组的结构线（交替）"u8,
+            "表示哪些模组属于当前展开的折叠组的偶数行指示线。"u8, modSelector);
         ret[(int)SelectorPriority] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "模组选择器优先级标识"u8,
             "在模组选择器里模组名称后显示优先级非0数字。"u8, modSelector);
         ret[(int)TemporaryModSettingsTint] = new ColorData<ColorId>(0x30FF0000, "具有临时设置的模组"u8,
@@ -115,7 +117,7 @@ public readonly struct ColorIdData : IColorData<ColorId>
         ret[(int)OptionColor8] = new ColorData<ColorId>(0xFF6BB5A6, "模组选项可选颜色 #8"u8, OptionColorTooltip, modSettings);
         ret[(int)OptionTreeLine] = new ColorData<ColorId>(ImGuiColor.Separator, "选项组依赖树连线"u8,
             "模组设置面板中连接选项组与节点的连线颜色。"u8, modSettings);
-        ret[(int)GroupLabelBackground] = new ColorData<ColorId>(ImGuiColor.TitleBackground, "选项组标签背景（非交互）"u8,
+        ret[(int)GroupLabelBackground] = new ColorData<ColorId>(Rgba32.Transparent, "选项组标签背景（非交互）"u8,
             "选项组标签不可折叠时的背景颜色。"u8, modSettings);
         ret[(int)GroupLabelBorder] = new ColorData<ColorId>(OptionTreeLine, "选项组标签边框（非交互）"u8,
             "选项组标签不可折叠时的边框颜色。"u8, modSettings);

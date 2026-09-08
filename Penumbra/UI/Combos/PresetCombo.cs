@@ -148,36 +148,39 @@ public sealed class PresetCombo : FilterComboBase<PresetCombo.CacheItem>, IUiSer
         _selectedName = StringU8.Empty;
     }
 
-    private IReadOnlyList<(ModObjectIdentifier, bool)>? GetGroupData(in ModObjectIdentifier groupIdentifier, out string? name)
+    private IReadOnlyList<(ModObjectIdentifier, bool)>? GetGroupData(in ModObjectIdentifier groupIdentifier, out string? name, out bool single)
     {
         if (groupIdentifier.FindGroup(_selection.Mod) is not { } group)
         {
-            name = null;
+            name   = null;
+            single = false;
             return null;
         }
 
-        name = group.Name;
-        return new AdapterList(group.Options, _selection.Settings.IsEmpty ? group.DefaultSettings : _selection.Settings.Settings[group.Index],
+        name   = group.Name;
+        single = group.Behaviour is GroupDrawBehaviour.SingleSelection;
+        return new PresetTooltipAdapterList(group.Options,
+            _selection.Settings.IsEmpty ? group.DefaultSettings : _selection.Settings.Settings[group.Index],
             group.Behaviour);
     }
+}
 
-    private sealed class AdapterList(IReadOnlyList<IModOption> options, Setting setting, GroupDrawBehaviour single)
-        : IReadOnlyList<(ModObjectIdentifier, bool)>
-    {
-        public IEnumerator<(ModObjectIdentifier, bool)> GetEnumerator()
-            => options.Select(Convert).GetEnumerator();
+internal sealed class PresetTooltipAdapterList(IReadOnlyList<IModOption> options, Setting setting, GroupDrawBehaviour single)
+    : IReadOnlyList<(ModObjectIdentifier, bool)>
+{
+    public IEnumerator<(ModObjectIdentifier, bool)> GetEnumerator()
+        => options.Select(Convert).GetEnumerator();
 
-        private (ModObjectIdentifier, bool) Convert(IModOption option, int index)
-            => (ModObjectIdentifier.From(option),
-                single is GroupDrawBehaviour.SingleSelection ? setting.AsIndex == index : setting.HasFlag(index));
+    private (ModObjectIdentifier, bool) Convert(IModOption option, int index)
+        => (ModObjectIdentifier.From(option),
+            single is GroupDrawBehaviour.SingleSelection ? setting.AsIndex == index : setting.HasFlag(index));
 
-        IEnumerator IEnumerable.GetEnumerator()
-            => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
 
-        public int Count
-            => options.Count;
+    public int Count
+        => options.Count;
 
-        public (ModObjectIdentifier, bool) this[int index]
-            => Convert(options[index], index);
-    }
+    public (ModObjectIdentifier, bool) this[int index]
+        => Convert(options[index], index);
 }

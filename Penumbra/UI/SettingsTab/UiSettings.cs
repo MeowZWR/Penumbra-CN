@@ -50,6 +50,7 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
             uiBuilder.DisableGposeUiHide =  config.HideUiInGPose;
             config.HideUiInGPose         ^= true;
         }
+
         LunaStyle.DrawSeparator();
     }
 
@@ -91,6 +92,11 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
         using var tree = Im.Tree.Node("常规显示"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
+
+        if (SettingsTab.Checkbox("在模组界面中隐藏预设栏"u8,
+                "隐藏模组选项卡下模组界面顶部用于预设应用和设置导入/导出的一行按钮。"u8,
+                config.HidePresetBar))
+            config.HidePresetBar ^= true;
 
         if (SettingsTab.Checkbox("在模组界面中隐藏重绘栏"u8, "隐藏模组选项卡下模组界面底部的重绘栏。"u8,
                 config.HideRedrawBar))

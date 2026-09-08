@@ -16,7 +16,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
         DrawMdlMigration();
         DrawMdlRestore();
         DrawMdlCleanup();
-        // TODO enable when this works
+        // TODO 20260824 enable when this works
         Im.Separator();
         //DrawMtrlMigration();
         DrawMtrlRestore();
@@ -30,7 +30,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
         Im.Tooltip.OnHover("这会增加版本标记并将骨骼表重构为新版本。"u8);
 
-        // TODO enable when this works
+        // TODO 20260824 enable when this works
         //value = config.MigrateImportedMaterialsToLegacy;
         //if (Im.Checkbox("导入时自动将材质迁移到「金曦之遗辉」"u8, ref value))
         //{

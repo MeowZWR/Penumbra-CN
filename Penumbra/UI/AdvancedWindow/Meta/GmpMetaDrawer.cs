@@ -1,6 +1,6 @@
 using ImSharp;
 using Luna;
-using Newtonsoft.Json.Linq;
+using Penumbra.Files;
 using Penumbra.GameData.Structs;
 using Penumbra.Meta;
 using Penumbra.Meta.Files;
@@ -34,7 +34,7 @@ public sealed class GmpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     {
         Im.Table.NextColumn();
         CopyToClipboardButton("将当前所有GMP操作复制到剪贴板。"u8,
-            new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Gmp)));
+            CreateLazy(j => MetaSerialization.SerializeTo(j, Editor.Gmp)));
 
         Im.Table.NextColumn();
         var canAdd = !Editor.Contains(Identifier);

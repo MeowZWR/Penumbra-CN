@@ -1,6 +1,6 @@
 using ImSharp;
 using Luna;
-using Newtonsoft.Json.Linq;
+using Penumbra.Files;
 using Penumbra.GameData.Enums;
 using Penumbra.Interop.Structs;
 using Penumbra.Meta;
@@ -34,7 +34,8 @@ public sealed class EqdpMetaDrawer(ModMetaEditor editor, MetaFileManager metaFil
     protected override void DrawNew()
     {
         Im.Table.NextColumn();
-        CopyToClipboardButton("将当前所有EQDP操作复制到剪贴板。"u8, new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Eqdp)));
+        CopyToClipboardButton("将当前所有EQDP操作复制到剪贴板。"u8,
+            CreateLazy(j => MetaSerialization.SerializeTo(j, Editor.Eqdp)));
 
         Im.Table.NextColumn();
         var validRaceCode = CharacterUtilityData.EqdpIdx(Identifier.GenderRace, false) >= 0;
