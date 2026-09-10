@@ -21,13 +21,13 @@ public sealed class HelpButton(ModFileSystemDrawer drawer) : BaseIconButton<Awes
 
     /// <inheritdoc/>
     public override void OnClick()
-        => Im.Popup.Open("ExtendedHelp"u8);
+        => Im.Popup.Open("ExHelp"u8);
 
     /// <inheritdoc/>
     protected override void PostDraw()
     {
         drawer.Tutorial.OpenTutorial(BasicTutorialSteps.AdvancedHelp);
-        ImEx.HelpPopup("ExtendedHelp"u8, new Vector2(1000 * Im.Style.GlobalScale, 38.5f * Im.Style.TextHeightWithSpacing), PopupContent);
+        ImEx.HelpPopup("ExHelp"u8, ImEx.ScaledVectorX(1000, 38.5f * Im.Style.TextHeightWithSpacing), PopupContent);
     }
 
     private void PopupContent()
@@ -46,23 +46,23 @@ public sealed class HelpButton(ModFileSystemDrawer drawer) : BaseIconButton<Awes
         Im.Line.New();
         Im.Text("模组列表"u8);
         Im.BulletText("选择一个模组以查看详细信息或调整设置。"u8);
-        Im.BulletText("模组名称的颜色取决于你的配色设置以及它在当前集合中的状态："u8);
+        Im.BulletText("模组名称的颜色取决于你的配色设置以及它在当前合集中的状态："u8);
         indent.Indent();
-        Im.BulletText("在当前集合中已启用。"u8,                   ColorId.EnabledMod.Value());
-        Im.BulletText("在当前集合中已禁用。"u8,                  ColorId.DisabledMod.Value());
-        Im.BulletText("因从其他集合继承而被启用。"u8,            ColorId.InheritedMod.Value());
-        Im.BulletText("因从其他集合继承而被禁用。"u8,            ColorId.InheritedDisabledMod.Value());
-        Im.BulletText("在所有继承的集合中均为未配置状态。"u8,    ColorId.UndefinedMod.Value());
+        Im.BulletText("在当前合集中已启用。"u8,                   ColorId.EnabledMod.Vector);
+        Im.BulletText("在当前合集中已禁用。"u8,                  ColorId.DisabledMod.Vector);
+        Im.BulletText("因从其他合集继承而被启用。"u8,            ColorId.InheritedMod.Vector);
+        Im.BulletText("因从其他合集继承而被禁用。"u8,            ColorId.InheritedDisabledMod.Vector);
+        Im.BulletText("在所有继承的合集中均为未配置状态。"u8,    ColorId.UndefinedMod.Vector);
         Im.BulletText("已启用且与另一个已启用模组存在冲突，但优先级不同（即冲突已被解决）。"u8,
-            ColorId.HandledConflictMod.Value());
-        Im.BulletText("已启用且与另一个已启用模组在同一优先级上冲突。"u8, ColorId.ConflictingMod.Value());
-        Im.BulletText("展开的模组文件夹。"u8,                                  ColorId.FolderExpanded.Value());
-        Im.BulletText("折叠的模组文件夹。"u8,                                  ColorId.FolderCollapsed.Value());
+            ColorId.HandledConflictMod.Vector);
+        Im.BulletText("已启用且与另一个已启用模组在同一优先级上冲突。"u8, ColorId.ConflictingMod.Vector);
+        Im.BulletText("展开的模组文件夹。"u8,                                                   ColorId.FolderExpanded.Vector);
+        Im.BulletText("折叠的模组文件夹。"u8,                                                   ColorId.FolderCollapsed.Vector);
         indent.Unindent();
         Im.BulletText("中键点击模组：若当前启用则将其禁用，若当前禁用则将其启用。"u8);
         indent.Indent();
         Im.BulletText(
-            $"在中键点击时按住 {drawer.Config.DeleteModModifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))} 可改为继承上级设置，并丢弃当前集合中的配置。");
+            $"在中键点击时按住 {LunaStyle.Modifier.Destructive.Modifier.ForcedModifier(new DoubleModifier(ModifierHotkey.Control, ModifierHotkey.Shift))} 可改为继承上级设置，并丢弃当前合集中的配置。");
         indent.Unindent();
         Im.BulletText("右键点击模组可设置自定义排序键，默认为模组名称（必要时会附加编号）。"u8);
         indent.Indent();

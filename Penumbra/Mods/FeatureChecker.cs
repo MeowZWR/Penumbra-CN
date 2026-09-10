@@ -1,28 +1,31 @@
 using System.Collections.Frozen;
 using ImSharp;
+using Penumbra.Files;
 using Penumbra.Mods.Manager;
 using Penumbra.UI.Classes;
-using Notification = Luna.Notification;
 
 namespace Penumbra.Mods;
 
 public static class FeatureChecker
 {
     /// <summary> Manually setup supported features to exclude None and Invalid and not make something supported too early. </summary>
-    private static readonly FrozenDictionary<string, FeatureFlags> SupportedFlags = new[]
+    private static readonly FrozenDictionary<StringU8, FeatureFlags> SupportedFlags = new[]
     {
         FeatureFlags.Atch,
         FeatureFlags.Shp,
         FeatureFlags.Atr,
-    }.ToFrozenDictionary(f => f.ToString(), f => f);
+        FeatureFlags.Layout,
+    }.ToFrozenDictionary(f => f.ToNameU8(), f => f);
 
-    public static IReadOnlyCollection<string> SupportedFeatures
+    public static IReadOnlyCollection<StringU8> SupportedFeatures
         => SupportedFlags.Keys;
 
-    public static FeatureFlags ParseFlags(string modDirectory, string modName, IEnumerable<string> features)
+    public static readonly FrozenSet<string> SupportedFeaturesU16 = SupportedFeatures.Select(s => s.ToString()).ToFrozenSet();
+
+    public static FeatureFlags ParseFlags(Mod mod, IReadOnlyCollection<StringU8> features)
     {
-        var             featureFlags    = FeatureFlags.None;
-        HashSet<string> missingFeatures = [];
+        var               featureFlags    = FeatureFlags.None;
+        HashSet<StringU8> missingFeatures = new(features.Count);
         foreach (var feature in features)
         {
             if (SupportedFlags.TryGetValue(feature, out var featureFlag))
@@ -32,17 +35,16 @@ public static class FeatureChecker
         }
 
         if (missingFeatures.Count > 0)
-        {
-            Penumbra.Messager.AddMessage(new Notification($"请更新Penumbra以使用模组 {modName}{(modDirectory != modName ? $" 位于 {modDirectory}" : string.Empty)}!\n\n"
-              + $"加载失败，因为该模组需要以下不支持的特性 {(missingFeatures.Count > 1 ? $"s\n\n\t[{string.Join("], [", missingFeatures)}]." : $" [{missingFeatures.First()}].")}"));
-            return FeatureFlags.Invalid;
-        }
+            throw new MissingFeatureException(mod, missingFeatures);
 
         return featureFlags;
     }
 
-    public static bool Supported(string features)
+    public static bool Supported(StringU8 features)
         => SupportedFlags.ContainsKey(features);
+
+    public static bool Supported(string features)
+        => SupportedFeaturesU16.Contains(features);
 
     public static void DrawFeatureFlagInput(ModDataEditor editor, Mod mod, float width)
     {
@@ -51,10 +53,9 @@ public static class FeatureChecker
         var       size         = new Vector2((width - (numButtons - 1) * innerSpacing.X) / numButtons, 0);
         var       buttonColor  = Im.Style[ImGuiColor.FrameBackground];
         var       textColor    = Im.Style[ImGuiColor.TextDisabled];
-        using (var style = ImStyleBorder.Frame.Push(ColorId.FolderLine.Value(), 0)
-                   .Push(ImStyleDouble.ItemSpacing, innerSpacing)
-                   .Push(ImGuiColor.Button,         buttonColor)
-                   .Push(ImGuiColor.Text,           textColor))
+        using (var style = ImStyleBorder.Frame.Push(ColorId.FolderLine.Vector, 0)
+                   .Push(ImGuiColor.Button, buttonColor)
+                   .Push(ImGuiColor.Text,   textColor))
         {
             foreach (var flag in SupportedFlags.Values)
             {
@@ -73,18 +74,17 @@ public static class FeatureChecker
                     editor.ChangeRequiredFeatures(mod, mod.RequiredFeatures | flag);
                 }
 
-                Im.Line.Same();
+                Im.Line.SameInner();
             }
         }
 
-        if (ImEx.Button("自动计算"u8, size, "根据已使用的特性自动计算所需特性。"u8))
+        if (ImEx.Button("计算"u8, size,
+                "从使用的功能自动计算所需的特征。\n\n右键点击清除所有功能。"u8))
             editor.ChangeRequiredFeatures(mod, mod.ComputeRequiredFeatures());
-
-        Im.Line.Same();
-        if (ImEx.Button("清除"u8, size, "清除所有所需特性。"u8))
+        if (Im.Item.RightClicked())
             editor.ChangeRequiredFeatures(mod, FeatureFlags.None);
 
-        Im.Line.Same();
-        Im.Text("所需特性"u8);
+        Im.Line.SameInner();
+        Im.Text("所需功能"u8);
     }
 }

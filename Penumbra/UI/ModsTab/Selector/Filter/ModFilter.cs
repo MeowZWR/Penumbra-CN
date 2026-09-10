@@ -19,7 +19,7 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
     {
         _modManager  = modManager;
         _collections = collections;
-        if (config.RememberModFilters)
+        if (config.Ui.RememberModFilters)
         {
             _stateFilter = config.Filters.ModTypeFilter;
             Set(config.Filters.ModFilter);
@@ -41,11 +41,11 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
             return;
 
         using var tt             = Im.Tooltip.Begin();
-        var       highlightColor = ColorId.NewMod.Value().ToVector();
+        var       highlightColor = ColorId.NewMod.Vector;
         Im.Text("根据输入的文本筛选模组，按空格分词，在模组完整路径或名称中查找包含这些文本的模组。"u8);
         ImEx.TextMultiColored("输入 "u8).Then("c:[string]"u8, highlightColor).Then(" 可按修改了指定物品的模组进行筛选。"u8).End();
         ImEx.TextMultiColored("输入 "u8).Then("t:[string]"u8, highlightColor).Then(" 可按已设置的指定标签筛选模组。"u8).End();
-        ImEx.TextMultiColored("Enter "u8).Then("n:[string]"u8, highlightColor)
+        ImEx.TextMultiColored("输入 "u8).Then("n:[string]"u8, highlightColor)
             .Then(" 只按模组名称进行筛选（不考虑路径）。"u8).End();
         ImEx.TextMultiColored("输入 "u8).Then("a:[string]"u8, highlightColor).Then(" 可按指定作者筛选模组。"u8).End();
         ImEx.TextMultiColored("输入 "u8).Then("s:[string]"u8, highlightColor).Then(
@@ -66,7 +66,7 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
         ImEx.TextMultiColored("将包含空格的文本包在 "u8).Then("\"[string with space]\""u8, highlightColor)
             .Then(" 中，以匹配这段完整文本。"u8).End();
         Im.Line.New();
-        Im.Text("示例：'t:Tag1 t:\"Tag2\" -t:Tag3 -a:None s:Body -c:Hempen ?c:Camise ?n:Top' 将匹配满足以下条件的任意模组："u8);
+        Im.Text("示例：'t:Tag1 t:\"Tag 2\" -t:Tag3 -a:None s:Body -c:Hempen ?c:Camise ?n:Top' 将匹配满足以下条件的任意模组："u8);
         Im.BulletText("包含标签 'tag1' 和 'tag2'；"u8);
         Im.BulletText("不包含标签 'tag3'；"u8);
         Im.BulletText("已设置任意作者（对 None 取反等同于“任意”）；"u8);
@@ -96,7 +96,7 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
             Clear();
         }
 
-        Im.Tooltip.OnHover("按模组激活的状态进行筛选。\n中键点击清除所有筛选, 包括文本筛选."u8);
+        Im.Tooltip.OnHover("按模组激活的状态进行筛选。\n中键点击清除所有筛选，包括文本筛选。"u8);
 
         var changes = false;
         if (combo)

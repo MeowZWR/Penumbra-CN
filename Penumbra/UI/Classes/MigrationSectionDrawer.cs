@@ -10,17 +10,13 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
     public void Draw()
     {
-        using var header = Im.Tree.HeaderId("迁移设置"u8);
-        if (!header)
-            return;
-
         _buttonSize = UiHelpers.InputTextWidth;
         DrawSettings();
         Im.Separator();
         DrawMdlMigration();
         DrawMdlRestore();
         DrawMdlCleanup();
-        // TODO enable when this works
+        // TODO 20260824 enable when this works
         Im.Separator();
         //DrawMtrlMigration();
         DrawMtrlRestore();
@@ -29,25 +25,21 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
 
     private void DrawSettings()
     {
-        var value = config.MigrateImportedModelsToV6;
-        if (Im.Checkbox("自动迁移V5模型到V6版本"u8, ref value))
-        {
-            config.MigrateImportedModelsToV6 = value;
-            config.Save();
-        }
+        if (Im.Checkbox("自动迁移V5模型到V6版本"u8, config.Io.MigrateImportedModelsToV6))
+            config.Io.MigrateImportedModelsToV6 ^= true;
 
         Im.Tooltip.OnHover("这会增加版本标记并将骨骼表重构为新版本。"u8);
 
-        // TODO enable when this works
+        // TODO 20260824 enable when this works
         //value = config.MigrateImportedMaterialsToLegacy;
-        //if (Im.Checkbox("Automatically Migrate Materials to Dawntrail on Import"u8, ref value))
+        //if (Im.Checkbox("导入时自动将材质迁移到「金曦之遗辉」"u8, ref value))
         //{
         //    config.MigrateImportedMaterialsToLegacy = value;
         //    config.Save();
         //}
         //
         //Im.Tooltip.OnHover(
-        //    "This currently only increases the color-table size and switches the shader from 'character.shpk' to 'characterlegacy.shpk', if the former is used."u8);
+        //    "目前仅会增大颜色表尺寸，并在使用 character.shpk 时将其切换为 characterlegacy.shpk。"u8);
 
         Im.Checkbox("手动迁移时创建备份"u8, ref _createBackups);
     }
@@ -58,7 +50,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     private void DrawMdlMigration()
     {
         if (ImEx.Button("迁移V5模型文件到V6版本"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
-            migrationManager.MigrateMdlDirectory(config.ModDirectory, _createBackups);
+            migrationManager.MigrateMdlDirectory(config.Main.ModDirectory, _createBackups);
 
         Im.Line.SameInner();
         DrawCancelButton(MigrationManager.TaskType.MdlMigration, "取消迁移。这不会恢复已经完成的迁移。"u8);
@@ -69,7 +61,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     private void DrawMtrlMigration()
     {
         if (ImEx.Button("将材质文件迁移到「金曦之遗辉」"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
-            migrationManager.MigrateMtrlDirectory(config.ModDirectory, _createBackups);
+            migrationManager.MigrateMtrlDirectory(config.Main.ModDirectory, _createBackups);
 
         Im.Line.SameInner();
         DrawCancelButton(MigrationManager.TaskType.MtrlMigration, MigrationTooltip);
@@ -84,7 +76,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     private void DrawMdlCleanup()
     {
         if (ImEx.Button("删除现有的模型备份文件"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
-            migrationManager.CleanMdlBackups(config.ModDirectory);
+            migrationManager.CleanMdlBackups(config.Main.ModDirectory);
 
         Im.Line.SameInner();
         DrawCancelButton(MigrationManager.TaskType.MdlCleanup, CleanupTooltip);
@@ -95,7 +87,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     private void DrawMtrlCleanup()
     {
         if (ImEx.Button("删除现有的材质备份文件"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
-            migrationManager.CleanMtrlBackups(config.ModDirectory);
+            migrationManager.CleanMtrlBackups(config.Main.ModDirectory);
 
         Im.Line.SameInner();
         DrawCancelButton(MigrationManager.TaskType.MtrlCleanup, CleanupTooltip);
@@ -109,7 +101,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     private void DrawMdlRestore()
     {
         if (ImEx.Button("恢复模型备份"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
-            migrationManager.RestoreMdlBackups(config.ModDirectory);
+            migrationManager.RestoreMdlBackups(config.Main.ModDirectory);
 
         Im.Line.SameInner();
         DrawCancelButton(MigrationManager.TaskType.MdlRestoration, RestorationTooltip);
@@ -120,7 +112,7 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
     private void DrawMtrlRestore()
     {
         if (ImEx.Button("恢复材质备份"u8, _buttonSize, StringU8.Empty, migrationManager.IsRunning))
-            migrationManager.RestoreMtrlBackups(config.ModDirectory);
+            migrationManager.RestoreMtrlBackups(config.Main.ModDirectory);
 
         Im.Line.SameInner();
         DrawCancelButton(MigrationManager.TaskType.MtrlRestoration, RestorationTooltip);
@@ -156,6 +148,6 @@ public class MigrationSectionDrawer(MigrationManager migrationManager, Configura
         if (total is 0)
             ImEx.TextFrameAligned(empty);
         else
-            ImEx.TextFrameAligned($"{data.Changed} 文件 {action}, {data.Failed} 文件失败, {total} 文件找到。");
+            ImEx.TextFrameAligned($"{data.Changed} 文件 {action}，{data.Failed} 文件失败，共找到 {total} 个文件。");
     }
 }

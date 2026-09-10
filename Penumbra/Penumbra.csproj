@@ -57,10 +57,10 @@
         <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
         <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
-        <PackageReference Include="SharpCompress" Version="0.44.1" />
-        <PackageReference Include="SharpGLTF.Core" Version="1.0.5" />
-        <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.5" />
-        <PackageReference Include="PeNet" Version="5.1.0" />
+        <PackageReference Include="SharpCompress" Version="0.48.1" />
+        <PackageReference Include="SharpGLTF.Core" Version="1.0.6" />
+        <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.6" />
+        <PackageReference Include="PeNet" Version="6.1.2" />
         <PackageReference Include="LiteDB" Version="5.0.21" />
     </ItemGroup>
 

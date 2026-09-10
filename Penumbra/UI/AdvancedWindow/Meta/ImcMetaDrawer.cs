@@ -1,6 +1,6 @@
 using ImSharp;
 using Luna;
-using Newtonsoft.Json.Linq;
+using Penumbra.Files;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.Meta;
@@ -36,7 +36,7 @@ public sealed class ImcMetaDrawer(ModMetaEditor editor, MetaFileManager metaFile
     {
         Im.Table.NextColumn();
         CopyToClipboardButton("复制当前所有IMC操作到剪贴板。"u8,
-            new Lazy<JToken?>(() => MetaDictionary.SerializeTo([], Editor.Imc)));
+            CreateLazy(j => MetaSerialization.SerializeTo(j, Editor.Imc)));
         Im.Table.NextColumn();
         var canAdd = _fileExists && !Editor.Contains(Identifier);
         var tt     = canAdd ? "暂存此编辑。"u8 : !_fileExists ? "此IMC文件不存在。"u8 : "此项已被编辑。"u8;

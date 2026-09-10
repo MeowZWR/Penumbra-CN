@@ -49,20 +49,20 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
 
         using (Im.Group())
         {
-            Im.Text("合并"u8);
+            Im.Text("合并 "u8);
             Im.Line.NoSpacing();
             if (size - textSize < minComboSize)
             {
-                Im.Text("选择的模组"u8, ColorId.FolderLine.Value());
+                Im.Text("选择的模组"u8, ColorId.FolderLine.Vector);
                 Im.Tooltip.OnHover(ModMerger.MergeFromMod!.Name);
             }
             else
             {
-                Im.Text(ModMerger.MergeFromMod!.Name, ColorId.FolderLine.Value());
+                Im.Text(ModMerger.MergeFromMod!.Name, ColorId.FolderLine.Vector);
             }
 
             Im.Line.NoSpacing();
-            Im.Text("到"u8);
+            Im.Text(" 到"u8);
         }
 
         Im.Line.Same();
@@ -80,7 +80,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
             Im.Item.SetNextWidth(buttonWidth);
             Im.Input.Text("##optionGroupInput"u8, ref ModMerger.OptionGroupName, "目标选项组"u8);
             Im.Tooltip.OnHover(
-                "这是合并到目标模组中现有的或新建的选项组名称。将选项组和选项名称都留空则会将其合并到default option中。\n"u8
+                "这是合并到目标模组中现有的或新建的选项组名称。将选项组和选项名称都留空则会将其合并到默认选项中。\n"u8
               + "红色边框表示现有的选项组，蓝色边框表示新的选项组。"u8);
             Im.Line.Same();
 
@@ -94,7 +94,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
             Im.Item.SetNextWidth(buttonWidth);
             Im.Input.Text("##optionInput"u8, ref ModMerger.OptionName, "目标选项名称"u8);
             Im.Tooltip.OnHover(
-                "这是合并到目标模组中现有的或新建的选项名称。将选项组和选项名称都留空则会将其合并到default option中。\n"u8
+                "这是合并到目标模组中现有的或新建的选项名称。将选项组和选项名称都留空则会将其合并到默认选项中。\n"u8
               + "红色边框表示现有的选项，蓝色边框表示新的选项。"u8);
         }
 

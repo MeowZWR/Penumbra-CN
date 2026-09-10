@@ -40,7 +40,7 @@ public class CollectionSelectHeader(
             DrawCollectionButton(buttonSize, GetPlayerCollectionInfo(),    3);
             DrawCollectionButton(buttonSize, GetInheritedCollectionInfo(), 4);
 
-            combo.Draw("##collectionSelector"u8, comboWidth, ColorId.SelectedCollection.Value());
+            combo.Draw("##collectionSelector"u8, comboWidth, ColorId.SelectedCollection.Value);
         }
 
         tutorial.OpenTutorial(BasicTutorialSteps.CollectionSelectors);
@@ -52,27 +52,24 @@ public class CollectionSelectHeader(
 
     private void DrawTemporaryCheckbox()
     {
-        var hold = config.IncognitoModifier.IsActive();
-        var tint = config.DefaultTemporaryMode
-            ? Rgba32.TintColor(Im.Style[ImGuiColor.Text], ColorId.TemporaryModSettingsTint.Value().ToVector())
-            : Im.Style[ImGuiColor.TextDisabled];
-        var frameBg = Im.Style[ImGuiColor.FrameBackground];
+        var hold = LunaStyle.Modifier.Misclick.Active;
+        var tint = config.Main.DefaultTemporaryMode
+            ? Rgba32.TintColor(ImGuiColor.Text.Vector, ColorId.TemporaryModSettingsTint.Vector)
+            : ImGuiColor.TextDisabled.Vector;
+        var frameBg = ImGuiColor.FrameBackground.Vector;
 
         using (ImStyleBorder.Frame.Push(tint)
                    .Push(ImGuiColor.ButtonHovered, frameBg, !hold)
                    .Push(ImGuiColor.ButtonActive,  frameBg, !hold))
         {
             if (ImEx.Icon.Button(Icon, buttonColor: frameBg, textColor: tint) && hold)
-            {
-                config.DefaultTemporaryMode = !config.DefaultTemporaryMode;
-                config.Save();
-            }
+                config.Main.DefaultTemporaryMode ^= true;
         }
 
         Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
-            "切换临时设置模式，在此模式下，您所做的所有更改将首先创建为临时设置，如果需要，可以将其设为永久设置。"u8, true);
-        if (!hold)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\n按住 {config.IncognitoModifier} 并点击以切换。", true);
+            "切换临时设置模式，在此模式下，您所做的所有更改将首先创建为临时设置，如果需要，可以将其设为永久设置。"u8,
+            true);
+        LunaStyle.Modifier.Misclick.TooltipLineBreak("切换"u8);
     }
 
     private enum CollectionState
@@ -181,7 +178,7 @@ public class CollectionSelectHeader(
             DrawCollectionButton(buttonSize, GetPlayerCollectionInfo(),    3);
             DrawCollectionButton(buttonSize, GetInheritedCollectionInfo(), 4);
 
-            combo.Draw("##collectionSelector"u8, comboWidth, ColorId.SelectedCollection.Value());
+            combo.Draw("##collectionSelector"u8, comboWidth, ColorId.SelectedCollection.Value);
         }
 
         tutorial.OpenTutorial(BasicTutorialSteps.CollectionSelectors);

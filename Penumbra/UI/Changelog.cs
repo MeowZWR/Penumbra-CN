@@ -66,17 +66,87 @@ public class PenumbraChangelog : IUiService
         AddDummy(Changelog);
         Add1_6_0_0(Changelog);
         Add1_6_1_0(Changelog);
+        AddDummy(Changelog);
+        Add1_7_1_0(Changelog);
     }
 
     #region Changelogs
+
+    private static void Add1_7_1_0(Changelog log)
+        => log.NextVersion("版本 1.7.1.0"u8)
+            .RegisterImportant("更新到此版本时，所有已安装的模组将迁移到新的元数据版本。"u8)
+            .RegisterEntry("本版本移除了选项组与默认选项的独立 JSON 文件，改为再次将全部信息存入 meta.json。"u8, 1)
+            .RegisterEntry("旧文件应会被移至备份；迁移前还会创建一份包含所有模组 JSON 的永久归档，以防出错时需要恢复。"u8, 1)
+            .RegisterHighlight("所有模组将获得稳定的 GUID 标识符，每个选项组与选项也会各有一个 GUID。"u8)
+            .RegisterEntry("模组 GUID 目前尚未使用；待作者为其模组建立稳定标识后，日后可用于验证依赖等用途。"u8, 1)
+            .RegisterEntry("选项 GUID 已在单个模组内用于多项新功能。"u8, 1)
+            .RegisterHighlight("模组作者获得多项非常灵活的新选项："u8)
+            .RegisterEntry("选项组现会尊重从 TexTools 导入的数值型「页面」（Page）字段（当然也可在 Penumbra 中设置）。"u8, 1)
+            .RegisterEntry("若存在多个含有实际可见选项的页面，这些页面会在设置标签页中以子标签形式显示。"u8, 2)
+            .RegisterEntry("默认情况下，页面命名为「页面 #」，但可在组编辑中为数值页面指定自定义名称。"u8, 2)
+            .RegisterEntry("可在设置中选择将页面显示为标签栏，或以折叠标题分段显示。"u8, 2)
+            .RegisterEntry("选项组现可挂靠到其他组或选项下，从而显示在对应组或选项的正下方。"u8, 1)
+            .RegisterEntry("使用挂靠时有多种布局选项——可选择是否缩进该组，以及是否显示组标题。"u8, 2)
+            .RegisterEntry("凡有选项或其他组挂靠其下的组标题现均可折叠，且可将组设为默认折叠。"u8, 1)
+            .RegisterHighlight("整个选项组以及单个选项均可基于本模组内的设置指定任意条件。"u8, 1)
+            .RegisterEntry("若条件未满足，该选项或组将不会生效（无论其设置如何），并根据设置选择完全不显示，或以禁用状态显示。"u8, 2)
+            .RegisterEntry("此外，选项可被指定 8 种颜色之一（由用户定义，而非作者定义），并可设置为在其后添加分隔线。"u8, 1)
+            .RegisterHighlight("为支持上述新功能，设置标签页 UI 已大幅改动。欢迎反馈如何进一步改进显示效果。"u8)
+            .RegisterEntry("随之而来的变化是：在不考虑挂靠或页面的情况下，选项组现在始终按正确顺序显示，而不再先按显示类型筛选。"u8, 1)
+            .RegisterHighlight("任务生成的敌对 NPC 等不再受「基于所有者使用合集」设置影响，除非另行启用「包含敌对所有者角色」。"u8)
+            .RegisterHighlight("用于自动导入模组的文件监视器现可设置为窥探压缩包内部，识别其中的模组压缩包并安装打包的模组（感谢 Stoia 与 Ny！）。"u8)
+            .RegisterHighlight("Penumbra 现已支持本地预设及其分享与应用。"u8)
+            .RegisterEntry("预设是存储在本地数据库中的一组选项组与选项状态，可通过单击应用，或通过剪贴板分享。"u8, 1)
+            .RegisterEntry("预设可以针对特定模组，也可以是通用预设；通用预设会按选项组与选项名称进行匹配，并将匹配到的状态应用到任意模组。"u8, 1)
+            .RegisterEntry("新增用于处理预设的 API/IPC。"u8, 1)
+            .RegisterEntry("新增使用已加入 Dalamud 的 DataShareAdapters 的 IPC 工具。"u8)
+            .RegisterEntry("「启用/禁用/继承子折叠组」右键菜单按钮现已加入防误触。"u8)
+            .RegisterEntry("编辑选项描述的弹窗现在可以调整大小。"u8)
+            .RegisterEntry("加载模组时，模组根目录现会跳过隐藏目录，而不再对其报错。"u8)
+            .RegisterHighlight(
+                "Penumbra 中可配置的颜色现在可以引用其他颜色（如 ImGui 或 Dalamud 颜色，或其他 Penumbra 颜色）。部分颜色在默认选项中即采用此方式。"u8)
+            .RegisterEntry("颜色配置应会自动迁移：仍使用旧默认值的项目会迁移到新默认值，并写入另一个文件。"u8, 1)
+            .RegisterEntry("新增选项：可为文件夹行启用交替颜色，并在对应文件夹设置中选择颜色。"u8)
+            .RegisterEntry("新增选项：可为文件夹设置独立于路径的显示名称。"u8)
+            .RegisterHighlight("大幅更新了材质编辑器（感谢 Ny！）。"u8)
+            .RegisterEntry("将此前未知的字段重命名为曝光（Exposure）、各向异性（Anisotropy）与滚动参数（Scroll Parameters）。"u8, 1)
+            .RegisterEntry("精简了颜色表布局，并增加了对窄窗口的支持。"u8, 1)
+            .RegisterEntry("屏幕内标签页现在会在顶级条目组之后显示分隔线，大致按装备栏位划分。"u8)
+            .RegisterEntry("支持信息中新增了若干插件，以及所有调用特定 IPC 函数的插件。"u8)
+            .RegisterEntry("应普遍需求，高级编辑的模型标签页现改用从 0 开始的索引，而不再从 1 开始。"u8)
+            .RegisterEntry("使用文件系统监视器时，并发的模组安装通知数量限制为 3 条。"u8)
+            .RegisterEntry("新增 SPM 文件查看器（感谢 Ny！）。"u8)
+            .RegisterEntry("多项反序列化与序列化函数已改用 System.Text.Json，速度显著提升。"u8)
+            .RegisterEntry("在多种情况下对语法损坏的 JSON 文件采用了新的恢复策略（感谢 Ny！）。"u8)
+            .RegisterEntry("「Failed to Load Resource」日志警告将不再因 EasyEyes 故意使用的失败路径而触发。"u8)
+            .RegisterEntry("修复了带有临时设置的模组重新加载后 UI 未更新的问题。"u8)
+            .RegisterEntry("修复了模组帮助弹窗的问题。"u8)
+            .RegisterEntry("显著改善了本地数据库的写入性能。"u8)
+            .RegisterEntry("修复了绘制对象解析器中存储空指针的问题。"u8)
+            .RegisterEntry("针对导入时涉及文件夹外文件的部分漏洞增加了防护。"u8)
+            .RegisterEntry("修复了更改选项时临时设置失效的问题。"u8)
+            .RegisterEntry("修复了自动备份功能的若干问题。"u8)
+            .RegisterEntry("修复了合集继承显示与更新的问题。"u8)
+            .RegisterEntry("修复了文件冗余保存的若干问题。"u8)
+            .RegisterEntry("修复了模型导出时材质后缀的问题。"u8)
+            .RegisterEntry("修复了通过资源树解析饰品皮肤材质时的崩溃。"u8)
+            .RegisterEntry("修复了模组选择器中文件夹树连线的问题。"u8)
+            .RegisterEntry("修复了编辑颜色表时数值未钳制的问题。"u8)
+            .RegisterEntry("修复了「移至快速文件夹」按钮选中状态的问题。"u8)
+            .RegisterHighlight("新增用于管理无法正确加载的损坏 mod 的管理标签页。(1.6.1.9)"u8)
+            .RegisterEntry("修复了模组压缩包内文件夹分隔符的问题。(1.6.1.9)"u8)
+            .RegisterEntry("特定动画现会正确关联到角色。(1.6.1.7)"u8)
+            .RegisterEntry("仅大小写变化时，文件夹与 mod 现也可重命名。(1.6.1.6)"u8)
+            .RegisterEntry("模组不会在短时间内被意外重复导入。(1.6.1.6)"u8)
+            .RegisterEntry("备份文件现已从 PMP 导出中排除。(1.6.1.6)"u8);
 
     private static void Add1_6_1_0(Changelog log)
         => log.NextVersion("版本 1.6.1.0"u8)
             .RegisterHighlight("Penumbra 已适配游戏版本 7.50 与 Dalamud API 15。"u8)
             .RegisterEntry("在找到更稳妥的实现方式之前，HDR 启动选项已暂时关闭。"u8, 1)
-            .RegisterHighlight("Mod 文件系统新增功能："u8)
-            .RegisterEntry("现可在 mod 文件系统中添加分隔线；右键分隔线可设置颜色、与文件夹或文件一同参与排序时的归类方式，以及具体排序规则。"u8,1)
-            .RegisterEntry("微调了 mod 文件系统中文件夹的右键菜单：在「编辑文件夹」子菜单中，可为指定文件夹单独设置颜色与排序模式。"u8,1)
+            .RegisterHighlight("模组文件系统新增功能："u8)
+            .RegisterEntry("现可在模组文件系统中添加分隔线；右键分隔线可设置颜色、与文件夹或文件一同参与排序时的归类方式，以及具体排序规则。"u8,1)
+            .RegisterEntry("微调了模组文件系统中文件夹的右键菜单：在「编辑文件夹」子菜单中，可为指定文件夹单独设置颜色与排序模式。"u8,1)
             .RegisterEntry("高级材质编辑中新增一项默认关闭的设置，可显示理论上支持的全部四个染色通道。多出的两个通道目前仅在本材质编辑器中有用，日后可能会在 Glamourer 中增加支持（感谢 Ny！）。"u8)
             .RegisterEntry("导入压缩包时，无效字符改为用下划线替换，而不再直接删除。"u8)
             .RegisterEntry("新版元数据编辑区域的标签页样式更易辨认。"u8)
@@ -117,9 +187,9 @@ public class PenumbraChangelog : IUiService
                 "「禁止文件」标签页可用于检查并移除因稳定性问题而不再被 Penumbra 允许的文件重定向。若启用这些文件会触发通知，且可能需要更新 mod 以保留功能。"u8,
                 1)
             .RegisterEntry("其他管理标签页可用于清理和优化 mod，但目前仍为开发中。"u8, 1)
-            .RegisterEntry("重复 mod 面板会检查是否存在多个同名 mod。"u8,                                  1)
+            .RegisterEntry("重复模组面板会检查是否存在多个同名模组。"u8,                                  1)
             .RegisterEntry("清理功能已从高级设置移至通用清理面板。"u8,                 1)
-            .RegisterEntry("mod 编辑标签页中新增了可快速重排选项组顺序的模式。"u8)
+            .RegisterEntry("模组编辑标签页中新增了可快速重排选项组顺序的模式。"u8)
             .RegisterEntry("纹理编辑标签页新增了多项模式与功能，并有所改进（感谢 Ny！）。"u8)
             .RegisterEntry("挂载点 BLD 和 BL2 已识别为双剑（Twinblades）。"u8)
             .RegisterEntry("使用物品交换创建 mod 时会尝试保留相关的 ATR 与 SHP 元数据编辑。"u8)
@@ -128,7 +198,7 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry(
                 "更新 Penumbra 时会显示通知，提示用户若遇到问题可先重启游戏再反馈。"u8)
             .RegisterEntry("在高级编辑标签页的文件组合框中增加了部分右键菜单选项。"u8)
-            .RegisterEntry("将本地 mod 数据从「每个 mod 一个文件」改为合并为单一文件，并普遍改善启动速度。"u8)
+            .RegisterEntry("将本地模组数据从「每个模组一个文件」改为合并为单一文件，并普遍改善启动速度。"u8)
             .RegisterEntry("改进了对无效 IMC 编辑的处理。"u8)
             .RegisterEntry("修复了 Penumbra 崩溃处理器的若干问题，使其更加健壮。"u8)
             .RegisterEntry("修复了过场动画或 NPC 道具上的挂载点问题。"u8)
@@ -149,445 +219,379 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("当重定向文件的扩展名不匹配时增加警告 (1.5.1.1)。"u8);
 
     private static void Add1_5_1_0(Changelog log)
-        => log.NextVersion("Version 1.5.1.0"u8)
-            .RegisterHighlight("Added the option to export a characters current data as a .pcp modpack in the On-Screen tab."u8)
-            .RegisterEntry("Other plugins can attach to this functionality and package and interpret their own data."u8, 1)
-            .RegisterEntry(
-                "When a .pcp modpack is installed, it can create and assign collections for the corresponding character it was created for."u8,
-                1)
-            .RegisterEntry(
-                "This basically provides an easier way to manually synchronize other players, but does not contain any automation."u8, 1)
-            .RegisterEntry(
-                "The settings provide some fine control about what happens when a PCP is installed, as well as buttons to cleanup any PCP-created data."u8,
-                1)
-            .RegisterEntry("Added a warning message when the game's integrity is corrupted to the On-Screen tab."u8)
-            .RegisterEntry("Added .kdb files to the On-Screen tab and associated functionality (thanks Ny!)."u8)
-            .RegisterEntry("Updated the creation of temporary collections to require a passed identity."u8)
-            .RegisterEntry(
-                "Added the option to change the skin material suffix in models using the stockings shader by adding specific attributes (thanks Ny!)."u8)
-            .RegisterEntry("Added predefined tag utility to the multi-mod selection."u8)
-            .RegisterEntry("Fixed an issue with the automatic collection selection on character login when no mods are assigned."u8)
-            .RegisterImportant(
-                "Fixed issue with new deformer data that makes modded deformers not containing this data work implicitly. Updates are still recommended (1.5.0.5)."u8)
-            .RegisterEntry("Fixed various issues after patch (1.5.0.1 - 1.5.0.4)."u8);
+        => log.NextVersion("版本 1.5.1.0"u8)
+            .RegisterHighlight("在屏幕内标签页中新增将角色当前数据导出为 .pcp 模组包的选项。"u8)
+            .RegisterEntry("其他插件可以接入此功能，打包并解析各自的数据。"u8, 1)
+            .RegisterEntry("安装 .pcp 模组包时，可以为当初创建该包所对应的角色创建并分配合集。"u8, 1)
+            .RegisterEntry("这基本上提供了一种更简便的手动同步其他玩家的方式，但不包含任何自动化。"u8, 1)
+            .RegisterEntry("设置中可精细控制安装 PCP 时的行为，并提供按钮用于清理任何由 PCP 创建的数据。"u8, 1)
+            .RegisterEntry("在屏幕内标签页中，于游戏完整性损坏时新增警告提示。"u8)
+            .RegisterEntry("屏幕内标签页新增 .kdb 文件及相关功能（感谢 Ny！）。"u8)
+            .RegisterEntry("创建临时合集现在需要传入身份标识。"u8)
+            .RegisterEntry("新增通过添加特定属性，来更改使用 stockings 着色器的模型中皮肤材质后缀的选项（感谢 Ny！）。"u8)
+            .RegisterEntry("多模组选择中新增预定义标签工具。"u8)
+            .RegisterEntry("修复了角色登录时若未分配模组则无法自动选择合集的问题。"u8)
+            .RegisterImportant("修复了新的变形器数据相关问题，使不含该数据的模组变形器也能隐式正常工作。仍建议进行更新 (1.5.0.5)。"u8)
+            .RegisterEntry("修复了补丁后的各类问题 (1.5.0.1 - 1.5.0.4)。"u8);
 
     private static void Add1_5_0_0(Changelog log)
-        => log.NextVersion("Version 1.5.0.0"u8)
-            .RegisterImportant(
-                "Updated for game version 7.30 and Dalamud API13, which uses a new GUI backend. Some things may not work as expected. Please let me know any issues you encounter."u8)
-            .RegisterEntry("Added support for exporting models using two vertex color schemes (thanks zeroeightysix!)."u8)
-            .RegisterEntry(
-                "Possibly improved the color accuracy of the basecolor texture created when exporting models (thanks zeroeightysix!)."u8)
-            .RegisterEntry(
-                "Disabled enabling transparency for materials that use the characterstockings shader due to crashes (thanks zeroeightysix!)."u8)
-            .RegisterEntry("Fixed some issues with model i/o and invalid tangents (thanks PassiveModding!)"u8)
-            .RegisterEntry("Changed the behavior for default directory names when using the mod normalizer with combining groups."u8)
-            .RegisterEntry("Added jumping to specific mods to the HTTP API."u8)
-            .RegisterEntry("Fixed an issue with character sound modding (1.4.0.6)."u8)
-            .RegisterHighlight("Added support for IMC-toggle attributes to accessories beyond the first toggle (1.4.0.5)."u8)
-            .RegisterEntry("Fixed up some slot-specific attributes and shapes in models when swapping items between slots (1.4.0.5)."u8)
-            .RegisterEntry("Added handling for human skin materials to the OnScreen tab and similar functionality (thanks Ny!) (1.4.0.5)."u8)
-            .RegisterEntry("The OS thread ID a resource was loaded from was added to the resource logger (1.4.0.5)."u8)
-            .RegisterEntry(
-                "A button linking to my (Ottermandias') Ko-Fi and Patreon was added in the settings tab. Feel free, but not pressured, to use it! :D "u8)
-            .RegisterHighlight("Mod setting combos now support mouse-wheel scrolling with Control and have filters (1.4.0.4)."u8)
-            .RegisterEntry("Using the middle mouse button to toggle designs now works correctly with temporary settings (1.4.0.4)."u8)
-            .RegisterEntry("Updated some BNPC associations (1.4.0.3)."u8)
-            .RegisterEntry("Fixed further issues with shapes and attributes (1.4.0.4)."u8)
-            .RegisterEntry(
-                "Penumbra now handles textures with MipMap offsets broken by TexTools on import and removes unnecessary MipMaps (1.4.0.3)."u8)
-            .RegisterEntry("Updated the Mod Merger for the new group types (1.4.0.3)."u8)
-            .RegisterEntry("Added querying Penumbra for supported features via IPC (1.4.0.3)."u8)
-            .RegisterEntry("Shape names can now be edited in Penumbras model editor (1.4.0.2)."u8)
-            .RegisterEntry("Attributes and Shapes can be fully toggled (1.4.0.2)."u8)
-            .RegisterEntry("Fixed several issues with attributes and shapes (1.4.0.1)."u8);
+        => log.NextVersion("版本 1.5.0.0"u8)
+            .RegisterImportant("更新以支持游戏版本 7.30 和 Dalamud API13，该版本使用了新的 GUI 后端。某些功能可能无法正常工作。如果您遇到任何问题，请告知我。"u8)
+            .RegisterEntry("添加了使用两种顶点颜色方案导出模型的支持（感谢 zeroeightysix！）。"u8)
+            .RegisterEntry("可能改善了导出模型时创建的基础颜色纹理的颜色准确性（感谢 zeroeightysix！）。"u8)
+            .RegisterEntry("由于崩溃问题，禁用了使用 characterstockings 着色器的材质的透明度启用功能（感谢 zeroeightysix！）。"u8)
+            .RegisterEntry("修复了模型输入/输出和无效切线的一些问题（感谢 PassiveModding！）"u8)
+            .RegisterEntry("更改了在使用模组标准化器与组合群组时默认目录名称的行为。"u8)
+            .RegisterEntry("向 HTTP API 添加了跳转到特定模组的功能。"u8)
+            .RegisterEntry("修复了角色声音模组的问题（1.4.0.6）。"u8)
+            .RegisterHighlight("添加了对第一个切换之外的饰品的 IMC 切换属性支持（1.4.0.5）。"u8)
+            .RegisterEntry("修复了在槽位间交换物品时模型中的一些槽位特定属性和形态（1.4.0.5）。"u8)
+            .RegisterEntry("为屏幕显示标签页和类似功能添加了人类皮肤材质处理（感谢 Ny！）（1.4.0.5）。"u8)
+            .RegisterEntry("资源记录器中添加了加载资源的操作系统线程 ID（1.4.0.5）。"u8)
+            .RegisterEntry("在设置标签页中添加了链接到我（Ottermandias）的 Ko-Fi 和 Patreon 的按钮。欢迎但不强制使用！:D "u8)
+            .RegisterHighlight("模组设置组合框现在支持使用 Ctrl 键进行鼠标滚轮滚动并具有筛选功能（1.4.0.4）。"u8)
+            .RegisterEntry("使用鼠标中键切换设计现在可以正确配合临时设置工作（1.4.0.4）。"u8)
+            .RegisterEntry("更新了一些 BNPC 关联（1.4.0.3）。"u8)
+            .RegisterEntry("修复了形态和属性的进一步问题（1.4.0.4）。"u8)
+            .RegisterEntry("Penumbra 现在可以处理导入时被 TexTools 破坏的 MipMap 偏移纹理，并移除不必要的 MipMaps（1.4.0.3）。"u8)
+            .RegisterEntry("为新的群组类型更新了模组合并器（1.4.0.3）。"u8)
+            .RegisterEntry("添加了通过 IPC 查询 Penumbra 支持功能的接口（1.4.0.3）。"u8)
+            .RegisterEntry("形态名称现在可以在 Penumbra 的模型编辑器中编辑（1.4.0.2）。"u8)
+            .RegisterEntry("属性和形态现在可以完全切换（1.4.0.2）。"u8)
+            .RegisterEntry("修复了属性和形态的几个问题（1.4.0.1）。"u8);
 
     private static void Add1_4_0_0(Changelog log)
-        => log.NextVersion("Version 1.4.0.0"u8)
-            .RegisterHighlight("Added two types of new Meta Changes, SHP and ATR (Thanks Karou!)."u8)
-            .RegisterEntry("Those allow mod creators to toggle custom shape keys and attributes for models on and off, respectively."u8, 1)
-            .RegisterEntry("Custom shape keys need to have the format 'shpx_*' and custom attributes need 'atrx_*'."u8,                  1)
+        => log.NextVersion("版本 1.4.0.0"u8)
+            .RegisterHighlight("添加了两种新的元数据变更类型：SHP和ATR（感谢Karou！）"u8)
+            .RegisterEntry("这些允许模组创作者分别开启或关闭模型的自定义形态键和属性。"u8, 1)
+            .RegisterEntry("自定义形态键需要遵循'shpx_*'格式，自定义属性需要遵循'atrx_*'格式。"u8, 1)
             .RegisterHighlight(
-                "Shapes of the following formats will automatically be toggled on if both relevant slots contain the same shape key:"u8, 1)
-            .RegisterEntry("'shpx_wa_*', for the waist seam between the body and leg slot,"u8,    2)
-            .RegisterEntry("'shpx_wr_*', for the wrist seams between the body and hands slot,"u8, 2)
-            .RegisterEntry("'shpx_an_*', for the ankle seams between the leg and feet slot."u8,   2)
+                "以下格式的形态键会在相关槽位包含相同形态键时自动开启："u8, 1)
+            .RegisterEntry("'shpx_wa_*'，用于身体和腿部槽位之间的腰部接缝，"u8, 2)
+            .RegisterEntry("'shpx_wr_*'，用于身体和手部槽位之间的手腕接缝，"u8, 2)
+            .RegisterEntry("'shpx_an_*'，用于腿部和脚部槽位之间的脚踝接缝。"u8, 2)
             .RegisterEntry(
-                "Custom shape key and attributes can be turned off in the advanced settings section for the moment, but this is not recommended."u8,
+                "自定义形态键和属性可以在高级设置部分关闭，但不建议这样做。"u8,
                 1)
-            .RegisterHighlight("The mod selector width is now draggable within certain restrictions that depend on the total window width."u8)
-            .RegisterEntry("The current behavior may not be final, let me know if you have any comments."u8, 1)
-            .RegisterEntry("Improved the naming of NPCs for identifiers by using Haselnussbombers new naming functionality (Thanks Hasel!)."u8)
-            .RegisterEntry("Added global EQP entries to always hide Au Ra horns, Viera ears, or Miqo'te ears, respectively."u8)
-            .RegisterEntry("This will leave holes in the heads of the respective race if not modded in some way."u8, 1)
-            .RegisterEntry("Added a filter for mods that have temporary settings in the mod selector panel (Thanks Caraxi)."u8)
-            .RegisterEntry("Made the checkbox for toggling Temporary Settings Mode in the mod tab more visible."u8)
-            .RegisterEntry("Improved the option select combo in advanced editing."u8)
-            .RegisterEntry("Fixed some issues with item identification for EST changes."u8)
-            .RegisterEntry("Fixed the sizing of the mod panel being off by 1 pixel sometimes."u8)
-            .RegisterEntry("Fixed an issue with redrawing while in GPose when other plugins broke some assumptions about the game state."u8)
-            .RegisterEntry("Fixed a clipping issue within the Meta Manipulations tab in advanced editing."u8)
-            .RegisterEntry("Fixed an issue with empty and temporary settings."u8)
+            .RegisterHighlight("模组选择器宽度现在可以在特定限制范围内拖动（限制取决于总窗口宽度）。"u8)
+            .RegisterEntry("当前的效果可能不是最终版本，如果您有任何意见请告诉我。"u8, 1)
+            .RegisterEntry("改进了NPC标识符的命名，使用了Haselnussbomber的新命名功能（感谢Hasel！）。"u8)
+            .RegisterEntry("添加了全局EQP条目，可以始终隐藏敖龙族角、维埃拉族耳朵或猫魅族耳朵。"u8)
+            .RegisterEntry("如果相应种族没有进行模组修改，这会在头部留下空洞。"u8, 1)
+            .RegisterEntry("在模组选择器面板中添加了临时设置筛选功能（感谢Caraxi）。"u8)
+            .RegisterEntry("使模组标签页中的临时设置模式切换复选框更加醒目。"u8)
+            .RegisterEntry("改进了高级编辑中的选项选择组合框。"u8)
+            .RegisterEntry("修复了EST变更中的物品识别问题。"u8)
+            .RegisterEntry("修复了模组面板有时会偏差1像素的尺寸问题。"u8)
+            .RegisterEntry("修复了在GPose中其他插件破坏游戏状态假设时的重绘问题。"u8)
+            .RegisterEntry("修复了高级编辑中元操作标签页的裁剪问题。"u8)
+            .RegisterEntry("修复了空设置和临时设置的问题。"u8)
             .RegisterHighlight(
-                "In the Item Swap tab, items changed by this mod are now sorted and highlighted before items changed in the current collection before other items for the source, and inversely for the target. (1.3.6.8)"u8)
+                "在物品交换标签页中，现在会优先排序和突出显示由当前模组更改的物品，然后是当前集合中更改的物品，最后是其他物品。（1.3.6.8）"u8)
             .RegisterHighlight(
-                "Default-valued meta edits should now be kept on import and only removed when the option to keep them is not set AND no other options in the mod edit the same entry. (1.3.6.8)"u8)
-            .RegisterEntry("Added a right-click context menu on file redirections to copy the full file path. (1.3.6.8)"u8)
+                "默认值的元编辑现在会在导入时保留，除非未设置保留选项且没有其他选项编辑相同条目。（1.3.6.8）"u8)
+            .RegisterEntry("添加了文件重定向的右键菜单，可以复制完整文件路径。（1.3.6.8）"u8)
             .RegisterEntry(
-                "Added a right-click context menu on the mod export button to open the backup directory in your file explorer. (1.3.6.8)"u8)
-            .RegisterEntry("Fixed some issues when redrawing characters from other plugins. (1.3.6.8)"u8)
+                "添加了模组导出按钮的右键菜单，可以在文件资源管理器中打开备份目录。（1.3.6.8）"u8)
+            .RegisterEntry("修复了从其他插件重绘角色时的一些问题。（1.3.6.8）"u8)
             .RegisterEntry(
-                "Added a modifier key separate from the delete modifier key that is used for less important key-checks, specifically toggling incognito mode. (1.3.6.7)"u8)
-            .RegisterEntry("Fixed some issues with the Material Editor (Thanks Ny). (1.3.6.6)"u8);
+                "添加了一个与删除组合键分开的组合键，用于不太重要的按键检查，特别是切换匿名模式。（1.3.6.7）"u8)
+            .RegisterEntry("修复了材质编辑器的一些问题（感谢Ny）。（1.3.6.6）"u8);
 
     private static void Add1_3_6_4(Changelog log)
-        => log.NextVersion("Version 1.3.6.4"u8)
-            .RegisterEntry("The material editor should be functional again."u8);
+        => log.NextVersion("版本 1.3.6.4"u8)
+            .RegisterEntry("材质编辑器现已恢复正常功能。"u8);
 
     private static void Add1_3_6_0(Changelog log)
-        => log.NextVersion("Version 1.3.6.0"u8)
-            .RegisterImportant("Updated Penumbra for update 7.20 and Dalamud API 12."u8)
+        => log.NextVersion("版本 1.3.6.0"u8)
+            .RegisterImportant("更新 Penumbra 以支持游戏版本 7.20 和 Dalamud API 12。"u8)
             .RegisterEntry(
-                "This is not thoroughly tested, but I decided to push to stable instead of testing because otherwise a lot of people would just go to testing just for early access again despite having no business doing so."u8,
+                "本次更新尚未经过充分测试，但我决定直接发布稳定版而非测试版——因为如果只发测试版，又会有大量用户为了抢先体验而涌入测试渠道，尽管他们并不适合参与测试。"u8,
                 1)
             .RegisterEntry(
-                "I also do not use most of the functionality of Penumbra myself, so I am unable to even encounter most issues myself."u8, 1)
-            .RegisterEntry("If you encounter any issues, please report them quickly on the discord."u8,                                   1)
+                "另外由于我个人并不使用 Penumbra 的大部分功能，所以很多问题可能我自己都无法发现。"u8, 1)
+            .RegisterEntry("如您遇到任何问题，请立即在 Discord 上反馈。"u8,                                   1)
             .RegisterHighlight(
-                "The texture editor now has encoding support for Block Compression 1, 4 and 5 and tooltips explaining when to use which format."u8)
-            .RegisterEntry("It also is able to use GPU compression and thus has become much faster for BC7 in particular. (Thanks Ny!)"u8, 1)
+                "纹理编辑器现已支持 Block Compression 1/4/5 的编码格式，并添加了格式使用场景的提示说明。"u8)
+            .RegisterEntry("现在支持使用 GPU 加速压缩，特别是 BC7 格式的处理速度显著提升。（感谢 Ny！）"u8, 1)
             .RegisterEntry(
-                "Added the option to import .atch files found in the particular mod via right-click context menu on the import drag & drop button."u8)
-            .RegisterEntry("Added a chat command to clear temporary settings done manually in Penumbra."u8)
+                "新增通过右键点击导入按钮的上下文菜单，来导入特定模组中的 .atch 文件功能。"u8)
+            .RegisterEntry("新增聊天指令用于清除 Penumbra 中的手动临时设置。"u8)
             .RegisterEntry(
-                "The changed item star to select the preferred changed item is a bit more noticeable by default, and its color can be configured."u8)
-            .RegisterEntry("Some minor fixes for computing changed items. (Thanks Anna!)"u8)
-            .RegisterEntry("The EQP entry previously named Unknown 4 was renamed to 'Hide Glove Cuffs'."u8)
-            .RegisterEntry("Fixed the changed item identification for EST changes."u8)
-            .RegisterEntry("Fixed clipping issues in the changed items panel when no grouping was active."u8);
+                "默认情况下，用于选择首选更改项目的星标现在更加醒目，且支持自定义颜色。"u8)
+            .RegisterEntry("修复了修改物品计算的一些小问题。（感谢 Anna！）"u8)
+            .RegisterEntry("EQP 条目中原先标记为 Unknown 4 的项目已重命名为「隐藏手套袖口」。"u8)
+            .RegisterEntry("修复了 EST 修改项的物品识别问题。"u8)
+            .RegisterEntry("修复了未启用分组时，修改物品面板可能出现的显示裁剪问题。"u8);
 
 
     private static void Add1_3_5_0(Changelog log)
-        => log.NextVersion("Version 1.3.5.0"u8)
+        => log.NextVersion("版本 1.3.5.0"u8)
             .RegisterImportant(
-                "Redirections of unsupported file types like .atch will now produce warnings when they are enabled. Please update mods still containing them or request updates from their creators."u8)
-            .RegisterEntry("You can now import .atch in the Meta section of advanced editing to add their non-default changes to the mod."u8)
-            .RegisterHighlight("Added an option in settings and in the collection bar in the mod tab to always use temporary settings."u8)
+                "重定向不支持的文件类型（如 .atch）现在在启用时会产生警告。请更新仍包含这些文件的模组或请求其创建者更新。"u8)
+            .RegisterEntry("现在可以在高级编辑的元数据部分导入 .atch 文件，将其与游戏默认值不同的更改添加到模组中。"u8)
+            .RegisterHighlight("在设置和模组选项卡的合集栏中添加了始终使用临时设置的选项。"u8)
             .RegisterEntry(
-                "While this option is enabled, all changes you make in the current collection will be applied as temporary changes, and you have to use Turn Permanent to make them permanent."u8,
+                "启用此选项时，您在当前合集中所做的所有更改将作为临时更改应用，您必须使用“设为永久”将其设为永久。"u8,
                 1)
             .RegisterEntry(
-                "This should be useful for trying out new mods without needing to reset their settings later, or for creating mod associations in Glamourer from them."u8,
+                "这对于尝试新模组而无需稍后重置其设置或在 Glamourer 中创建模组关联应该很有用。"u8,
                 1)
             .RegisterEntry(
-                "Added a context menu entry on the mod selector blank-space context menu to clear all temporary settings made manually."u8)
+                "在模组选择器空白区域的上下文菜单中添加了清除所有手动临时设置的选项。"u8)
             .RegisterHighlight(
-                "Resource Trees now consider some additional files like decals, and improved the quick-import behaviour for some files that should not generally be modded."u8)
-            .RegisterHighlight("The Changed Item display for single mods has been heavily improved."u8)
-            .RegisterEntry("Any changed item will now show how many individual edits are affecting it in the mod in its tooltip."u8, 1)
-            .RegisterEntry("Equipment pieces are now grouped by their model id, reducing clutter."u8,                                1)
+                "资源树现在考虑了一些额外的文件，如贴花，并改进了一些不应通常被修改的文件的快速导入行为。"u8)
+            .RegisterHighlight("单个模组的更改项目显示已大幅改进。"u8)
+            .RegisterEntry("任何更改的项目现在将在其工具提示中显示有多少个单独的编辑影响它。"u8, 1)
+            .RegisterEntry("装备现在按其模型 ID 分组，减少了混乱。"u8, 1)
             .RegisterEntry(
-                "The primary equipment piece displayed is the one with the most changes affecting it, but can be configured to a specific item by the mod creator and locally."u8,
+                "显示的主要装备是受影响更改最多的那个，但可以由模组创建者和本地配置为特定项目。"u8,
                 1)
             .RegisterEntry(
-                "Preferred changed items stored in the mod will be shared when exporting the mod, and used as the default for local preferences, which will not be shared."u8,
+                "模组中存储的首选更改项目将在导出模组时共享，并用作本地首选项的默认值，这些首选项不会共享。"u8,
                 2)
             .RegisterEntry(
-                "You can configure whether groups are automatically collapsed or expanded, or remove grouping entirely in the settings."u8, 1)
-            .RegisterHighlight("Fixed support for model import/export with more than one UV."u8)
-            .RegisterEntry("Added some IPC relating to changed items."u8)
-            .RegisterEntry("Skeleton and Physics changes should now be identified in Changed Items."u8)
-            .RegisterEntry("Item Swaps will now also correctly swap EQP entries of multi-slot pieces."u8)
-            .RegisterEntry("Meta edit transmission through IPC should be a lot more efficient than before."u8)
-            .RegisterEntry("Fixed an issue with incognito names in some cutscenes."u8)
-            .RegisterEntry("Newly extracted mod folders will now try to rename themselves three times before being considered a failure."u8);
+                "您可以在设置中配置组是自动折叠还是展开，或完全删除分组。"u8, 1)
+            .RegisterHighlight("修复了支持多个 UV 的模型导入/导出。"u8)
+            .RegisterEntry("添加了一些与更改项目相关的 IPC。"u8)
+            .RegisterEntry("骨骼和物理更改现在应该在更改项目中识别。"u8)
+            .RegisterEntry("项目交换现在也会正确交换多装备槽的 EQP 条目。"u8)
+            .RegisterEntry("通过 IPC 传输元数据编辑应该比以前更有效率。"u8)
+            .RegisterEntry("修复了一些匿名名称在某些过场动画中的问题。"u8)
+            .RegisterEntry("新提取的模组文件夹现在会尝试重命名三次，然后才被视为失败。"u8);
 
     private static void Add1_3_4_0(Changelog log)
-        => log.NextVersion("Version 1.3.4.0"u8)
-            .RegisterHighlight(
-                "Added HDR functionality to diffuse buffers. This allows more accurate representation of non-standard color values for e.g. skin or hair colors when used with advanced customizations in Glamourer."u8)
-            .RegisterEntry(
-                "This option requires Wait For Plugins On Load to be enabled in Dalamud and to be enabled on start to work. It is on by default but can be turned off."u8,
-                1)
-            .RegisterHighlight("Added a new option group type: Combining Groups."u8)
-            .RegisterEntry(
-                "A combining group behaves similarly to a multi group for the user, but instead of enabling the different options separately, it results in exactly one option per choice of settings."u8,
-                1)
-            .RegisterEntry(
-                "Example: The user sees 2 checkboxes [+25%, +50%], but the 4 different selection states result in +0%, +25%, +50% or +75% if both are toggled on. Every choice of settings can be configured separately by the mod creator."u8,
-                1)
-            .RegisterEntry(
-                "Added new functionality to better track copies of the player character in cutscenes if they get forced to specific clothing, like in the Margrat cutscene. Might improve tracking in wedding ceremonies, too, let me know."u8)
-            .RegisterEntry("Added a display of the number of selected files and folders to the multi mod selection."u8)
-            .RegisterEntry(
-                "Added cleaning functionality to remove outdated or unused files or backups from the config and mod folders via manual action."u8)
-            .RegisterEntry("Updated the Bone and Material limits in the Model Importer."u8)
-            .RegisterEntry("Improved handling of IMC and Material files loaded asynchronously."u8)
-            .RegisterEntry("Added IPC functionality to query temporary settings."u8)
-            .RegisterEntry("Improved some mod setting IPC functions."u8)
-            .RegisterEntry("Fixed some path detection issues in the OnScreen tab."u8)
-            .RegisterEntry("Fixed some issues with temporary mod settings."u8)
-            .RegisterEntry("Fixed issues with IPC calls before the game has finished loading."u8)
-            .RegisterEntry("Fixed using the wrong dye channel in the material editor previews."u8)
-            .RegisterEntry("Added some log warnings if outdated materials are loaded by the game."u8)
-            .RegisterEntry("Added Schemas for some of the json files generated and read by Penumbra to the solution."u8);
+        => log.NextVersion("版本 1.3.4.0"u8)
+            .RegisterHighlight("为漫反射缓冲区添加HDR功能。当与 Glamourer 的高级定制功能配合使用时，可以更准确地表现非标准颜色值（例如皮肤或发色）。"u8)
+            .RegisterEntry("此功能需要在卫月设置中启用“在游戏加载前等待插件初始化完成”并在启动时启用才能正常工作。默认开启但可手动关闭。"u8, 1)
+            .RegisterHighlight("新增选项组类型：组合型选项组（Combining Groups）。"u8)
+            .RegisterEntry("组合型选项组对用户的表现类似多选组，但不同选项的开启会导致设置组合生成唯一的配置结果。"u8, 1)
+            .RegisterEntry("示例：用户可见两个复选框[+25%, +50%]，但四种选择状态实际会产生+0%、+25%、+50%或+75%（同时勾选时）。模组制作者可为每个组合单独配置不同设置。"u8, 1)
+            .RegisterEntry("新增功能以更好地追踪过场动画中玩家角色的复制体（当角色被强制使用特定服装时，如玛格拉特过场动画）。可能也会改善婚礼场景的追踪，欢迎反馈。"u8)
+            .RegisterEntry("在多模组选择界面添加了已选折叠组和折叠组数量的显示。"u8)
+            .RegisterEntry("新增清理功能，可通过手动操作从配置和模组文件夹中移除过时或未使用的文件/备份。"u8)
+            .RegisterEntry("更新了模型导入器中的骨骼和材质限制。"u8)
+            .RegisterEntry("改进了异步加载IMC和材质文件的处理方式。"u8)
+            .RegisterEntry("添加查询临时设置的IPC功能。"u8)
+            .RegisterEntry("改进部分模组设置的IPC功能。"u8)
+            .RegisterEntry("修复“画面角色”选项卡中的部分路径检测问题。"u8)
+            .RegisterEntry("修复临时模组设置的相关问题。"u8)
+            .RegisterEntry("修复游戏加载完成前的IPC调用问题。"u8)
+            .RegisterEntry("修复材质编辑器预览中使用错误染色通道的问题。"u8)
+            .RegisterEntry("当游戏加载过时材质时添加日志警告提示。"u8)
+            .RegisterEntry("在解决方案中添加 Penumbra 生成/读取的部分 json 文件的 Schema 定义。"u8);
 
     private static void Add1_3_3_0(Changelog log)
-        => log.NextVersion("Version 1.3.3.0"u8)
-            .RegisterHighlight("Added Temporary Settings to collections."u8)
-            .RegisterEntry(
-                "Settings can be manually turned temporary (and turned back) while editing mod settings via right-click context on the mod or buttons in the settings panel."u8,
-                1)
-            .RegisterEntry(
-                "This can be used to test mods or changes without saving those changes permanently or having to reinstate the old settings afterwards."u8,
-                1)
-            .RegisterEntry(
-                "More importantly, this can be set via IPC by other plugins, allowing Glamourer to only set and reset temporary settings when applying Mod Associations."u8,
-                1)
-            .RegisterEntry(
-                "As an extreme example, it would be possible to only enable the consistent mods for your character in the collection, and let Glamourer handle all outfit mods itself via temporary settings only."u8,
-                1)
-            .RegisterEntry(
-                "This required some pretty big changes that were in testing for a while now, but nobody talked about it much so it may still have some bugs or usability issues. Let me know!"u8,
-                1)
-            .RegisterHighlight(
-                "Added an option to automatically select the collection assigned to the current character on login events. This is off by default."u8)
-            .RegisterEntry(
-                "Added partial copying of color tables in material editing via right-click context menu entries on the import buttons."u8)
-            .RegisterHighlight(
-                "Added handling for TMB files cached by the game that should resolve issues of leaky TMBs from animation and VFX mods."u8)
-            .RegisterEntry(
-                "The enabled checkbox, Priority and Inheriting buttons now stick at the top of the Mod Settings panel even when scrolling down for specific settings."u8)
-            .RegisterEntry("When creating new mods with Item Swap, the attributed author of the resulting mod was improved."u8)
-            .RegisterEntry("Fixed an issue with rings in the On-Screen tab and in the data sent over to other plugins via IPC."u8)
-            .RegisterEntry(
-                "Fixed some issues when writing material files that resulted in technically valid files that still caused some issues with the game for unknown reasons."u8)
-            .RegisterEntry("Fixed some ImGui assertions."u8);
+        => log.NextVersion("版本 1.3.3.0"u8)
+            .RegisterHighlight("为合集添加了临时设置。"u8)
+            .RegisterEntry("在编辑模组设置时，可以通过右键菜单或设置面板中的按钮手动将设置设置为临时（并可恢复）。"u8, 1)
+            .RegisterEntry("这可以用来测试模组或更改，而无需永久保存这些更改或事后恢复旧设置。"u8, 1)
+            .RegisterEntry("更重要的是，其他插件可以通过IPC设置此选项，允许 Glamourer 在应用模组关联时仅设置和重置临时设置。"u8, 1)
+            .RegisterEntry("作为极端示例，您可以仅在合集内启用角色的一致模组，并仅通过临时设置让 Glamourer 处理所有装备模组。"u8, 1)
+            .RegisterEntry("这需要进行一些大的变更，这些变更已经测试了一段时间，但由于没人多提，所以它可能仍然存在一些错误或可用性问题。请告诉我！"u8, 1)
+            .RegisterHighlight("添加了在登录事件时自动选择分配给当前角色的合集的选项。此功能默认关闭。"u8)
+            .RegisterEntry("在材质编辑中，通过右键菜单项，新增了部分复制颜色集的功能。"u8)
+            .RegisterHighlight("添加了对游戏缓存的 TMB 文件的处理，这应该解决了动画和 VFX 模组中 TMB 泄漏的问题。"u8)
+            .RegisterEntry("启用复选框、优先级和继承按钮现在即使在滚动下拉设置时也会固定在模组设置面板顶部。"u8)
+            .RegisterEntry("在使用物品交换创建新模组时，生成模组的作者信息得到了改进。"u8)
+            .RegisterEntry("修复了画面角色标签页中的戒指以及通过IPC发送给其他插件的数据中的一个问题。"u8)
+            .RegisterEntry("修复了写入材质文件时的一些问题，导致技术上有效的文件仍然因未知原因在游戏中引发问题。"u8)
+            .RegisterEntry("修复了一些 ImGui 断言问题。"u8);
 
     private static void Add1_3_2_0(Changelog log)
-        => log.NextVersion("Version 1.3.2.0"u8)
-            .RegisterHighlight("Added ATCH meta manipulations that allow the composite editing of attachment points across multiple mods."u8)
-            .RegisterEntry("Those ATCH manipulations should be shared via Mare Synchronos."u8, 1)
-            .RegisterEntry(
-                "This is an early implementation and might be bug-prone. Let me know of any issues. It was in testing for quite a while without reports."u8,
-                1)
-            .RegisterEntry(
-                "Added jumping to identified mods in the On-Screen tab via Control + Right-Click and improved their display slightly."u8)
-            .RegisterEntry("Added some right-click context menu copy options in the File Redirections editor for paths."u8)
-            .RegisterHighlight("Added the option to change a specific mod's settings via chat commands by using '/penumbra mod settings'."u8)
-            .RegisterEntry("Fixed issues with the copy-pasting of meta manipulations."u8)
-            .RegisterEntry("Fixed some other issues related to meta manipulations."u8)
-            .RegisterEntry(
-                "Updated available NPC names and fixed an issue with some supposedly invisible characters in names showing in ImGui."u8);
+        => log.NextVersion("版本 1.3.2.0"u8)
+            .RegisterHighlight("新增 ATCH 元数据操作，允许跨多个模组对骨骼挂点进行组合编辑。"u8)
+            .RegisterEntry("这些 ATCH 操作应通过 Mare Synchronos 共享。"u8, 1)
+            .RegisterEntry("这是一个早期实现，可能存在问题。如果发现问题，请告知。尽管它已经测试了一段时间，但尚未收到反馈。"u8, 1)
+            .RegisterEntry("在“画面角色”选项卡中通过 Ctrl + 右键单击跳转到已识别的模组，并稍微改进了其显示。"u8)
+            .RegisterEntry("在文件重定向编辑器中，在路径的右键上下文菜单中增加了一些复制选项。"u8)
+            .RegisterHighlight("新增通过聊天命令 '/penumbra mod settings' 更改特定模组设置的选项。"u8)
+            .RegisterEntry("修复了元数据操作复制粘贴的问题。"u8)
+            .RegisterEntry("修复了与数据元操作相关的其他一些问题。"u8)
+            .RegisterEntry("更新了可用的 NPC 名称，并修复了某些假定不可见字符在 ImGui 中显示的问题。"u8);
 
 
     private static void Add1_3_1_0(Changelog log)
-        => log.NextVersion("Version 1.3.1.0"u8)
-            .RegisterEntry("Penumbra has been updated for Dalamud API 11 and patch 7.1."u8)
-            .RegisterImportant(
-                "There are some known issues with potential crashes using certain VFX/SFX mods, probably related to sound files."u8)
-            .RegisterEntry(
-                "If you encounter those issues, please report them in the discord and potentially disable the corresponding mods for the time being."u8,
-                1)
-            .RegisterImportant(
-                "The modding of .atch files has been disabled. Outdated modded versions of these files cause crashes when loaded."u8)
-            .RegisterEntry("A better way for modular modding of .atch files via meta changes will release to the testing branch soonish."u8, 1)
-            .RegisterHighlight("Temporary collections (as created by Mare) will now always respect ownership."u8)
-            .RegisterEntry(
-                "This means that you can toggle this setting off if you do not want it, and Mare will still work for minions and mounts of other players."u8,
-                1)
-            .RegisterEntry(
-                "The new physics and animation engine files (.kdb and .bnmb) should now be correctly redirected and respect EST changes."u8)
-            .RegisterEntry(
-                "Fixed issues with EQP entries being labeled wrongly and global EQP not changing all required values for earrings."u8)
-            .RegisterEntry("Fixed an issue with global EQP changes of a mod being reset upon reloading the mod."u8)
-            .RegisterEntry("Fixed another issue with left rings and mare synchronization / the on-screen tab."u8)
-            .RegisterEntry("Maybe fixed some issues with characters appearing in the login screen being misidentified."u8)
-            .RegisterEntry("Some improvements for debug visualization have been made."u8);
+        => log.NextVersion("版本 1.3.1.0"u8)
+            .RegisterEntry("Penumbra 已更新以支持 Dalamud API 11 和 7.1 游戏版本。"u8)
+            .RegisterImportant("已知使用某些 VFX/SFX 模组可能导致崩溃，可能与音频文件有关。"u8)
+            .RegisterEntry("如果您遇到这些问题，请在 Discord 中报告，并暂时禁用相关模组。"u8, 1)
+            .RegisterImportant("已禁用修改的 .atch 文件。过期的这些文件会在加载时会导致崩溃。"u8)
+            .RegisterEntry("通过元数据更改实现修改 .atch 文件的更好方法将很快在测试分支发布。"u8, 1)
+            .RegisterHighlight("临时合集（如 Mare 创建的合集）现在将始终遵循所有权规则。"u8)
+            .RegisterEntry("这意味着您可以关闭此设置，而 Mare 仍然可以正确处理其他玩家的宠物和坐骑。"u8, 1)
+            .RegisterEntry("新的物理和动画引擎文件（.kdb 和 .bnmb）现在可以正确重定向并遵循 EST 变更。"u8)
+            .RegisterEntry("修复了 EQP 条目标记错误的问题，且全局 EQP 未正确修改耳环的所有必要值的问题。"u8)
+            .RegisterEntry("修复了重新加载模组时模组的全局 EQP 更改被重置的问题。"u8)
+            .RegisterEntry("修复了左手戒指与 Mare 同步 / 画面角色 标签页的问题。"u8)
+            .RegisterEntry("可能修复了登录画面中角色被错误识别的问题。"u8)
+            .RegisterEntry("改进了调试模块的可视化功能。"u8);
 
 
     private static void Add1_3_0_0(Changelog log)
-        => log.NextVersion("Version 1.3.0.0"u8)
-            .RegisterHighlight("The textures tab in the advanced editing window can now import and export .tga files."u8)
-            .RegisterEntry("BC4 and BC6 textures can now also be imported."u8, 1)
-            .RegisterHighlight("Added item swapping from and to the Glasses slot."u8)
-            .RegisterEntry("Reworked quite a bit of things around face wear / bonus items. Please let me know if anything broke."u8, 1)
-            .RegisterEntry("The import date of a mod is now shown in the Edit Mod tab, and can be reset via button."u8)
-            .RegisterEntry("A button to open the file containing local mod data for a mod was also added."u8, 1)
-            .RegisterHighlight(
-                "IMC groups can now be configured to only apply the attribute flags for their entry, and take the other values from the default value."u8)
-            .RegisterEntry("This allows keeping the material index of every IMC entry of a group, while setting the attributes."u8, 1)
-            .RegisterHighlight("Model Import/Export was fixed and re-enabled (thanks ackwell and ramen)."u8)
-            .RegisterHighlight("Added a hack to allow bonus items (face wear, glasses) to have VFX."u8)
-            .RegisterEntry("Also fixed the hack that allowed accessories to have VFX not working anymore."u8, 1)
-            .RegisterHighlight("Added rudimentary options to edit PBD files in the advanced editing window."u8)
-            .RegisterEntry("Preparing the advanced editing window for a mod now does not freeze the game until it is ready."u8)
-            .RegisterEntry(
-                "Meta Manipulations in the advanced editing window are now ordered and do not eat into performance as much when drawn."u8)
-            .RegisterEntry("Added a button to the advanced editing window to remove all default-valued meta manipulations from a mod"u8)
-            .RegisterEntry(
-                "Default-valued manipulations will now also be removed on import from archives and .pmps, not just .ttmps, if not configured otherwise."u8,
-                1)
-            .RegisterEntry("Checkbox-based mod filters are now tri-state checkboxes instead of two disjoint checkboxes."u8)
-            .RegisterEntry("Paths from the resource logger can now be copied."u8)
-            .RegisterEntry("Silenced some redundant error logs when updating mods via Heliosphere."u8)
-            .RegisterEntry("Added 'Page' to imported mod data for TexTools interop. The value is not used in Penumbra, just persisted."u8)
-            .RegisterEntry("Updated all external dependencies."u8)
-            .RegisterEntry("Fixed issue with Demihuman IMC entries."u8)
-            .RegisterEntry("Fixed some off-by-one errors on the mod import window."u8)
-            .RegisterEntry("Fixed a race-condition concerning the first-time creation of mod-meta files."u8)
-            .RegisterEntry("Fixed an issue with long mod titles in the merge mods tab."u8)
-            .RegisterEntry("A bunch of other miscellaneous fixes."u8);
+        => log.NextVersion("版本 1.3.0.0"u8)
+
+            .RegisterHighlight("高级编辑窗口中的纹理选项卡现在可以导入和导出 .tga 文件。"u8)
+            .RegisterEntry("现在也可以导入 BC4 和 BC6 纹理。"u8, 1)
+            .RegisterHighlight("新增了对眼镜槽（面部配饰）进行道具交换的功能。"u8)
+            .RegisterEntry("对面部配饰/额外物品进行了大量重构。如果出现任何问题，请告知。"u8, 1)
+            .RegisterEntry("编辑模组选项卡现在会显示模组的导入日期，并且可以通过按钮重置。"u8)
+            .RegisterEntry("还增加了一个按钮用于打开包含本地模组数据的文件。"u8, 1)
+            .RegisterHighlight("现在可以将 IMC 组配置为仅应用其条目的属性标志，并从默认值中获取其他值。"u8)
+            .RegisterEntry("这允许在设置属性的同时保持每个 IMC 组条目的材质索引。"u8, 1)
+            .RegisterHighlight("模型导入/导出已修复并重新启用（感谢 ackwell 和 ramen）。"u8)
+            .RegisterHighlight("添加了一个 hack，允许额外物品（面部配饰、眼镜）拥有 VFX。"u8)
+            .RegisterEntry("还修复了之前允许饰品拥有 VFX 的 hack 不再工作的情况。"u8, 1)
+            .RegisterHighlight("在高级编辑窗口中添加了对 PBD 文件的基础编辑选项。"u8)
+            .RegisterEntry("现在准备高级编辑窗口中的模组不会冻结游戏，直到准备完成。"u8)
+            .RegisterEntry("高级编辑窗口中的元操作现在已经排序，并且绘制时不会显著影响性能。"u8)
+            .RegisterEntry("高级编辑窗口中添加了一个按钮，可以从模组中删除所有包含默认值的元数据操作。"u8)
+            .RegisterEntry("现在，在从压缩包和 .pmps 导入时，如果没有在其他地方设置，包含默认值的元数据操作也会被移除，而不仅仅是 .ttmps。"u8, 1)
+            .RegisterEntry("基于复选框的模组筛选器现在是三态复选框，而不是两个不相交的复选框。"u8)
+            .RegisterEntry("现在可以复制资源日志中的路径。"u8)
+            .RegisterEntry("在通过 Heliosphere 更新模组时，屏蔽了一些冗余的错误日志。"u8)
+            .RegisterEntry("为 TexTools 互操作性添加了“Page”到导入的模组数据中。该值在 Penumbra 中不使用，只是持久化。"u8)
+            .RegisterEntry("更新了所有外部依赖项。"u8)
+            .RegisterEntry("修复了与亚人 IMC 条目相关的问题。"u8)
+            .RegisterEntry("修复了模组导入窗口中的一些越界错误。"u8)
+            .RegisterEntry("修复了有关首次创建模组元数据文件的竞态条件问题。"u8)
+            .RegisterEntry("修复了合并模组选项卡中长模组标题的问题。"u8)
+            .RegisterEntry("其他一些杂项修复。"u8);
 
 
     private static void Add1_2_1_0(Changelog log)
-        => log.NextVersion("Version 1.2.1.0"u8)
-            .RegisterHighlight("Penumbra is now released for Dawntrail!"u8)
-            .RegisterEntry("Mods themselves may have to be updated. TexTools provides options for this."u8,                              1)
-            .RegisterEntry("For model files, Penumbra provides a rudimentary update function, but prefer using TexTools if possible."u8, 1)
-            .RegisterEntry("Other files, like materials and textures, will have to go through TexTools for the moment."u8,               1)
-            .RegisterEntry(
-                "Some outdated mods can be identified by Penumbra and are prevented from loading entirely (specifically shaders, by Ny)."u8, 1)
-            .RegisterImportant("I am sorry that it took this long, but there was an immense amount of work to be done from the start."u8)
-            .RegisterImportant(
-                "Since Penumbra has been in Testing for quite a while, multitudes of bugs and issues cropped up that needed to be dealt with."u8,
-                1)
-            .RegisterEntry("There very well may still be a lot of issues, so please report any you find."u8, 1)
-            .RegisterImportant("BUT, please make sure that those issues are not caused by outdated mods before reporting them."u8, 1)
-            .RegisterEntry(
-                "This changelog may seem rather short for the timespan, but I omitted hundreds of smaller fixes and the details of getting Penumbra to work in Dawntrail."u8,
-                1)
-            .RegisterHighlight("The Material Editing tab in the Advanced Editing Window has been heavily improved (by Ny)."u8)
-            .RegisterEntry(
-                "Especially for Dawntrail materials using the new shaders, the window provides much more in-depth and user-friendly editing options."u8,
-                1)
-            .RegisterHighlight("Many advancements regarding modded shaders, and modding bone deformers have been made."u8)
-            .RegisterHighlight("IMC groups now allow their options to toggle attributes off that are on in the default entry."u8)
-            .RegisterImportant(
-                "The 'Update Bibo' button was removed. The functionality is redundant since any mods that old need to be updated anyway."u8)
-            .RegisterEntry("Clicking the button on modern mods generally caused more harm than benefit."u8, 1)
-            .RegisterEntry(
-                "If you somehow still need to mass-migrate materials in your models, the Material Reassignment tab in Advanced Editing is still available for this."u8,
-                1)
-            .RegisterEntry("The On-Screen tab was updated and improved and can now display modded actual paths in more useful form."u8)
-            .RegisterImportant("Model Import/Export is temporarily disabled until Dawntrail-related changes can be made."u8)
-            .RegisterHighlight("You can now change a mods state in any collection from its Collections tab via right-clicking the state."u8)
-            .RegisterHighlight("Items changed in a mod now sort before other items in the Item Swap tab, and are highlighted."u8)
-            .RegisterEntry("Path handling was improved in regards to case-sensitivity."u8)
-            .RegisterEntry("Fixed an issue with negative search matching on folders with no matches"u8)
-            .RegisterEntry("Mod option groups on the same priority are now applied in reverse index order. (1.2.0.12)"u8)
-            .RegisterEntry("Fixed the display of missing files in the Advanced Editing Window's header. (1.2.0.8)"u8)
-            .RegisterEntry(
-                "Fixed some, but not all soft-locks that occur when your character gets redrawn while fishing. Just do not do that. (1.2.0.7)"u8)
-            .RegisterEntry("Improved handling of invalid Offhand IMC files for certain jobs. (1.2.0.6)"u8)
-            .RegisterEntry("Added automatic reduplication for files in the UI category, as they cause crashes when not unique. (1.2.0.5)"u8)
-            .RegisterEntry("The mod import popup can now be closed by clicking outside of it, if it is finished. (1.2.0.5)"u8)
-            .RegisterEntry("Fixed an issue with Mod Normalization skipping the default option. (1.2.0.5)"u8)
-            .RegisterEntry("Improved the Support Info output. (1.1.1.5)"u8)
-            .RegisterEntry("Reworked the handling of Meta Manipulations entirely. (1.1.1.3)"u8)
-            .RegisterEntry("Added a configuration option to disable showing mods in the character lobby and at the aesthetician. (1.1.1.1)"u8)
-            .RegisterEntry("Fixed an issue with the AddMods API and the root directory. (1.1.1.2)"u8)
-            .RegisterEntry("Fixed an issue with the Mod Merger file lookup and casing. (1.1.1.2)"u8)
-            .RegisterEntry("Fixed an issue with file saving not happening when merging mods or swapping items in some cases. (1.1.1.2)"u8);
+        => log.NextVersion("版本 1.2.1.0"u8)
+            .RegisterHighlight("Penumbra 现在已为「金曦之遗辉」发布新版本！"u8)
+            .RegisterEntry("你的模组可能需要更新。请使用TexTools的相关功能。"u8, 1)
+            .RegisterEntry("对于模型文件，Penumbra提供了基本的更新功能，但尽量优先使用TexTools。"u8, 1)
+            .RegisterEntry("其他文件，如材质和纹理，暂时需要通过 TexTools 更新。"u8, 1)
+            .RegisterEntry("Penumbra 能够识别部分过时的模组，并防止其加载（特别是着色器，感谢 Ny）。"u8, 1)
+            .RegisterImportant("很抱歉花了这么长时间，但从一开始就有大量工作要完成。"u8)
+            .RegisterImportant("由于Penumbra测试时间较长，出现了许多问题和错误需要解决。"u8, 1)
+            .RegisterEntry("可能仍然存在许多问题，请报告任何你发现的错误。"u8, 1)
+            .RegisterImportant("但是，请确保在报告问题之前这些问题不是由过时的模组引起的。"u8, 1)
+            .RegisterEntry("虽然这个更新日志看起来很短，但我省略了数百个小修复以及让 Penumbra 在「金曦之遗辉」上运行的详细工作。"u8, 1)
+            .RegisterHighlight("高级编辑窗口中的材质编辑选项卡已大幅改进（感谢 Ny）。"u8)
+            .RegisterEntry("特别是对于使用新着色器的「金曦之遗辉」材质，窗口提供了更深入和友好的编辑选项。"u8, 1)
+            .RegisterHighlight("着色器模组和骨骼变形器的多个改进已完成。"u8)
+            .RegisterHighlight("IMC组现在允许关闭默认条目中已启用的属性。"u8)
+            .RegisterImportant("移除了“更新Bibo”按钮。由于旧模组需要更新，这一功能已经多余。"u8)
+            .RegisterEntry("点击该按钮通常对新模组弊大于利。"u8, 1)
+            .RegisterEntry("如果你仍然需要批量迁移模型中的材质，高级编辑中的材质指定选项卡仍然可以用于此操作。"u8, 1)
+            .RegisterEntry("“画面角色”选项卡已更新并改进，现在可以以更有用的形式显示模组的实际路径。"u8)
+            .RegisterImportant("模型导入/导出功能暂时禁用，直到完成与「金曦之遗辉」相关的更改。"u8)
+            .RegisterHighlight("现在可以通过右键点击状态，在模组的合集选项卡中更改模组状态。"u8)
+            .RegisterHighlight("模组中更改的物品现在会在物品交换选项卡中优先显示，并高亮显示。"u8)
+            .RegisterEntry("改进了路径处理，考虑了大小写敏感性。"u8)
+            .RegisterEntry("修正了在文件夹没有匹配时，负搜索匹配的问题。"u8)
+            .RegisterEntry("相同优先级的模组选项组现在按反向索引顺序应用。（1.2.0.12）"u8)
+            .RegisterEntry("修正了高级编辑窗口标题中显示缺失文件的问题。（1.2.0.8）"u8)
+            .RegisterEntry("修正了角色在钓鱼时重绘导致的部分软锁问题。请尽量不要这样做。（1.2.0.7）"u8)
+            .RegisterEntry("改进了某些职业的无效副手IMC文件的处理。（1.2.0.6）"u8)
+            .RegisterEntry("为UI类别的文件添加了自动重复功能，因其不唯一时会导致崩溃。（1.2.0.5）"u8)
+            .RegisterEntry("模组导入弹出窗口完成后，现在可以通过点击窗口外部关闭。（1.2.0.5）"u8)
+            .RegisterEntry("修正了模组标准化跳过默认选项的问题。（1.2.0.5）"u8)
+            .RegisterEntry("改进了支持信息的输出。（1.1.1.5）"u8)
+            .RegisterEntry("彻底重构了元数据操作的处理。（1.1.1.3）"u8)
+            .RegisterEntry("添加了禁用在登录大厅和美容师处显示模组的配置选项。（1.1.1.1）"u8)
+            .RegisterEntry("修正了添加模组API和根目录的问题。（1.1.1.2）"u8)
+            .RegisterEntry("修正了模组合并器文件查找和大小写的问题。（1.1.1.2）"u8)
+            .RegisterEntry("修正了在某些情况下，文件保存时模组合并或物品交换无法生效的问题。（1.1.1.2）"u8);
 
     private static void Add1_1_1_0(Changelog log)
-        => log.NextVersion("Version 1.1.1.0"u8)
-            .RegisterHighlight("Filtering for mods is now tokenized and can filter for multiple things at once, or exclude specific things."u8)
-            .RegisterEntry("Hover over the filter to see the new available options in the tooltip."u8, 1)
-            .RegisterEntry("Be aware that the tokenization changed the prior behavior slightly."u8,    1)
-            .RegisterEntry("This is open to improvements, if you have any ideas, let me know!"u8,      1)
-            .RegisterHighlight("Added initial identification of characters in the login-screen by name."u8)
+        => log.NextVersion("版本 1.1.1.0"u8)
+            .RegisterHighlight("模组的筛选现在被标记化，现在可以同时筛选多个条件或排除特定条件。"u8)
+            .RegisterEntry("鼠标悬停在筛选器上可在工具提示中查看新的可用选项。"u8, 1)
+            .RegisterEntry("请注意，标记化稍微改变了之前的行为。"u8, 1)
+            .RegisterEntry("此功能仍可改进，如果你有任何想法，请告诉我！"u8, 1)
+            .RegisterHighlight("新增了登录界面角色按名字识别的初始功能。"u8)
             .RegisterEntry(
-                "Those characters can not be redrawn and re-use some things, so this may not always behave as expected, but should work in general. Let me know if you encounter edge cases!"u8,
-                1)
-            .RegisterEntry("Added functionality for IMC groups to apply to all variants for a model instead of a specific one."u8)
-            .RegisterEntry("Improved the resource tree view with filters and incognito mode. (by Ny)"u8)
-            .RegisterEntry("Added a tooltip to the global EQP condition."u8)
-            .RegisterEntry(
-                "Fixed the new worlds not being identified correctly because Square Enix could not be bothered to turn them public."u8)
-            .RegisterEntry("Fixed model import getting stuck when doing weight adjustments. (by ackwell)"u8)
-            .RegisterEntry("Fixed an issue with dye previews in the material editor not applying."u8)
-            .RegisterEntry("Fixed an issue with collections not saving on renames."u8)
-            .RegisterEntry("Fixed an issue parsing collections with settings set to negative values, which should now be set to 0."u8)
-            .RegisterEntry("Fixed an issue with the accessory VFX addition."u8)
-            .RegisterEntry("Fixed an issue with GMP animation type entries."u8)
-            .RegisterEntry("Fixed another issue with the mod merger."u8)
-            .RegisterEntry("Fixed an issue with IMC groups and IPC."u8)
-            .RegisterEntry("Fixed some issues with the capitalization of the root directory."u8)
-            .RegisterEntry("Fixed IMC attribute tooltips not appearing for disabled checkboxes."u8)
-            .RegisterEntry("Added GetChangedItems IPC for single mods. (1.1.0.2)"u8)
-            .RegisterEntry("Fixed an issue with creating unnamed collections. (1.1.0.2)"u8)
-            .RegisterEntry("Fixed an issue with the mod merger. (1.1.0.2)"u8)
-            .RegisterEntry("Fixed the global EQP entry for rings checking for bracelets instead of rings. (1.1.0.2)"u8)
-            .RegisterEntry("Fixed an issue with newly created collections not being added to the collection list. (1.1.0.1)"u8);
+                "这些角色无法被重绘，并且复用了一些资源，因此可能不会始终如预期运行，但总体应该可以工作。如果遇到特殊情况，请告诉我！"u8, 1)
+            .RegisterEntry("为IMC组添加了适用于所有模型变体的功能，而不是仅针对特定的变体。"u8)
+            .RegisterEntry("为筛选器和隐身模式改进了资源树视图。（感谢Ny）"u8)
+            .RegisterEntry("为全局EQP条件添加了工具提示。"u8)
+            .RegisterEntry("修正了由于Square Enix没有将新世界公开而导致无法正确识别的问题。"u8)
+            .RegisterEntry("修正了模型导入在进行权重调整时卡住的问题。（感谢ackwell）"u8)
+            .RegisterEntry("修正了材质编辑器中的染色预览无法应用的问题。"u8)
+            .RegisterEntry("修正了重命名时集合无法保存的问题。"u8)
+            .RegisterEntry("修正了合集设置为负值时解析合集的问题，现在应将其设为0。"u8)
+            .RegisterEntry("修正了配件VFX添加的问题。"u8)
+            .RegisterEntry("修正了GMP动画类型条目中的问题。"u8)
+            .RegisterEntry("修正了模组合并器中的另一个问题。"u8)
+            .RegisterEntry("修正了IMC组和IPC的问题。"u8)
+            .RegisterEntry("修正了根目录大小写的问题。"u8)
+            .RegisterEntry("修正了IMC属性工具提示未出现在禁用的复选框旁边的问题。"u8)
+            .RegisterEntry("为单个模组添加了获取更改项目的IPC功能。（1.1.0.2）"u8)
+            .RegisterEntry("修正了创建未命名合集时的问题。（1.1.0.2）"u8)
+            .RegisterEntry("修正了模组合并器的问题。（1.1.0.2）"u8)
+            .RegisterEntry("修正了全局EQP条目检查戒指时错误地检查手镯的问题。（1.1.0.2）"u8)
+            .RegisterEntry("修正了新创建的合集未被添加到集合列表中的问题。（1.1.0.1）"u8);
 
     private static void Add1_1_0_0(Changelog log)
-        => log.NextVersion("Version 1.1.0.0"u8)
+        => log.NextVersion("版本 1.1.0.0"u8)
             .RegisterImportant(
-                "This update comes, again, with a lot of very heavy backend changes (collections and groups) and thus may introduce new issues."u8)
-            .RegisterEntry("Updated to .net8 and XIV 6.58, using some new framework facilities to improve performance and stability."u8)
+                "此更新再次带来了大量非常重要的后端更改（合集和组），因此可能会引入新问题。"u8)
+            .RegisterEntry("更新至 .NET 8 和 XIV 6.58，利用了一些新的框架功能来提高性能和稳定性。"u8)
             .RegisterHighlight(
-                "Added an experimental crash handler that is supposed to write a Penumbra.log file when the game crashes, containing Penumbra-specific information."u8)
-            .RegisterEntry("This is disabled by default. It can be enabled in Advanced Settings."u8, 1)
-            .RegisterHighlight("Collections now have associated GUIDs as identifiers instead of their names, so they can now be renamed."u8)
-            .RegisterEntry("Migrating those collections may introduce issues, please let me know as soon as possible if you encounter any."u8,
-                1)
-            .RegisterEntry("A permanent (non-rolling) backup should be created before the migration in case of any issues."u8, 1)
+                "新增了一个实验性的崩溃处理程序，当游戏崩溃时，它应该会写入一个 Penumbra.log 文件，其中包含特定于 Penumbra 的信息。"u8)
+            .RegisterEntry("默认情况下已禁用。可以在高级设置中启用此功能。"u8, 1)
+            .RegisterHighlight("合集现在具有关联的 GUID 作为标识符，而不是它们的名称，因此现在可以重命名它们。"u8)
+            .RegisterEntry("迁移这些合集可能会引入问题，请在遇到任何问题时尽快告诉我。"u8, 1)
+            .RegisterEntry("在迁移之前应创建永久性（非滚动性）备份，以防出现任何问题。"u8,                 1)
             .RegisterHighlight(
-                "Added predefined tags that can be setup in the Settings tab and can be more easily applied or removed from mods. (by DZD)"u8)
+                "添加了可以在设置选项卡中设置并可以更轻松地应用或移除的预定义标签。（由 DZD 提供）"u8)
             .RegisterHighlight(
-                "A total rework of how options and groups are handled internally, and introduction of the first new group type, the IMC Group."u8)
+                "彻底重做了内部选项和组处理的方式，并引入了第一个新的组类型，变体IMC 组。"u8)
             .RegisterEntry(
-                "Mod Creators can add a IMC Group to their mod that controls a single IMC Manipulation, so they can provide options for the separate attributes for it."u8,
-                1)
-            .RegisterEntry(
-                "This makes it a lot easier to have combined options: No need for 'A', 'B' and 'AB', you can just define 'A' and 'B' and skip their combinations"u8,
-                1)
-            .RegisterHighlight("A new type of Meta Manipulation was added, 'Global EQP Manipulation'."u8)
-            .RegisterEntry(
-                "Global EQP Manipulations allow accessories to make other equipment pieces not hide them, e.g. whenever a character is wearing a specific Bracelet, neither body nor hand items will ever hide bracelets."u8,
+                "模组创建者可以在他们的模组中添加一个 变体IMC 组，用于控制单个 变体IMC 操作，从而为其提供独立属性的选项。"u8,
                 1)
             .RegisterEntry(
-                "This can be used if something like a jacket or a stole is put onto an accessory to prevent it from being hidden in general."u8,
+                "这使得组合选项变得更容易：无需定义 'A'、'B' 和 'AB'，您只需定义 'A' 和 'B'，并跳过它们的组合。"u8,
+                1)
+            .RegisterHighlight("新增了一种新类型的元数据操作，'全局装备参数设置 EQP 操作'。"u8)
+            .RegisterEntry(
+                "全局 EQP 操作允许配饰不被其他装备隐藏，例如，每当角色佩戴特定的手镯时，无论是身体还是手部物品都不会隐藏手镯。"u8,
                 1)
             .RegisterEntry(
-                "The first empty option in a single-select option group imported from a TTMP will now keep its location instead of being moved to the first option."u8)
-            .RegisterEntry("Further empty options are still removed."u8, 1)
+                "如果将类似夹克或披肩的物品放在配饰上，可以防止其被隐藏。"u8,
+                1)
+            .RegisterEntry(
+                "从 TTMP 导入的单选选项组中的第一个空选项现在会保持其位置，而不是被移动到第一个选项。"u8)
+            .RegisterEntry("其他空选项仍然会被移除。"u8, 1)
             .RegisterHighlight(
-                "Added a field to rename mods directly from the mod selector context menu, instead of moving them in the filesystem."u8)
-            .RegisterEntry("You can choose which rename field (none, either one or both) to display in the settings."u8, 1)
-            .RegisterEntry("Added the characterglass.shpk shader file to special shader treatment to fix issues when replacing it. (By Ny)"u8)
-            .RegisterEntry("Made it more obvious if a user has not set their root directory yet."u8)
+                "在模组选择器上下文菜单中新增了一个字段，可以直接重命名模组，而不是在文件系统中移动它们。"u8)
+            .RegisterEntry("您可以在设置中选择要显示的重命名字段（无、任一或两者）。"u8, 1)
+            .RegisterEntry("将 characterglass.shpk 着色文件添加到特殊着色处理以解决替换时的问题。（由 Ny 提供）"u8)
+            .RegisterEntry("如果用户尚未设置根目录，则更明显地显示该信息。"u8)
             .RegisterEntry(
-                "You can now paste your current clipboard text into the mod selector filter with a simple right-click as long as it is not focused."u8)
+                "现在，只要未聚焦，您可以通过简单的右键单击将当前剪贴板文本粘贴到模组选择器筛选器中。"u8)
             .RegisterHighlight(
-                "Added the option to display VFX for accessories if added via IMC edits, which the game does not do inherently (by Ocealot)."u8)
-            .RegisterEntry("Added support for reading and writing the new material and model file formats from the benchmark."u8)
+                "新增了选项，如果通过 变体IMC 编辑添加配饰，则可以显示配饰的 VFX，这是游戏本身不具备的功能。（由 Ocealot 提供）"u8)
+            .RegisterEntry("新增对从DT基准测试读取和写入新材料和模型文件格式的支持。"u8)
             .RegisterEntry(
-                "Added the option to hide Machinist Offhands from the Changed Items tabs (because any change to it changes ALL of them), which is on by default."u8)
-            .RegisterEntry("Removed the auto-generated descriptions for newly created groups in Penumbra."u8)
+                "新增了在更改项目标签中隐藏机工副手的选项（因为对其进行任何更改都会同时更改所有这些项目），默认情况下开启。"u8)
+            .RegisterEntry("移除了在 Penumbra 中新创建组的自动生成描述。"u8)
             .RegisterEntry(
-                "Made some improvements to the Advanced Editing window, for example a much better and more performant Hex Viewer for unstructured data was added."u8)
-            .RegisterEntry("Various improvements to model import/export by ackwell (throughout all patches)."u8)
+                "对高级编辑窗口进行了一些改进，例如添加了更好且性能更佳的非结构化数据的十六进制查看器。"u8)
+            .RegisterEntry("由 ackwell 进行的模型导入/导出的各种改进（在所有补丁中）。"u8)
+            .RegisterEntry("在高级编辑窗口中，悬停在其他选项中的元数据操作上现在会显示这些选项的列表。"u8)
+            .RegisterEntry("彻底重构了 API 和 IPC 结构。"u8)
+            .RegisterImportant("这意味着一些与 Penumbra 交互的插件在更新之前可能无法正常工作。"u8, 1)
+            .RegisterEntry("解决了当绘制添加项过大时，UI IPC 可能会导致所有设置移位的问题。"u8)
+            .RegisterEntry("修复了重新加载模组后不能确保该模组的设置后续正确的问题。"u8)
+            .RegisterEntry("修复了一些压缩文件大小的问题。"u8)
+            .RegisterEntry("修复了合并和去重模组时的问题。"u8)
+            .RegisterEntry("修复了扫描没有文件夹访问权限的模组时崩溃的问题。"u8)
             .RegisterEntry(
-                "Hovering over meta manipulations in other options in the advanced editing window now shows a list of those options."u8)
-            .RegisterEntry("Reworked the API and IPC structure heavily."u8)
-            .RegisterImportant("This means some plugins interacting with Penumbra may not work correctly until they update."u8, 1)
-            .RegisterEntry("Worked around the UI IPC possibly displacing all settings when the drawn additions became too big."u8)
-            .RegisterEntry("Fixed an issue where reloading a mod did not ensure settings for that mod being correct afterwards."u8)
-            .RegisterEntry("Fixed some issues with the file sizes of compressed files."u8)
-            .RegisterEntry("Fixed an issue with merging and deduplicating mods."u8)
-            .RegisterEntry("Fixed a crash when scanning for mods without access rights to the folder."u8)
-            .RegisterEntry(
-                "Made plugin conform to Dalamud requirements by adding a punchline and another button to open the menu from the installer."u8)
-            .RegisterEntry("Added an option to automatically redraw the player character when saving files. (1.0.0.8)"u8)
-            .RegisterEntry("Fixed issue with manipulating mods not triggering some events.  (1.0.0.7)"u8)
-            .RegisterEntry("Fixed issue with temporary mods not triggering some events.  (1.0.0.6)"u8)
-            .RegisterEntry("Fixed issue when renaming mods while the advanced edit window is open. (1.0.0.6)"u8)
-            .RegisterEntry("Fixed issue with empty option groups. (1.0.0.5)"u8)
-            .RegisterEntry("Fixed issues with cutscene character identification. (1.0.0.4)"u8)
-            .RegisterEntry("Added locale environment information to support info. (1.0.0.4)"u8)
-            .RegisterEntry("Fixed an issue with copied mod settings in IPC missing unused settings. (1.0.0.3)"u8);
+                "使插件符合 Dalamud 要求，通过添加 punchline 和另一个按钮来从安装程序中打开菜单。"u8)
+            .RegisterEntry("添加了一个选项，在保存文件时自动重新绘制玩家角色。（1.0.0.8）"u8)
+            .RegisterEntry("修复了操作模组不触发某些事件的问题。（1.0.0.7）"u8)
+            .RegisterEntry("修复了临时模组不触发某些事件的问题。（1.0.0.6）"u8)
+            .RegisterEntry("修复了在高级编辑窗口打开时重命名模组的问题。（1.0.0.6）"u8)
+            .RegisterEntry("修复了空选项组的问题。（1.0.0.5）"u8)
+            .RegisterEntry("修复了剧情人物识别的问题。（1.0.0.4）"u8)
+            .RegisterEntry("添加了本地环境信息以更好的提交支持信息。（1.0.0.4）"u8)
+            .RegisterEntry("修复了在 IPC 中复制的模组设置缺少未使用设置的问题。（1.0.0.3）"u8);
 
     private static void Add1_0_0_0(Changelog log)
         => log.NextVersion("Version 1.0.0.0"u8)
@@ -1242,20 +1246,11 @@ public class PenumbraChangelog : IUiService
         => log.NextVersion(""u8);
 
     private (int, ChangeLogDisplayType) ConfigData()
-        => (_config.Ephemeral.LastSeenVersion, _config.ChangeLogDisplayType);
+        => (_config.Ephemeral.LastSeenVersion, _config.Main.ChangeLogDisplayType);
 
     private void Save(int version, ChangeLogDisplayType type)
     {
-        if (_config.Ephemeral.LastSeenVersion != version)
-        {
-            _config.Ephemeral.LastSeenVersion = version;
-            _config.Ephemeral.Save();
-        }
-
-        if (_config.ChangeLogDisplayType != type)
-        {
-            _config.ChangeLogDisplayType = type;
-            _config.Save();
-        }
+        _config.Ephemeral.LastSeenVersion = version;
+        _config.Main.ChangeLogDisplayType = type;
     }
 }

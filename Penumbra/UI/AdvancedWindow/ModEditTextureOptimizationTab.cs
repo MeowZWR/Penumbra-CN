@@ -1,4 +1,3 @@
-#if DEBUG
 using ImSharp;
 using Lumina.Data.Files;
 using Lumina.Extensions;
@@ -12,8 +11,8 @@ using Penumbra.UI.ManagementTab;
 
 namespace Penumbra.UI.AdvancedWindow;
 
-/// <summary> DEBUG-only advanced editor tab: scan and batch-restrict texture dimensions for the current mod. </summary>
-public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptimization optimization, Configuration config)
+/// <summary> Advanced editor tab: scan and batch-restrict texture dimensions for the current mod. </summary>
+public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptimization optimization)
 {
     private readonly List<Candidate> _candidates = [];
     private readonly HashSet<string> _selected   = new(StringComparer.OrdinalIgnoreCase);
@@ -97,12 +96,12 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
             _selected.Clear();
 
         Im.Line.Same();
-        var modifierOk = config.DeleteModModifier.IsActive();
+        var modifierOk = LunaStyle.Modifier.Destructive.Active;
         var canProcess = !busy && _selected.Count > 0 && editor.Mod is not null;
         Utf8StringHandler<TextStringHandlerBuffer> processTt = !canProcess
             ? "请先扫描并选中要处理的纹理。"
             : !modifierOk
-                ? $"按住 {config.DeleteModModifier} 键以处理选中纹理。"
+                ? $"按住 {LunaStyle.Modifier.Destructive} 键以处理选中纹理。"
                 : $"将选中纹理分辨率限制为 {_dimensionLimit}×{_dimensionLimit}（保持原压缩格式）。";
         if (ImEx.Button($"处理选中 ({_selected.Count})", Vector2.Zero, processTt, !canProcess || !modifierOk))
             StartProcess();
@@ -399,4 +398,3 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
         _busy        = false;
     }
 }
-#endif

@@ -13,7 +13,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
     {
         Buttons.AddButton(new AddButton(collectionManager.Storage),                                             100);
         Buttons.AddButton(new DuplicateButton(collectionManager.Storage, collectionManager.Active),             50);
-        Buttons.AddButton(new DeleteButton(collectionManager.Storage, collectionManager.Active, configuration), 0);
+        Buttons.AddButton(new DeleteButton(collectionManager.Storage, collectionManager.Active), 0);
     }
 
     public int Count
@@ -42,7 +42,7 @@ public sealed class CollectionButtonFooter : ButtonFooter
         }
     }
 
-    public sealed class DeleteButton(CollectionStorage collections, ActiveCollections active, Configuration config)
+    public sealed class DeleteButton(CollectionStorage collections, ActiveCollections active)
         : BaseIconButton<AwesomeIcon>
     {
         public override AwesomeIcon Icon
@@ -53,15 +53,15 @@ public sealed class CollectionButtonFooter : ButtonFooter
 
         public override bool Enabled
             => collections.DefaultNamed != active.Current
-             && config.DeleteModModifier.IsActive();
+             && LunaStyle.Modifier.Destructive.Active;
 
         public override void DrawTooltip()
         {
             Im.Text("删除当前合集。"u8);
             if (collections.DefaultNamed == active.Current)
                 Im.Text("默认合集不能被删除。"u8);
-            else if (!config.DeleteModModifier.IsActive())
-                Im.Text($"按住 {config.DeleteModModifier} 点击删除当前合集。");
+            else if (!LunaStyle.Modifier.Destructive.Active)
+                Im.Text($"按住 {LunaStyle.Modifier.Destructive} 点击删除当前合集。");
         }
 
         public override void OnClick()

@@ -53,8 +53,7 @@ public class TutorialService(EphemeralConfig config) : Luna.IUiService
           + "该文件夹应为空文件夹，且不要有其他程序向其中写入数据。"u8)
         .Register("初始设置，步骤2：启用模组"u8, "若尚未启用模组，请记得勾选启用，否则模组不会生效。"u8)
         .Deprecated()
-        .Register("常规设置"u8, "开始深入使用前，建议先浏览这些设置，往往很有帮助。\n\n"u8
-          + "若暂时看不懂其中某些项，可以稍后再回来查看。"u8)
+        .Deprecated()
         .Register("初始设置，步骤3：合集"u8, "合集是你已安装模组的各项设置的集合。\n\n"u8
           + "接下来请前往此处。\n\n"u8
           + "在完成根目录（模组目录）设置后，请打开本页以继续教程。"u8)

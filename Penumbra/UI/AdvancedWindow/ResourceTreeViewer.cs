@@ -66,14 +66,15 @@ public class ResourceTreeViewer(
         }
         else if (_task.IsCompletedSuccessfully)
         {
-            var debugMode = config.DebugMode;
+            var debugMode = config.Advanced.DebugMode;
             foreach (var (index, tree) in _task.Result.Index())
             {
                 var category = Classify(tree);
-                if (!_categoryFilter.HasFlag(category) || !tree.Name.Contains(config.Filters.OnScreenCharacterFilter, StringComparison.OrdinalIgnoreCase))
+                if (!_categoryFilter.HasFlag(category)
+                 || !tree.Name.Contains(config.Filters.OnScreenCharacterFilter, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                using (ImGuiColor.Text.Push(CategoryColor(category).Value()))
+                using (ImGuiColor.Text.Push(CategoryColor(category).Vector))
                 {
                     var isOpen = Im.Tree.Header($"{(incognito.IncognitoMode ? tree.AnonymizedName : tree.Name)}###{index}",
                         index is 0 ? TreeNodeFlags.DefaultOpen : 0);
@@ -87,53 +88,49 @@ public class ResourceTreeViewer(
                 using var id = Im.Id.Push(index);
 
                 ImEx.TextFrameAligned($"合集：{(incognito.IncognitoMode ? tree.AnonymizedCollectionName : tree.CollectionName)}");
-
-                var isOtherPlayer = tree.PlayerRelated && !tree.LocalPlayerRelated;
-                if (!isOtherPlayer)
+                Im.Line.Same();
+                if (ImEx.Button("导出角色包"u8,
+                        "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
                 {
-                    Im.Line.Same();
-                    if (ImEx.Button("导出角色包"u8,
-                            "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
+                    pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, null, _note).ContinueWith(t =>
                     {
-                        pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, null, _note).ContinueWith(t =>
-                        {
-                            var (success, text) = t.Result;
+                        var (success, text) = t.Result;
 
-                            if (success)
-                                Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
-                            else
-                                Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
-                        });
-                        _note = string.Empty;
-                    }
-
-                    Im.Line.SameInner();
-                    if (ImEx.Button("导出到..."u8,
-                            "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
-                        fileDialog.OpenSavePicker("导出角色包...",
-                            $"Penumbra Mod Packs{{.pcp,.pmp}},{config.PcpSettings.PcpExtension},Any File{{.*}}",
-                            PcpService.ModName(tree.Name, _note, DateTime.Now),
-                            config.PcpSettings.PcpExtension,
-                            (selected, path) =>
-                            {
-                                if (!selected)
-                                    return;
-
-                                pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, path, _note).ContinueWith(t =>
-                                {
-                                    var (success, text) = t.Result;
-
-                                    if (success)
-                                        Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
-                                    else
-                                        Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
-                                });
-                                _note = string.Empty;
-                            }, config.ExportDirectory, false);
-                    Im.Line.SameInner();
-                    Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
-                    Im.Input.Text("##note"u8, ref _note, "导出备注..."u8);
+                        if (success)
+                            Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
+                        else
+                            Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
+                    });
+                    _note = string.Empty;
                 }
+
+                Im.Line.SameInner();
+                if (ImEx.Button("导出到..."u8,
+                        "注意：如果角色仍然存在，这将重新计算角色的当前数据，而不会使用缓存数据。"u8))
+                    fileDialog.OpenSavePicker("导出角色包...",
+                        $"Penumbra Mod Packs{{.pcp,.pmp}},{config.Io.PcpExtension},Any File{{.*}}",
+                        PcpService.ModName(tree.Name, _note, DateTime.Now),
+                        config.Io.PcpExtension,
+                        (selected, path) =>
+                        {
+                            if (!selected)
+                                return;
+
+                            pcpService.CreatePcp((ObjectIndex)tree.GameObjectIndex, path, _note).ContinueWith(t =>
+                            {
+                                var (success, text) = t.Result;
+
+                                if (success)
+                                    Penumbra.Messager.NotificationMessage($"已创建 {text}。", NotificationType.Success, false);
+                                else
+                                    Penumbra.Messager.NotificationMessage(text, NotificationType.Error, false);
+                            });
+                            _note = string.Empty;
+                        }, config.Io.ExportDirectory, false);
+                Im.Line.SameInner();
+                Im.Item.SetNextWidth(Im.ContentRegion.Available.X);
+                Im.Input.Text("##note"u8, ref _note, "导出备注..."u8);
+
 
                 using var table = Im.Table.Begin("##ResourceTree"u8, 4,
                     TableFlags.SizingFixedFit | TableFlags.RowBackground);
@@ -187,7 +184,7 @@ public class ResourceTreeViewer(
             foreach (var category in TreeCategory.Values)
             {
                 using var id = Im.Id.Push((int)category);
-                using var c  = ImGuiColor.CheckMark.Push(CategoryColor(category).Value());
+                using var c  = ImGuiColor.CheckMark.Push(CategoryColor(category).Vector);
                 Im.Checkbox(StringU8.Empty, ref _categoryFilter, category);
                 Im.Tooltip.OnHover(CategoryFilterDescription(category));
                 Im.Line.Same(0.0f, checkSpacing);
@@ -256,24 +253,26 @@ public class ResourceTreeViewer(
     private void DrawNodes(in Im.TableDisposable table, IEnumerable<ResourceNode> resourceNodes, int level, nint pathHash,
         ChangedItemIconFlag parentFilterIconFlag)
     {
-        var debugMode   = config.DebugMode;
+        var debugMode   = config.Advanced.DebugMode;
         var frameHeight = Im.Style.FrameHeight;
 
         foreach (var (index, resourceNode) in resourceNodes.Index())
         {
             var nodePathHash = unchecked(pathHash + resourceNode.ResourceHandle);
-
-            var visibility = GetNodeVisibility(nodePathHash, resourceNode, parentFilterIconFlag);
+            var visibility   = GetNodeVisibility(nodePathHash, resourceNode, parentFilterIconFlag);
             if (visibility == NodeVisibility.Hidden)
                 continue;
 
             using var mutedColor = ImGuiColor.Text.Push(Im.Style[ImGuiColor.Text].WithAlpha(0.5f), resourceNode.Internal);
 
-            var filterIcon = resourceNode.IconFlag != 0 ? resourceNode.IconFlag : parentFilterIconFlag;
+            var filterIcon = resourceNode.IconFlag is not 0 ? resourceNode.IconFlag : parentFilterIconFlag;
 
             using var id = Im.Id.Push(index);
             table.NextColumn();
             var unfolded = _unfolded.Contains(nodePathHash);
+            if (level is 0 && index is not 0)
+                table.DrawHorizontalSeparator();
+
             using (Im.Indent(level))
             {
                 var hasVisibleChildren = resourceNode.Children.Any(child
@@ -343,7 +342,7 @@ public class ResourceTreeViewer(
                     var       modName = $"[{(hasMod ? mod!.Name : resourceNode.ModName)}]";
                     var       textPos = Im.Cursor.X + Im.Font.CalculateSize(modName).X + Im.Style.ItemInnerSpacing.X;
                     using var group   = Im.Group();
-                    using (ImGuiColor.Text.Push((hasMod ? ColorId.NewMod : ColorId.DisabledMod).Value()))
+                    using (ImGuiColor.Text.Push((hasMod ? ColorId.NewMod : ColorId.DisabledMod).Vector))
                     {
                         Im.Selectable(modName, false, SelectableFlags.AllowOverlap, Im.ContentRegion.Available with { Y = frameHeight });
                     }
@@ -526,7 +525,7 @@ public class ResourceTreeViewer(
             if (Im.Menu.Item("复制游戏对象地址"u8))
                 Im.Clipboard.Set($"0x{tree.GameObjectAddress:X}");
             if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("检查游戏对象"u8))
-                Penumbra.Dynamis.InspectObject(tree.GameObjectAddress, $"{tree.Name} Game Object");
+                Penumbra.Dynamis.InspectObject(tree.GameObjectAddress, $"{tree.Name} 游戏对象");
             if (tree.DrawObjectAddress != nint.Zero)
             {
                 if (Im.Menu.Item("复制绘制对象地址"u8))
@@ -558,7 +557,7 @@ public class ResourceTreeViewer(
             {
                 if (Im.Menu.Item("复制对象地址"u8))
                     Im.Clipboard.Set($"0x{node.ObjectAddress:X}");
-                if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("Inspect Object"u8))
+                if (Penumbra.Dynamis.IsSubscribed && Im.Menu.Item("检查对象"u8))
                     Penumbra.Dynamis.InspectObject(node.ObjectAddress, $"{node.Name} 对象");
             }
         }
@@ -595,7 +594,7 @@ public class ResourceTreeViewer(
         => category switch
         {
             TreeCategory.LocalPlayer  => "显示你和从属于你的对象（坐骑、宠物、时尚配饰、战斗伙伴等等）。"u8,
-            TreeCategory.Player       => "显示其他玩家和从属于他们的对象"u8,
+            TreeCategory.Player       => "显示其他玩家和从属于他们的对象。"u8,
             TreeCategory.Networked    => "显示由游戏服务器处理的NPC对象。"u8,
             TreeCategory.NonNetworked => "显示由本地处理的NPC对象。"u8,
             _                         => throw new ArgumentException(),

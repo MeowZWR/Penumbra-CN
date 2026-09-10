@@ -35,7 +35,7 @@ public sealed class CollectionPanel(
     private readonly ActiveCollections _active = manager.Active;
     private readonly IndividualAssignmentUi _individualAssignmentUi = new(communicator, actors, manager);
     private readonly InheritanceUi _inheritanceUi = new(manager, incognito);
-    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
+    private readonly IFontHandle _nameFont = pi.UiBuilder.FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Jupiter23));
 
     private static readonly IReadOnlyDictionary<CollectionType, (StringU8 Name, Vector4 Border)> Buttons      = CreateButtons();
     private static readonly IReadOnlyList<(CollectionType, bool, bool, StringU8, Vector4)>       AdvancedTree = CreateTree();
@@ -70,7 +70,7 @@ public sealed class CollectionPanel(
         DrawSimpleCollectionButton(CollectionType.MaleNonPlayerCharacter,   buttonWidth);
         DrawSimpleCollectionButton(CollectionType.FemaleNonPlayerCharacter, buttonWidth);
 
-        ImEx.TextMultiColored("独立 "u8, ColorId.NewMod.Value())
+        ImEx.TextMultiColored("独立 "u8, ColorId.NewMod.Value)
             .Then("分配优先级高于其他任何分配，并且只能应用于一个特定的角色或怪物。"u8)
             .End();
         Im.Dummy(1);
@@ -299,15 +299,15 @@ public sealed class CollectionPanel(
         collection ??= _active.ByType(type, id);
         using var color = ImGuiColor.Button.Push(
                 collection is null
-                    ? ColorId.NoAssignment.Value()
+                    ? ColorId.NoAssignment.Vector
                     : redundancy.Length > 0
-                        ? ColorId.RedundantAssignment.Value()
+                        ? ColorId.RedundantAssignment.Vector
                         : collection == _active.Current
-                            ? ColorId.SelectedCollection.Value()
+                            ? ColorId.SelectedCollection.Vector
                             : collection == ModCollection.Empty
-                                ? ColorId.NoModsAssignment.Value()
-                                : ImGuiColor.Button.Get(), !invalid)
-            .Push(ImGuiColor.Border, borderColor == 0 ? ImGuiColor.TextDisabled.Get().Color : borderColor);
+                                ? ColorId.NoModsAssignment.Vector
+                                : ImGuiColor.Button.Vector, !invalid)
+            .Push(ImGuiColor.Border, borderColor == 0 ? ImGuiColor.TextDisabled.Vector : borderColor);
         using var disabled = Im.Disabled(invalid);
         var       button   = Im.Button(text, width) || Im.Item.RightClicked();
         var       hovered  = redundancy.Length > 0 && Im.Item.Hovered();
@@ -319,7 +319,7 @@ public sealed class CollectionPanel(
             var name    = Name(collection);
             var size    = Im.Font.CalculateSize(name);
             var textPos = Im.Item.LowerRightCorner - size - Im.Style.FramePadding;
-            Im.Window.DrawList.Text(textPos, ImGuiColor.Text.Get().Color, name);
+            Im.Window.DrawList.Text(textPos, ImGuiColor.Text.Value, name);
             DrawContext(button, collection, type, id, text, suffix);
         }
 
@@ -368,7 +368,7 @@ public sealed class CollectionPanel(
                 case CollectionType.Default: Im.Text("优先级低于所有其他分配。"u8); break;
                 case CollectionType.Yourself:
                     ImEx.TextMultiColored("优先级低于 "u8)
-                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
                         .Then("分配。"u8)
                         .End();
                     break;
@@ -376,9 +376,9 @@ public sealed class CollectionPanel(
                     ImEx.TextMultiColored("优先级低于 "u8)
                         .Then("男性种族玩家"u8, LunaStyle.DiscordColor)
                         .Then(", "u8)
-                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value().Color)
-                        .Then("或 "u8)
-                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
                         .Then("分配。"u8)
                         .End();
                     break;
@@ -386,9 +386,9 @@ public sealed class CollectionPanel(
                     ImEx.TextMultiColored("优先级低于 "u8)
                         .Then("女性种族玩家"u8, LunaStyle.ReniColorActive)
                         .Then(", "u8)
-                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value().Color)
-                        .Then("或 "u8)
-                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("你的角色"u8, ColorId.HandledConflictMod.Value)
+                        .Then(", 或 "u8)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
                         .Then("分配。"u8)
                         .End();
                     break;
@@ -396,11 +396,11 @@ public sealed class CollectionPanel(
                     ImEx.TextMultiColored("优先级低于 "u8)
                         .Then("男性种族NPC"u8, LunaStyle.DiscordColor)
                         .Then(", "u8)
-                        .Then("儿童"u8, ColorId.FolderLine.Value().Color)
+                        .Then("儿童"u8, ColorId.FolderLine.Value)
                         .Then(", "u8)
                         .Then("老年人"u8, Colors.MetaInfoText)
                         .Then(", 或 "u8)
-                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
                         .Then("分配。"u8)
                         .End();
                     break;
@@ -408,11 +408,11 @@ public sealed class CollectionPanel(
                     ImEx.TextMultiColored("优先级低于 "u8)
                         .Then("女性种族NPC"u8, LunaStyle.ReniColorActive)
                         .Then(", "u8)
-                        .Then("儿童"u8, ColorId.FolderLine.Value().Color)
+                        .Then("儿童"u8, ColorId.FolderLine.Value)
                         .Then(", "u8)
                         .Then("老年人"u8, Colors.MetaInfoText)
                         .Then(", 或 "u8)
-                        .Then("独立 "u8, ColorId.NewMod.Value().Color)
+                        .Then("独立 "u8, ColorId.NewMod.Value)
                         .Then("分配。"u8)
                         .End();
                     break;
@@ -661,9 +661,9 @@ public sealed class CollectionPanel(
 
         table.SetupScrollFreeze(0, 1);
         table.SetupColumn(StringU8.Empty,            TableColumnFlags.WidthFixed, UiHelpers.IconButtonSize.X);
-        table.SetupColumn("未使用模组标识符"u8,       TableColumnFlags.WidthStretch);
-        table.SetupColumn("状态"u8,                  TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
-        table.SetupColumn("优先级"u8,                TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
+        table.SetupColumn("未使用模组标识符"u8, TableColumnFlags.WidthStretch);
+        table.SetupColumn("状态"u8,                 TableColumnFlags.WidthFixed, 1.75f * Im.Style.FrameHeight);
+        table.SetupColumn("优先级"u8,              TableColumnFlags.WidthFixed, 2.5f * Im.Style.FrameHeight);
         table.HeaderRow();
         string? delete = null;
         foreach (var (name, settings) in collection.Settings.Unused.OrderBy(n => n.Key))

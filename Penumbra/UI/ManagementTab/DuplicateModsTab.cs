@@ -7,7 +7,7 @@ using Penumbra.Mods.Manager;
 
 namespace Penumbra.UI.ManagementTab;
 
-public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager mods, CollectionStorage collections, Configuration config)
+public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager mods, CollectionStorage collections)
     : ITab<ManagementTabType>
 {
     public ReadOnlySpan<byte> Label
@@ -40,12 +40,12 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
         table.SetupColumn("模组目录"u8, TableColumnFlags.WidthStretch, 0.25f);
         table.SetupColumn("激活"u8, TableColumnFlags.WidthFixed, cache.Active.CalculateSize().X);
         table.SetupColumn("导入日期"u8, TableColumnFlags.WidthFixed, cache.Date.CalculateSize().X);
-        table.SetupColumn("路径"u8, TableColumnFlags.WidthStretch, 0.5f);
+        table.SetupColumn("Path"u8, TableColumnFlags.WidthStretch, 0.5f);
         table.SetupColumn("备注"u8, TableColumnFlags.WidthFixed, cache.Notes.CalculateSize().X + Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X);
         table.HeaderRow();
 
         var       lastDrawnName = StringU8.Empty;
-        var       disabled      = !config.DeleteModModifier.IsActive();
+        var       disabled      = !LunaStyle.Modifier.Destructive.Active;
         using var clipper       = new Im.ListClipper(cache.Items.Count, 0);
         foreach (var (index, item) in cache.Items.Index())
         {
@@ -58,7 +58,7 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
             }
 
             if (disabled)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {config.DeleteModModifier} 键以删除此模组。");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"按住 {LunaStyle.Modifier.Destructive} 键以删除此模组。");
             Im.Line.SameInner();
             if (ImEx.Icon.Button(LunaStyle.FolderIcon, "在文件资源管理器中打开此模组。"u8))
                 Process.Start(new ProcessStartInfo(item.Mod.ModPath.FullName) { UseShellExecute = true });
@@ -85,7 +85,7 @@ public sealed class DuplicateModsTab(ModConfigUpdater configUpdater, ModManager 
                 {
                     Im.Text("在合集["u8);
                     Im.Line.NoSpacing();
-                    Im.Text(collection.Identity.Name);                    
+                    Im.Text(collection.Identity.Name);
                     Im.Line.NoSpacing();
                     Im.Text("]中激活"u8);
                 }

@@ -347,12 +347,12 @@ public class ModPreviewImagePanel : IDisposable
         lock (_cacheLock)
         {
             bool isOverCount = _textureCache.Count > MaxCacheSize * 1.5;
-            bool isOverMemory = CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.9;
+            bool isOverMemory = CurrentMemoryUsage > _configuration.Ui.PreviewPanelMaxMemory * 0.9;
             
             if (isOverCount || isOverMemory)
             {
 #if DEBUG
-                Penumbra.Log.Debug($"[缓存管理] 准备清理缓存，当前数量: {_textureCache.Count}，最大允许: {MaxCacheSize}，当前内存: {CurrentMemoryUsage / 1024 / 1024}MB，最大允许: {_configuration.PreviewPanelMaxMemory / 1024 / 1024}MB");
+                Penumbra.Log.Debug($"[缓存管理] 准备清理缓存，当前数量: {_textureCache.Count}，最大允许: {MaxCacheSize}，当前内存: {CurrentMemoryUsage / 1024 / 1024}MB，最大允许: {_configuration.Ui.PreviewPanelMaxMemory / 1024 / 1024}MB");
 #endif
             }
             else
@@ -387,10 +387,10 @@ public class ModPreviewImagePanel : IDisposable
                 }
 
                 isOverCount = _textureCache.Count > MaxCacheSize * 1.5;
-                isOverMemory = CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.9;
+                isOverMemory = CurrentMemoryUsage > _configuration.Ui.PreviewPanelMaxMemory * 0.9;
             }
 
-            if (isOverMemory && CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.95)
+            if (isOverMemory && CurrentMemoryUsage > _configuration.Ui.PreviewPanelMaxMemory * 0.95)
             {
 #if DEBUG
                 Penumbra.Log.Warning($"[缓存管理] 非可见图片已全部清理，但内存仍严重超出限制。开始清理可见图片。当前: {_textureCache.Count}张，{CurrentMemoryUsage / 1024 / 1024}MB");
@@ -421,11 +421,11 @@ public class ModPreviewImagePanel : IDisposable
                         texture.OriginalTexture?.Dispose();
                     }
 
-                    isOverMemory = CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.95;
+                    isOverMemory = CurrentMemoryUsage > _configuration.Ui.PreviewPanelMaxMemory * 0.95;
                 }
             }
 
-            if (isOverMemory && CurrentMemoryUsage > _configuration.PreviewPanelMaxMemory * 0.95)
+            if (isOverMemory && CurrentMemoryUsage > _configuration.Ui.PreviewPanelMaxMemory * 0.95)
             {
                 Penumbra.Log.Error($"[缓存管理] 严重警告：清理后仍超出限制。当前: {_textureCache.Count}张，{CurrentMemoryUsage / 1024 / 1024}MB，加载中: {_loadingImages.Count}张");
             }
@@ -600,7 +600,7 @@ public class ModPreviewImagePanel : IDisposable
 
         // 计算允许的平均每张图片内存
         long averageMemoryPerImage = Math.Max(
-            _configuration.PreviewPanelMaxMemory / Math.Max(imageFiles.Count, 1), 
+            _configuration.Ui.PreviewPanelMaxMemory / Math.Max(imageFiles.Count, 1), 
             1024 * 1024 * 2); // 最小2MB每张图
 
         // 记录未缓存图片数量
@@ -655,14 +655,14 @@ public class ModPreviewImagePanel : IDisposable
                 var scrollbarWidth = Im.Style.ScrollbarSize;
                 var leftPadding = 0 * UiHelpers.Scale; // 减小左侧间距
                 var availableWidth = panelWidth - leftPadding - scrollbarWidth;
-                var spacing = _configuration.PreviewPanelImageSpacing * UiHelpers.Scale;
+                var spacing = _configuration.Ui.PreviewPanelImageSpacing * UiHelpers.Scale;
                 
                 // 计算每行可以显示的图片数量，确保至少为1
                 var imagesPerRow = 1;
-                if (availableWidth >= _configuration.PreviewPanelMinWidth)
+                if (availableWidth >= _configuration.Ui.PreviewPanelMinWidth)
                 {
                     var effectiveWidth = availableWidth - spacing * (imagesPerRow - 1);
-                    imagesPerRow = Math.Max(1, (int)(effectiveWidth / _configuration.PreviewImageMinWidth));
+                    imagesPerRow = Math.Max(1, (int)(effectiveWidth / _configuration.Ui.PreviewImageMinWidth));
                 }
 
                 // 如果图片数量少，调整布局以更好地利用空间
@@ -727,7 +727,7 @@ public class ModPreviewImagePanel : IDisposable
                     
                     if (neededResolution > cachedTexture.Resolution && 
                         !_loadingImages.Contains(path) && 
-                        CurrentMemoryUsage < _configuration.PreviewPanelMaxMemory * 0.9)
+                        CurrentMemoryUsage < _configuration.Ui.PreviewPanelMaxMemory * 0.9)
                     {
                         Task.Run(async () => 
                         {

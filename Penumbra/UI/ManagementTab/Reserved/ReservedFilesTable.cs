@@ -13,11 +13,10 @@ public sealed class ReservedFilesTable(
     ModManager mods,
     TextureManager textures,
     UiNavigator navigator,
-    Configuration config,
     ReservedFiles reservedFiles,
     ManagementLog<ReservedFiles> log)
     : TableBase<ReservedFileCacheObject, ScannerTabCache<ReservedFileCacheObject, ReservedFileRedirection>>(new StringU8("##fft"u8),
-        new ActionColumn(reservedFiles, config),
+        new ActionColumn(reservedFiles),
         new GamePathColumn<ReservedFileCacheObject, ReservedFileRedirection> { Label = new StringU8("游戏路径"u8) },
         new StateColumn { Label                                                      = new StringU8("状态"u8) },
         new TargetColumn<ReservedFileCacheObject, ReservedFileRedirection> { Label   = new StringU8("目标文件"u8) },
@@ -32,14 +31,14 @@ public sealed class ReservedFilesTable(
     {
         cache.DrawScanButtons();
 
-        var active = config.IncognitoModifier.IsActive();
+        var active = LunaStyle.Modifier.Misclick.Active;
         if (ImEx.Button("移除所有简单重定向"u8, default, !active))
             reservedFiles.RemoveRedundant(cache, false);
 
         if (Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
         {
             using var tt = Im.Tooltip.Begin();
-            Im.Text("执行此操作将："u8);
+            Im.Text("执行此操作将"u8);
             Im.BulletText("移除所有列出的文件替换(File Swaps)，因为这些配置不合理。"u8);
             Im.BulletText("移除所有状态为“损坏(Broken)”的重定向，因为它们无法被读取且无效。"u8);
             Im.BulletText("移除所有状态为“缺失 (Missing)”的重定向，因为目标文件不存在且无效。"u8);
@@ -49,10 +48,10 @@ public sealed class ReservedFilesTable(
             Im.Text("\n此操作不可撤销。"u8, Colors.RegexWarningBorder);
 
             if (!active)
-                Im.Text($"\n点击时按住 {config.DeleteModModifier} 键。");
+                Im.Text($"\n点击时按住 {LunaStyle.Modifier.Misclick} 键。");
         }
 
-        active = config.DeleteModModifier.IsActive();
+        active = LunaStyle.Modifier.Destructive.Active;
         Im.Line.Same();
         using (ImGuiColor.Text.Push(Colors.RegexWarningBorder))
         {
@@ -64,7 +63,7 @@ public sealed class ReservedFilesTable(
         {
             using var tt = Im.Tooltip.Begin();
             Im.Text("执行此操作将"u8);
-            Im.BulletText("移除所有列出的文件替换(File Swaps)，因为这些配置不合理。"u8);
+            Im.BulletText("执行「移除所有简单重定向」的全部操作。"u8);
             Im.BulletText(
                 "同时移除所有标记为“不同（Different）”的重定向。带有这些重定向的模组可能已经无法正常工作，但移除重定向本身不会改变这一现状。"u8);
             Im.Text("\n此操作不可撤销。"u8, Colors.RegexWarningBorder);
@@ -73,7 +72,7 @@ public sealed class ReservedFilesTable(
                 Colors.RegexWarningBorder);
 
             if (!active)
-                Im.Text($"\n点击时按住 {config.DeleteModModifier} 键。");
+                Im.Text($"\n点击时按住 {LunaStyle.Modifier.Destructive} 键。");
         }
     }
 
@@ -90,13 +89,11 @@ public sealed class ReservedFilesTable(
     private sealed class ActionColumn : BasicColumn<ReservedFileCacheObject>
     {
         private readonly ReservedFiles _service;
-        private readonly Configuration       _config;
-        private          int                 _deleteIndex = -1;
+        private          int           _deleteIndex = -1;
 
-        public ActionColumn(ReservedFiles service, Configuration config)
+        public ActionColumn(ReservedFiles service)
         {
             _service =  service;
-            _config  =  config;
             Flags    |= TableColumnFlags.NoSort | TableColumnFlags.NoResize;
         }
 
@@ -111,7 +108,7 @@ public sealed class ReservedFilesTable(
 
         public override void DrawColumn(in ReservedFileCacheObject item, int globalIndex)
         {
-            var disabled = !_config.DeleteModModifier.IsActive();
+            var disabled = !LunaStyle.Modifier.Destructive.Active;
             if (ImEx.Icon.Button(LunaStyle.DeleteIcon,
                     item.ScannedObject.FileSwap
                         ? "移除此文件替换(File Swap)。"u8
@@ -123,7 +120,7 @@ public sealed class ReservedFilesTable(
             }
 
             if (disabled)
-                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\n按住 {_config.DeleteModModifier} 键以删除。");
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\n按住 {LunaStyle.Modifier.Destructive} 键以删除。");
         }
 
         public override float ComputeWidth(IEnumerable<ReservedFileCacheObject> _)

@@ -37,16 +37,16 @@ public partial class ModEditWindow
         var extension = Path.GetExtension(registry.File.FullName).ToLowerInvariant();
         return extension switch
         {
-            ".dds" => _config.HideDdsFiles,
-            ".png" => _config.HidePngFiles,
-            ".jpg" or ".jpeg" => _config.HideJpegFiles,
-            ".json" => _config.HideJsonFiles,
-            ".tga" => _config.HideTgaFiles,
-            ".bmp" => _config.HideBmpFiles,
-            ".gif" => _config.HideGifFiles,
-            ".tiff" or ".tif" => _config.HideTiffFiles,
-            ".webp" => _config.HideWebpFiles,
-            ".xcp" => _config.HideXcpFiles,
+            ".dds" => _config.Editing.HideDdsFiles,
+            ".png" => _config.Editing.HidePngFiles,
+            ".jpg" or ".jpeg" => _config.Editing.HideJpegFiles,
+            ".json" => _config.Editing.HideJsonFiles,
+            ".tga" => _config.Editing.HideTgaFiles,
+            ".bmp" => _config.Editing.HideBmpFiles,
+            ".gif" => _config.Editing.HideGifFiles,
+            ".tiff" or ".tif" => _config.Editing.HideTiffFiles,
+            ".webp" => _config.Editing.HideWebpFiles,
+            ".xcp" => _config.Editing.HideXcpFiles,
             _ => false
         };
     }
@@ -61,16 +61,16 @@ public partial class ModEditWindow
         var extension = Path.GetExtension(fileName).ToLowerInvariant();
         return extension switch
         {
-            ".dds" => _config.HideDdsFiles,
-            ".png" => _config.HidePngFiles,
-            ".jpg" or ".jpeg" => _config.HideJpegFiles,
-            ".json" => _config.HideJsonFiles,
-            ".tga" => _config.HideTgaFiles,
-            ".bmp" => _config.HideBmpFiles,
-            ".gif" => _config.HideGifFiles,
-            ".tiff" or ".tif" => _config.HideTiffFiles,
-            ".webp" => _config.HideWebpFiles,
-            ".xcp" => _config.HideXcpFiles,
+            ".dds" => _config.Editing.HideDdsFiles,
+            ".png" => _config.Editing.HidePngFiles,
+            ".jpg" or ".jpeg" => _config.Editing.HideJpegFiles,
+            ".json" => _config.Editing.HideJsonFiles,
+            ".tga" => _config.Editing.HideTgaFiles,
+            ".bmp" => _config.Editing.HideBmpFiles,
+            ".gif" => _config.Editing.HideGifFiles,
+            ".tiff" or ".tif" => _config.Editing.HideTiffFiles,
+            ".webp" => _config.Editing.HideWebpFiles,
+            ".xcp" => _config.Editing.HideXcpFiles,
             _ => false
         };
     }
@@ -164,9 +164,9 @@ public partial class ModEditWindow
     private void DrawSelectable(FileRegistry registry, int i)
     {
         var selected = _selectedFiles.Contains(registry);
-        var color = registry.SubModUsage.Count == 0             ? ColorId.ConflictingMod :
+        var color = registry.SubModUsage.Count is 0             ? ColorId.ConflictingMod :
             registry.CurrentUsage == registry.SubModUsage.Count ? ColorId.NewMod : ColorId.InheritedMod;
-        using (ImGuiColor.Text.Push(color.Value()))
+        using (ImGuiColor.Text.Push(color.Vector))
         {
             if (Im.Selectable(registry.RelPath.Path.Span, selected))
             {
@@ -339,13 +339,13 @@ public partial class ModEditWindow
 
 
         Im.Line.Same();
-        var active = _config.DeleteModModifier.IsActive();
+        var active = LunaStyle.Modifier.Destructive.Active;
         var tt =
             "从你的文件系统中完全删除选中的所有文件，但不删除替换游戏路径。\n！！！注意，此操作无法恢复！！！";
         if (_selectedFiles.Count is 0)
             tt += "\n\n没有文件被删除。";
         else if (!active)
-            tt += $"\n\n按住 {_config.DeleteModModifier} 键并点击以删除。";
+            tt += $"\n\n按住 {LunaStyle.Modifier.Destructive} 键并点击以删除。";
 
         if (ImEx.Button("删除选中的文件"u8, Vector2.Zero, tt, _selectedFiles.Count is 0 || !active))
             _editor.FileEditor.DeleteFiles(_editor.Mod!, _editor.Option!, _editor.Files.Available.Where(_selectedFiles.Contains));
@@ -423,16 +423,16 @@ public partial class ModEditWindow
     {
         var changed = false;
 
-        var hideDds  = _config.HideDdsFiles;
-        var hidePng  = _config.HidePngFiles;
-        var hideJpeg = _config.HideJpegFiles;
-        var hideJson = _config.HideJsonFiles;
-        var hideTga  = _config.HideTgaFiles;
-        var hideBmp  = _config.HideBmpFiles;
-        var hideGif  = _config.HideGifFiles;
-        var hideTiff = _config.HideTiffFiles;
-        var hideWebp = _config.HideWebpFiles;
-        var hideXcp  = _config.HideXcpFiles;
+        var hideDds  = _config.Editing.HideDdsFiles;
+        var hidePng  = _config.Editing.HidePngFiles;
+        var hideJpeg = _config.Editing.HideJpegFiles;
+        var hideJson = _config.Editing.HideJsonFiles;
+        var hideTga  = _config.Editing.HideTgaFiles;
+        var hideBmp  = _config.Editing.HideBmpFiles;
+        var hideGif  = _config.Editing.HideGifFiles;
+        var hideTiff = _config.Editing.HideTiffFiles;
+        var hideWebp = _config.Editing.HideWebpFiles;
+        var hideXcp  = _config.Editing.HideXcpFiles;
 
         changed |= Im.Checkbox("隐藏 DDS 文件"u8, ref hideDds);
         changed |= Im.Checkbox("隐藏 PNG 文件"u8, ref hidePng);
@@ -447,17 +447,16 @@ public partial class ModEditWindow
 
         if (changed)
         {
-            _config.HideDdsFiles  = hideDds;
-            _config.HidePngFiles  = hidePng;
-            _config.HideJpegFiles = hideJpeg;
-            _config.HideJsonFiles = hideJson;
-            _config.HideTgaFiles  = hideTga;
-            _config.HideBmpFiles  = hideBmp;
-            _config.HideGifFiles  = hideGif;
-            _config.HideTiffFiles = hideTiff;
-            _config.HideWebpFiles = hideWebp;
-            _config.HideXcpFiles  = hideXcp;
-            _config.Save();
+            _config.Editing.HideDdsFiles  = hideDds;
+            _config.Editing.HidePngFiles  = hidePng;
+            _config.Editing.HideJpegFiles = hideJpeg;
+            _config.Editing.HideJsonFiles = hideJson;
+            _config.Editing.HideTgaFiles  = hideTga;
+            _config.Editing.HideBmpFiles  = hideBmp;
+            _config.Editing.HideGifFiles  = hideGif;
+            _config.Editing.HideTiffFiles = hideTiff;
+            _config.Editing.HideWebpFiles = hideWebp;
+            _config.Editing.HideXcpFiles  = hideXcp;
         }
     }
 }

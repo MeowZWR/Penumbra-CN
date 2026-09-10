@@ -1,7 +1,6 @@
 using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
-using ImSharp;
 using Luna;
 using Penumbra.Api.Api;
 using Penumbra.Api.Enums;
@@ -28,13 +27,11 @@ public class CommandHandler : IDisposable, IApiService
     private readonly ActorManager      _actors;
     private readonly ModManager        _modManager;
     private readonly CollectionManager _collectionManager;
-    private readonly Penumbra          _penumbra;
     private readonly CollectionEditor  _collectionEditor;
     private readonly KnowledgeWindow   _knowledgeWindow;
 
     public CommandHandler(IFramework framework, ICommandManager commandManager, IChatGui chat, RedrawService redrawService,
         Configuration config, MainWindow mainWindow, ModManager modManager, CollectionManager collectionManager, ActorManager actors,
-        Penumbra penumbra,
         CollectionEditor collectionEditor, KnowledgeWindow knowledgeWindow)
     {
         _commandManager    = commandManager;
@@ -45,7 +42,6 @@ public class CommandHandler : IDisposable, IApiService
         _collectionManager = collectionManager;
         _actors            = actors;
         _chat              = chat;
-        _penumbra          = penumbra;
         _collectionEditor  = collectionEditor;
         _knowledgeWindow   = knowledgeWindow;
         framework.RunOnFrameworkThread(() =>
@@ -169,22 +165,21 @@ public class CommandHandler : IDisposable, IApiService
 
     private bool SetDebug(string arguments)
     {
-        var value = ParseTrueFalseToggle(arguments) ?? !_config.DebugMode;
-        if (value == _config.DebugMode)
+        var value = ParseTrueFalseToggle(arguments) ?? !_config.Advanced.DebugMode;
+        if (value == _config.Advanced.DebugMode)
             return false;
 
         Print(value ? "调试模式已启用。" : "调试模式已禁用。" );
 
-        _config.DebugMode = value;
-        _config.Save();
+        _config.Advanced.DebugMode = value;
         return true;
     }
 
     private bool SetPenumbraState(string _, bool? newValue)
     {
-        var value = newValue ?? !_config.EnableMods;
+        var value = newValue ?? !_config.Main.EnableMods;
 
-        if (value == _config.EnableMods)
+        if (value == _config.Main.EnableMods)
         {
             Print(value
                 ? "你的模组已经启用。要禁用模组，请使用此命令：/penumbra disable"
@@ -194,56 +189,55 @@ public class CommandHandler : IDisposable, IApiService
 
         Print(value
             ? "你的模组已启用。"
-            : "你的模组已禁用。" );
-        return _penumbra.SetEnabled(value);
+            : "你的模组已禁用。");
+        _config.Main.EnableMods = value;
+        return true;
     }
 
     private bool SetUiMinimumSize(string _)
     {
-        if (_config.MinimumSize.X == Configuration.Constants.MinimumSizeX && _config.MinimumSize.Y == Configuration.Constants.MinimumSizeY)
+        if (_config.Advanced.MinimumSize.X == AdvancedConfig.MinimumSizeX && _config.Advanced.MinimumSize.Y == AdvancedConfig.MinimumSizeY)
             return false;
 
-        _config.MinimumSize.X = Configuration.Constants.MinimumSizeX;
-        _config.MinimumSize.Y = Configuration.Constants.MinimumSizeY;
-        _config.Save();
+        _config.Advanced.MinimumSize = new Vector2(AdvancedConfig.MinimumSizeX, AdvancedConfig.MinimumSizeY);
         return true;
     }
 
     private bool SetCollection(string arguments)
     {
-        if (arguments.Length == 0)
+        if (arguments.Length is 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /penumbra collection ").AddBlue("[Collection Type]")
-                .AddText(" | ").AddYellow("[Collection Name]")
-                .AddText(" | ").AddGreen("<Identifier>").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 Valid Collection Types are ").AddBlue("Base").AddText(", ")
-                .AddBlue("Ui").AddText(", ")
-                .AddBlue("Selected").AddText(", ")
-                .AddBlue("Individual").AddText(", and all those selectable in Character Groups.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 Valid Collection Names are ").AddYellow("None")
-                .AddText(", all collections you have created by their full names, and ").AddYellow("Delete")
-                .AddText(" to remove assignments (not valid for all types).")
+            _chat.Print(new SeStringBuilder().AddText("用法：/penumbra collection ").AddBlue("[合集类型]")
+                .AddText(" | ").AddYellow("[合集名称]")
+                .AddText(" | ").AddGreen("<标识符>").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 有效的合集类型为 ").AddBlue("Base").AddText("、")
+                .AddBlue("Ui").AddText("、")
+                .AddBlue("Selected").AddText("、")
+                .AddBlue("Individual").AddText("，以及角色组中所有可选类型。").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 有效的合集名称为 ").AddYellow("None")
+                .AddText("、你已创建的所有合集的完整名称，以及 ").AddYellow("Delete")
+                .AddText(" 用于移除分配（并非所有类型都有效）。")
                 .BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 If the type is ").AddBlue("Individual")
-                .AddText(" you need to specify an individual with an identifier of the form:").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("<me>").AddText(" or ").AddGreen("<t>")
-                .AddText(" or ").AddGreen("<mo>")
-                .AddText(" or ").AddGreen("<f>")
-                .AddText(" as placeholders for your character, your target, your mouseover or your focus, if they exist.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 如果类型为 ").AddBlue("Individual")
+                .AddText("，需要指定个体及其标识符，格式如下：").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("<me>").AddText(" 或 ").AddGreen("<t>")
+                .AddText(" 或 ").AddGreen("<mo>")
+                .AddText(" 或 ").AddGreen("<f>")
+                .AddText(" 分别作为你的角色、当前目标、鼠标悬停对象或焦点对象的占位符（若存在）。").BuiltString);
             _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("p").AddText(" | ")
-                .AddWhite("[Player Name]@<World Name>")
-                .AddText(", if no @ is provided, Any World is used.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("r").AddText(" | ").AddWhite("[Retainer Name]")
+                .AddWhite("[玩家名称]@<服务器名称>")
+                .AddText("，若未提供 @，则使用任意服务器。").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("r").AddText(" | ").AddWhite("[雇员名称]")
                 .BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("n").AddText(" | ").AddPurple("[NPC Type]")
+            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("n").AddText(" | ").AddPurple("[NPC 类型]")
                 .AddText(" : ")
-                .AddRed("[NPC Name]").AddText(", where NPC Type can be ").AddInitialPurple("Mount").AddInitialPurple("Companion")
+                .AddRed("[NPC 名称]").AddText("，其中 NPC 类型可以是 ").AddInitialPurple("Mount").AddInitialPurple("Companion")
                 .AddInitialPurple("Accessory")
-                .AddInitialPurple("Event NPC").AddText("or ")
-                .AddInitialPurple("Battle NPC", false).AddText(".").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("o").AddText(" | ").AddPurple("[NPC Type]")
+                .AddInitialPurple("Event NPC").AddText("或 ")
+                .AddInitialPurple("Battle NPC", false).AddText("。").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("o").AddText(" | ").AddPurple("[NPC 类型]")
                 .AddText(" : ")
-                .AddRed("[NPC Name]").AddText(" | ").AddWhite("[Player Name]@<World Name>").AddText(".").BuiltString);
+                .AddRed("[NPC 名称]").AddText(" | ").AddWhite("[玩家名称]@<服务器名称>").AddText("。").BuiltString);
             return true;
         }
 
@@ -252,14 +246,14 @@ public class CommandHandler : IDisposable, IApiService
 
         if (!CollectionTypeExtensions.TryParse(typeName, out var type))
         {
-            _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(typeName, true)
-                .AddText(" is not a valid collection type.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("参数 ").AddRed(typeName, true)
+                .AddText(" 不是有效的合集类型。").BuiltString);
             return false;
         }
 
         if (split.Length == 1)
         {
-            _chat.Print("There was no collection name provided.");
+            _chat.Print("未提供合集名称。");
             return false;
         }
 
@@ -272,7 +266,7 @@ public class CommandHandler : IDisposable, IApiService
             if (split.Length == 2)
             {
                 _chat.Print(
-                    "Setting an individual collection requires a collection name and an identifier, but no identifier was provided.");
+                    "设置个体合集需要合集名称和标识符，但未提供标识符。");
                 return false;
             }
 
@@ -283,8 +277,8 @@ public class CommandHandler : IDisposable, IApiService
                     var identifier = _actors.FromObject(obj, false, true, true);
                     if (!identifier.IsValid)
                     {
-                        _chat.Print(new SeStringBuilder().AddText("The placeholder ").AddGreen(split[2])
-                            .AddText(" did not resolve to a game object with a valid identifier.").BuiltString);
+                        _chat.Print(new SeStringBuilder().AddText("占位符 ").AddGreen(split[2])
+                            .AddText(" 未能解析为具有有效标识符的游戏对象。").BuiltString);
                         return false;
                     }
 
@@ -300,8 +294,8 @@ public class CommandHandler : IDisposable, IApiService
             }
             catch (ActorIdentifierFactory.IdentifierParseError e)
             {
-                _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(split[2], true)
-                    .AddText($" could not be converted to an identifier. {e.Message}")
+                _chat.Print(new SeStringBuilder().AddText("参数 ").AddRed(split[2], true)
+                    .AddText($" 无法转换为标识符。{e.Message}")
                     .BuiltString);
                 return false;
             }
@@ -314,8 +308,8 @@ public class CommandHandler : IDisposable, IApiService
             if (collection == oldCollection)
             {
                 _chat.Print(collection == null
-                    ? $"The {type.ToName()} Collection{(identifier.IsValid ? $" for {identifier}" : string.Empty)} is already unassigned"
-                    : $"{collection.Identity.Name} already is the {type.ToName()} Collection{(identifier.IsValid ? $" for {identifier}." : ".")}");
+                    ? $"{type.ToName()} 合集{(identifier.IsValid ? $"（{identifier}）" : string.Empty)} 已处于未分配状态"
+                    : $"{collection.Identity.Name} 已经是 {type.ToName()} 合集{(identifier.IsValid ? $"（{identifier}）。" : "。")}");
                 continue;
             }
 
@@ -347,18 +341,18 @@ public class CommandHandler : IDisposable, IApiService
                 else
                 {
                     _chat.Print(
-                        $"Can not remove the {type.ToName()} Collection assignment {(identifier.IsValid ? $" for {identifier}." : ".")}");
+                        $"无法移除 {type.ToName()} 合集分配{(identifier.IsValid ? $"（{identifier}）。" : "。")}");
                     continue;
                 }
 
                 Print(
-                    $"Removed {oldCollection.Identity.Name} as {type.ToName()} Collection assignment {(identifier.IsValid ? $" for {identifier}." : ".")}");
+                    $"已移除 {oldCollection.Identity.Name} 作为 {type.ToName()} 合集的分配{(identifier.IsValid ? $"（{identifier}）。" : "。")}");
                 anySuccess = true;
                 continue;
             }
 
             _collectionManager.Active.SetCollection(collection!, type, individualIndex);
-            Print($"Assigned {collection!.Identity.Name} as {type.ToName()} Collection{(identifier.IsValid ? $" for {identifier}." : ".")}");
+            Print($"已将 {collection!.Identity.Name} 分配为 {type.ToName()} 合集{(identifier.IsValid ? $"（{identifier}）。" : "。")}");
         }
 
         return anySuccess;
@@ -369,11 +363,11 @@ public class CommandHandler : IDisposable, IApiService
         if (arguments.Length == 0)
         {
             var seString = new SeStringBuilder()
-                .AddText("Use with /penumbra mod ").AddBlue("[enable|disable|inherit|toggle|").AddGreen("setting").AddBlue("]").AddText("  ")
-                .AddYellow("[Collection Name]")
+                .AddText("用法：/penumbra mod ").AddBlue("[enable|disable|inherit|toggle|").AddGreen("setting").AddBlue("]").AddText("  ")
+                .AddYellow("[合集名称]")
                 .AddText(" | ")
-                .AddPurple("[Mod Name or Mod Directory Name]")
-                .AddGreen(" <| [Option Group Name] | [Option1;Option2;...]>");
+                .AddPurple("[模组名称或模组目录名]")
+                .AddGreen(" <| [选项组名称] | [选项1;选项2;...]>");
             _chat.Print(seString.BuiltString);
             return true;
         }
@@ -384,14 +378,14 @@ public class CommandHandler : IDisposable, IApiService
             : split[1].Split('|', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         if (nameSplit.Length != 2)
         {
-            _chat.Print("Not enough arguments provided.");
+            _chat.Print("提供的参数不足。");
             return false;
         }
 
         var state = ConvertToSettingState(split[0]);
         if (state == -1)
         {
-            _chat.Print(new SeStringBuilder().AddRed(split[0], true).AddText(" is not a valid type of setting.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddRed(split[0], true).AddText(" 不是有效的设置类型。").BuiltString);
             return false;
         }
 
@@ -406,7 +400,7 @@ public class CommandHandler : IDisposable, IApiService
             if (split2.Length < 2)
             {
                 _chat.Print(
-                    "Not enough arguments for changing settings provided. Please add a group name and a list of setting names - which can be empty for multi options.");
+                    "更改设置的参数不足。请提供组名称和设置名称列表（多选项组可以为空）。");
                 return false;
             }
 
@@ -418,7 +412,7 @@ public class CommandHandler : IDisposable, IApiService
 
         if (!_modManager.TryGetMod(nameSplit[1], nameSplit[1], out var mod))
         {
-            _chat.Print(new SeStringBuilder().AddText("The mod ").AddRed(nameSplit[1], true).AddText(" does not exist.")
+            _chat.Print(new SeStringBuilder().AddText("模组 ").AddRed(nameSplit[1], true).AddText(" 不存在。")
                 .BuiltString);
             return false;
         }
@@ -428,27 +422,27 @@ public class CommandHandler : IDisposable, IApiService
             if (HandleModState(state, collection!, mod))
                 return true;
 
-            _chat.Print(new SeStringBuilder().AddText("Mod ").AddPurple(mod.Name, true)
-                .AddText("already had the desired state in collection ")
-                .AddYellow(collection!.Identity.Name, true).AddText(".").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("模组 ").AddPurple(mod.Name, true)
+                .AddText(" 在合集 ")
+                .AddYellow(collection!.Identity.Name, true).AddText(" 中已处于目标状态。").BuiltString);
             return false;
         }
 
         switch (ModSettingsApi.ConvertModSetting(mod, groupName, optionNames, out var groupIndex, out var setting))
         {
             case PenumbraApiEc.OptionGroupMissing:
-                _chat.Print(new SeStringBuilder().AddText("The mod ").AddRed(nameSplit[1], true).AddText(" has no group ")
-                    .AddGreen(groupName, true).AddText(".").BuiltString);
-                return false;
+                _chat.Print(new SeStringBuilder().AddText("模组 ").AddRed(nameSplit[1], true).AddText(" 没有组 ")
+                    .AddGreen(groupName, true).AddText("。").BuiltString);
+                break;
             case PenumbraApiEc.OptionMissing:
-                _chat.Print(new SeStringBuilder().AddText("Not all set options in the mod ").AddRed(nameSplit[1], true)
-                    .AddText(" could be found in group ").AddGreen(groupName, true).AddText(".").BuiltString);
-                return false;
+                _chat.Print(new SeStringBuilder().AddText("模组 ").AddRed(nameSplit[1], true)
+                    .AddText(" 中并非所有指定选项都能在组 ").AddGreen(groupName, true).AddText(" 中找到。").BuiltString);
+                break;
             case PenumbraApiEc.Success:
                 _collectionEditor.SetModSetting(collection!, mod, groupIndex, setting);
-                Print(() => new SeStringBuilder().AddText("Changed settings of group ").AddGreen(groupName, true).AddText(" in mod ")
-                    .AddPurple(mod.Name, true).AddText(" in collection ")
-                    .AddYellow(collection!.Identity.Name, true).AddText(".").BuiltString);
+                Print(() => new SeStringBuilder().AddText("已更改组 ").AddGreen(groupName, true).AddText(" 在模组 ")
+                    .AddPurple(mod.Name, true).AddText(" 中的设置，合集为 ")
+                    .AddYellow(collection!.Identity.Name, true).AddText("。").BuiltString);
                 return true;
         }
 
@@ -467,18 +461,18 @@ public class CommandHandler : IDisposable, IApiService
         if (arguments.Length == 0)
         {
             var seString = new SeStringBuilder()
-                .AddText("Use with /penumbra bulktag ").AddBlue("[enable|disable|toggle|inherit]").AddText("  ").AddYellow("[Collection Name]")
+                .AddText("用法：/penumbra bulktag ").AddBlue("[enable|disable|toggle|inherit]").AddText("  ").AddYellow("[合集名称]")
                 .AddText(" | ")
-                .AddPurple("[Tag]");
+                .AddPurple("[标签]");
             _chat.Print(seString.BuiltString);
             var tagString = new SeStringBuilder()
                 .AddText("    》 ")
-                .AddPurple("[Tag]")
-                .AddText(" is only Local tags by default, but can be prefixed with '")
+                .AddPurple("[标签]")
+                .AddText(" 默认仅匹配本地标签，可加前缀 '")
                 .AddWhite("b:")
-                .AddText("' for both types of tags or '")
+                .AddText("' 以同时匹配两种标签，或 '")
                 .AddWhite("m:")
-                .AddText("' for only Mod tags.");
+                .AddText("' 以仅匹配模组标签。");
             _chat.Print(tagString.BuiltString);
             return true;
         }
@@ -489,7 +483,7 @@ public class CommandHandler : IDisposable, IApiService
             : split[1].Split('|', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         if (nameSplit.Length != 2)
         {
-            _chat.Print("Not enough arguments provided.");
+            _chat.Print("提供的参数不足。");
             return false;
         }
 
@@ -497,7 +491,7 @@ public class CommandHandler : IDisposable, IApiService
 
         if (state == -1)
         {
-            _chat.Print(new SeStringBuilder().AddRed(split[0], true).AddText(" is not a valid type of setting.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddRed(split[0], true).AddText(" 不是有效的设置类型。").BuiltString);
             return false;
         }
 
@@ -523,7 +517,7 @@ public class CommandHandler : IDisposable, IApiService
 
         if (mods.Count == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("The tag ").AddRed(tag, true).AddText(" does not match any mods.")
+            _chat.Print(new SeStringBuilder().AddText("标签 ").AddRed(tag, true).AddText(" 未匹配任何模组。")
                 .BuiltString);
             return false;
         }
@@ -533,8 +527,8 @@ public class CommandHandler : IDisposable, IApiService
             changes |= HandleModState(state, collection!, mod);
 
         if (!changes)
-            Print(() => new SeStringBuilder().AddText("No mod states were changed in collection ").AddYellow(collection!.Identity.Name, true)
-                .AddText(".").BuiltString);
+            Print(() => new SeStringBuilder().AddText("合集 ").AddYellow(collection!.Identity.Name, true)
+                .AddText(" 中没有任何模组状态被更改。").BuiltString);
 
         return true;
     }
@@ -556,7 +550,7 @@ public class CommandHandler : IDisposable, IApiService
         if (collection != null)
             return true;
 
-        _chat.Print(new SeStringBuilder().AddText("The collection ").AddRed(collectionName, true).AddText(" does not exist.")
+        _chat.Print(new SeStringBuilder().AddText("合集 ").AddRed(collectionName, true).AddText(" 不存在。")
             .BuiltString);
         return false;
     }
@@ -603,7 +597,7 @@ public class CommandHandler : IDisposable, IApiService
                 if (!_collectionEditor.SetModState(collection, mod, true))
                     return false;
 
-                Print(() => new SeStringBuilder().AddText("Enabled mod ").AddPurple(mod.Name, true).AddText(" in collection ")
+                Print(() => new SeStringBuilder().AddText("已启用模组 ").AddPurple(mod.Name, true).AddText("，合集为 ")
                     .AddYellow(collection.Identity.Name, true)
                     .AddText(".").BuiltString);
                 return true;
@@ -612,7 +606,7 @@ public class CommandHandler : IDisposable, IApiService
                 if (!_collectionEditor.SetModState(collection, mod, false))
                     return false;
 
-                Print(() => new SeStringBuilder().AddText("Disabled mod ").AddPurple(mod.Name, true).AddText(" in collection ")
+                Print(() => new SeStringBuilder().AddText("已禁用模组 ").AddPurple(mod.Name, true).AddText("，合集为 ")
                     .AddYellow(collection.Identity.Name, true)
                     .AddText(".").BuiltString);
                 return true;
@@ -622,8 +616,8 @@ public class CommandHandler : IDisposable, IApiService
                 if (!_collectionEditor.SetModState(collection, mod, setting))
                     return false;
 
-                Print(() => new SeStringBuilder().AddText(setting ? "Enabled mod " : "Disabled mod ").AddPurple(mod.Name, true)
-                    .AddText(" in collection ")
+                Print(() => new SeStringBuilder().AddText(setting ? "已启用模组 " : "已禁用模组 ").AddPurple(mod.Name, true)
+                    .AddText("，合集为 ")
                     .AddYellow(collection.Identity.Name, true)
                     .AddText(".").BuiltString);
                 return true;
@@ -632,9 +626,9 @@ public class CommandHandler : IDisposable, IApiService
                 if (!_collectionEditor.SetModInheritance(collection, mod, true))
                     return false;
 
-                Print(() => new SeStringBuilder().AddText("Set mod ").AddPurple(mod.Name, true).AddText(" in collection ")
+                Print(() => new SeStringBuilder().AddText("已将模组 ").AddPurple(mod.Name, true).AddText(" 在合集 ")
                     .AddYellow(collection.Identity.Name, true)
-                    .AddText(" to inherit.").BuiltString);
+                    .AddText(" 中设为继承。").BuiltString);
                 return true;
         }
 
@@ -643,23 +637,23 @@ public class CommandHandler : IDisposable, IApiService
 
     private void Print(string text)
     {
-        if (_config.PrintSuccessfulCommandsToChat)
+        if (_config.Main.PrintSuccessfulCommandsToChat)
             _chat.Print(text);
     }
 
     private void Print(DefaultInterpolatedStringHandler text)
     {
-        if (_config.PrintSuccessfulCommandsToChat)
+        if (_config.Main.PrintSuccessfulCommandsToChat)
             _chat.Print(text.ToStringAndClear());
     }
 
     private void Print(Func<SeString> text)
     {
-        if (_config.PrintSuccessfulCommandsToChat)
+        if (_config.Main.PrintSuccessfulCommandsToChat)
             _chat.Print(text());
     }
 
-    private bool HandleKnowledge(string arguments)
+    private bool HandleKnowledge(string _)
     {
         _knowledgeWindow.Toggle();
         return true;

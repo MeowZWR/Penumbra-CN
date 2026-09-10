@@ -20,10 +20,8 @@ using Penumbra.UI.AdvancedWindow.Meta;
 using Penumbra.UI.Classes;
 using Penumbra.UI.FileEditing;
 using Penumbra.UI.FileEditing.Textures;
-using MdlMaterialEditor = Penumbra.Mods.Editor.MdlMaterialEditor;
-#if DEBUG
 using Penumbra.UI.ManagementTab;
-#endif
+using MdlMaterialEditor = Penumbra.Mods.Editor.MdlMaterialEditor;
 
 namespace Penumbra.UI.AdvancedWindow;
 
@@ -50,10 +48,8 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
     private readonly FileEditor _newTextureTab;
 #endif
 
-    private readonly CombiningTextureEditor _textureEditor;
-#if DEBUG
+    private readonly CombiningTextureEditor        _textureEditor;
     private readonly ModEditTextureOptimizationTab _textureOptimizationTab;
-#endif
 
     private Vector2 _iconSize = Vector2.Zero;
     private bool    _allowReduplicate;
@@ -97,13 +93,13 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         Mod = mod;
         _parent.SaveWindows();
-        WindowName = $"{mod.Name} (LOADING){WindowBaseLabel}{Index}";
+        WindowName = $"{mod.Name} (加载中){WindowBaseLabel}{Index}";
         AppendTask(() =>
         {
             _editor.LoadMod(mod, -1, 0).Wait();
             SizeConstraints = new WindowSizeConstraints
             {
-                MinimumSize = new Vector2(940, 600),
+                MinimumSize = new Vector2(1240, 600),
                 MaximumSize = 4000 * Vector2.One,
             };
             _selectedFiles.Clear();
@@ -112,9 +108,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             _shaderPackageTab.Reset();
             _modMergeTab.ModMerger.ResetMod();
             _pbdTab.Reset();
-#if DEBUG
             _textureOptimizationTab.Reset();
-#endif
             _itemSwapTab.UpdateMod(mod, _activeCollections.Current.GetInheritedSettings(mod.Index).Settings);
             UpdateModels();
         });
@@ -124,7 +118,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
     {
         AppendTask(() =>
         {
-            var (groupIdx, dataIdx) = subMod?.GetDataIndices() ?? (-1, 0);
+            var (groupIdx, dataIdx) = (subMod?.GroupIndex ?? -1, subMod?.Index ?? 0);
             _editor.LoadOption(groupIdx, dataIdx).Wait();
         });
     }
@@ -204,9 +198,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             _modelTab.Reset();
             _shaderPackageTab.Reset();
             _pbdTab.Reset();
-#if DEBUG
             _textureOptimizationTab.Reset();
-#endif
 #if false
             _newTextureTab.Reset();
 #endif
@@ -246,9 +238,8 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             if (tab)
                 _textureEditor.DrawPanel(false);
         }
-#if DEBUG
-        _textureOptimizationTab.Draw();
-#endif
+        if (_config.Advanced.EnableExtendedFeatures)
+            _textureOptimizationTab.Draw();
 #if false
         _newTextureTab.Draw();
 #endif
@@ -317,8 +308,8 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
                                 ? "将所有皮肤材质后缀替换为目标后缀。"
                                 : "将指定种族的皮肤材质后缀替换为目标后缀。"
                             : _raceCode is GenderRace.Unknown
-                                ? $"将所有皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'."
-                                : $"将指定种族的皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'.";
+                                ? $"将所有皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'。"
+                                : $"将指定种族的皮肤材质后缀从 '{_materialSuffixFrom}' 改为 '{_materialSuffixTo}'。";
             if (ImEx.Button("修改材质后缀"u8, buttonSize, tt, disabled))
                 editor.MdlMaterialEditor.ReplaceAllMaterials(_materialSuffixTo, _materialSuffixFrom, _raceCode);
 
@@ -337,7 +328,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             LunaStyle.DrawAlignedHelpMarker(
                 "模型文件引用了它们应该使用的皮肤材质。这个皮肤材质一般都是同一种。不过mod作者们可能会采用不同的材质来区分体型。\n"u8
               + "此选项允许你将所有模型文件的一个后缀修改为另一个后缀，比如将所有的后缀b改为bibo。这会修改文件，因此请注意此操作有风险。\n"u8
-              + "如果你不知道这个模组当前使用的后缀是什么，你可以将'将此后缀...'留空，它会将所有后缀替换为'改为'里面的内容，而不仅仅是匹配的后缀。\n"u8);
+              + "如果你不知道这个模组当前使用的后缀是什么，你可以将'将此后缀...'留空，它会将所有后缀替换为'改为'里面的内容，而不仅仅是匹配的后缀。"u8);
         }
     }
 
@@ -403,7 +394,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         }
 
         if (_allowReduplicate && !LunaStyle.Modifier.Destructive)
-            Im.Tooltip.OnHover($"\n\nNo duplicates detected! Hold {LunaStyle.Modifier.Destructive} to force normalization anyway.");
+            Im.Tooltip.OnHover($"\n\n未检测到重复项！按住 {LunaStyle.Modifier.Destructive} 仍可强制标准化。");
 
         if (!_editor.Duplicates.Worker.IsCompleted)
             return;
@@ -507,10 +498,10 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
             using (ImGuiColor.Button.Push(Im.Style[ImGuiColor.ButtonActive], ModPinned))
             {
                 if (ImEx.Icon.Button(LunaStyle.PinIcon, _parent.UnpinnedWindow == this
-                            ? $"将 {Mod?.Name} 固定到此编辑窗口。\n固定后，在其他 Mod 上打开高级编辑时将开启新窗口。"
+                            ? $"将 {Mod?.Name} 固定到此编辑窗口。\n固定后，在其他模组上打开高级编辑时将开启新窗口。"
                             : _parent.UnpinnedWindow?.Mod is not { } mod
-                                ? $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的 Mod。"
-                                : $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的 Mod。\n\n这会将现有的未固定窗口固定到 {mod.Name}。",
+                                ? $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的模组。"
+                                : $"取消固定 {Mod?.Name}。\n取消后，此窗口将跟随主窗口中所选的模组。\n\n这会将现有的未固定窗口固定到 {mod.Name}。",
                         false, new Vector2(frameHeight + spacingX, frameHeight)))
                     _parent.UnpinWindow(this, _parent.UnpinnedWindow != this);
             }
@@ -530,13 +521,13 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         using var id        = Im.Id.Push(Mod!.Identifier);
         var       setsEqual = !_editor.SwapEditor.Changes;
-        var       tt        = setsEqual ? "未暂存任何修改" : "应用当前暂存的修改到此选项。";
+        var       tt        = setsEqual ? "未暂存任何修改"u8 : "应用当前暂存的修改到此选项。"u8;
         Im.Line.New();
         if (ImEx.Button("应用修改"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Apply(_editor.Option!);
 
         Im.Line.Same();
-        tt = setsEqual ? "未暂存任何修改" : "撤销当前暂存的所有修改。";
+        tt = setsEqual ? "未暂存任何修改"u8 : "撤销当前暂存的所有修改。"u8;
         if (ImEx.Button("撤销修改"u8, Vector2.Zero, tt, setsEqual))
             _editor.SwapEditor.Revert(_editor.Option!);
 
@@ -544,8 +535,8 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         if (otherSwaps > 0)
         {
             Im.Line.Same();
-            ImEx.TextFramed($"{otherSwaps} 文件替换已经在其他选项中设置过了。", Vector2.Zero,
-                ColorId.RedundantAssignment.Value().Color);
+            ImEx.TextFramed($"{otherSwaps} 个文件替换已经在其他选项中设置过了。", Vector2.Zero,
+                ColorId.RedundantAssignment.Value);
         }
 
         using var child = Im.Child.Begin("##swaps"u8, Im.ContentRegion.Available, true);
@@ -613,9 +604,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         CommunicatorService communicator, IDragDropManager dragDropManager,
         ResourceTreeViewerFactory resourceTreeViewerFactory, IFramework framework,
         MetaDrawers metaDrawers, FileEditorRegistry fileEditorRegistry, CombiningTextureEditorFactory textureEditorFactory,
-#if DEBUG
         TextureOptimization textureOptimization,
-#endif
         int index, ModEditWindowFactory parent)
         : base(WindowBaseLabel, index)
     {
@@ -628,7 +617,6 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         _communicator      = communicator;
         _dragDropManager   = dragDropManager;
         _parent            = parent;
-        _fileDialog        = fileDialog;
         _metaDrawers       = metaDrawers;
         _overviewTable     = new OverviewTable(_editor);
         _optionSelect      = new OptionSelectCombo(editor, this);
@@ -638,13 +626,11 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         _shaderPackageTab = CreateFileEditor("着色器",   ".shpk", ResourceType.Shpk);
         _pbdTab           = CreateFileEditor("变形器", ".pbd",  ResourceType.Pbd);
 #if false
-        _newTextureTab = CreateFileEditor("纹理", ".tex,.atex", ResourceType.Tex);
+        _newTextureTab = CreateFileEditor("纹理 (2)", ".tex,.atex", ResourceType.Tex);
 #endif
 
         _textureEditor = textureEditorFactory.CreateForModEditWindow(new ModEditFileEditingContext(activeCollections, editor, null));
-#if DEBUG
-        _textureOptimizationTab = new ModEditTextureOptimizationTab(editor, textureOptimization, config);
-#endif
+        _textureOptimizationTab = new ModEditTextureOptimizationTab(editor, textureOptimization);
 
         _resourceTreeFactory = resourceTreeFactory;
         _quickImportViewer   = resourceTreeViewerFactory.Create(1, OnQuickImportRefresh, DrawQuickImportActions);

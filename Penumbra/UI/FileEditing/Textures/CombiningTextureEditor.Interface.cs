@@ -119,7 +119,7 @@ public partial class CombiningTextureEditor
                 {
                     TextureDrawer.PathInputBox(_textures, tex, ref tex.TmpPath, "##input"u8, "导入图像..."u8,
                         "既可以导入游戏内部路径，也可以导入您自己的本地文件。"u8, _context?.Mod?.ModPath.FullName, _fileDialog,
-                        _config.DefaultModImportPath);
+                        _config.Io.DefaultModImportPath);
                     if (_textureSelectCombo is not null
                      && _textureSelectCombo.Draw("##combo"u8,
                             "请选择此模组文件夹内包含的纹理，或选择它们在游戏文件中所替换的原始纹理。"u8, tex.Path,
@@ -131,7 +131,7 @@ public partial class CombiningTextureEditor
                 if (tex.OriginalBaseImage.MipMaps > 1)
                 {
                     Im.Item.SetNextWidthScaled(75.0f);
-                    if (Im.Drag("Scaling"u8, ref tex.LevelOfDetail, $"\u00F7 {1 << tex.LevelOfDetail}", 0, tex.OriginalBaseImage.MipMaps - 1,
+                    if (Im.Drag("缩放"u8, ref tex.LevelOfDetail, $"\u00F7 {1 << tex.LevelOfDetail}", 0, tex.OriginalBaseImage.MipMaps - 1,
                             0.1f, SliderFlags.NoInput))
                         tex.SelectLevelOfDetail(_textures);
                 }
@@ -208,7 +208,7 @@ public partial class CombiningTextureEditor
             var canSaveInPlace = Path.IsPathRooted(_left.Path)
              && _left.Type is TextureType.Tex or TextureType.Dds or TextureType.Png
              && _writable;
-            var isActive    = _config.DeleteModModifier.IsActive();
+            var isActive    = LunaStyle.Modifier.Destructive.Active;
             var buttonSize2 = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2,     0);
             var buttonSize3 = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X * 2) / 3, 0);
 
@@ -217,7 +217,7 @@ public partial class CombiningTextureEditor
                 if (ImEx.Button("覆盖原文件保存"u8, buttonSize2,
                         isActive
                             ? "将纹理保存并覆盖原文件。此操作不可撤销。"u8
-                            : $"将纹理保存并覆盖原文件。此操作不可撤销。按住 {_config.DeleteModModifier} 键以保存。",
+                            : $"将纹理保存并覆盖原文件。此操作不可撤销。按住 {LunaStyle.Modifier.Destructive} 键以保存。",
                         !isActive
                      || !canSaveInPlace
                      || _center.IsLeftCopy && _currentSaveAs is (int)CombinedTexture.TextureSaveType.AsIs && _left.LevelOfDetail is 0))
@@ -295,18 +295,18 @@ public partial class CombiningTextureEditor
         {
             using var color = ImGuiColor.Text.Push(ImGuiColor.Text.Get().HalfBlend(Rgba32.Yellow));
             Im.TextWrapped(
-                $"This texture is a solid surface of color {solidColor}.");
+                $"此纹理为纯色表面，颜色为 {solidColor}。");
             if (Texture.SolidTextures.TryGetValue(solidColor, out var path))
             {
-                Im.TextWrapped($"Consider using a file swap to {path}.");
+                Im.TextWrapped($"建议使用文件替换到 {path}。");
                 Im.Line.Same();
                 color.Pop();
-                if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Copy this path to your clipboard."u8))
+                if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "将此路径复制到剪贴板。"u8))
                     Im.Clipboard.Set(path);
             }
             else if (width > 32 || height > 32)
             {
-                Im.TextWrapped($"Consider scaling it down to at most 32 \u00D7 32 pixels.");
+                Im.TextWrapped($"建议将其缩小到最多 32 \u00D7 32 像素。");
             }
 
             Im.Line.New();
