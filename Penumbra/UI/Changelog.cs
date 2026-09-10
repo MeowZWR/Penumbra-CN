@@ -66,13 +66,14 @@ public class PenumbraChangelog : IUiService
         AddDummy(Changelog);
         Add1_6_0_0(Changelog);
         Add1_6_1_0(Changelog);
-        Add1_7_0_0(Changelog);
+        AddDummy(Changelog);
+        Add1_7_1_0(Changelog);
     }
 
     #region Changelogs
 
-    private static void Add1_7_0_0(Changelog log)
-        => log.NextVersion("版本 1.7.0.0"u8)
+    private static void Add1_7_1_0(Changelog log)
+        => log.NextVersion("版本 1.7.1.0"u8)
             .RegisterImportant("更新到此版本时，所有已安装的模组将迁移到新的元数据版本。"u8)
             .RegisterEntry("本版本移除了选项组与默认选项的独立 JSON 文件，改为再次将全部信息存入 meta.json。"u8, 1)
             .RegisterEntry("旧文件应会被移至备份；迁移前还会创建一份包含所有模组 JSON 的永久归档，以防出错时需要恢复。"u8, 1)
@@ -94,18 +95,34 @@ public class PenumbraChangelog : IUiService
             .RegisterEntry("随之而来的变化是：在不考虑挂靠或页面的情况下，选项组现在始终按正确顺序显示，而不再先按显示类型筛选。"u8, 1)
             .RegisterHighlight("任务生成的敌对 NPC 等不再受「基于所有者使用合集」设置影响，除非另行启用「包含敌对所有者角色」。"u8)
             .RegisterHighlight("用于自动导入模组的文件监视器现可设置为窥探压缩包内部，识别其中的模组压缩包并安装打包的模组（感谢 Stoia 与 Ny！）。"u8)
+            .RegisterHighlight("Penumbra 现已支持本地预设及其分享与应用。"u8)
+            .RegisterEntry("预设是存储在本地数据库中的一组选项组与选项状态，可通过单击应用，或通过剪贴板分享。"u8, 1)
+            .RegisterEntry("预设可以针对特定模组，也可以是通用预设；通用预设会按选项组与选项名称进行匹配，并将匹配到的状态应用到任意模组。"u8, 1)
+            .RegisterEntry("新增用于处理预设的 API/IPC。"u8, 1)
+            .RegisterEntry("新增使用已加入 Dalamud 的 DataShareAdapters 的 IPC 工具。"u8)
             .RegisterEntry("「启用/禁用/继承子折叠组」右键菜单按钮现已加入防误触。"u8)
             .RegisterEntry("编辑选项描述的弹窗现在可以调整大小。"u8)
+            .RegisterEntry("加载模组时，模组根目录现会跳过隐藏目录，而不再对其报错。"u8)
             .RegisterHighlight(
                 "Penumbra 中可配置的颜色现在可以引用其他颜色（如 ImGui 或 Dalamud 颜色，或其他 Penumbra 颜色）。部分颜色在默认选项中即采用此方式。"u8)
             .RegisterEntry("颜色配置应会自动迁移：仍使用旧默认值的项目会迁移到新默认值，并写入另一个文件。"u8, 1)
+            .RegisterEntry("新增选项：可为文件夹行启用交替颜色，并在对应文件夹设置中选择颜色。"u8)
+            .RegisterEntry("新增选项：可为文件夹设置独立于路径的显示名称。"u8)
+            .RegisterHighlight("大幅更新了材质编辑器（感谢 Ny！）。"u8)
+            .RegisterEntry("将此前未知的字段重命名为曝光（Exposure）、各向异性（Anisotropy）与滚动参数（Scroll Parameters）。"u8, 1)
+            .RegisterEntry("精简了颜色表布局，并增加了对窄窗口的支持。"u8, 1)
             .RegisterEntry("屏幕内标签页现在会在顶级条目组之后显示分隔线，大致按装备栏位划分。"u8)
             .RegisterEntry("支持信息中新增了若干插件，以及所有调用特定 IPC 函数的插件。"u8)
             .RegisterEntry("应普遍需求，高级编辑的模型标签页现改用从 0 开始的索引，而不再从 1 开始。"u8)
             .RegisterEntry("使用文件系统监视器时，并发的模组安装通知数量限制为 3 条。"u8)
+            .RegisterEntry("新增 SPM 文件查看器（感谢 Ny！）。"u8)
             .RegisterEntry("多项反序列化与序列化函数已改用 System.Text.Json，速度显著提升。"u8)
             .RegisterEntry("在多种情况下对语法损坏的 JSON 文件采用了新的恢复策略（感谢 Ny！）。"u8)
             .RegisterEntry("「Failed to Load Resource」日志警告将不再因 EasyEyes 故意使用的失败路径而触发。"u8)
+            .RegisterEntry("修复了带有临时设置的模组重新加载后 UI 未更新的问题。"u8)
+            .RegisterEntry("修复了模组帮助弹窗的问题。"u8)
+            .RegisterEntry("显著改善了本地数据库的写入性能。"u8)
+            .RegisterEntry("修复了绘制对象解析器中存储空指针的问题。"u8)
             .RegisterEntry("针对导入时涉及文件夹外文件的部分漏洞增加了防护。"u8)
             .RegisterEntry("修复了更改选项时临时设置失效的问题。"u8)
             .RegisterEntry("修复了自动备份功能的若干问题。"u8)
