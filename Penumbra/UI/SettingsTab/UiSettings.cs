@@ -191,7 +191,7 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
 
     private void DrawModSelectorSettings()
     {
-        using var tree = Im.Tree.Node("模组选择器显示"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("模组选择器显示参数"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
@@ -234,7 +234,7 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
 
     private void DrawOptionGroupSettings()
     {
-        using var tree = Im.Tree.Node("模组配置显示"u8, TreeNodeFlags.DefaultOpen);
+        using var tree = Im.Tree.Node("模组设置显示参数"u8, TreeNodeFlags.DefaultOpen);
         if (!tree)
             return;
 
