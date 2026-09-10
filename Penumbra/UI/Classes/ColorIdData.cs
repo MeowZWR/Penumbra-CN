@@ -44,7 +44,7 @@ public readonly struct ColorIdData : IColorData<ColorId>
             "此模组未在当前选中的合集中配置，但在选中合集继承的合集中已禁用。"u8, modSelector);
         ret[(int)NewMod] = new ColorData<ColorId>(DalamudColor.SuccessForeground, "新模组"u8,
             "此模组在此次Penumbra加载期间导入或创建，且尚未启用。"u8, modSelector);
-        ret[(int)ConflictingMod] = new ColorData<ColorId>(DalamudColor.WarningBackground, "未解决冲突的模组"u8,
+        ret[(int)ConflictingMod] = new ColorData<ColorId>(DalamudColor.WarningForeground, "未解决冲突的模组"u8,
             "此模组已启用，但与另一个处于同一优先级的已启用模组发生冲突。"u8, modSelector);
         ret[(int)NewModTint] = new ColorData<ColorId>(DalamudColor.SuccessForeground, "新模组色调"u8,
             "一个在当前会话中刚刚导入或创建的模组，尚未启用。此颜色用作常规状态颜色的色调。"u8,
@@ -79,12 +79,16 @@ public readonly struct ColorIdData : IColorData<ColorId>
             "当前MOD上已存在且可以删除的预定义标签。"u8, metadata);
         ret[(int)ChangedItemPreferenceStar] = new ColorData<ColorId>(0x30FFFFFF, "首选更改项目星标"u8,
             "模组面板的更改项目标签页中，用于优先处理特定项目的星标按钮颜色。"u8, metadata);
-        ret[(int)InGameHighlight] = new ColorData<ColorId>(0xFFEBCF89, "游戏中高亮"u8,
+        ret[(int)InGameHighlight] = new ColorData<ColorId>(0xFFEBCF89, "游戏内高亮（主要）"u8,
             "为便于编辑而高亮显示的游戏中元素。"u8, metadata);
         ret[(int)InGameHighlight2] = new ColorData<ColorId>(0xFF446CC0, "游戏内高亮（次要）"u8,
             "另一个为便于编辑而高亮显示的游戏中元素。"u8, metadata);
         ret[(int)ModSpecificPreset] = new ColorData<ColorId>(DalamudColor.HealerGreen, "模组专属设置预设"u8,
             "在预设下拉菜单中，此模组专属设置预设（相对于通用设置预设）的颜色。"u8, metadata);
+        ret[(int)FileOnPlayer] = new ColorData<ColorId>(HandledConflictMod, "使用中的文件"u8,
+            "文件编辑器下拉菜单中，当前正在玩家角色上使用的文件颜色。"u8, metadata);
+        ret[(int)FileIsGamePath] = new ColorData<ColorId>(FolderLine, "游戏路径文件"u8,
+            "材质选择下拉菜单中，不是磁盘上的模组文件，而是指向未修改游戏文件路径的文件颜色。"u8, metadata);
 
         // Collections
         ret[(int)SelectedCollection] = new ColorData<ColorId>(0x6069C056, "当前选中合集的分配对象"u8,
