@@ -30,8 +30,8 @@ internal sealed class ConditionCombo : ModObjectCombo
             .PushDefault(ImGuiColor.Border)
             .Push(ImGuiColor.FrameBackground, color);
 
-        if (!base.Draw(label, _currentCondition?.Option.FullName ?? "Select New Condition...",
-                "Selecting an option here makes the display and application of this option or entire group dependent on the option being enabled."u8,
+        if (!base.Draw(label, _currentCondition?.Option.FullName ?? "选择新条件...",
+                "在此选择一个选项后，当前选项或整个组的显示与生效将取决于该选项是否启用。"u8,
                 width, out var parent)
          || parent.Object is not IModOption option
          || option == existingCondition?.Option)
@@ -94,7 +94,7 @@ internal sealed class ConditionCombo : ModObjectCombo
 
     protected override bool DrawItem(in ModObjectCache item, int globalIndex, bool selected)
     {
-        var ret = Im.Selectable(item.Name.IsEmpty ? "<No Name>"u8 : item.Name.Utf8, selected);
+        var ret = Im.Selectable(item.Name.IsEmpty ? "<未命名>"u8 : item.Name.Utf8, selected);
         Im.Line.NoSpacing();
         using (ImGuiColor.Text.Push(Im.Style[ImGuiColor.TextDisabled]))
         {

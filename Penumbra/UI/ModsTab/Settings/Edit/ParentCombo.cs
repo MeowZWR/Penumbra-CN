@@ -13,8 +13,8 @@ internal sealed class ParentCombo(ModManager mods) : ModObjectCombo
         Group = group;
         Mod   = group.Mod;
         var current = group.ParentSetting;
-        if (!base.Draw(label, current?.Name ?? "Select Parent...",
-                "Selecting a group here places this group below it, possibly indented. Selecting an option places this group below the option if the option is not inside a combo."u8,
+        if (!base.Draw(label, current?.Name ?? "选择父级...",
+                "在此选择一个组，会将本组挂靠到其下方，并可能缩进。选择一个选项时，若该选项不在下拉框内，则会将本组挂靠到该选项下方。"u8,
                 width, out var parent))
             return;
 
@@ -63,11 +63,11 @@ internal sealed class ParentCombo(ModManager mods) : ModObjectCombo
             else if (group.Visible)
             {
                 using var indent = Im.Indent();
-                ret = Im.Selectable(item.Name.IsEmpty ? "<No Name>"u8 : item.Name.Utf8, selected);
+                ret = Im.Selectable(item.Name.IsEmpty ? "<未命名>"u8 : item.Name.Utf8, selected);
             }
             else
             {
-                ret = Im.Selectable(item.Name.IsEmpty ? "<No Name>"u8 : item.Name.Utf8, selected);
+                ret = Im.Selectable(item.Name.IsEmpty ? "<未命名>"u8 : item.Name.Utf8, selected);
                 if (!item.GroupName.IsEmpty)
                 {
                     Im.Line.NoSpacing();
@@ -80,7 +80,7 @@ internal sealed class ParentCombo(ModManager mods) : ModObjectCombo
         }
 
         if (item.CausesCycle)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "Setting this parent would cause a cycle in the ancestors."u8, true);
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "选择此父级会在挂靠关系中形成循环。"u8, true);
 
         return ret;
     }

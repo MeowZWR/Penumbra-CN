@@ -20,24 +20,24 @@ public sealed class LayoutEditPopup(ModManager mods) : ObjectEditPopup, IUiServi
     private void DrawGroup(IModGroup group)
     {
         DrawIdentifier(group);
-        _parentCombo.Draw("Parent Setting"u8, group, ImEx.GuidInputWidth + Im.Style.ItemInnerSpacing.X + Im.Style.FrameHeight);
+        _parentCombo.Draw("父级设置"u8, group, ImEx.GuidInputWidth + Im.Style.ItemInnerSpacing.X + Im.Style.FrameHeight);
         var layout = group.Layout;
-        if (Im.Checkbox("Hide When Condition Not Met"u8, ref layout, ModSettingsLayout.Hide))
+        if (Im.Checkbox("条件未满足时隐藏"u8, ref layout, ModSettingsLayout.Hide))
             mods.OptionEditor.SetLayout(group, layout);
         Im.Tooltip.OnHover(
-            "When this is checked, this group is not just disabled when its conditions are not met, but fully hidden instead."u8);
-        if (Im.Checkbox("Collapsed By Default"u8, ref layout, ModSettingsLayout.DefaultClosed))
+            "勾选后，当条件未满足时，此组将完全隐藏，而不仅仅是禁用。"u8);
+        if (Im.Checkbox("默认折叠"u8, ref layout, ModSettingsLayout.DefaultClosed))
             mods.OptionEditor.SetLayout(group, layout);
         Im.Tooltip.OnHover(
-            "When this is checked and this group is displayed with a collapsible header, the header is closed by default instead of open by default."u8);
-        if (Im.Checkbox("Add Spacing"u8, ref layout, ModSettingsLayout.Space))
+            "勾选后，若此组以可折叠标题显示，标题将默认收起而不是默认展开。"u8);
+        if (Im.Checkbox("添加间距"u8, ref layout, ModSettingsLayout.Space))
             mods.OptionEditor.SetLayout(group, layout);
         Im.Tooltip.OnHover(
-            "When this is checked, an empty line is inserted after the group is drawn, regardless of it being expanded or not."u8);
-        if (Im.Checkbox("Hide Group Name When Placed Under Parent"u8, ref layout, ModSettingsLayout.ParentHeader))
+            "勾选后，无论组是否展开，都会在绘制完毕后插入空行。"u8);
+        if (Im.Checkbox("挂靠到父级时隐藏组名称"u8, ref layout, ModSettingsLayout.ParentHeader))
             mods.OptionEditor.SetLayout(group, layout);
         Im.Tooltip.OnHover(
-            "When this is checked, this group only shows its options and not the group header if it is placed under a parent group or option."u8);
+            "勾选后，若此组挂靠在父组或父选项下，将只显示其选项而不显示组标题。"u8);
     }
 
     private void DrawIdentifier(IModObject @object)
@@ -46,10 +46,10 @@ public sealed class LayoutEditPopup(ModManager mods) : ObjectEditPopup, IUiServi
         if (ImEx.GuidInput("##guid"u8, ref guid) && guid.HasValue)
             mods.OptionEditor.ForceIdentifier(@object, guid.Value);
         Im.Line.SameInner();
-        if (ImEx.Icon.Button(LunaStyle.RefreshIcon, "Set a new GUID for this object."u8))
+        if (ImEx.Icon.Button(LunaStyle.RefreshIcon, "为此对象设置一个新的 GUID。"u8))
             mods.OptionEditor.ForceIdentifier(@object, Guid.NewGuid());
         Im.Line.SameInner();
-        ImEx.TextFrameAligned("Identifier"u8);
+        ImEx.TextFrameAligned("标识符（GUID）"u8);
     }
 
     private void DrawOption(IModOption option)
@@ -61,34 +61,34 @@ public sealed class LayoutEditPopup(ModManager mods) : ObjectEditPopup, IUiServi
         {
             using (Im.Disabled())
             {
-                Im.Checkbox("Disable When Condition Not Met"u8, true);
+                Im.Checkbox("条件未满足时禁用"u8, true);
             }
 
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
-                "Single select options are always disabled instead of hidden when their conditions are not met."u8);
+                "单选选项在条件未满足时始终禁用而非隐藏。"u8);
 
-            if (Im.Checkbox("Add Separator"u8, ref layout, ModSettingsLayout.Separator))
+            if (Im.Checkbox("添加分隔线"u8, ref layout, ModSettingsLayout.Separator))
                 mods.OptionEditor.SetLayout(option, layout);
             Im.Tooltip.OnHover(
-                "When this is checked, a separator line is placed below this option when it is displayed inside a combo."u8);
+                "勾选后，若此选项显示在下拉框中，将在其下方绘制分隔线。"u8);
         }
         else
         {
-            if (Im.Checkbox("Hide When Condition Not Met"u8, ref layout, ModSettingsLayout.Hide))
+            if (Im.Checkbox("条件未满足时隐藏"u8, ref layout, ModSettingsLayout.Hide))
                 mods.OptionEditor.SetLayout(option, layout);
             Im.Tooltip.OnHover(
-                "When this is checked, this option is not just disabled when its conditions are not met, but fully hidden instead."u8);
+                "勾选后，当条件未满足时，此选项将完全隐藏，而不仅仅是禁用。"u8);
         }
 
-        if (Im.Checkbox("Add Spacing"u8, ref layout, ModSettingsLayout.Space))
+        if (Im.Checkbox("添加间距"u8, ref layout, ModSettingsLayout.Space))
             mods.OptionEditor.SetLayout(option, layout);
         Im.Tooltip.OnHover(
-            "When this is checked, an empty line is inserted after the option and all its children are drawn if this does not happen inside a combo."u8);
+            "勾选后，若不在下拉框内显示，将在此选项及其所有子项绘制完毕后插入空行。"u8);
 
-        if (Im.Checkbox("Hide Option Label (Single Line)"u8, ref layout, ModSettingsLayout.HideOptionLabel))
+        if (Im.Checkbox("隐藏选项标签（单行）"u8, ref layout, ModSettingsLayout.HideOptionLabel))
             mods.OptionEditor.SetLayout(option, layout);
         Im.Tooltip.OnHover(
-            "When this is checked, and this option is a single checkbox option on the same line as its group label, only display the checkbox, not the option's name or description as a label."u8);
+            "勾选后，若此选项是与组标签同一行的单个复选框，将只显示复选框，而不显示选项名称或描述作为标签。"u8);
     }
 
     protected override void DrawInternal()
@@ -102,15 +102,15 @@ public sealed class LayoutEditPopup(ModManager mods) : ObjectEditPopup, IUiServi
 
     private static readonly IReadOnlyList<StringU8> ColorNames =
     [
-        new("Default"u8),
-        new("Option Color 1"u8),
-        new("Option Color 2"u8),
-        new("Option Color 3"u8),
-        new("Option Color 4"u8),
-        new("Option Color 5"u8),
-        new("Option Color 6"u8),
-        new("Option Color 7"u8),
-        new("Option Color 8"u8),
+        new("默认"u8),
+        new("选项颜色 1"u8),
+        new("选项颜色 2"u8),
+        new("选项颜色 3"u8),
+        new("选项颜色 4"u8),
+        new("选项颜色 5"u8),
+        new("选项颜色 6"u8),
+        new("选项颜色 7"u8),
+        new("选项颜色 8"u8),
     ];
 
     private void DrawColorCombo(IModOption option)
@@ -126,9 +126,9 @@ public sealed class LayoutEditPopup(ModManager mods) : ObjectEditPopup, IUiServi
         }
 
         Im.Tooltip.OnHover(
-            "Note that these colors are user-configurable, the preview here only displays your configured colors, which may differ from those of a user."u8);
+            "请注意这些颜色可由用户自行配置，此处预览仅显示你当前配置的颜色，可能与其他用户的配置不同。"u8);
 
-        ImEx.TextLabel("Color"u8);
+        ImEx.TextLabel("颜色"u8);
         DrawColorPopup(option, popupId, bb);
     }
 

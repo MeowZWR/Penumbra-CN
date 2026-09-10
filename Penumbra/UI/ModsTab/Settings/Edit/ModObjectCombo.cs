@@ -19,7 +19,7 @@ internal sealed class ModObjectCache
 
     private ModObjectCache()
     {
-        Name      = new StringPair("None"u8);
+        Name      = new StringPair("无"u8);
         Visible   = true;
         GroupName = StringPair.Empty;
     }
