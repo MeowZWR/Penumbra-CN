@@ -27,9 +27,9 @@ public sealed class SetDescendantsButton(ModFileSystemDrawer drawer, bool setTo,
 
     public override void DrawTooltip(in IFileSystemFolder data)
     {
-        Im.Text("Perform a bulk action on all mods that are inside this folder or its subfolders."u8);
+        Im.Text("对当前组及其所有子组中的模组执行批量操作。"u8);
         if (!LunaStyle.Modifier.Misclick.Active)
-            Im.Text($"Hold {LunaStyle.Modifier.Misclick} while clicking to execute.");
+            Im.Text($"按住 {LunaStyle.Modifier.Misclick} 点击以执行。");
     }
 
     /// <inheritdoc/>

@@ -292,16 +292,16 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##comboHomo"u8, config.ModSettingMaximumExtendComboWidth, out var newComboHomo, "%.0f"u8, -1))
             config.ModSettingMaximumExtendComboWidth = newComboHomo;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Maximum Option Combo Preview Homogenization"u8,
-            "The maximum width in unscaled pixels that single selection group combo previews are extended in the settings screen. "u8
-          + "Combo previews are sized according to the largest option name available across all combos, up to this value. "u8
-          + "If a combo contains longer option names than this, it is an outlier and other combos are not extended to its width."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项下拉预览最大齐宽"u8,
+            "设置界面中单选项组下拉预览扩展的最大未缩放像素宽度。"u8
+          + "下拉预览宽度会按所有下拉菜单中最长的选项名称对齐，但不超过此值。"u8
+          + "如果某个下拉菜单的选项名称所需空间超过此值，则视为异常值，其他下拉菜单不会扩展到该宽度。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##comboMin"u8, config.ModSettingMinimumComboWidth, out var newComboMin, "%.0f"u8, 10, 500))
             config.ModSettingMinimumComboWidth = newComboMin;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Minimum Option Combo Preview Width"u8,
-            "The minimum width used for single selection group combo previews, regardless of the length of their option names."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项下拉预览最小宽度"u8,
+            "单选项组下拉预览使用的最小宽度，与选项名称长度无关。"u8);
 
         DrawSingleSelectRadioMax();
     }
