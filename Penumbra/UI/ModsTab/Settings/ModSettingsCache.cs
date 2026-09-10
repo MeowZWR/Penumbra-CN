@@ -106,7 +106,7 @@ public sealed class ModSettingsCache : BasicCache
         var id               = Im.Id.Get("Page"u8);
         var currentIndex     = _config.DisplayPages ? -1 : list.Count;
         var parentLineOffset = _config.DisplayPages || VisiblePages.Count <= 1 ? 0 : CaretTipSpacing;
-        var expanded         = Storage.GetBool(id, true);
+        var expanded         = _config.DisplayPages || VisiblePages.Count <= 1 || Storage.GetBool(id, true);
 
         // If the user displays pages as headers, add a header line.
         if (!_config.DisplayPages && VisiblePages.Count > 1)
