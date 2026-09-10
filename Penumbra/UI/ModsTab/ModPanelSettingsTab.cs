@@ -249,6 +249,35 @@ public class ModPanelSettingsTab(
             ? Im.Style.ScrollbarSize
             : 0;
 
+    private float RemainingOnLine()
+        => Im.ContentRegion.Maximum.X - Im.Cursor.PositionPreviousLine.X;
+
+    private float FitPresetComboWidth(float rightExceptCombo)
+    {
+        var preferred = 250 * Im.Style.GlobalScale;
+        var min       = 150 * Im.Style.GlobalScale;
+        var padding   = SettingsButtonsRightPadding();
+        var sameLine  = RemainingOnLine() - Im.Style.ItemSpacing.X - padding - rightExceptCombo;
+        return sameLine >= min
+            ? Math.Min(preferred, sameLine)
+            : Math.Clamp(Im.ContentRegion.Available.X - padding - rightExceptCombo, min, preferred);
+    }
+
+    private void AlignRightOrWrap(float width)
+    {
+        width += SettingsButtonsRightPadding();
+        var spacing = RemainingOnLine() - width;
+        if (spacing >= Im.Style.ItemSpacing.X)
+        {
+            Im.Line.Same(0, spacing);
+            return;
+        }
+
+        var alignedX = Im.ContentRegion.Maximum.X - width;
+        if (alignedX > Im.Cursor.X)
+            Im.Cursor.X = alignedX;
+    }
+
     private void DrawPresetRow()
     {
         if (config.Ui.HidePresetBar)
@@ -263,16 +292,16 @@ public class ModPanelSettingsTab(
         if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "将当前设置复制到剪贴板作为可分享预设。"u8))
             SettingPresetData.FromMod(selection.Mod!, selection.Settings).ToClipboard();
 
-        var buttonSize      = SettingsToggleButtonWidth();
-        var smallButtonSize = new Vector2((buttonSize - Im.Style.ItemInnerSpacing.X) / 2, 0);
-        Im.Line.Same(Im.ContentRegion.Available.X
-          - (2 * Im.Style.FrameHeight + 2 * Im.Style.ItemInnerSpacing.X + Im.Style.ItemSpacing.X + 250 * Im.Style.GlobalScale + buttonSize
-                + SettingsButtonsRightPadding()));
+        var buttonSize       = SettingsToggleButtonWidth();
+        var smallButtonSize  = new Vector2((buttonSize - Im.Style.ItemInnerSpacing.X) / 2, 0);
+        var rightExceptCombo = 2 * Im.Style.FrameHeight + 2 * Im.Style.ItemInnerSpacing.X + Im.Style.ItemSpacing.X + buttonSize;
+        var comboWidth       = FitPresetComboWidth(rightExceptCombo);
+        AlignRightOrWrap(rightExceptCombo + comboWidth);
         if (ImEx.Icon.Button(LunaStyle.SaveIcon, "将当前设置保存为此模组的新预设。"u8))
             Im.Popup.Open("presetName"u8);
 
         Im.Line.SameInner();
-        presets.Draw(StringU8.Empty, 250 * Im.Style.GlobalScale);
+        presets.Draw(StringU8.Empty, comboWidth);
         Im.Line.SameInner();
 
         using (ImGuiColor.Button.Push(ImGuiColor.ButtonActive.Vector, _editPresetMode && presets.Selected is not null))
@@ -369,7 +398,7 @@ public class ModPanelSettingsTab(
         var offset = drawInherited
             ? buttonSize + inheritSize + Im.Style.ItemSpacing.X
             : buttonSize;
-        Im.Line.Same(Im.ContentRegion.Available.X - offset - SettingsButtonsRightPadding());
+        AlignRightOrWrap(offset);
         var enabled = LunaStyle.Modifier.Destructive.Active;
         if (drawInherited)
         {
