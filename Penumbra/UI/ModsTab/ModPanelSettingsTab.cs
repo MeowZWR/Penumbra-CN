@@ -160,6 +160,8 @@ public class ModPanelSettingsTab(
             Im.Line.Same();
             DrawPriorityInput();
             tutorial.OpenTutorial(BasicTutorialSteps.Priority);
+            Im.Line.Same();
+            DrawModConfigButton();
             DrawRemoveSettings();
         }
     }
@@ -357,7 +359,7 @@ public class ModPanelSettingsTab(
             _currentPriority = priority;
         if (new ModPriority(priority).IsHidden)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
-                $"This priority is special-cased to hide this mod in conflict tabs ({ModPriority.HiddenMin}, {ModPriority.HiddenMax}).");
+                $"此优先级为特殊值，会在冲突选项卡中隐藏此模组（{ModPriority.HiddenMin}–{ModPriority.HiddenMax}）。");
 
 
         if (Im.Item.DeactivatedAfterEdit && _currentPriority.HasValue)
@@ -386,13 +388,30 @@ public class ModPanelSettingsTab(
           + "如果要用模组A覆盖模组B，则模组A的优先级应高于模组B。"u8);
     }
 
+    private void DrawModConfigButton()
+    {
+        using var id = Im.Id.Push("Config"u8);
+        if (ImEx.Icon.Button(LunaStyle.ConfigIcon, "编辑此模组的本地配置。"u8) || Im.Item.RightClicked())
+            Im.Popup.Open("ModConfig"u8);
+
+        using var popup = Im.Popup.Begin("ModConfig"u8, WindowFlags.NoSavedSettings);
+        if (!popup)
+            return;
+
+        if (Im.Menu.Item(selection.Mod!.Favorite ? "移除收藏"u8 : "标记为收藏"u8))
+            modManager.DataEditor.ChangeModFavorite(selection.Mod, !selection.Mod.Favorite);
+
+        if (Im.Menu.Item(selection.Mod!.IgnorePages ? "为此模组显示选项页"u8 : "忽略此模组的选项页"u8))
+            modManager.DataEditor.ChangeIgnorePages(selection.Mod, !selection.Mod.IgnorePages);
+    }
+
     /// <summary>
     /// Draw a button to remove the current settings and inherit them instead
     /// in the top-right corner of the window/tab.
     /// </summary>
     private void DrawRemoveSettings()
     {
-        var drawInherited = !selection.Inherited && !selection.Settings.IsEmpty;
+        var drawInherited = selection is { Inherited: false, Settings.IsEmpty: false };
         var buttonSize    = SettingsToggleButtonWidth();
         var inheritSize   = LabelButtonWidth("继承设置"u8);
         var offset = drawInherited
