@@ -284,8 +284,8 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
         if (ImEx.InputOnDeactivation.Drag("##groupWidth"u8, config.ModSettingMaximumLabelWidth,
                 out var newLabelWidth, "%.0f"u8, 50, 2000, 1f, SliderFlags.AlwaysClamp))
             config.ModSettingMaximumLabelWidth = newLabelWidth;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Maximum Group Label Width"u8,
-            "The maximum width in unscaled pixels that group label are allowed to use."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项组标签最大宽度"u8,
+            "选项组标签允许使用的最大未缩放像素宽度。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##groupHomo"u8, config.ModSettingMaximumExtendLabelWidth,
@@ -300,8 +300,8 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
         if (ImEx.InputOnDeactivation.Drag("##comboWidth"u8, config.ModSettingMaximumComboWidth,
                 out var newComboWidth, "%.0f"u8, 50, 2000, 1f, SliderFlags.AlwaysClamp))
             config.ModSettingMaximumComboWidth = newComboWidth;
-        LunaStyle.DrawAlignedHelpMarkerLabel("Maximum Option Combo Preview Width"u8,
-            "The maximum width in unscaled pixels that option previews are allowed to use."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("选项下拉预览最大宽度"u8,
+            "选项下拉预览允许使用的最大未缩放像素宽度。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##comboHomo"u8, config.ModSettingMaximumExtendComboWidth, out var newComboHomo, "%.0f"u8, -1, 2000, 1f, SliderFlags.AlwaysClamp))
