@@ -18,15 +18,15 @@ using Penumbra.UI.Classes;
 using Penumbra.UI.ModsTab.ModPreview;
 using Penumbra.UI.ModsTab.Settings;
 
-namespace Penumbra.UI.ModsTab;
+namespace Penumbra.UI.ModsTab.Optimized;
 
-public class ModPanelSettingsTab(
+public sealed class OptimizedModPanelSettingsTab(
     CollectionManager collectionManager,
     ModManager modManager,
     ModSelection selection,
     TutorialService tutorial,
     CommunicatorService communicator,
-    ModGroupDrawer modGroupDrawer,
+    OptimizedModGroupDrawer modGroupDrawer,
     Configuration config,
     PresetCombo presets,
     ITextureProvider textureProvider,
@@ -59,15 +59,16 @@ public class ModPanelSettingsTab(
 
     public void DrawContent()
     {
+        using var optimizedId = Im.Id.Push("OptimizedSettings"u8);
         var ui = config.Ui;
         if (ui.SavePreviewPanelState && _previewExpanded != _imagePanel.Config.Expanded)
             _previewExpanded = _imagePanel.Config.Expanded;
 
         var totalAvailableWidth = Im.ContentRegion.Available.X;
-        var gutterWidth         = PreviewCollapseGutterWidth;
-        var maxAllowedWidth     = (totalAvailableWidth - gutterWidth) * ui.PreviewPanelRatio;
-        var safeMinWidth        = Math.Min(ui.PreviewPanelMinWidth, maxAllowedWidth);
-        var safeMaxWidth        = Math.Min(ui.PreviewPanelMaxWidth, maxAllowedWidth);
+        var gutterWidth = PreviewCollapseGutterWidth;
+        var maxAllowedWidth = (totalAvailableWidth - gutterWidth) * ui.PreviewPanelRatio;
+        var safeMinWidth = Math.Min(ui.PreviewPanelMinWidth, maxAllowedWidth);
+        var safeMaxWidth = Math.Min(ui.PreviewPanelMaxWidth, maxAllowedWidth);
         var calculatedPreviewWidth = (totalAvailableWidth - gutterWidth) * ui.PreviewPanelRatio;
         var previewWidth = _previewExpanded && ui.ShowModPreviewPanel
             ? Math.Clamp(calculatedPreviewWidth, safeMinWidth * UiHelpers.Scale, safeMaxWidth * UiHelpers.Scale)
@@ -101,16 +102,14 @@ public class ModPanelSettingsTab(
             () => new ModSettingsCache(selection, config.Ui, communicator, Im.State.Storage));
 
         _actualEditPresetMode = _editPresetMode && presets.Selected is not null;
-        _temporary            = selection.TemporarySettings is not null;
-        _locked               = (selection.TemporarySettings?.Lock ?? 0) > 0;
+        _temporary = selection.TemporarySettings is not null;
+        _locked = (selection.TemporarySettings?.Lock ?? 0) > 0;
 
         if (cache.VisiblePages.Count > 1 && config.Ui.DisplayPages)
         {
             DrawPreamble();
             if (_actualEditPresetMode)
-            {
                 DrawEditPresetMode();
-            }
             else
             {
                 communicator.PostEnabledDraw.Invoke(new PostEnabledDraw.Arguments(selection.Mod!));
@@ -131,9 +130,7 @@ public class ModPanelSettingsTab(
             Im.Dummy(0);
             table.NextColumn();
             if (_actualEditPresetMode)
-            {
                 DrawEditPresetMode();
-            }
             else
             {
                 communicator.PostEnabledDraw.Invoke(new PostEnabledDraw.Arguments(selection.Mod!));
@@ -152,21 +149,38 @@ public class ModPanelSettingsTab(
 
         Im.Dummy(Vector2.Zero);
         DrawPresetRow();
-        if (!_actualEditPresetMode)
-        {
-            communicator.PreSettingsPanelDraw.Invoke(new PreSettingsPanelDraw.Arguments(selection.Mod!));
-            DrawEnabledInput();
-            tutorial.OpenTutorial(BasicTutorialSteps.EnablingMods);
-            Im.Line.Same();
-            DrawPriorityInput();
-            tutorial.OpenTutorial(BasicTutorialSteps.Priority);
-            Im.Line.Same();
-            DrawModConfigButton();
-            DrawRemoveSettings();
-        }
+        if (_actualEditPresetMode)
+            return;
+
+        communicator.PreSettingsPanelDraw.Invoke(new PreSettingsPanelDraw.Arguments(selection.Mod!));
+        DrawEnabledInput();
+        tutorial.OpenTutorial(BasicTutorialSteps.EnablingMods);
+        Im.Line.Same();
+        DrawPriorityInput();
+        tutorial.OpenTutorial(BasicTutorialSteps.Priority);
+        Im.Line.SameInner();
+        DrawPresetVisibilityInput();
+        Im.Line.SameInner();
+        DrawPageTabsInput();
+        DrawRemoveSettings();
     }
 
-    /// <summary> Draw a big tinted bar if the current setting is temporary. </summary>
+    private void DrawPresetVisibilityInput()
+    {
+        var visible = !config.Ui.HideTraditionalModSettingsPresetBar;
+        if (Im.Checkbox("预设"u8, ref visible))
+            config.Ui.HideTraditionalModSettingsPresetBar = !visible;
+        Im.Tooltip.OnHover("显示或隐藏传统模组设置界面中的预设栏。"u8);
+    }
+
+    private void DrawPageTabsInput()
+    {
+        var showPages = !selection.Mod!.IgnorePages;
+        if (Im.Checkbox("页签"u8, ref showPages))
+            modManager.DataEditor.ChangeIgnorePages(selection.Mod, !showPages);
+        Im.Tooltip.OnHover("如果此模组有选项页，启用后会以标签页的形式显示。"u8);
+    }
+
     private void DrawTemporaryWarning()
     {
         if (!_temporary)
@@ -183,14 +197,13 @@ public class ModPanelSettingsTab(
           + "你可以点击这个按钮移除临时设置并返回到正常设置。"u8);
     }
 
-    /// <summary> Draw a big red bar if the current setting is inherited. </summary>
     private void DrawInheritedWarning()
     {
         if (!selection.Inherited)
             return;
 
         using var color = ImGuiColor.Button.Push(Colors.PressEnterWarningBg);
-        var       width = Im.ContentRegion.Available with { Y = 0 };
+        var width = Im.ContentRegion.Available with { Y = 0 };
         if (ImEx.Button($"这些设置继承自 {selection.Collection.Identity.Name}。", width, _locked))
         {
             if (_temporary)
@@ -208,10 +221,9 @@ public class ModPanelSettingsTab(
           + "你也可以直接更改任何设置，这会把当前设置连同该项改动一起复制到此合集。"u8);
     }
 
-    /// <summary> Draw a checkbox for the enabled status of the mod. </summary>
     private void DrawEnabledInput()
     {
-        var       enabled  = selection.Settings.Enabled;
+        var enabled = selection.Settings.Enabled;
         using var disabled = Im.Disabled(_locked);
         if (!Im.Checkbox("启用"u8, ref enabled))
             return;
@@ -221,7 +233,7 @@ public class ModPanelSettingsTab(
         {
             var temporarySettings = selection.TemporarySettings ?? new TemporaryModSettings(selection.Mod!, selection.Settings);
             temporarySettings.ForceInherit = false;
-            temporarySettings.Enabled      = enabled;
+            temporarySettings.Enabled = enabled;
             collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!, temporarySettings);
         }
         else
@@ -233,19 +245,14 @@ public class ModPanelSettingsTab(
     private static float LabelButtonWidth(ReadOnlySpan<byte> label)
         => Im.Font.CalculateButtonSize(label).X + 2 * Im.Style.FramePadding.X;
 
-    /// <summary>
-    /// Shared width of Turn Permanent / Turn Temporary, also used as the combined Apply + Copy width.
-    /// </summary>
     private static float SettingsToggleButtonWidth()
     {
-        var toggleWidth = Math.Max(LabelButtonWidth("设为永久"u8), LabelButtonWidth("设为临时"u8));
-        var smallWidth  = Math.Max(LabelButtonWidth("应用"u8), LabelButtonWidth("复制"u8));
-        return Math.Max(toggleWidth, smallWidth * 2 + Im.Style.ItemInnerSpacing.X);
+        var smallWidth = Math.Max(
+            Math.Max(LabelButtonWidth("应用"u8), LabelButtonWidth("复制"u8)),
+            Math.Max(LabelButtonWidth("继承"u8), LabelButtonWidth("临时"u8)));
+        return smallWidth * 2 + Im.Style.ItemInnerSpacing.X;
     }
 
-    /// <summary>
-    /// When the preview collapse button is visible and no scrollbar is taking that space, keep the same gap.
-    /// </summary>
     private float SettingsButtonsRightPadding()
         => config.Ui.ShowModPreviewPanel && Im.Scroll.MaximumY is 0
             ? Im.Style.ScrollbarSize
@@ -256,16 +263,15 @@ public class ModPanelSettingsTab(
 
     private float FitPresetComboWidth(float rightExceptCombo)
     {
-        var preferred = 250 * Im.Style.GlobalScale;
-        var min       = 150 * Im.Style.GlobalScale;
-        var padding   = SettingsButtonsRightPadding();
-        var sameLine  = RemainingOnLine() - Im.Style.ItemSpacing.X - padding - rightExceptCombo;
+        var min = 100 * Im.Style.GlobalScale;
+        var padding = SettingsButtonsRightPadding();
+        var sameLine = RemainingOnLine() - Im.Style.ItemSpacing.X - padding - rightExceptCombo;
         return sameLine >= min
-            ? Math.Min(preferred, sameLine)
-            : Math.Clamp(Im.ContentRegion.Available.X - padding - rightExceptCombo, min, preferred);
+            ? sameLine
+            : Math.Max(min, Im.ContentRegion.Available.X - padding - rightExceptCombo);
     }
 
-    private void AlignRightOrWrap(float width)
+    private void AlignRightOrWrap(float width, bool alignWrapped = true)
     {
         width += SettingsButtonsRightPadding();
         var spacing = RemainingOnLine() - width;
@@ -275,14 +281,17 @@ public class ModPanelSettingsTab(
             return;
         }
 
-        var alignedX = Im.ContentRegion.Maximum.X - width;
-        if (alignedX > Im.Cursor.X)
-            Im.Cursor.X = alignedX;
+        if (alignWrapped)
+        {
+            var alignedX = Im.ContentRegion.Maximum.X - width;
+            if (alignedX > Im.Cursor.X)
+                Im.Cursor.X = alignedX;
+        }
     }
 
     private void DrawPresetRow()
     {
-        if (config.Ui.HidePresetBar)
+        if (config.Ui.HideTraditionalModSettingsPresetBar)
             return;
 
         using var id = Im.Id.Push("presets"u8);
@@ -294,10 +303,10 @@ public class ModPanelSettingsTab(
         if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "将当前设置复制到剪贴板作为可分享预设。"u8))
             SettingPresetData.FromMod(selection.Mod!, selection.Settings).ToClipboard();
 
-        var buttonSize       = SettingsToggleButtonWidth();
-        var smallButtonSize  = new Vector2((buttonSize - Im.Style.ItemInnerSpacing.X) / 2, 0);
+        var buttonSize = SettingsToggleButtonWidth();
+        var smallButtonSize = new Vector2((buttonSize - Im.Style.ItemInnerSpacing.X) / 2, 0);
         var rightExceptCombo = 2 * Im.Style.FrameHeight + 2 * Im.Style.ItemInnerSpacing.X + Im.Style.ItemSpacing.X + buttonSize;
-        var comboWidth       = FitPresetComboWidth(rightExceptCombo);
+        var comboWidth = FitPresetComboWidth(rightExceptCombo);
         AlignRightOrWrap(rightExceptCombo + comboWidth);
         if (ImEx.Icon.Button(LunaStyle.SaveIcon, "将当前设置保存为此模组的新预设。"u8))
             Im.Popup.Open("presetName"u8);
@@ -305,7 +314,6 @@ public class ModPanelSettingsTab(
         Im.Line.SameInner();
         presets.Draw(StringU8.Empty, comboWidth);
         Im.Line.SameInner();
-
         using (ImGuiColor.Button.Push(ImGuiColor.ButtonActive.Vector, _editPresetMode && presets.Selected is not null))
         {
             if (ImEx.Icon.Button(LunaStyle.EditIcon, "编辑当前选中的预设。"u8, presets.Selected is null))
@@ -322,7 +330,6 @@ public class ModPanelSettingsTab(
         }
 
         var hovered = Im.Item.Hovered();
-
         Im.Line.SameInner();
         if (ImEx.Button("复制"u8, smallButtonSize, "将此预设数据复制到剪贴板以便分享。"u8, presets.Selected is null))
         {
@@ -332,27 +339,21 @@ public class ModPanelSettingsTab(
 
         if (hovered || Im.Item.Hovered())
         {
-            using var _  = Im.Style.PushDefault();
+            using var _ = Im.Style.PushDefault();
             using var tt = Im.Tooltip.Begin();
             LunaStyle.DrawSeparator();
-
             presets.DrawTooltip(presets.Selected!);
         }
-
 
         if (InputPopup.OpenName("presetName"u8, out var name))
             presets.PresetManager.AddPreset(selection.Mod!, selection.Settings, name);
     }
 
-    /// <summary>
-    /// Draw a priority input.
-    /// Priority is changed on deactivation of the input box.
-    /// </summary>
     private void DrawPriorityInput()
     {
-        using var group    = Im.Group();
-        var       settings = selection.Settings;
-        var       priority = _currentPriority ?? settings.Priority.Value;
+        using var group = Im.Group();
+        var settings = selection.Settings;
+        var priority = _currentPriority ?? settings.Priority.Value;
         Im.Item.SetNextWidth(50 * Im.Style.GlobalScale);
         using var disabled = Im.Disabled(_locked);
         if (Im.Input.Scalar("##Priority"u8, ref priority))
@@ -360,7 +361,6 @@ public class ModPanelSettingsTab(
         if (new ModPriority(priority).IsHidden)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
                 $"此优先级为特殊值，会在冲突选项卡中隐藏此模组（{ModPriority.HiddenMin}–{ModPriority.HiddenMax}）。");
-
 
         if (Im.Item.DeactivatedAfterEdit && _currentPriority.HasValue)
         {
@@ -370,7 +370,7 @@ public class ModPanelSettingsTab(
                 {
                     var temporarySettings = selection.TemporarySettings ?? new TemporaryModSettings(selection.Mod!, selection.Settings);
                     temporarySettings.ForceInherit = false;
-                    temporarySettings.Priority     = new ModPriority(_currentPriority.Value);
+                    temporarySettings.Priority = new ModPriority(_currentPriority.Value);
                     collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
                         temporarySettings);
                 }
@@ -388,49 +388,24 @@ public class ModPanelSettingsTab(
           + "如果要用模组A覆盖模组B，则模组A的优先级应高于模组B。"u8);
     }
 
-    private void DrawModConfigButton()
-    {
-        using var id = Im.Id.Push("Config"u8);
-        if (ImEx.Icon.Button(LunaStyle.ConfigIcon, "编辑此模组本地配置。"u8) || Im.Item.RightClicked())
-            Im.Popup.Open("ModConfig"u8);
-
-        using var popup = Im.Popup.Begin("ModConfig"u8, WindowFlags.NoSavedSettings);
-        if (!popup)
-            return;
-
-        if (Im.Menu.Item(selection.Mod!.Favorite ? "移除收藏"u8 : "标记为收藏"u8))
-            modManager.DataEditor.ChangeModFavorite(selection.Mod, !selection.Mod.Favorite);
-
-        if (Im.Menu.Item(selection.Mod!.IgnorePages ? "显示此模组选项页"u8 : "忽略此模组选项页"u8))
-            modManager.DataEditor.ChangeIgnorePages(selection.Mod, !selection.Mod.IgnorePages);
-    }
-
-    /// <summary>
-    /// Draw a button to remove the current settings and inherit them instead
-    /// in the top-right corner of the window/tab.
-    /// </summary>
     private void DrawRemoveSettings()
     {
         var drawInherited = selection is { Inherited: false, Settings.IsEmpty: false };
-        var buttonSize    = SettingsToggleButtonWidth();
-        var inheritSize   = LabelButtonWidth("继承设置"u8);
-        var offset = drawInherited
-            ? buttonSize + inheritSize + Im.Style.ItemSpacing.X
-            : buttonSize;
-        AlignRightOrWrap(offset);
+        var buttonSize = SettingsToggleButtonWidth();
+        var smallButtonSize = new Vector2((buttonSize - Im.Style.ItemInnerSpacing.X) / 2, 0);
+        AlignRightOrWrap(buttonSize, false);
         var enabled = LunaStyle.Modifier.Destructive.Active;
         if (drawInherited)
         {
-            var inheritSizeVec = new Vector2(inheritSize, 0);
             var inherit = (enabled, _locked) switch
             {
-                (true, false) => ImEx.Button("继承设置"u8, inheritSizeVec,
+                (true, false) => ImEx.Button("继承"u8, smallButtonSize,
                     "从此合集移除当前设置，以便它可以继承设置。\n"u8
                   + "如果没有继承的合集为此模组设置了设置，它将被禁用。"u8),
-                (false, false) => ImEx.Button("继承设置"u8, inheritSizeVec,
+                (false, false) => ImEx.Button("继承"u8, smallButtonSize,
                     $"从此合集移除当前设置，以便它可以继承设置。\n按住 {LunaStyle.Modifier.Destructive} 以进行继承。",
                     true),
-                (_, true) => ImEx.Button("继承设置"u8, inheritSizeVec,
+                (_, true) => ImEx.Button("继承"u8, smallButtonSize,
                     "从此合集移除当前设置，以便它可以继承设置。\n设置当前被锁定，无法更改。"u8,
                     true),
             };
@@ -449,15 +424,19 @@ public class ModPanelSettingsTab(
                 }
             }
 
-            Im.Line.Same();
+            Im.Line.SameInner();
+        }
+        else
+        {
+            Im.Cursor.X += smallButtonSize.X + Im.Style.ItemInnerSpacing.X;
         }
 
         if (_temporary)
         {
             var overwrite = enabled
-                ? ImEx.Button("设为永久"u8, new Vector2(buttonSize, 0),
+                ? ImEx.Button("永久"u8, smallButtonSize,
                     "使用当前的临时设置覆盖此合集中的该模组的实际设置。"u8)
-                : ImEx.Button("设为永久"u8, new Vector2(buttonSize, 0),
+                : ImEx.Button("永久"u8, smallButtonSize,
                     $"使用当前的临时设置覆盖该模组在此合集中的实际设置。\n按住 {LunaStyle.Modifier.Destructive} 以覆盖。",
                     true);
             if (overwrite)
@@ -481,7 +460,7 @@ public class ModPanelSettingsTab(
         else
         {
             var actual = collectionManager.Active.Current.GetActualSettings(selection.Mod!.Index).Settings;
-            if (ImEx.Button("设为临时"u8, new Vector2(buttonSize, 0),
+            if (ImEx.Button("临时"u8, smallButtonSize,
                     "将当前设置复制到临时设置中以进行实验。"u8))
                 collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
                     new TemporaryModSettings(selection.Mod!, actual));
@@ -501,14 +480,14 @@ public class ModPanelSettingsTab(
         if (!gutter)
             return;
 
-        var gutterMin    = Im.Cursor.ScreenPosition;
+        var gutterMin = Im.Cursor.ScreenPosition;
         var gutterHeight = Im.ContentRegion.Available.Y;
         var handleHeight = Im.Style.FrameHeight * 4;
         Im.Dummy(new Vector2(gutterWidth, MathF.Max(0, MathF.Round((gutterHeight - handleHeight) * 0.5f))));
 
         var clicked = Im.InvisibleButton("##handle"u8, new Vector2(gutterWidth, handleHeight));
         var hovered = Im.Item.Hovered();
-        var active  = Im.Item.Active;
+        var active = Im.Item.Active;
         var handleRect = Im.Item.Bounds;
         Im.Tooltip.OnHover(_previewExpanded ? "隐藏预览面板"u8 : "显示预览面板"u8);
         if (clicked)
@@ -521,11 +500,11 @@ public class ModPanelSettingsTab(
             }
         }
 
-        var drawList      = Im.Window.DrawList;
-        var lineX         = MathF.Round(gutterMin.X + gutterWidth * 0.5f);
-        var lineColor     = Im.Style[ImGuiColor.Separator];
+        var drawList = Im.Window.DrawList;
+        var lineX = MathF.Round(gutterMin.X + gutterWidth * 0.5f);
+        var lineColor = Im.Style[ImGuiColor.Separator];
         var lineThickness = MathF.Max(1, Im.Style.GlobalScale);
-        var gutterMaxY    = gutterMin.Y + gutterHeight;
+        var gutterMaxY = gutterMin.Y + gutterHeight;
         drawList.Shape.Line(new Vector2(lineX, gutterMin.Y), new Vector2(lineX, handleRect.Minimum.Y), lineColor, lineThickness);
         drawList.Shape.Line(new Vector2(lineX, handleRect.Maximum.Y), new Vector2(lineX, gutterMaxY), lineColor, lineThickness);
 
@@ -538,7 +517,7 @@ public class ModPanelSettingsTab(
         drawList.Shape.RectangleFilled(handleRect, fill, rounding);
         drawList.Shape.Rectangle(handleRect, Im.Style[ImGuiColor.Border], rounding, thickness: lineThickness);
 
-        var fontSize   = Im.Style.TextHeight;
+        var fontSize = Im.Style.TextHeight;
         var arrowScale = Math.Clamp(gutterWidth / fontSize * 0.75f, 0.5f, 1f);
         var arrowPos = new Vector2(
             handleRect.Minimum.X + (gutterWidth - fontSize) * 0.5f,
@@ -562,9 +541,9 @@ public class ModPanelSettingsTab(
 
         if (selection.Mod != null)
         {
-            var coverFolder  = Path.Combine(selection.Mod!.ModPath.FullName, "CoverImage");
+            var coverFolder = Path.Combine(selection.Mod.ModPath.FullName, "CoverImage");
             var folderExists = Directory.Exists(coverFolder);
-            var icon         = folderExists ? FontAwesomeIcon.FolderOpen : FontAwesomeIcon.Plus;
+            var icon = folderExists ? FontAwesomeIcon.FolderOpen : FontAwesomeIcon.Plus;
             var tooltip = folderExists
                 ? "在文件资源管理器中打开 CoverImage 文件夹"
                 : "按住 Ctrl 点击创建 CoverImage 文件夹";
@@ -591,8 +570,8 @@ public class ModPanelSettingsTab(
             }
 
             Im.Line.Same();
-            var websiteUrl     = ModPreviewDownloader.GetModWebsiteUrl(selection.Mod);
-            var isHeliosphere  = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("heliosphere.app");
+            var websiteUrl = ModPreviewDownloader.GetModWebsiteUrl(selection.Mod);
+            var isHeliosphere = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("heliosphere.app");
             var buttonDisabled = string.IsNullOrEmpty(websiteUrl) || !isHeliosphere;
             var downloadTooltip = string.IsNullOrEmpty(websiteUrl)
                 ? "模组中未找到网址相关字段，无法下载预览图"
@@ -620,9 +599,9 @@ public class ModPanelSettingsTab(
 
         table.NextColumn();
         var scrollbarWidth = Im.Style.ScrollbarSize;
-        var rightPadding   = 2 * UiHelpers.Scale;
-        var imageSpacing   = config.Ui.PreviewPanelImageSpacing * UiHelpers.Scale;
-        var reservedSpace  = scrollbarWidth + rightPadding + imageSpacing;
+        var rightPadding = 2 * UiHelpers.Scale;
+        var imageSpacing = config.Ui.PreviewPanelImageSpacing * UiHelpers.Scale;
+        var reservedSpace = scrollbarWidth + rightPadding + imageSpacing;
         var availableWidth = Math.Max(0, width - reservedSpace);
 
         if (selection.Mod != null)
@@ -637,10 +616,10 @@ public class ModPanelSettingsTab(
         _previewDownloader.Dispose();
     }
 
-    private string _groupNameInput        = string.Empty;
-    private string _optionNameInput       = string.Empty;
-    private Guid   _groupIdentifierInput  = Guid.Empty;
-    private Guid   _optionIdentifierInput = Guid.Empty;
+    private string _groupNameInput = string.Empty;
+    private string _optionNameInput = string.Empty;
+    private Guid _groupIdentifierInput = Guid.Empty;
+    private Guid _optionIdentifierInput = Guid.Empty;
 
     private void DrawEditPresetMode()
     {
@@ -716,8 +695,8 @@ public class ModPanelSettingsTab(
     {
         var ret = false;
         changedGroupIdentifier = default;
-        newGroupIdentifier     = null;
-        newDisableUnknown      = null;
+        newGroupIdentifier = null;
+        newDisableUnknown = null;
         foreach (var (index, (groupIdentifier, groupData)) in preset.Data.Settings.Index())
         {
             using var groupId = Im.Id.Push(index);
@@ -727,10 +706,10 @@ public class ModPanelSettingsTab(
                     actualGroup is not null ? ModObjectIdentifier.From(actualGroup) : null, groupData.DisableAllUnknown, out var newGroup,
                     out var disable))
             {
-                ret                    = true;
+                ret = true;
                 changedGroupIdentifier = groupIdentifier;
-                newGroupIdentifier     = newGroup;
-                newDisableUnknown      = disable;
+                newGroupIdentifier = newGroup;
+                newDisableUnknown = disable;
             }
 
             using var indent = Im.Indent();
@@ -749,8 +728,8 @@ public class ModPanelSettingsTab(
 
             Im.Cursor.Y += Im.Style.ItemSpacing.Y;
             var id = new ModObjectIdentifier(_optionIdentifierInput, _optionNameInput);
-            if (SettingPresetData.DrawAddOption(size.AddX(-Im.Style.IndentSpacing), groupData, ref _optionIdentifierInput, ref _optionNameInput,
-                    out var option,
+            if (SettingPresetData.DrawAddOption(size.AddX(-Im.Style.IndentSpacing), groupData, ref _optionIdentifierInput,
+                    ref _optionNameInput, out var option,
                     id.FindOption(actualGroup) is { } o ? ModObjectIdentifier.From(o) : null))
                 presets.PresetManager.ChangeOption(presets.ModIdentifier, preset, groupIdentifier, option, OptionState.Ignored);
         }
@@ -763,21 +742,21 @@ public class ModPanelSettingsTab(
     {
         var ret = false;
         changedOptionIdentifier = default;
-        newOptionIdentifier     = null;
-        newOptionState          = null;
+        newOptionIdentifier = null;
+        newOptionState = null;
         foreach (var (optionIndex, (optionIdentifier, optionState)) in data.Options.Index())
         {
-            using var id             = Im.Id.Push(optionIndex);
-            var       resolvedOption = optionIdentifier.FindOption(actualGroup);
+            using var id = Im.Id.Push(optionIndex);
+            var resolvedOption = optionIdentifier.FindOption(actualGroup);
             Im.Cursor.Y += Im.Style.ItemSpacing.Y;
             if (SettingPresetData.DrawOption(size, optionIndex, optionIdentifier,
                     resolvedOption is not null ? ModObjectIdentifier.From(resolvedOption) : null,
                     (OptionState)optionState, out var newOption, out var state))
             {
-                ret                     = true;
+                ret = true;
                 changedOptionIdentifier = optionIdentifier;
-                newOptionIdentifier     = newOption;
-                newOptionState          = state;
+                newOptionIdentifier = newOption;
+                newOptionState = state;
             }
         }
 

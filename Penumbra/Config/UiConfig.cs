@@ -113,6 +113,12 @@ public sealed partial class UiConfig : ConfigurationFile<FilenameService>
     private bool _displayPages = true;
 
     [ConfigProperty]
+    private bool _useOptimizedModSettingsUi = false;
+
+    [ConfigProperty]
+    private bool _hideTraditionalModSettingsPresetBar = false;
+
+    [ConfigProperty]
     private float _modSettingItemSpacingFactor = 1f;
 
     [ConfigProperty]
@@ -231,6 +237,8 @@ public sealed partial class UiConfig : ConfigurationFile<FilenameService>
         using (var tempObject = j.TemporaryObject("ModConfig"u8))
         {
             tempObject.WriteIfNot("DisplayPages"u8,            DisplayPages,                      true);
+            tempObject.WriteIfNot("UseOptimizedUi"u8,          UseOptimizedModSettingsUi,          false);
+            tempObject.WriteIfNot("HideTraditionalPresetBar"u8, HideTraditionalModSettingsPresetBar, false);
             tempObject.WriteIfNot("SingleGroupRadioMax"u8,     SingleGroupRadioMax,               2);
             tempObject.WriteIfNot("ItemSpacingFactor"u8,       ModSettingItemSpacingFactor,       1f);
             tempObject.WriteIfNot("BorderScale"u8,             ModSettingBorderScale,             2f);
@@ -311,6 +319,9 @@ public sealed partial class UiConfig : ConfigurationFile<FilenameService>
         if (j.TryReadObject("ModConfig"u8, out var modConfig))
         {
             DisplayPages                      = modConfig.PropertyOrDefault("DisplayPages"u8,            DisplayPages);
+            UseOptimizedModSettingsUi          = modConfig.PropertyOrDefault("UseOptimizedUi"u8,          UseOptimizedModSettingsUi);
+            HideTraditionalModSettingsPresetBar =
+                modConfig.PropertyOrDefault("HideTraditionalPresetBar"u8, HideTraditionalModSettingsPresetBar);
             SingleGroupRadioMax               = modConfig.PropertyOrDefault("SingleGroupRadioMax"u8,     SingleGroupRadioMax);
             ModSettingItemSpacingFactor       = modConfig.PropertyOrDefault("ItemSpacingFactor"u8,       ModSettingItemSpacingFactor);
             ModSettingBorderScale             = modConfig.PropertyOrDefault("BorderScale"u8,             ModSettingBorderScale);

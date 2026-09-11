@@ -21,16 +21,16 @@ public enum ModPanelTab
 
 public class ModPanelTabBar : TabBar<ModPanelTab>, IDisposable
 {
-    public readonly  ModPanelSettingsTab Settings;
-    public readonly  ModPanelEditTab     Edit;
-    private readonly Configuration       _config;
-    private readonly ModManager          _modManager;
-    private readonly TutorialService     _tutorial;
-    private readonly UiNavigator         _navigator;
+    public readonly  ModPanelSettingsTabHost Settings;
+    public readonly  ModPanelEditTab         Edit;
+    private readonly Configuration           _config;
+    private readonly ModManager              _modManager;
+    private readonly TutorialService         _tutorial;
+    private readonly UiNavigator             _navigator;
 
     private Mod? _lastMod;
 
-    public ModPanelTabBar(ModEditWindowFactory modEditWindowFactory, ModPanelSettingsTab settings, ModPanelDescriptionTab description,
+    public ModPanelTabBar(ModEditWindowFactory modEditWindowFactory, ModPanelSettingsTabHost settings, ModPanelDescriptionTab description,
         ModPanelConflictsTab conflicts, ModPanelChangedItemsTab changedItems, ModPanelEditTab edit, ModManager modManager,
         TutorialService tutorial, ModPanelCollectionsTab collections, LunaLogger log, Configuration config, UiNavigator navigator)
         : base(nameof(ModPanelTabBar), log, settings, description, conflicts, changedItems, collections, edit)
