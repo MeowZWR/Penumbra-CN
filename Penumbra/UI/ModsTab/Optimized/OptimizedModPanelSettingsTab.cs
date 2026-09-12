@@ -178,7 +178,8 @@ public sealed class OptimizedModPanelSettingsTab(
         var showPages = !selection.Mod!.IgnorePages;
         if (Im.Checkbox("页签"u8, ref showPages))
             modManager.DataEditor.ChangeIgnorePages(selection.Mod, !showPages);
-        Im.Tooltip.OnHover("如果此模组有选项页，启用后会以标签页的形式显示。"u8);
+        Im.Tooltip.OnHover("仅对此模组生效。勾选后按该模组的选项页分页；取消勾选则忽略分页，全部显示在同一页。\n\n"u8
+          + "分页后的样式由设置里的「选项页显示为顶部页签栏」决定：勾选为顶部页签栏，不勾选为可折叠标题。"u8);
     }
 
     private void DrawTemporaryWarning()

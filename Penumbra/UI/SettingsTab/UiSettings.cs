@@ -240,12 +240,14 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
 
         if (SettingsTab.Checkbox("使用传统模组设置布局"u8,
                 "基于新版模组功能重新调整的模组设置界面，偏向旧版样式。此设置对所有模组生效。\n\n"u8
-              + "没有严格测试，谨慎使用。"u8,
+              + "汉化版特供，没有严格测试，谨慎使用。"u8,
                 config.UseOptimizedModSettingsUi))
             config.UseOptimizedModSettingsUi ^= true;
 
-        if (SettingsTab.Checkbox("选项页使用标签栏显示"u8,
-                "启用后，模组元数据中为选项设置的页面将以标签栏显示。禁用后，页面将以可折叠标题分段的形式依次显示在同一页上。"u8,
+        if (SettingsTab.Checkbox("选项页显示为顶部页签栏"u8,
+                "仅在模组本身启用了选项页时生效。\n\n"u8
+              + "勾选：多个选项页显示为窗口顶部的页签栏，一次只看其中一个页面。\n"u8
+              + "不勾选：所有选项页排在同一滚动区域里，每个页面是可折叠标题。"u8,
                 config.DisplayPages))
             config.DisplayPages ^= true;
 

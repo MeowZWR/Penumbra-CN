@@ -205,6 +205,7 @@ public sealed class OptimizedModGroupDrawer(
         Im.Tooltip.OnHover(group.Description.IsEmpty
             ? group.Name
             : $"{group.Name}\n\n{group.Description}");
+        ModSettingDrawNode.AddUniqueNameTooltip(group);
 
         using var indent = Im.Indent();
         foreach (var child in group.VisibleChildren.OfType<ModSettingGroup>())
@@ -230,6 +231,7 @@ public sealed class OptimizedModGroupDrawer(
         var headerHovered = Im.Mouse.IsHoveringRectangle(headerMin, headerMax);
         if (headerHovered && !group.Description.IsEmpty)
             Im.Tooltip.Set(group.Description);
+        ModSettingDrawNode.AddUniqueNameTooltip(group, headerHovered);
         if (headerHovered && Im.Mouse.IsClicked(MouseButton.Left))
         {
             expanded = !expanded;
@@ -286,6 +288,7 @@ public sealed class OptimizedModGroupDrawer(
     {
         if (!option.Description.IsEmpty)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, option.Description);
+        ModSettingDrawNode.AddUniqueNameTooltip(option);
     }
 
     private Setting GetModSetting(IModGroup group)
