@@ -171,7 +171,7 @@ public sealed class ModGroupEditDrawer(
     private void DrawGroupLayout(IModGroup group)
     {
         if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "编辑组布局设置。"u8,
-                textColor: group.Layout is not 0 || group.ParentSetting is not null ? LunaStyle.FavoriteColor : ColorParameter.Default))
+                textColor: group.Layout is not 0 || group.ParentSetting is not null || !string.IsNullOrWhiteSpace(group.DisplayName) ? LunaStyle.FavoriteColor : ColorParameter.Default))
             layoutPopup.Open(group);
         DrawLayoutInteraction(group);
     }
@@ -259,7 +259,7 @@ public sealed class ModGroupEditDrawer(
     private void DrawOptionLayout(IModOption option)
     {
         if (ImEx.Icon.Button(LunaStyle.LayoutIcon, "编辑选项布局设置。"u8,
-                textColor: option.Layout is not 0 || option.ColorAsInteger is not 0 ? LunaStyle.FavoriteColor : ColorParameter.Default))
+                textColor: option.Layout is not 0 || option.ColorAsInteger is not 0 || !string.IsNullOrWhiteSpace(option.DisplayName) ? LunaStyle.FavoriteColor : ColorParameter.Default))
             layoutPopup.Open(option);
         DrawLayoutInteraction(option);
     }
@@ -429,11 +429,12 @@ public sealed class ModGroupEditDrawer(
             }
         }
 
-        using (Im.Disabled(@object.Layout is 0))
+        using (Im.Disabled(@object.Layout is 0 && string.IsNullOrWhiteSpace(@object.DisplayName)))
         {
             if (Im.Menu.Item("清除"u8))
             {
                 ModManager.OptionEditor.SetLayout(@object, 0);
+                ModManager.OptionEditor.SetDisplayName(@object, null);
                 if (@object is IModGroup g)
                     ModManager.OptionEditor.SetParent(g, null);
                 if (@object is IModOption o)

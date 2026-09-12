@@ -101,6 +101,7 @@ public readonly struct ModSettingDrawNode
         return true;
     }
 
+
     private bool DrawLabel(ModGroupDrawer _, ModSettingsCache cache)
     {
         Im.Cursor.X += Indent;
@@ -140,6 +141,8 @@ public readonly struct ModSettingDrawNode
                 }
             }
 
+            AddUniqueNameTooltip(Node);
+
             return true;
         }
 
@@ -170,6 +173,8 @@ public readonly struct ModSettingDrawNode
             cache.DrawDirty = true;
         }
 
+        AddUniqueNameTooltip(Node);
+
         if (Node.HasHiddenChildren && ColorId.HiddenOptionIndicator.Vector.W is not 0)
         {
             var start = (Im.Item.UpperLeftCorner + new Vector2(LabelWidth.X / 6f, Im.Style.FrameHeight - cache.BorderWidth / 2)).Round();
@@ -188,6 +193,20 @@ public readonly struct ModSettingDrawNode
         DrawConnector(cache);
         DoDrawCheckbox(drawer, cache, option);
         return true;
+    }
+
+    internal static void AddUniqueNameTooltip(ModSettingDataNode node, bool isHovered = false)
+    {
+        if (!node.HasDisplayName || !(isHovered || Im.Item.Hovered(HoveredFlags.AllowWhenDisabled)))
+            return;
+
+        using var style = Im.Style.PushDefault();
+        using var tt    = Im.Tooltip.Begin();
+        if (Im.Cursor.Y != Im.Cursor.StartPosition.Y)
+            LunaStyle.DrawSeparator();
+        Im.Text("唯一名称："u8);
+        Im.Line.NoSpacing();
+        Im.Text(node.OriginalName, DalamudColor.AttentionForeground.Value);
     }
 
     private static void DrawConnector(ModSettingsCache cache)
@@ -273,8 +292,14 @@ public readonly struct ModSettingDrawNode
 
         if (!option.Description.IsEmpty)
         {
+            var treatAsHovered = Im.Item.Hovered(HoveredFlags.AllowWhenDisabled);
             Im.Line.SameInner();
-            LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: Im.Item.Hovered(HoveredFlags.AllowWhenDisabled));
+            LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: treatAsHovered);
+            AddUniqueNameTooltip(option, treatAsHovered);
+        }
+        else
+        {
+            AddUniqueNameTooltip(option);
         }
     }
 
@@ -302,8 +327,14 @@ public readonly struct ModSettingDrawNode
 
         if (!option.Description.IsEmpty)
         {
+            var treatAsHovered = Im.Item.Hovered(HoveredFlags.AllowWhenDisabled);
             Im.Line.SameInner();
-            LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: Im.Item.Hovered(HoveredFlags.AllowWhenDisabled));
+            LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: treatAsHovered);
+            AddUniqueNameTooltip(option, treatAsHovered);
+        }
+        else
+        {
+            AddUniqueNameTooltip(option);
         }
 
         return true;

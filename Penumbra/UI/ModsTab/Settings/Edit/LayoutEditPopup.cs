@@ -20,6 +20,7 @@ public sealed class LayoutEditPopup(ModManager mods) : ObjectEditPopup, IUiServi
     private void DrawGroup(IModGroup group)
     {
         DrawIdentifier(group);
+        DrawDisplayName(group);
         _parentCombo.Draw("父级设置"u8, group, ImEx.GuidInputWidth + Im.Style.ItemInnerSpacing.X + Im.Style.FrameHeight);
         var layout = group.Layout;
         if (Im.Checkbox("条件未满足时隐藏"u8, ref layout, ModSettingsLayout.Hide))
@@ -52,9 +53,23 @@ public sealed class LayoutEditPopup(ModManager mods) : ObjectEditPopup, IUiServi
         ImEx.TextFrameAligned("标识符（GUID）"u8);
     }
 
+    private void DrawDisplayName(IModObject @object)
+    {
+        Im.Item.SetNextWidth(ImEx.GuidInputWidth);
+        if (ImEx.InputOnDeactivation.Text("##display"u8, @object.DisplayName ?? string.Empty, out string newDisplay, "显示名称..."u8))
+            mods.OptionEditor.SetDisplayName(@object, newDisplay);
+        Im.Tooltip.OnHover("为此对象设置可选的、不必唯一的显示名称，将在设置页中显示。留空则使用对象的常规名称。"u8);
+        Im.Line.SameInner();
+        if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "清除此显示名称，恢复为默认。"u8, string.IsNullOrEmpty(@object.DisplayName)))
+            mods.OptionEditor.SetDisplayName(@object, null);
+        Im.Line.SameInner();
+        ImEx.TextFrameAligned("显示名称"u8);
+    }
+
     private void DrawOption(IModOption option)
     {
         DrawIdentifier(option);
+        DrawDisplayName(option);
         DrawColorCombo(option);
         var layout = option.Layout;
         if (option is SingleSubMod)

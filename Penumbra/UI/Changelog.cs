@@ -68,9 +68,32 @@ public class PenumbraChangelog : IUiService
         Add1_6_1_0(Changelog);
         AddDummy(Changelog);
         Add1_7_1_0(Changelog);
+        Add1_7_2_0(Changelog);
     }
 
     #region Changelogs
+
+    private static void Add1_7_2_0(Changelog log)
+        => log.NextVersion("版本 1.7.2.0"u8)
+            .RegisterHighlight("为选项与选项组新增「显示名称」字段，作者可使用不必唯一的显示名，同时保留唯一的内部名称。"u8)
+            .RegisterEntry("若已设置显示名称，悬停时会在提示中显示原来的唯一名称。"u8, 1)
+            .RegisterHighlight("新增设置：单选项下拉框或复选框不再与组标签同一行显示。"u8)
+            .RegisterEntry("修复模组右键菜单中重命名字段左右反了的问题。"u8)
+            .RegisterEntry("修复跨会话保留筛选的设置未能正确加载的问题。"u8)
+            .RegisterEntry("修复选项与选项组中「非」（Not）条件的解析。"u8)
+            .RegisterHighlight("在模组优先级配置旁新增齿轮图标的配置按钮（1.7.1.3）。"u8)
+            .RegisterEntry("点击后打开上下文菜单，可配置该模组的本地设置。"u8, 1)
+            .RegisterEntry("这些本地设置可让该模组完全忽略分页，主要用于每个设置各占一页的旧版 TexTools 模组等。"u8, 1)
+            .RegisterHighlight("新增选项组标签与选项下拉框的总最大宽度配置（1.7.1.3）。"u8)
+            .RegisterEntry("名称超出宽度时会被截断，悬停可查看完整名称。"u8, 1)
+            .RegisterEntry("更新战斗 NPC 名称以适配 7.56（1.7.1.2）。"u8)
+            .RegisterEntry("下拉框中属于游戏路径或位于玩家身上的文件现使用独立颜色，不再套用无关颜色（1.7.1.2）。"u8)
+            .RegisterHighlight("新增模组设置下拉框的最大齐宽配置（1.7.1.2）。"u8)
+            .RegisterEntry("修复在高级编辑中选择选项时触发的 ImGui 断言错误（1.7.1.2）。"u8)
+            .RegisterEntry("修复新创建的选项与选项组未分配 ID 的问题（1.7.1.1）。"u8)
+            .RegisterEntry("修复部分日志将模组名称写成 New Mod 的问题（1.7.1.1）。"u8)
+            .RegisterEntry("修复对不存在文件进行迁移检查的问题（1.7.1.1）。"u8)
+            .RegisterEntry("修复非默认全局缩放下标签折叠箭头的尺寸（1.7.1.1）。"u8);
 
     private static void Add1_7_1_0(Changelog log)
         => log.NextVersion("版本 1.7.1.0"u8)

@@ -249,6 +249,11 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
                 config.DisplayPages))
             config.DisplayPages ^= true;
 
+        if (SettingsTab.Checkbox("选项不与组标签同一行"u8,
+                "启用后，单选项组的下拉框以及仅含单个复选框的多选项组将不再与组标签同一行显示，而是放到下一行。\n\n此设置仅作用于新版模组设置布局，对传统布局无效。"u8,
+                config.ModSettingNeverSameLine))
+            config.ModSettingNeverSameLine ^= true;
+
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
         if (ImEx.InputOnDeactivation.Drag("##groupLine"u8, config.ModSettingLineScale,
                 out var newLine, "%.2f"u8, 0, 4, 0.005f, SliderFlags.AlwaysClamp))
@@ -310,7 +315,8 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
             "选项下拉预览允许使用的最大未缩放像素宽度。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
-        if (ImEx.InputOnDeactivation.Drag("##comboHomo"u8, config.ModSettingMaximumExtendComboWidth, out var newComboHomo, "%.0f"u8, -1, 2000, 1f, SliderFlags.AlwaysClamp))
+        if (ImEx.InputOnDeactivation.Drag("##comboHomo"u8, config.ModSettingMaximumExtendComboWidth, out var newComboHomo, "%.0f"u8, -1, 2000,
+                1f, SliderFlags.AlwaysClamp))
             config.ModSettingMaximumExtendComboWidth = newComboHomo;
         LunaStyle.DrawAlignedHelpMarkerLabel("选项下拉预览最大齐宽"u8,
             "设置界面中单选项组下拉预览扩展的最大未缩放像素宽度。"u8
@@ -318,7 +324,8 @@ public sealed class UiSettings(UiConfig config, IUiBuilder uiBuilder) : IUiServi
           + "如果某个下拉菜单的选项名称所需空间超过此值，则视为异常值，其他下拉菜单不会扩展到该宽度。"u8);
 
         Im.Item.SetNextWidth(UiHelpers.InputTextWidth.X);
-        if (ImEx.InputOnDeactivation.Drag("##comboMin"u8, config.ModSettingMinimumComboWidth, out var newComboMin, "%.0f"u8, 50, 500, 1f, SliderFlags.AlwaysClamp))
+        if (ImEx.InputOnDeactivation.Drag("##comboMin"u8, config.ModSettingMinimumComboWidth, out var newComboMin, "%.0f"u8, 50, 500, 1f,
+                SliderFlags.AlwaysClamp))
             config.ModSettingMinimumComboWidth = newComboMin;
         LunaStyle.DrawAlignedHelpMarkerLabel("选项下拉预览最小宽度"u8,
             "单选项组下拉预览使用的最小宽度，与选项名称长度无关。"u8);
