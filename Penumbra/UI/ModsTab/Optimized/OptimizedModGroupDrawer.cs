@@ -200,6 +200,7 @@ public sealed class OptimizedModGroupDrawer(
         }
 
         DrawOptionTooltip(current);
+        HandleComboMouseWheel(group, options, setting);
         Im.Line.SameInner();
         Im.Text(group.Name);
         Im.Tooltip.OnHover(group.Description.IsEmpty
@@ -289,6 +290,35 @@ public sealed class OptimizedModGroupDrawer(
         if (!option.Description.IsEmpty)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, option.Description);
         ModSettingDrawNode.AddUniqueNameTooltip(option);
+    }
+
+    private void HandleComboMouseWheel(ModSettingGroup group, IReadOnlyList<ModSettingOption> options, Setting setting)
+    {
+        if (group.Disabled || _locked || options.Count is 0)
+            return;
+        if (!Im.Item.Hovered() || !MouseWheelType.Control.CheckMouseWheel())
+            return;
+
+        Im.Item.SetUsingMouseWheel();
+        var delta = (int)Im.Io.MouseWheel;
+        if (delta is 0)
+            return;
+
+        var currentIdx = -1;
+        for (var i = 0; i < options.Count; ++i)
+        {
+            if (options[i].Data.Index == setting.AsIndex)
+            {
+                currentIdx = i;
+                break;
+            }
+        }
+
+        var newIdx = ImUtility.ApplyMouseWheelDelta(delta, currentIdx, options.Count);
+        if (newIdx < 0 || newIdx == currentIdx)
+            return;
+
+        SetModSetting(group.Group, Setting.Single(options[newIdx].Data.Index));
     }
 
     private Setting GetModSetting(IModGroup group)
