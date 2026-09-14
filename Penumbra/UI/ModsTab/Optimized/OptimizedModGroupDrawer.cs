@@ -132,7 +132,8 @@ public sealed class OptimizedModGroupDrawer(
          + Math.Max(ImEx.Icon.CalculateSize(LunaStyle.TreeCollapseIcon).X, ImEx.Icon.CalculateSize(LunaStyle.TreeExpandIcon).X)
          + Im.Style.ItemInnerSpacing.X
          + 2 * Im.Style.FrameHeight
-         + 2 * Im.Style.ItemSpacing.X;
+         + 2 * Im.Style.ItemSpacing.X
+         + (group.Description.IsEmpty ? 0 : Im.Style.ItemInnerSpacing.X + LunaStyle.HelpMarker.CalculateSize().X);
 
     private static void CollectVisibleGroups(IEnumerable<ModSettingGroup> source, List<ModSettingGroup> target, HashSet<int> seen)
     {
@@ -194,19 +195,28 @@ public sealed class OptimizedModGroupDrawer(
                     using var disabled = Im.Disabled(option.Disabled);
                     if (Im.Selectable(option.Name, option.Data.Index == setting.AsIndex))
                         SetModSetting(group.Group, Setting.Single(option.Data.Index));
-                    DrawOptionTooltip(option);
+                    DrawOptionHelpMarker(option, aligned: false);
                 }
             }
         }
 
-        DrawOptionTooltip(current);
+        if (!current.Description.IsEmpty)
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, current.Description);
+        ModSettingDrawNode.AddUniqueNameTooltip(current);
         HandleComboMouseWheel(group, options, setting);
         Im.Line.SameInner();
         Im.Text(group.Name);
-        Im.Tooltip.OnHover(group.Description.IsEmpty
-            ? group.Name
-            : $"{group.Name}\n\n{group.Description}");
-        ModSettingDrawNode.AddUniqueNameTooltip(group);
+        if (group.Description.IsEmpty)
+        {
+            ModSettingDrawNode.AddUniqueNameTooltip(group);
+        }
+        else
+        {
+            var nameHovered = Im.Item.Hovered();
+            Im.Line.SameInner();
+            LunaStyle.DrawAlignedHelpMarker(group.Description, treatAsHovered: nameHovered);
+            ModSettingDrawNode.AddUniqueNameTooltip(group, nameHovered);
+        }
 
         using var indent = Im.Indent();
         foreach (var child in group.VisibleChildren.OfType<ModSettingGroup>())
@@ -226,8 +236,8 @@ public sealed class OptimizedModGroupDrawer(
         using var borderStyle = ImStyleSingle.ChildBorderThickness.Push(
             config.Ui.ModSettingBorderScale * Im.Style.GlobalScale / 2);
         var headerIcon = expanded ? LunaStyle.TreeCollapseIcon : LunaStyle.TreeExpandIcon;
-        using var frame = ImEx.FramedGroup($"{group.Name}", headerIcon, default(AwesomeIcon),
-            minimumSize: new Vector2(cardWidth, 0));
+        using var frame = ImEx.FramedGroup($"{group.Name}", headerIcon, LunaStyle.HelpMarker,
+            group.Description, minimumSize: new Vector2(cardWidth, 0));
         var headerMax     = headerMin + new Vector2(Math.Max(cardWidth, frame.MinimumWidth), Im.Style.FrameHeight);
         var headerHovered = Im.Mouse.IsHoveringRectangle(headerMin, headerMax);
         if (headerHovered && !group.Description.IsEmpty)
@@ -278,18 +288,29 @@ public sealed class OptimizedModGroupDrawer(
             }
         }
 
-        DrawOptionTooltip(option);
+        DrawOptionHelpMarker(option);
         if (option.Separator)
             LunaStyle.DrawSeparator();
         if (option.Space)
             UiHelpers.DefaultLineSpace();
     }
 
-    private static void DrawOptionTooltip(ModSettingOption option)
+    private static void DrawOptionHelpMarker(ModSettingOption option, bool aligned = true)
     {
         if (!option.Description.IsEmpty)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, option.Description);
-        ModSettingDrawNode.AddUniqueNameTooltip(option);
+        {
+            var treatAsHovered = Im.Item.Hovered(HoveredFlags.AllowWhenDisabled);
+            Im.Line.SameInner();
+            if (aligned)
+                LunaStyle.DrawAlignedHelpMarker(option.Description, treatAsHovered: treatAsHovered);
+            else
+                LunaStyle.DrawHelpMarker(option.Description, treatAsHovered: treatAsHovered);
+            ModSettingDrawNode.AddUniqueNameTooltip(option, treatAsHovered);
+        }
+        else
+        {
+            ModSettingDrawNode.AddUniqueNameTooltip(option);
+        }
     }
 
     private void HandleComboMouseWheel(ModSettingGroup group, IReadOnlyList<ModSettingOption> options, Setting setting)
