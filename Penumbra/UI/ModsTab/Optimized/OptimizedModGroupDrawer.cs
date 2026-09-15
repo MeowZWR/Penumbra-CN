@@ -1,4 +1,3 @@
-using Dalamud.Interface;
 using ImSharp;
 using Luna;
 using Penumbra.Collections;
@@ -28,7 +27,9 @@ public sealed class OptimizedModGroupDrawer(
     private bool                  _setMultiState;
     private IModGroup?            _setStateGroup;
 
-    private readonly record struct PageLayout(float ComboWidth, float CardWidth);
+    private readonly record struct PageLayout(float ComboWidth, float CardWidth, float InCardComboWidth, float Indent, float CardPad);
+
+    private readonly record struct Nesting(float Offset, bool InsideCard);
 
     public void Draw(ModSettingsCache cache, Mod mod, ModSettings settings, TemporaryModSettings? tempSettings)
     {
@@ -94,40 +95,73 @@ public sealed class OptimizedModGroupDrawer(
     {
         _pageLayout = CalculatePageLayout(groups);
         UiHelpers.DefaultLineSpace();
-        foreach (var group in groups.OrderByDescending(IsSortableSingleGroup))
-            DrawGroup(group);
+        foreach (var group in groups.OrderByDescending(IsCompactCombo))
+            DrawGroup(group, default);
         UiHelpers.DefaultLineSpace();
     }
 
     private PageLayout CalculatePageLayout(IReadOnlyList<ModSettingGroup> roots)
     {
-        var groups = new List<ModSettingGroup>();
-        CollectVisibleGroups(roots, groups, []);
-
+        var indent            = Im.Style.IndentSpacing;
+        var cardPad           = Im.Style.FrameHeight * 0.5f;
         var minimumComboWidth = config.Ui.ModSettingMinimumComboWidth * Im.Style.GlobalScale;
         var maximumComboWidth = config.Ui.ModSettingMaximumComboWidth * Im.Style.GlobalScale;
-        var comboWidth = groups
-            .Where(g => g.Behaviour is GroupDrawBehaviour.SingleSelection && g.IsCombo)
-            .Select(g => g.ComboWidth)
-            .DefaultIfEmpty(minimumComboWidth)
-            .Max();
+        var comboWidth        = minimumComboWidth;
+        var cardWidth         = 0f;
+        var inCardComboWidth  = 0f;
+        var inCardComboRows   = new List<(float Offset, float LabelExtra, float RightChrome)>();
+        var seen              = new HashSet<int>();
+
+        foreach (var group in roots)
+            Accumulate(group, 0, false);
+
+        inCardComboWidth = Math.Min(inCardComboWidth, maximumComboWidth);
+        foreach (var (offset, labelExtra, rightChrome) in inCardComboRows)
+            cardWidth = Math.Max(cardWidth, offset + inCardComboWidth + labelExtra + rightChrome);
+
         comboWidth = Math.Clamp(comboWidth, minimumComboWidth, maximumComboWidth);
+        return new PageLayout(comboWidth, cardWidth, inCardComboWidth, indent, cardPad);
 
-        var cardWidth = 0f;
-        foreach (var group in groups.Where(IsExpandedGroup))
+        void Accumulate(ModSettingGroup group, float offset, bool insideCard)
         {
-            var headerWidth = CalculateCardHeaderWidth(group);
-            var optionWidth = group.VisibleChildren
-                .OfType<ModSettingOption>()
-                .Select(o => o.Width + Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X)
-                .DefaultIfEmpty(0)
-                .Max()
-              + 2 * Im.Style.FrameHeight;
-            cardWidth = Math.Max(cardWidth, Math.Max(headerWidth, optionWidth));
-        }
+            if (!seen.Add(group.Group.Index))
+                return;
 
-        return new PageLayout(comboWidth, cardWidth);
+            if (IsCompactCombo(group))
+            {
+                if (insideCard)
+                {
+                    inCardComboWidth = Math.Max(inCardComboWidth, ComboPreviewWidth(group));
+                    inCardComboRows.Add((offset, ComboLabelExtra(group), cardPad));
+                }
+                else
+                {
+                    comboWidth = Math.Max(comboWidth, group.ComboWidth + offset);
+                }
+
+                var childOffset = offset + indent;
+                foreach (var child in NestedGroups(group))
+                    Accumulate(child, childOffset, insideCard);
+                return;
+            }
+
+            var rightChrome = insideCard ? cardPad : 0;
+            cardWidth = Math.Max(cardWidth, CalculateCardContentWidth(group) + offset + rightChrome);
+            var nestedOffset = offset + cardPad + indent;
+            foreach (var option in group.VisibleChildren.OfType<ModSettingOption>())
+            {
+                foreach (var child in option.VisibleChildren)
+                    Accumulate(child, nestedOffset, true);
+            }
+
+            var groupChildOffset = offset + indent;
+            foreach (var child in NestedGroups(group))
+                Accumulate(child, groupChildOffset, false);
+        }
     }
+
+    private static float CalculateCardContentWidth(ModSettingGroup group)
+        => Math.Max(CalculateCardHeaderWidth(group), CalculateCardOptionWidth(group));
 
     private static float CalculateCardHeaderWidth(ModSettingGroup group)
         => group.Name.CalculateSize().X
@@ -137,53 +171,64 @@ public sealed class OptimizedModGroupDrawer(
          + 2 * Im.Style.ItemSpacing.X
          + (group.Description.IsEmpty ? 0 : Im.Style.ItemInnerSpacing.X + LunaStyle.HelpMarker.CalculateSize().X);
 
-    private static void CollectVisibleGroups(IEnumerable<ModSettingGroup> source, List<ModSettingGroup> target, HashSet<int> seen)
-    {
-        foreach (var group in source)
-        {
-            if (!seen.Add(group.Group.Index))
-                continue;
+    private static float CalculateCardOptionWidth(ModSettingGroup group)
+        => group.VisibleChildren
+            .OfType<ModSettingOption>()
+            .Select(o => o.Width + Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X)
+            .DefaultIfEmpty(0)
+            .Max()
+         + 2 * Im.Style.FrameHeight;
 
-            target.Add(group);
-            CollectVisibleGroups(group.VisibleChildren.OfType<ModSettingGroup>(), target, seen);
-            foreach (var option in group.VisibleChildren.OfType<ModSettingOption>())
-                CollectVisibleGroups(option.VisibleChildren, target, seen);
-        }
+    private static bool IsCompactCombo(ModSettingGroup group)
+        => group.Behaviour is GroupDrawBehaviour.SingleSelection && group.IsCombo;
+
+    private static IEnumerable<ModSettingGroup> NestedGroups(ModSettingGroup group)
+        => group.VisibleChildren.OfType<ModSettingGroup>();
+
+    private static IEnumerable<ModSettingOption> ComboOptions(ModSettingGroup group)
+        => group.VisibleChildren.Take(group.NumOptions).OfType<ModSettingOption>();
+
+    private static float ComboPreviewWidth(ModSettingGroup group)
+        => ComboOptions(group)
+            .Select(o => o.Width)
+            .DefaultIfEmpty(0)
+            .Max()
+         + Im.Style.FrameHeight
+         + 2 * Im.Style.FramePadding.X;
+
+    private static float ComboLabelExtra(ModSettingGroup group)
+    {
+        var extra = Im.Style.ItemInnerSpacing.X + group.Name.CalculateSize().X;
+        if (!group.Description.IsEmpty)
+            extra += Im.Style.ItemInnerSpacing.X + LunaStyle.HelpMarker.CalculateSize().X;
+        return extra;
     }
 
-    private static bool IsSortableSingleGroup(ModSettingGroup group)
-        => group.Behaviour is GroupDrawBehaviour.SingleSelection
-        && group.IsCombo
-        && !HasVisibleDependentGroups(group);
-
-    private static bool IsExpandedGroup(ModSettingGroup group)
-        => group.Behaviour is GroupDrawBehaviour.MultiSelection || !group.IsCombo;
-
-    private static bool HasVisibleDependentGroups(ModSettingGroup group)
-        => group.VisibleChildren.OfType<ModSettingGroup>().Any()
-         || group.VisibleChildren.OfType<ModSettingOption>().Any(o => o.VisibleChildren.Count > 0);
-
-    private void DrawGroup(ModSettingGroup group)
+    private Vector2 DrawGroup(ModSettingGroup group, Nesting nesting)
     {
         using var id = Im.Id.Push(group.Group.Index);
-        if (group.Behaviour is GroupDrawBehaviour.SingleSelection && group.IsCombo)
-            DrawCompactSingleGroup(group);
-        else
-            DrawExpandedGroup(group);
+        var attach = IsCompactCombo(group)
+            ? DrawCompactSingleGroup(group, nesting)
+            : DrawExpandedGroup(group, nesting);
 
         if (group.Space)
             UiHelpers.DefaultLineSpace();
+
+        return attach;
     }
 
-    private void DrawCompactSingleGroup(ModSettingGroup group)
+    private Vector2 DrawCompactSingleGroup(ModSettingGroup group, Nesting nesting)
     {
         var setting = GetModSetting(group.Group);
-        var options = group.VisibleChildren.Take(group.NumOptions).OfType<ModSettingOption>().ToList();
+        var options = ComboOptions(group).ToList();
         if (options.Count is 0)
-            return;
+            return Im.Cursor.ScreenPosition;
 
-        var current = group.AllOptions[setting.AsIndex];
-        Im.Item.SetNextWidth(_pageLayout.ComboWidth);
+        var current    = group.AllOptions[setting.AsIndex];
+        var comboWidth = nesting.InsideCard
+            ? RemainingWidth(_pageLayout.InCardComboWidth, 0, 0)
+            : RemainingWidth(_pageLayout.ComboWidth, nesting.Offset, 0);
+        Im.Item.SetNextWidth(comboWidth);
         using (ImGuiColor.Text.Push(current.Color))
         using (Im.Disabled(group.Disabled || _locked))
         using (var combo = Im.Combo.Begin("##value"u8, current.Name))
@@ -202,6 +247,8 @@ public sealed class OptimizedModGroupDrawer(
             }
         }
 
+        var comboMin = Im.Item.UpperLeftCorner;
+        var comboMax = Im.Item.LowerRightCorner;
         if (!current.Description.IsEmpty)
             Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, current.Description);
         ModSettingDrawNode.AddUniqueNameTooltip(current);
@@ -221,52 +268,99 @@ public sealed class OptimizedModGroupDrawer(
             ModSettingDrawNode.AddUniqueNameTooltip(group, nameHovered);
         }
 
-        using var indent = Im.Indent();
-        foreach (var child in group.VisibleChildren.OfType<ModSettingGroup>())
-            DrawGroup(child);
+        DrawNestedGroups(NestedGroups(group),
+            new Nesting(nesting.Offset + _pageLayout.Indent, nesting.InsideCard), comboMax.Y);
+        return new Vector2(comboMin.X, (comboMin.Y + comboMax.Y) * 0.5f);
     }
 
-    private void DrawExpandedGroup(ModSettingGroup group)
+    private Vector2 DrawExpandedGroup(ModSettingGroup group, Nesting nesting)
     {
-        var stateId        = Im.Id.Get("Expanded"u8);
+        var stateId         = Im.Id.Get("Expanded"u8);
         var defaultExpanded = !group.Group.Layout.HasFlag(ModSettingsLayout.DefaultClosed);
-        var expanded       = _cache.Storage.GetBool(stateId, defaultExpanded);
-        var maximumWidth   = Math.Max(0, Im.ContentRegion.Available.X);
-        var ownHeaderWidth = CalculateCardHeaderWidth(group);
-        var desiredWidth   = Math.Max(_pageLayout.CardWidth, ownHeaderWidth);
-        var cardWidth      = Math.Min(desiredWidth, maximumWidth);
-        var headerMin      = Im.Cursor.ScreenPosition;
-        using var borderStyle = ImStyleSingle.ChildBorderThickness.Push(
-            config.Ui.ModSettingBorderScale * Im.Style.GlobalScale / 2);
-        var headerIcon = expanded ? LunaStyle.TreeCollapseIcon : LunaStyle.TreeExpandIcon;
-        using var frame = ImEx.FramedGroup($"{group.Name}", headerIcon, LunaStyle.HelpMarker,
-            group.Description, minimumSize: new Vector2(cardWidth, 0));
-        var headerMax     = headerMin + new Vector2(Math.Max(cardWidth, frame.MinimumWidth), Im.Style.FrameHeight);
-        var headerHovered = Im.Mouse.IsHoveringRectangle(headerMin, headerMax);
-        if (headerHovered && !group.Description.IsEmpty)
-            Im.Tooltip.Set(group.Description);
-        ModSettingDrawNode.AddUniqueNameTooltip(group, headerHovered);
-        DrawGroupContextMenu(group, headerHovered);
-        if (headerHovered && Im.Mouse.IsClicked(MouseButton.Left))
+        var expanded        = _cache.Storage.GetBool(stateId, defaultExpanded);
+        var rightChrome = nesting.InsideCard ? _pageLayout.CardPad : 0;
+        var cardWidth   = RemainingWidth(_pageLayout.CardWidth, nesting.Offset, rightChrome);
+        var headerMin   = Im.Cursor.ScreenPosition;
+        var headerIcon  = expanded ? LunaStyle.TreeCollapseIcon : LunaStyle.TreeExpandIcon;
+        using (ImStyleSingle.ChildBorderThickness.Push(_cache.BorderWidth / 2))
+        using (var frame = ImEx.FramedGroup($"{group.Name}", headerIcon, LunaStyle.HelpMarker,
+                   group.Description, minimumSize: new Vector2(cardWidth, 0)))
         {
-            expanded = !expanded;
-            _cache.Storage.SetBool(stateId, expanded);
+            var headerMax = headerMin + new Vector2(Math.Max(cardWidth, frame.MinimumWidth), Im.Style.FrameHeight);
+            if (Im.InvisibleButton("##header"u8, new Rectangle(headerMin, headerMax)))
+            {
+                expanded = !expanded;
+                _cache.Storage.SetBool(stateId, expanded);
+            }
+
+            var headerHovered = Im.Item.Hovered();
+            if (headerHovered && !group.Description.IsEmpty)
+                Im.Tooltip.Set(group.Description);
+            ModSettingDrawNode.AddUniqueNameTooltip(group, headerHovered);
+            DrawGroupContextMenu(group, headerHovered);
+
+            if (expanded)
+            {
+                var childNesting = new Nesting(nesting.Offset + _pageLayout.CardPad + _pageLayout.Indent, true);
+                foreach (var option in group.VisibleChildren.OfType<ModSettingOption>())
+                {
+                    DrawOption(option);
+                    DrawNestedGroups(option.VisibleChildren, childNesting, Im.Item.LowerRightCorner.Y);
+                }
+            }
         }
 
-        if (!expanded)
+        var itemMax    = Im.Item.LowerRightCorner;
+        var attach     = CardTreeAttach(headerMin, itemMax);
+        if (expanded)
+        {
+            var groupChildren = NestedGroups(group).ToList();
+            if (groupChildren.Count > 0)
+            {
+                var treeX = headerMin.X + _pageLayout.Indent * 0.5f;
+                DrawNestedGroups(groupChildren, new Nesting(nesting.Offset + _pageLayout.Indent, false), itemMax.Y, treeX);
+            }
+        }
+
+        return attach;
+    }
+
+    private static Vector2 CardTreeAttach(Vector2 itemMin, Vector2 itemMax)
+    {
+        var frameHeight = Im.Style.FrameHeight;
+        var frameMin    = itemMin + new Vector2(frameHeight / 8f, frameHeight / 2f);
+        return new Vector2(frameMin.X, (frameMin.Y + itemMax.Y) * 0.5f);
+    }
+
+    private float RemainingWidth(float columnWidth, float offset, float rightChrome)
+        => Math.Max(0, Math.Min(Im.ContentRegion.Available.X, columnWidth - offset - rightChrome));
+
+    private void DrawNestedGroups(IEnumerable<ModSettingGroup> children, Nesting nesting, float parentAnchorY,
+        float? treeOriginX = null)
+    {
+        var list = children as IList<ModSettingGroup> ?? children.ToList();
+        if (list.Count is 0)
             return;
 
-        foreach (var option in group.VisibleChildren.OfType<ModSettingOption>())
+        if (Im.Cursor.ScreenPosition.Y + 1f < Im.Item.LowerRightCorner.Y)
+            Im.Line.New();
+
+        var parentLeft = Im.Cursor.ScreenPosition.X;
+        using var indent = Im.Indent();
+        var childLeft    = Im.Cursor.ScreenPosition.X;
+        var treeX        = treeOriginX ?? MathF.Round((parentLeft + childLeft) * 0.5f);
+        var lineWidth    = _cache.BorderWidth;
+        var color        = ImGuiColor.Border.Get();
+        var lastY        = parentAnchorY;
+        foreach (var child in list)
         {
-            DrawOption(option);
-            using var optionIndent = Im.Indent();
-            foreach (var child in option.VisibleChildren)
-                DrawGroup(child);
+            var attach = DrawGroup(child, nesting);
+            Im.Window.DrawList.Shape.Line(new Vector2(treeX, attach.Y), attach, color, lineWidth);
+            lastY = attach.Y;
         }
 
-        using var childIndent = Im.Indent();
-        foreach (var child in group.VisibleChildren.OfType<ModSettingGroup>())
-            DrawGroup(child);
+        if (lastY > parentAnchorY)
+            Im.Window.DrawList.Shape.Line(new Vector2(treeX, parentAnchorY), new Vector2(treeX, lastY), color, lineWidth);
     }
 
     private void DrawOption(ModSettingOption option)
@@ -329,21 +423,25 @@ public sealed class OptimizedModGroupDrawer(
         if (delta is 0)
             return;
 
+        var selectable = options.Where(o => !o.Disabled).ToList();
+        if (selectable.Count is 0)
+            return;
+
         var currentIdx = -1;
-        for (var i = 0; i < options.Count; ++i)
+        for (var i = 0; i < selectable.Count; ++i)
         {
-            if (options[i].Data.Index == setting.AsIndex)
+            if (selectable[i].Data.Index == setting.AsIndex)
             {
                 currentIdx = i;
                 break;
             }
         }
 
-        var newIdx = ImUtility.ApplyMouseWheelDelta(delta, currentIdx, options.Count);
+        var newIdx = ImUtility.ApplyMouseWheelDelta(delta, currentIdx, selectable.Count);
         if (newIdx < 0 || newIdx == currentIdx)
             return;
 
-        SetModSetting(group.Group, Setting.Single(options[newIdx].Data.Index));
+        SetModSetting(group.Group, Setting.Single(selectable[newIdx].Data.Index));
     }
 
     private void DrawGroupContextMenu(ModSettingGroup group, bool hovered)
