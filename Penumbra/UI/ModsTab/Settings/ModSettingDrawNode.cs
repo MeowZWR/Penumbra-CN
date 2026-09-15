@@ -198,9 +198,9 @@ public readonly struct ModSettingDrawNode
         if (!context)
             return;
 
-        if (Im.Menu.Item("Enable All Child Options"u8))
+        if (Im.Menu.Item("启用所有子选项"u8))
             drawer.SetMultiState(group.Group, true);
-        if (Im.Menu.Item("Disable All Child Options"u8))
+        if (Im.Menu.Item("禁用所有子选项"u8))
             drawer.SetMultiState(group.Group, false);
     }
 
