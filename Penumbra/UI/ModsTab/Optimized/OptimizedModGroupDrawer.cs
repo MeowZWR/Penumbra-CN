@@ -25,6 +25,8 @@ public sealed class OptimizedModGroupDrawer(
     private bool                  _locked;
     private ModSettingsCache      _cache = null!;
     private PageLayout            _pageLayout;
+    private bool                  _setMultiState;
+    private IModGroup?            _setStateGroup;
 
     private readonly record struct PageLayout(float ComboWidth, float CardWidth);
 
@@ -206,13 +208,14 @@ public sealed class OptimizedModGroupDrawer(
         HandleComboMouseWheel(group, options, setting);
         Im.Line.SameInner();
         Im.Text(group.Name);
+        var nameHovered = Im.Item.Hovered();
+        DrawGroupContextMenu(group, nameHovered);
         if (group.Description.IsEmpty)
         {
             ModSettingDrawNode.AddUniqueNameTooltip(group);
         }
         else
         {
-            var nameHovered = Im.Item.Hovered();
             Im.Line.SameInner();
             LunaStyle.DrawAlignedHelpMarker(group.Description, treatAsHovered: nameHovered);
             ModSettingDrawNode.AddUniqueNameTooltip(group, nameHovered);
@@ -243,6 +246,7 @@ public sealed class OptimizedModGroupDrawer(
         if (headerHovered && !group.Description.IsEmpty)
             Im.Tooltip.Set(group.Description);
         ModSettingDrawNode.AddUniqueNameTooltip(group, headerHovered);
+        DrawGroupContextMenu(group, headerHovered);
         if (headerHovered && Im.Mouse.IsClicked(MouseButton.Left))
         {
             expanded = !expanded;
@@ -340,6 +344,72 @@ public sealed class OptimizedModGroupDrawer(
             return;
 
         SetModSetting(group.Group, Setting.Single(options[newIdx].Data.Index));
+    }
+
+    private void DrawGroupContextMenu(ModSettingGroup group, bool hovered)
+    {
+        if (group.Disabled)
+            return;
+
+        ApplyMultiState(group);
+
+        if (hovered && Im.Mouse.IsClicked(MouseButton.Right))
+            Im.Popup.Open("##multiState"u8);
+
+        using var context = Im.Popup.Begin("##multiState"u8);
+        if (!context)
+            return;
+
+        if (Im.Menu.Item("启用所有子选项"u8))
+            SetMultiState(group.Group, true);
+        if (Im.Menu.Item("禁用所有子选项"u8))
+            SetMultiState(group.Group, false);
+    }
+
+    private void SetMultiState(IModGroup group, bool state)
+    {
+        _setStateGroup = group;
+        _setMultiState = state;
+    }
+
+    private void ApplyMultiState(ModSettingGroup group)
+    {
+        if (_setStateGroup != group.Group)
+            return;
+
+        if (SetAllOptions(group, _setMultiState))
+            return;
+
+        _setStateGroup = null;
+    }
+
+    private bool SetAllOptions(ModSettingDataNode node, bool state)
+    {
+        if (node is not ModSettingGroup group || group.Disabled)
+            return false;
+
+        var initialSetting = GetModSetting(group.Group);
+        var setting        = initialSetting;
+        var changes        = false;
+        foreach (var child in group.VisibleChildren)
+        {
+            if (child is ModSettingOption option)
+            {
+                if (option is { Radio: false, Disabled: false })
+                    setting = setting.SetBit(option.Data.Index, state);
+
+                foreach (var subgroup in option.VisibleChildren)
+                    changes |= SetAllOptions(subgroup, state);
+            }
+            else if (child is ModSettingGroup subgroup)
+            {
+                changes |= SetAllOptions(subgroup, state);
+            }
+        }
+
+        changes |= setting != initialSetting;
+        SetModSetting(group.Group, setting);
+        return changes;
     }
 
     private Setting GetModSetting(IModGroup group)
