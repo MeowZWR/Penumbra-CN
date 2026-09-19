@@ -65,6 +65,10 @@ public readonly struct ColorIdData : IColorData<ColorId>
             "一个具有临时设置的模组。此颜色用作常规状态颜色的色调。"u8, modSelector);
         ret[(int)NoTint] = new ColorData<ColorId>(Rgba32.Transparent, "无色调"u8,
             "所有模组的默认色调。"u8, modSelector);
+        ret[(int)ModTextFilterBorder] = new ColorData<ColorId>(DalamudColor.AttentionForeground, "已设置筛选时的模组筛选框边框"u8,
+            "当模组筛选文本框中已设置筛选条件时，其边框的颜色。"u8, modSelector);
+        ret[(int)ModComboFilterActive] = new ColorData<ColorId>(DalamudColor.AttentionBackground, "已设置筛选时的模组筛选下拉框背景"u8,
+            "当下拉筛选中任意筛选条件已设置时，可展开下拉箭头的颜色。"u8, modSelector);
 
         // Meta stuff
         ret[(int)ItemId] = new ColorData<ColorId>(ImGuiColor.TextDisabled, "物品ID"u8,
