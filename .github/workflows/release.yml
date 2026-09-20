@@ -67,8 +67,8 @@ jobs:
 
       - name: Write out repo.json
         run: |
-          git fetch origin cn
-          git checkout -B cn origin/cn
+          git fetch origin cn --no-recurse-submodules
+          git checkout --force --no-recurse-submodules -B cn origin/cn
           $ver = '${{ github.ref_name }}'
           $verBase = $ver -replace '-cn$', ''
           $verObj = [version] $verBase
