@@ -1,6 +1,5 @@
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
-using Newtonsoft.Json.Linq;
 using Penumbra.Mods;
 using System.Net.Http;
 
@@ -46,22 +45,7 @@ public class ModPreviewDownloader : IDisposable
     /// 获取模组网站链接
     /// </summary>
     public static string GetModWebsiteUrl(Mod mod)
-    {
-        try
-        {
-            var metaFile = Path.Combine(mod.ModPath.FullName, "meta.json");
-            if (!File.Exists(metaFile))
-                return string.Empty;
-
-            var json = JObject.Parse(File.ReadAllText(metaFile));
-            return json["Website"]?.ToString() ?? string.Empty;
-        }
-        catch (Exception ex)
-        {
-            Penumbra.Log.Error($"读取模组网站链接失败: {ex.Message}");
-            return string.Empty;
-        }
-    }
+        => mod.Website;
 
     /// <summary>
     /// 获取模组支持的网站处理器
