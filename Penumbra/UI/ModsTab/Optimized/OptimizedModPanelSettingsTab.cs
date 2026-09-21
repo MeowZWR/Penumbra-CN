@@ -572,11 +572,11 @@ public sealed class OptimizedModPanelSettingsTab(
 
             Im.Line.Same();
             var websiteUrl = ModPreviewDownloader.GetModWebsiteUrl(selection.Mod);
-            var isHeliosphere = !string.IsNullOrEmpty(websiteUrl) && websiteUrl.Contains("heliosphere.app");
-            var buttonDisabled = string.IsNullOrEmpty(websiteUrl) || !isHeliosphere;
+            var canDownload = _previewDownloader.CanDownloadPreview(selection.Mod);
+            var buttonDisabled = !canDownload;
             var downloadTooltip = string.IsNullOrEmpty(websiteUrl)
                 ? "模组中未找到网址相关字段，无法下载预览图"
-                : isHeliosphere
+                : canDownload
                     ? "从Heliosphere下载预览图（最多3张）"
                     : "只支持从Heliosphere下载预览图";
 

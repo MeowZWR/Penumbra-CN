@@ -12,6 +12,7 @@ public class ModPreviewDownloader : IDisposable
     private readonly Configuration _configuration;
     
     private const int MaxPreviewImageCount = 3;
+    private const int MaxDownloadedImageSize = 50 * 1024 * 1024;
 
     private static readonly List<ISupportedModSite> SupportedSites =
     [
@@ -74,7 +75,10 @@ public class ModPreviewDownloader : IDisposable
         
         if (site == null)
         {
-            ShowNotification($"不支持从该网站下载预览图: {new Uri(websiteUrl).Host}", NotificationType.Warning);
+            var source = Uri.TryCreate(websiteUrl, UriKind.Absolute, out var uri)
+                ? uri.Host
+                : websiteUrl;
+            ShowNotification($"不支持从该网站下载预览图: {source}", NotificationType.Warning);
             return false;
         }
 
@@ -136,33 +140,21 @@ public class ModPreviewDownloader : IDisposable
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Add("User-Agent", "PenumbraModManager/1.0");
             
-            var response = await _httpClient!.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            using var response = await _httpClient!.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode)
                 return false;
-            
-            // 处理重定向
-            var finalUrl = url;
-            if (response.Headers.Location != null)
-            {
-                finalUrl = response.Headers.Location.ToString();
-                if (!finalUrl.StartsWith("http"))
-                    finalUrl = new Uri(new Uri(url), finalUrl).ToString();
-                
-                request = new HttpRequestMessage(HttpMethod.Get, finalUrl);
-                request.Headers.Add("User-Agent", "PenumbraModManager/1.0");
-                response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                
-                if (!response.IsSuccessStatusCode)
-                    return false;
-            }
-            
-            var imageBytes = await response.Content.ReadAsByteArrayAsync();
+
+            if (response.Content.Headers.ContentLength > MaxDownloadedImageSize)
+                return false;
+
+            var imageBytes = await ReadWithLimitAsync(response.Content, MaxDownloadedImageSize);
             if (!IsValidImageFile(imageBytes))
                 return false;
-            
+
+            var finalUrl = response.RequestMessage?.RequestUri?.ToString() ?? url;
             var fileName = GenerateFileName(response, finalUrl);
             await File.WriteAllBytesAsync(Path.Combine(destinationFolder, fileName), imageBytes);
             
@@ -173,6 +165,23 @@ public class ModPreviewDownloader : IDisposable
             Penumbra.Log.Error($"下载图片失败 {url}: {ex.Message}");
             return false;
         }
+    }
+
+    internal static async Task<byte[]> ReadWithLimitAsync(HttpContent content, int maxBytes)
+    {
+        await using var source = await content.ReadAsStreamAsync();
+        using var destination = new MemoryStream(Math.Min((int)(content.Headers.ContentLength ?? 0), maxBytes));
+        var buffer = new byte[81920];
+        int read;
+        while ((read = await source.ReadAsync(buffer)) > 0)
+        {
+            if (destination.Length + read > maxBytes)
+                throw new InvalidDataException($"下载内容超过 {maxBytes / 1024 / 1024} MB 限制");
+
+            await destination.WriteAsync(buffer.AsMemory(0, read));
+        }
+
+        return destination.ToArray();
     }
     
     /// <summary>
@@ -219,7 +228,7 @@ public class ModPreviewDownloader : IDisposable
         // 尝试从Content-Disposition获取文件名
         if (response.Content.Headers.ContentDisposition?.FileName is string fileName && !string.IsNullOrEmpty(fileName))
         {
-            fileName = fileName.Trim('"');
+            fileName = Path.GetFileName(fileName.Trim('"'));
             // 确保文件名不包含无效字符
             foreach (var c in Path.GetInvalidFileNameChars())
                 fileName = fileName.Replace(c, '_');
@@ -261,9 +270,11 @@ public interface ISupportedModSite
 /// </summary>
 public class HeliosphereSite : ISupportedModSite
 {
-    private static readonly Regex ModIdRegex = new(@"heliosphere\.app/mod/([a-zA-Z0-9]+)", RegexOptions.IgnoreCase);
+    private const int MaxPageSize = 5 * 1024 * 1024;
+    private static readonly Regex ModIdRegex = new(@"^/mod/([a-zA-Z0-9]+)(?:/|$)", RegexOptions.IgnoreCase);
 
-    public bool IsSupported(string url) => ModIdRegex.IsMatch(url);
+    public bool IsSupported(string url)
+        => TryGetModUri(url, out _);
 
     public async Task<List<string>> GetPreviewImageUrls(string modUrl, HttpClient client)
     {
@@ -271,15 +282,19 @@ public class HeliosphereSite : ISupportedModSite
         
         try
         {
-            // 验证URL格式
-            if (!ModIdRegex.IsMatch(modUrl))
+            if (!TryGetModUri(modUrl, out var modUri))
                 return result;
 
             // 获取页面内容
-            var response = await client.GetStringAsync(modUrl);
+            using var response = await client.GetAsync(modUri, HttpCompletionOption.ResponseHeadersRead);
+            if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength > MaxPageSize)
+                return result;
+
+            var responseBytes = await ModPreviewDownloader.ReadWithLimitAsync(response.Content, MaxPageSize);
+            var page = System.Text.Encoding.UTF8.GetString(responseBytes);
             
             // 尝试查找API图片路径
-            foreach (Match match in Regex.Matches(response, @"/api/web/package/([a-zA-Z0-9]+)/image/(\d+)"))
+            foreach (Match match in Regex.Matches(page, @"/api/web/package/([a-zA-Z0-9]+)/image/(\d+)"))
             {
                 var packageId = match.Groups[1].Value;
                 var imageId = match.Groups[2].Value;
@@ -291,7 +306,7 @@ public class HeliosphereSite : ISupportedModSite
             
             if (result.Count == 0)
             {
-                foreach (Match match in Regex.Matches(response, @"https://data\.heliosphere\.app/images/[a-zA-Z0-9_\-]+"))
+                foreach (Match match in Regex.Matches(page, @"https://data\.heliosphere\.app/images/[a-zA-Z0-9_\-]+"))
                 {
                     if (!result.Contains(match.Value))
                         result.Add(match.Value);
@@ -305,4 +320,20 @@ public class HeliosphereSite : ISupportedModSite
         
         return result;
     }
+
+    private static bool TryGetModUri(string url, out Uri uri)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var parsed)
+         && parsed.Scheme == Uri.UriSchemeHttps
+         && parsed.Host.Equals("heliosphere.app", StringComparison.OrdinalIgnoreCase)
+         && ModIdRegex.IsMatch(parsed.AbsolutePath))
+        {
+            uri = parsed;
+            return true;
+        }
+
+        uri = null!;
+        return false;
+    }
+
 } 

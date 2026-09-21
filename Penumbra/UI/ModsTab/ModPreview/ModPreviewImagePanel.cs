@@ -1,5 +1,6 @@
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin;
 using ImSharp;
 using Luna;
@@ -23,6 +24,7 @@ public class ModPreviewImagePanel : IDisposable
     private readonly LinkedList<string> _lruList = [];
     private readonly Lock _cacheLock = new();
     private readonly Timer _cacheCleanupTimer;
+    private readonly CancellationTokenSource _lifetimeCancellation = new();
     private readonly ObjectPool<MemoryStream> _memoryStreamPool;
     private readonly Lock _fileLock = new();
     private readonly HashSet<string> _processingFiles = [];
@@ -32,6 +34,7 @@ public class ModPreviewImagePanel : IDisposable
     private readonly Configuration _configuration;
     private readonly INotificationManager _notificationManager;
     private bool _disposed;
+    private int _cacheGeneration;
     private const int MaxRetryCount = 3;
     private const int FileOperationDelay = 500;
     private const int MaxCacheSize = 30;
@@ -240,13 +243,32 @@ public class ModPreviewImagePanel : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
-        _disposed = true;
+        lock (_cacheLock)
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+        }
+
+        _lifetimeCancellation.Cancel();
         _cacheCleanupTimer.Dispose();
         _memoryStreamPool.Dispose();
         _imageCompressor.Dispose();
         ClearCache();
+        _lifetimeCancellation.Dispose();
+        if (ReferenceEquals(_instance, this))
+            _instance = null;
+    }
+
+    private static void DisposeTextures(CachedTexture texture)
+        => DisposeTextures(texture.Texture, texture.OriginalTexture);
+
+    private static void DisposeTextures(IDalamudTextureWrap? texture, IDalamudTextureWrap? originalTexture)
+    {
+        texture?.Dispose();
+        if (originalTexture != null && !ReferenceEquals(texture, originalTexture))
+            originalTexture.Dispose();
     }
 
     private void CleanupCache(object? state)
@@ -276,8 +298,7 @@ public class ModPreviewImagePanel : IDisposable
                 {
                     _textureCache.Remove(item.Key);
                     _lruList.Remove(item.Key);
-                    item.Value.Texture?.Dispose();
-                    item.Value.OriginalTexture?.Dispose();
+                    DisposeTextures(item.Value);
                 }
             }
         }
@@ -287,14 +308,12 @@ public class ModPreviewImagePanel : IDisposable
     {
         lock (_cacheLock)
         {
+            ++_cacheGeneration;
 #if DEBUG
             Penumbra.Log.Debug($"[缓存管理] 执行完全清理，当前缓存: {_textureCache.Count}张，内存使用: {CurrentMemoryUsage / 1024 / 1024}MB");
 #endif
             foreach (var texture in _textureCache.Values)
-            {
-                texture.Texture?.Dispose();
-                texture.OriginalTexture?.Dispose();
-            }
+                DisposeTextures(texture);
             _textureCache.Clear();
             _lruList.Clear();
             _originalSizes.Clear();
@@ -386,8 +405,7 @@ public class ModPreviewImagePanel : IDisposable
 #endif
                     _textureCache.Remove(lastPath);
                     _lruList.Remove(lastPath);
-                    texture.Texture?.Dispose();
-                    texture.OriginalTexture?.Dispose();
+                    DisposeTextures(texture);
                 }
 
                 isOverCount = _textureCache.Count > MaxCacheSize * 1.5;
@@ -421,8 +439,7 @@ public class ModPreviewImagePanel : IDisposable
 #endif
                         _textureCache.Remove(lastPath);
                         _lruList.Remove(lastPath);
-                        texture.Texture?.Dispose();
-                        texture.OriginalTexture?.Dispose();
+                        DisposeTextures(texture);
                     }
 
                     isOverMemory = CurrentMemoryUsage > _configuration.Ui.PreviewPanelMaxMemory * 0.95;
@@ -477,13 +494,19 @@ public class ModPreviewImagePanel : IDisposable
 
     private bool QueueImageLoad(string path)
     {
+        int generation;
+        CancellationToken cancellationToken;
         lock (_cacheLock)
         {
-            if (_disposed || _textureCache.ContainsKey(path) || !_loadingImages.Add(path))
+            if (_disposed || _lifetimeCancellation.IsCancellationRequested
+             || _textureCache.ContainsKey(path) || !_loadingImages.Add(path))
                 return false;
+
+            generation = _cacheGeneration;
+            cancellationToken = _lifetimeCancellation.Token;
         }
 
-        Task.Run(async () => await LoadImage(path));
+        Task.Run(async () => await LoadImage(path, generation, cancellationToken));
         return true;
     }
 
@@ -494,6 +517,9 @@ public class ModPreviewImagePanel : IDisposable
         
         if (CurrentModPath != newModPath)
         {
+            lock (_cacheLock)
+                ++_cacheGeneration;
+
             CurrentModPath = newModPath;
             LoadPinnedConfig(); // 切换模组时加载新的置顶配置
             RequestImagePathRefresh();
@@ -754,6 +780,8 @@ public class ModPreviewImagePanel : IDisposable
                          && CurrentMemoryUsage < _configuration.Ui.PreviewPanelMaxMemory * 0.9
                          && _loadingImages.Add(path))
                         {
+                            var generation = _cacheGeneration;
+                            var cancellationToken = _lifetimeCancellation.Token;
                             Task.Run(async () =>
                             {
                                 try
@@ -763,30 +791,41 @@ public class ModPreviewImagePanel : IDisposable
 #endif
 
                                     var (newTexture, newOriginalTexture, newScaledSize, originalSize, newMemorySize) =
-                                        await _imageCompressor.CompressImageAsync(path, neededResolution);
+                                        await _imageCompressor.CompressImageAsync(path, neededResolution,
+                                            cancellationToken);
 
                                     if (newTexture != null && newOriginalTexture != null)
                                     {
+                                        var adopted = false;
                                         lock (_cacheLock)
                                         {
-                                            var oldTexture = cachedTexture.Texture;
-                                            var oldOriginalTexture = cachedTexture.OriginalTexture;
+                                            if (!_disposed && generation == _cacheGeneration
+                                             && _textureCache.TryGetValue(path, out var currentTexture)
+                                             && ReferenceEquals(currentTexture, cachedTexture))
+                                            {
+                                                var oldTexture = cachedTexture.Texture;
+                                                var oldOriginalTexture = cachedTexture.OriginalTexture;
 
-                                            cachedTexture.Texture = newTexture;
-                                            cachedTexture.OriginalTexture = newOriginalTexture;
-                                            cachedTexture.MemorySize = newMemorySize;
-                                            cachedTexture.ScaledSize = newScaledSize;
-                                            cachedTexture.Resolution = neededResolution;
+                                                cachedTexture.Texture = newTexture;
+                                                cachedTexture.OriginalTexture = newOriginalTexture;
+                                                cachedTexture.MemorySize = newMemorySize;
+                                                cachedTexture.ScaledSize = newScaledSize;
+                                                cachedTexture.Resolution = neededResolution;
+                                                adopted = true;
 
-                                            if (oldTexture != null && oldTexture != oldOriginalTexture)
-                                                oldTexture.Dispose();
-                                            if (oldOriginalTexture != null && oldOriginalTexture != newOriginalTexture)
-                                                oldOriginalTexture.Dispose();
+                                                DisposeTextures(oldTexture, oldOriginalTexture);
 #if DEBUG
-                                            Penumbra.Log.Debug($"[分辨率提升] 图片 {Path.GetFileName(path)} 已提升到 {neededResolution}，内存: {newMemorySize/1024}KB");
+                                                Penumbra.Log.Debug($"[分辨率提升] 图片 {Path.GetFileName(path)} 已提升到 {neededResolution}，内存: {newMemorySize/1024}KB");
 #endif
+                                            }
                                         }
+
+                                        if (!adopted)
+                                            DisposeTextures(newTexture, newOriginalTexture);
                                     }
+                                }
+                                catch (OperationCanceledException)
+                                {
                                 }
                                 catch (Exception ex)
                                 {
@@ -855,6 +894,8 @@ public class ModPreviewImagePanel : IDisposable
                                 if (cachedTexture.Resolution < ImageCompressor.ResolutionType.Original
                                  && _loadingImages.Add(path))
                                 {
+                                    var generation = _cacheGeneration;
+                                    var cancellationToken = _lifetimeCancellation.Token;
                                     Task.Run(async () =>
                                     {
                                         try
@@ -863,26 +904,38 @@ public class ModPreviewImagePanel : IDisposable
                                             Penumbra.Log.Debug($"[全屏预览] 为图片 {Path.GetFileName(path)} 提升分辨率至原始分辨率");
 #endif
                                             var (newTexture, newOriginalTexture, newScaledSize, originalSize, newMemorySize) =
-                                                await _imageCompressor.CompressImageAsync(path, ImageCompressor.ResolutionType.Original);
+                                                await _imageCompressor.CompressImageAsync(path,
+                                                    ImageCompressor.ResolutionType.Original,
+                                                    cancellationToken);
 
                                             if (newTexture != null && newOriginalTexture != null)
                                             {
+                                                var adopted = false;
                                                 lock (_cacheLock)
                                                 {
-                                                    var oldTexture = cachedTexture.Texture;
-                                                    var oldOriginalTexture = cachedTexture.OriginalTexture;
+                                                    if (!_disposed && generation == _cacheGeneration
+                                                     && _textureCache.TryGetValue(path, out var currentTexture)
+                                                     && ReferenceEquals(currentTexture, cachedTexture))
+                                                    {
+                                                        var oldTexture = cachedTexture.Texture;
+                                                        var oldOriginalTexture = cachedTexture.OriginalTexture;
 
-                                                    cachedTexture.Texture = newTexture;
-                                                    cachedTexture.OriginalTexture = newOriginalTexture;
-                                                    cachedTexture.MemorySize = newMemorySize;
-                                                    cachedTexture.Resolution = ImageCompressor.ResolutionType.Original;
+                                                        cachedTexture.Texture = newTexture;
+                                                        cachedTexture.OriginalTexture = newOriginalTexture;
+                                                        cachedTexture.MemorySize = newMemorySize;
+                                                        cachedTexture.Resolution = ImageCompressor.ResolutionType.Original;
+                                                        adopted = true;
 
-                                                    if (oldTexture != null && oldTexture != oldOriginalTexture)
-                                                        oldTexture.Dispose();
-                                                    if (oldOriginalTexture != null && oldOriginalTexture != newOriginalTexture)
-                                                        oldOriginalTexture.Dispose();
+                                                        DisposeTextures(oldTexture, oldOriginalTexture);
+                                                    }
                                                 }
+
+                                                if (!adopted)
+                                                    DisposeTextures(newTexture, newOriginalTexture);
                                             }
+                                        }
+                                        catch (OperationCanceledException)
+                                        {
                                         }
                                         catch (Exception ex)
                                         {
@@ -1071,34 +1124,38 @@ public class ModPreviewImagePanel : IDisposable
         return false;
     }
 
-    private async Task LoadImage(string imagePath)
+    private async Task LoadImage(string imagePath, int generation, CancellationToken cancellationToken)
     {
 #if DEBUG
         Penumbra.Log.Debug($"[图片加载] 开始加载图片: {Path.GetFileName(imagePath)}");
 #endif
-        
+
         try
         {
             if (!await ProcessFileWithLock(imagePath, async () =>
             {
+                CachedTexture? insertedTexture = null;
                 try
                 {
                     var resolutionType = ImageCompressor.ResolutionType.Thumbnail;
 
                     var (previewTexture, originalTexture, scaledSize, originalSize, memorySize) =
-                        await _imageCompressor.CompressImageAsync(imagePath, resolutionType);
+                        await _imageCompressor.CompressImageAsync(imagePath, resolutionType, cancellationToken);
 
                     if (previewTexture == null || originalTexture == null)
-                    {
                         throw new Exception("创建纹理失败");
-                    }
 
-                    CachedTexture cachedTexture;
                     lock (_cacheLock)
                     {
+                        if (_disposed || generation != _cacheGeneration)
+                        {
+                            DisposeTextures(previewTexture, originalTexture);
+                            return;
+                        }
+
                         EnsureCacheSize();
 
-                        cachedTexture = new CachedTexture
+                        insertedTexture = new CachedTexture
                         {
                             Texture = previewTexture,
                             OriginalTexture = originalTexture,
@@ -1113,7 +1170,7 @@ public class ModPreviewImagePanel : IDisposable
                             IsNew = true
                         };
 
-                        _textureCache[imagePath] = cachedTexture;
+                        _textureCache[imagePath] = insertedTexture;
                         _originalSizes[imagePath] = originalSize;
                         _lruList.AddFirst(imagePath);
 
@@ -1122,29 +1179,34 @@ public class ModPreviewImagePanel : IDisposable
 #endif
                     }
 
-                    await Task.Delay(2000);
+                    await Task.Delay(2000, cancellationToken);
 
                     lock (_cacheLock)
                     {
-                        if (_textureCache.TryGetValue(imagePath, out var existingTexture))
-                        {
+                        if (generation == _cacheGeneration
+                         && _textureCache.TryGetValue(imagePath, out var existingTexture)
+                         && ReferenceEquals(existingTexture, insertedTexture))
                             existingTexture.IsNew = false;
-                        }
                     }
+                }
+                catch (OperationCanceledException)
+                {
                 }
                 catch (Exception ex)
                 {
                     if (!ex.Message.Contains("being used by another process"))
-                    {
                         Penumbra.Log.Warning($"加载预览图失败: {imagePath} - {ex.Message}");
-                    }
+
                     lock (_cacheLock)
                     {
-                        if (_textureCache.TryGetValue(imagePath, out var cachedTexture))
+                        if (insertedTexture != null && generation == _cacheGeneration
+                         && _textureCache.TryGetValue(imagePath, out var cachedTexture)
+                         && ReferenceEquals(cachedTexture, insertedTexture))
                         {
-                            cachedTexture.Texture?.Dispose();
-                            cachedTexture.OriginalTexture?.Dispose();
                             _textureCache.Remove(imagePath);
+                            _originalSizes.Remove(imagePath);
+                            _lruList.Remove(imagePath);
+                            DisposeTextures(cachedTexture);
                         }
                     }
                 }

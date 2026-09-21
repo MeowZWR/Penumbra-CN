@@ -17,6 +17,8 @@ public class ImageCompressor : IDisposable
     private const int MaxCompressDimension = 1024; // 最大压缩尺寸
     private const int MaxRetryCount = 3;
     private const int FileOperationDelay = 100;
+    private const long MaxSourceFileSize = 100L * 1024 * 1024;
+    private const long MaxSourcePixelCount = 100_000_000;
 
     public enum ResolutionType
     {
@@ -57,18 +59,29 @@ public class ImageCompressor : IDisposable
     /// 压缩图片并生成多种分辨率的预览图
     /// </summary>
     public async Task<(IDalamudTextureWrap? PreviewTexture, IDalamudTextureWrap? OriginalTexture, Vector2 ScaledSize, Vector2 OriginalSize, long MemorySize)> 
-        CompressImageAsync(string imagePath, ResolutionType requestedResolution = ResolutionType.Medium)
+        CompressImageAsync(string imagePath, ResolutionType requestedResolution = ResolutionType.Medium,
+            CancellationToken cancellationToken = default)
     {
         try
         {
+            var fileLength = new FileInfo(imagePath).Length;
+            if (fileLength > MaxSourceFileSize)
+                throw new InvalidDataException($"图片文件超过 {MaxSourceFileSize / 1024 / 1024} MB 限制");
+
             // 读取原图
             byte[] imageData;
             using (var fs = File.OpenRead(imagePath))
             {
                 using var ms = new MemoryStream();
-                await fs.CopyToAsync(ms);
+                await fs.CopyToAsync(ms, cancellationToken);
                 imageData = ms.ToArray();
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var imageInfo = Image.Identify(imageData)
+             ?? throw new InvalidDataException("无法识别图片格式");
+            if ((long)imageInfo.Width * imageInfo.Height > MaxSourcePixelCount)
+                throw new InvalidDataException($"图片像素数超过 {MaxSourcePixelCount:N0} 限制");
 
             // 加载图片
             using var image = Image.Load<Rgba32>(imageData);
@@ -85,7 +98,7 @@ public class ImageCompressor : IDisposable
             };
             
             // 计算缩放尺寸保持宽高比
-            var scaleFactor = (float)targetSize / Math.Max(originalSize.X, originalSize.Y);
+            var scaleFactor = Math.Min(1f, targetSize / Math.Max(originalSize.X, originalSize.Y));
             var scaledSize = new Vector2(originalSize.X * scaleFactor, originalSize.Y * scaleFactor);
             
             // 仅当需要缩小图片时才进行缩放处理
@@ -108,7 +121,7 @@ public class ImageCompressor : IDisposable
                 BitDepth = PngBitDepth.Bit8,
                 CompressionLevel = PngCompressionLevel.BestSpeed, // 使用快速压缩
                 FilterMethod = PngFilterMethod.Adaptive
-            });
+            }, cancellationToken);
             memoryStream.Seek(0, SeekOrigin.Begin);
 
             // 创建预览纹理
@@ -118,55 +131,19 @@ public class ImageCompressor : IDisposable
                 throw new Exception("创建预览纹理失败");
             }
 
-            // 创建原始图片纹理（只在需要的情况下）
-            IDalamudTextureWrap? originalTexture = null;
-            long originalMemorySize = 0;
-            
-            // 只有在请求原始分辨率或者高分辨率预览时才加载原图
-            if (requestedResolution == ResolutionType.Original)
-            {
-                using var originalMs = new MemoryStream();
-                if (needsResize)
-                {
-                    // 使用原始图片
-                    await image.SaveAsPngAsync(originalMs, new PngEncoder
-                    {
-                        ColorType = PngColorType.RgbWithAlpha,
-                        BitDepth = PngBitDepth.Bit8,
-                        CompressionLevel = PngCompressionLevel.BestSpeed
-                    });
-                }
-                else
-                {
-                    // 如果预览图就是原图大小，直接复制
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    await memoryStream.CopyToAsync(originalMs);
-                }
-                
-                originalMs.Seek(0, SeekOrigin.Begin);
-                originalTexture = await _textureProvider.CreateFromImageAsync(originalMs, leaveOpen: true);
-                originalMemorySize = originalMs.Length;
-
-                if (originalTexture == null)
-                {
-                    previewTexture.Dispose();
-                    throw new Exception("创建原始纹理失败");
-                }
-            }
-            else
-            {
-                // 如果不需要原始分辨率，使用预览纹理作为原始纹理
-                originalTexture = previewTexture;
-            }
-
-            // 计算实际占用的内存大小
-            long totalMemorySize = memoryStream.Length + originalMemorySize;
+            // GPU纹理按解码后的RGBA像素占用显存，而不是按压缩后的PNG流大小计算。
+            var originalTexture = previewTexture;
+            long totalMemorySize = (long)previewTexture.Width * previewTexture.Height * 4;
             
 #if DEBUG
             Penumbra.Log.Debug($"[图片压缩] 加载图片 {Path.GetFileName(imagePath)}, 分辨率: {requestedResolution}, 原始: {originalSize.X}x{originalSize.Y}, 压缩后: {scaledSize.X}x{scaledSize.Y}, 内存: {totalMemorySize/1024}KB");
 #endif
             
             return (previewTexture, originalTexture, scaledSize, originalSize, totalMemorySize);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
