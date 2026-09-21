@@ -573,12 +573,15 @@ public sealed class OptimizedModPanelSettingsTab(
             Im.Line.Same();
             var websiteUrl = ModPreviewDownloader.GetModWebsiteUrl(selection.Mod);
             var canDownload = _previewDownloader.CanDownloadPreview(selection.Mod);
-            var buttonDisabled = !canDownload;
-            var downloadTooltip = string.IsNullOrEmpty(websiteUrl)
-                ? "模组中未找到网址相关字段，无法下载预览图"
-                : canDownload
-                    ? "从Heliosphere下载预览图（最多3张）"
-                    : "只支持从Heliosphere下载预览图";
+            var isDownloading = _previewDownloader.IsDownloading;
+            var buttonDisabled = !canDownload || isDownloading;
+            var downloadTooltip = isDownloading
+                ? "正在下载预览图"
+                : string.IsNullOrEmpty(websiteUrl)
+                    ? "模组中未找到网址相关字段，无法下载预览图"
+                    : canDownload
+                        ? "从Heliosphere下载预览图（最多3张）"
+                        : "只支持从Heliosphere下载预览图";
 
             if (ImEx.Icon.Button(FontAwesomeIcon.Download.Icon(), downloadTooltip, buttonDisabled, UiHelpers.IconButtonSize))
                 Task.Run(async () => await _previewDownloader.TryDownloadPreviewImage(selection.Mod!));
@@ -596,6 +599,12 @@ public sealed class OptimizedModPanelSettingsTab(
             }
 
             Im.Tooltip.OnHover("启用/禁用图片交互功能（点击打开外部工具，右键放大图片等）");
+
+            if (_previewDownloader.TryGetDownloadProgress(out var progress, out var progressLabel))
+            {
+                Im.ProgressBar(progress, new Vector2(-1, 3 * UiHelpers.Scale), string.Empty);
+                Im.Tooltip.OnHover(progressLabel);
+            }
         }
 
         table.NextColumn();

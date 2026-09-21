@@ -6,6 +6,9 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
+using SixLabors.ImageSharp.Formats.Webp;
+using ImageSharpImage = SixLabors.ImageSharp.Image;
+using System.Drawing.Imaging;
 
 namespace Penumbra.UI.ModsTab.ModPreview;
 
@@ -51,31 +54,44 @@ public class ClipboardImageImporter
             }
 
             int importedCount = 0;
+            int failedCount = 0;
             if (Clipboard.ContainsFileDropList())
             {
                 var clipboardDataList = Clipboard.GetFileDropList();
                 foreach (var image in clipboardDataList)
                 {
                     if (image is null) continue;
-                    // 生成唯一的文件名
-                    var fileName = $"clipboard_{DateTime.Now:yyyyMMddHHmmss}_{importedCount}.png";
-                    var filePath = Path.Combine(coverFolder, fileName);
 
-                    if (IsImageFile(image))
+                    if (!IsImageFile(image))
+                        continue;
+
+                    try
                     {
-                        File.Copy(image, filePath, true);
+                        using var sourceImage = ImageSharpImage.Load(image);
+                        var fileName = Path.ChangeExtension(Path.GetFileName(image), ".webp");
+                        PreviewImageFile.WriteUnique(coverFolder, fileName,
+                            output => sourceImage.Save(output, new WebpEncoder { Quality = 85 }));
                         importedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Penumbra.Log.Warning($"转换剪贴板图片失败: {image} - {ex.Message}");
+                        failedCount++;
                     }
                 }
             }
             else if (Clipboard.ContainsImage())
             {
-                var fileName = $"clipboard_{DateTime.Now:yyyyMMddHHmmss}_{importedCount}.png";
-                var filePath = Path.Combine(coverFolder, fileName);
-                var image    = Clipboard.GetImage();
-                if (image != null)
+                using var clipboardImage = Clipboard.GetImage();
+                if (clipboardImage != null)
                 {
-                    image.Save(filePath);
+                    using var sourceStream = new MemoryStream();
+                    clipboardImage.Save(sourceStream, ImageFormat.Png);
+                    sourceStream.Position = 0;
+                    using var sourceImage = ImageSharpImage.Load(sourceStream);
+                    var fileName = $"clipboard_{DateTime.Now:yyyyMMddHHmmssfff}.webp";
+                    PreviewImageFile.WriteUnique(coverFolder, fileName,
+                        output => sourceImage.Save(output, new WebpEncoder { Quality = 85 }));
                     importedCount++;
                 }
             }
@@ -84,10 +100,13 @@ public class ClipboardImageImporter
             {
                 ShowNotification($"成功导入 {importedCount} 张图片", NotificationType.Success);
             }
-            else
+            else if (failedCount == 0)
             {
                 ShowNotification("剪贴板中没有图片或图片格式不支持", NotificationType.Warning);
             }
+
+            if (failedCount > 0)
+                ShowNotification($"{failedCount} 张图片转换失败", NotificationType.Error);
 
             return importedCount;
         }

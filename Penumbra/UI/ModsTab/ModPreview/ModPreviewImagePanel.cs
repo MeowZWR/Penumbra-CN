@@ -510,6 +510,21 @@ public class ModPreviewImagePanel : IDisposable
         return true;
     }
 
+    private void ReloadImage(string path)
+    {
+        lock (_cacheLock)
+        {
+            if (_textureCache.Remove(path, out var cachedTexture))
+                DisposeTextures(cachedTexture);
+            _originalSizes.Remove(path);
+            _scaledSizes.Remove(path);
+            _lruList.Remove(path);
+        }
+
+        RequestImagePathRefresh();
+        QueueImageLoad(path);
+    }
+
     public void Draw(Mod mod, float panelWidth)
     {
         var newModPath = mod.ModPath.FullName;
@@ -566,15 +581,15 @@ public class ModPreviewImagePanel : IDisposable
                         try
                         {
                             var fileName = Path.GetFileName(file);
-                            var targetPath = Path.Combine(coverFolder, fileName);
-                            
-                            // 确保CoverImage文件夹存在
-                            if (!Directory.Exists(coverFolder))
+                            var targetPath = await PreviewImageFile.WriteUniqueAsync(coverFolder, fileName,
+                                async output =>
                             {
-                                Directory.CreateDirectory(coverFolder);
-                            }
+                                await using var input = new FileStream(file, FileMode.Open, FileAccess.Read,
+                                    FileShare.Read, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
+                                await input.CopyToAsync(output);
+                            });
 
-                            File.Copy(file, targetPath, true);
+                            ReloadImage(targetPath);
                             successCount++;
                         }
                         catch (Exception ex)
@@ -1138,6 +1153,7 @@ public class ModPreviewImagePanel : IDisposable
                 try
                 {
                     var resolutionType = ImageCompressor.ResolutionType.Thumbnail;
+                    var lastWriteTime = File.GetLastWriteTimeUtc(imagePath);
 
                     var (previewTexture, originalTexture, scaledSize, originalSize, memorySize) =
                         await _imageCompressor.CompressImageAsync(imagePath, resolutionType, cancellationToken);
@@ -1145,9 +1161,11 @@ public class ModPreviewImagePanel : IDisposable
                     if (previewTexture == null || originalTexture == null)
                         throw new Exception("创建纹理失败");
 
+                    var currentLastWriteTime = File.GetLastWriteTimeUtc(imagePath);
                     lock (_cacheLock)
                     {
-                        if (_disposed || generation != _cacheGeneration)
+                        if (_disposed || generation != _cacheGeneration
+                         || currentLastWriteTime != lastWriteTime)
                         {
                             DisposeTextures(previewTexture, originalTexture);
                             return;
@@ -1160,7 +1178,7 @@ public class ModPreviewImagePanel : IDisposable
                             Texture = previewTexture,
                             OriginalTexture = originalTexture,
                             LastAccessTime = DateTime.Now,
-                            LastModifiedTime = File.GetLastWriteTime(imagePath),
+                            LastModifiedTime = lastWriteTime,
                             MemorySize = memorySize,
                             IsVisible = false,
                             ScaledSize = scaledSize,

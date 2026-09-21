@@ -10,6 +10,9 @@ public class ModPreviewDownloader : IDisposable
     private readonly INotificationManager _notificationManager;
     private HttpClient? _httpClient;
     private readonly Configuration _configuration;
+    private readonly Lock _progressLock = new();
+    private readonly Dictionary<string, DownloadProgress> _downloadProgress = [];
+    private bool _isDownloading;
     
     private const int MaxPreviewImageCount = 3;
     private const int MaxDownloadedImageSize = 50 * 1024 * 1024;
@@ -31,6 +34,54 @@ public class ModPreviewDownloader : IDisposable
     {
         _httpClient?.Dispose();
         _httpClient = null;
+    }
+
+    public bool IsDownloading
+    {
+        get
+        {
+            lock (_progressLock)
+                return _isDownloading;
+        }
+    }
+
+    public bool TryGetDownloadProgress(out float progress, out string label)
+    {
+        lock (_progressLock)
+        {
+            if (!_isDownloading)
+            {
+                progress = 0;
+                label = string.Empty;
+                return false;
+            }
+
+            if (_downloadProgress.Count == 0)
+            {
+                progress = 0;
+                label = "正在获取预览图...";
+                return true;
+            }
+
+            var completed = 0;
+            double totalProgress = 0;
+            foreach (var item in _downloadProgress.Values)
+            {
+                if (item.Completed)
+                {
+                    ++completed;
+                    totalProgress += 1;
+                }
+                else if (item.TotalBytes is > 0)
+                {
+                    totalProgress += Math.Clamp(item.DownloadedBytes / (double)item.TotalBytes.Value, 0, 1);
+                }
+            }
+
+            progress = (float)(totalProgress / _downloadProgress.Count);
+            label = $"正在下载预览图 {completed}/{_downloadProgress.Count}";
+            return true;
+        }
     }
 
     /// <summary>
@@ -64,72 +115,95 @@ public class ModPreviewDownloader : IDisposable
     /// </summary>
     public async Task<bool> TryDownloadPreviewImage(Mod mod)
     {
-        var websiteUrl = GetModWebsiteUrl(mod);
-        if (string.IsNullOrEmpty(websiteUrl))
+        lock (_progressLock)
         {
-            ShowNotification("模组没有网站链接，无法下载预览图", NotificationType.Warning);
-            return false;
-        }
+            if (_isDownloading)
+                return false;
 
-        var site = GetSupportedSite(websiteUrl);
-        
-        if (site == null)
-        {
-            var source = Uri.TryCreate(websiteUrl, UriKind.Absolute, out var uri)
-                ? uri.Host
-                : websiteUrl;
-            ShowNotification($"不支持从该网站下载预览图: {source}", NotificationType.Warning);
-            return false;
+            _isDownloading = true;
+            _downloadProgress.Clear();
         }
 
         try
         {
-            var coverFolder = Path.Combine(mod.ModPath.FullName, "CoverImage");
-            Directory.CreateDirectory(coverFolder);
+            var websiteUrl = GetModWebsiteUrl(mod);
+            if (string.IsNullOrEmpty(websiteUrl))
+            {
+                ShowNotification("模组没有网站链接，无法下载预览图", NotificationType.Warning);
+                return false;
+            }
 
-            List<string> previewUrls;
-            var originalCount = 0;
+            var site = GetSupportedSite(websiteUrl);
+            if (site == null)
+            {
+                var source = Uri.TryCreate(websiteUrl, UriKind.Absolute, out var uri)
+                    ? uri.Host
+                    : websiteUrl;
+                ShowNotification($"不支持从该网站下载预览图: {source}", NotificationType.Warning);
+                return false;
+            }
+
             try
             {
-                previewUrls = await site.GetPreviewImageUrls(websiteUrl, _httpClient!);
-                
-                originalCount = previewUrls.Count;
-                if (previewUrls.Count > MaxPreviewImageCount)
+                var coverFolder = Path.Combine(mod.ModPath.FullName, "CoverImage");
+                Directory.CreateDirectory(coverFolder);
+
+                List<string> previewUrls;
+                var originalCount = 0;
+                try
                 {
-                    Penumbra.Log.Information($"检测到 {previewUrls.Count} 张，限制为下载 {MaxPreviewImageCount} 张图片");
-                    previewUrls = [.. previewUrls.Take(MaxPreviewImageCount)];
+                    previewUrls = await site.GetPreviewImageUrls(websiteUrl, _httpClient!);
+
+                    originalCount = previewUrls.Count;
+                    if (previewUrls.Count > MaxPreviewImageCount)
+                    {
+                        Penumbra.Log.Information($"检测到 {previewUrls.Count} 张，限制为下载 {MaxPreviewImageCount} 张图片");
+                        previewUrls = [.. previewUrls.Take(MaxPreviewImageCount)];
+                    }
                 }
+                catch (Exception ex)
+                {
+                    ShowNotification($"获取预览图URL失败: {ex.Message}", NotificationType.Error);
+                    return false;
+                }
+
+                if (previewUrls.Count == 0)
+                {
+                    ShowNotification("没有找到可下载的预览图", NotificationType.Warning);
+                    return false;
+                }
+
+                lock (_progressLock)
+                    foreach (var url in previewUrls)
+                        _downloadProgress[url] = new DownloadProgress();
+
+                // 并行下载
+                var results = await Task.WhenAll(
+                    previewUrls.Select(url => DownloadImage(url, coverFolder)));
+
+                var successCount = results.Count(result => result);
+                ShowNotification(
+                    successCount > 0
+                        ? $"成功下载 {successCount} / {originalCount} 张预览图"
+                        : "所有预览图下载失败",
+                    successCount > 0 ? NotificationType.Success : NotificationType.Error);
+
+                return successCount > 0;
             }
             catch (Exception ex)
             {
-                ShowNotification($"获取预览图URL失败: {ex.Message}", NotificationType.Error);
+                Penumbra.Log.Error($"下载预览图过程中出错: {ex.Message}");
+                ShowNotification($"下载预览图失败: {ex.Message}", NotificationType.Error);
                 return false;
             }
-            
-            if (previewUrls.Count == 0)
-            {
-                ShowNotification("没有找到可下载的预览图", NotificationType.Warning);
-                return false;
-            }
-
-            // 并行下载
-            var results = await Task.WhenAll(
-                previewUrls.Select(url => DownloadImage(url, coverFolder)));
-            
-            var successCount = results.Count(r => r);
-            ShowNotification(
-                successCount > 0
-                    ? $"成功下载 {successCount} / {originalCount} 张预览图"
-                    : "所有预览图下载失败", 
-                successCount > 0 ? NotificationType.Success : NotificationType.Error);
-            
-            return successCount > 0;
         }
-        catch (Exception ex)
+        finally
         {
-            Penumbra.Log.Error($"下载预览图过程中出错: {ex.Message}");
-            ShowNotification($"下载预览图失败: {ex.Message}", NotificationType.Error);
-            return false;
+            lock (_progressLock)
+            {
+                _isDownloading = false;
+                _downloadProgress.Clear();
+            }
         }
     }
 
@@ -150,13 +224,16 @@ public class ModPreviewDownloader : IDisposable
             if (response.Content.Headers.ContentLength > MaxDownloadedImageSize)
                 return false;
 
-            var imageBytes = await ReadWithLimitAsync(response.Content, MaxDownloadedImageSize);
+            SetDownloadTotal(url, response.Content.Headers.ContentLength);
+            var imageBytes = await ReadWithLimitAsync(response.Content, MaxDownloadedImageSize,
+                bytes => AddDownloadedBytes(url, bytes));
             if (!IsValidImageFile(imageBytes))
                 return false;
 
             var finalUrl = response.RequestMessage?.RequestUri?.ToString() ?? url;
             var fileName = GenerateFileName(response, finalUrl);
-            await File.WriteAllBytesAsync(Path.Combine(destinationFolder, fileName), imageBytes);
+            await PreviewImageFile.WriteUniqueAsync(destinationFolder, fileName,
+                output => output.WriteAsync(imageBytes, 0, imageBytes.Length));
             
             return true;
         }
@@ -165,9 +242,14 @@ public class ModPreviewDownloader : IDisposable
             Penumbra.Log.Error($"下载图片失败 {url}: {ex.Message}");
             return false;
         }
+        finally
+        {
+            CompleteDownload(url);
+        }
     }
 
-    internal static async Task<byte[]> ReadWithLimitAsync(HttpContent content, int maxBytes)
+    internal static async Task<byte[]> ReadWithLimitAsync(HttpContent content, int maxBytes,
+        Action<int>? reportProgress = null)
     {
         await using var source = await content.ReadAsStreamAsync();
         using var destination = new MemoryStream(Math.Min((int)(content.Headers.ContentLength ?? 0), maxBytes));
@@ -179,9 +261,31 @@ public class ModPreviewDownloader : IDisposable
                 throw new InvalidDataException($"下载内容超过 {maxBytes / 1024 / 1024} MB 限制");
 
             await destination.WriteAsync(buffer.AsMemory(0, read));
+            reportProgress?.Invoke(read);
         }
 
         return destination.ToArray();
+    }
+
+    private void SetDownloadTotal(string url, long? totalBytes)
+    {
+        lock (_progressLock)
+            if (_downloadProgress.TryGetValue(url, out var progress))
+                progress.TotalBytes = totalBytes;
+    }
+
+    private void AddDownloadedBytes(string url, int bytes)
+    {
+        lock (_progressLock)
+            if (_downloadProgress.TryGetValue(url, out var progress))
+                progress.DownloadedBytes += bytes;
+    }
+
+    private void CompleteDownload(string url)
+    {
+        lock (_progressLock)
+            if (_downloadProgress.TryGetValue(url, out var progress))
+                progress.Completed = true;
     }
     
     /// <summary>
@@ -243,7 +347,7 @@ public class ModPreviewDownloader : IDisposable
         // 从URL特征生成文件名
         var prefix = url.Contains("heliosphere") ? "heliosphere" : "preview";
                        
-        return $"{prefix}_{Math.Abs(url.GetHashCode())}_{DateTime.Now.Ticks % 10000}{extension}";
+        return $"{prefix}_{Math.Abs((long)url.GetHashCode())}{extension}";
     }
 
     private void ShowNotification(string content, NotificationType type) =>
@@ -254,6 +358,13 @@ public class ModPreviewDownloader : IDisposable
             Type = type,
             InitialDuration = TimeSpan.FromSeconds(3)
         });
+
+    private sealed class DownloadProgress
+    {
+        public long DownloadedBytes { get; set; }
+        public long? TotalBytes { get; set; }
+        public bool Completed { get; set; }
+    }
 }
 
 /// <summary>
