@@ -5,16 +5,20 @@ using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.Interop.Services;
+using Penumbra.Mods;
 using Penumbra.UI.Classes;
 
 namespace Penumbra.UI.ModsTab;
 
 public sealed class RedrawFooter(
     UiConfig config,
+    AdvancedConfig advanced,
     TutorialService tutorial,
     ObjectManager objects,
     ITargetManager targets,
-    RedrawService redrawService) : IFooter
+    RedrawService redrawService,
+    AnimationResourceCache animationCache,
+    ModSelection selection) : IFooter
 {
     public bool Collapsed
         => config.HideRedrawBar;
@@ -63,13 +67,25 @@ public sealed class RedrawFooter(
         using var id       = Im.Id.Push("Redraw"u8);
         using var disabled = Im.Disabled(!objects[0].Valid);
         Im.Line.NoSpacing();
-        var buttonWidth = size with { X = Im.ContentRegion.Available.X / 5 };
+        var columns     = advanced.EnableExtendedFeatures ? 6 : 5;
+        var buttonWidth = size with { X = Im.ContentRegion.Available.X / columns };
         var tt = !objects[0].Valid
             ? "只能在登录且角色可用时使用。"u8
             : StringU8.Empty;
         DrawButton(buttonWidth, "全部"u8, string.Empty, tt);
         Im.Line.NoSpacing();
         DrawButton(buttonWidth, "自己"u8, "self", tt);
+        if (advanced.EnableExtendedFeatures)
+        {
+            Im.Line.NoSpacing();
+            var animTt = tt.Length > 0
+                ? tt
+                : selection.Mod is null
+                    ? "请先在模组列表中选中一个模组。"u8
+                    : StringU8.Empty;
+            DrawAnimationRefreshButton(buttonWidth, animTt);
+        }
+
         Im.Line.NoSpacing();
 
         tt = targets.Target is null && targets.GPoseTarget is null
@@ -88,6 +104,42 @@ public sealed class RedrawFooter(
             ? "目前只能用于室内家具。"u8
             : StringU8.Empty;
         DrawButton(buttonWidth, "家具"u8, "furniture", tt);
+    }
+
+    private void DrawAnimationRefreshButton(Vector2 width, ReadOnlySpan<byte> additionalTooltip)
+    {
+        using (Im.Disabled(additionalTooltip.Length > 0))
+        {
+            if (Im.Button("动画"u8, width))
+                RefreshCurrentModAnimations();
+        }
+
+        if (!Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
+            return;
+
+        using var style = Im.Style.PushDefault();
+        using var _     = Im.Tooltip.Begin();
+        Im.Text(
+            "刷新当前选中模组中已启用选项里的 PAP / TMB / SCD，并重绘自己。"u8);
+        if (additionalTooltip.Length > 0)
+            Im.Text(additionalTooltip);
+    }
+
+    private void RefreshCurrentModAnimations()
+    {
+        if (selection.Mod is not { } mod)
+            return;
+
+        var count = animationCache.Refresh(mod.GetData(selection.Settings).FileRedirections);
+        if (count is 0)
+        {
+            Penumbra.Log.Debug($"[AnimationResourceCache] {mod.Name} has no applied PAP/TMB/SCD redirections to refresh.");
+            return;
+        }
+
+        redrawService.RedrawObject("self", RedrawType.Redraw);
+        Penumbra.Log.Debug(
+            $"[AnimationResourceCache] Refreshed {count} PAP/TMB/SCD file(s) from {mod.Name} (generation {animationCache.Generation}).");
     }
 
     private void DrawButton(Vector2 width, ReadOnlySpan<byte> label, string lower, ReadOnlySpan<byte> additionalTooltip)

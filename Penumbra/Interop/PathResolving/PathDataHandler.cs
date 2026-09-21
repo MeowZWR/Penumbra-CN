@@ -34,10 +34,20 @@ public static class PathDataHandler
     public static FullPath CreateImc(CiByteString path, ModCollection collection)
         => new($"|{collection.Identity.LocalId.Id}_{collection.Counters.Imc}_{DiscriminatorString}|{path}");
 
+    /// <summary> Create the encoding path for a PAP file. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static FullPath CreatePap(CiByteString path, ModCollection collection, int generation = 0)
+        => CreateBase(path, collection, generation);
+
     /// <summary> Create the encoding path for a TMB file. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FullPath CreateTmb(CiByteString path, ModCollection collection)
-        => CreateBase(path, collection);
+    public static FullPath CreateTmb(CiByteString path, ModCollection collection, int generation = 0)
+        => CreateBase(path, collection, generation);
+
+    /// <summary> Create the encoding path for an SCD file. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static FullPath CreateScd(CiByteString path, ModCollection collection, int generation = 0)
+        => CreateBase(path, collection, generation);
 
     /// <summary> Create the encoding path for an AVFX file. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -56,8 +66,19 @@ public static class PathDataHandler
 
     /// <summary> The base function shared by most file types. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static FullPath CreateBase(CiByteString path, ModCollection collection)
-        => new($"|{collection.Identity.LocalId.Id}_{collection.Counters.Change}_{DiscriminatorString}|{path}");
+    private static FullPath CreateBase(CiByteString path, ModCollection collection, int generation = 0)
+    {
+        if (generation <= 0)
+            return new FullPath($"|{collection.Identity.LocalId.Id}_{collection.Counters.Change}_{DiscriminatorString}|{path}");
+
+        var encoded = $"|{collection.Identity.LocalId.Id}_{collection.Counters.Change}_{generation:X}_{DiscriminatorString}|{path}";
+        var full    = new FullPath(encoded);
+        if (full.InternalName.Length < Utf8GamePath.MaxGamePathLength)
+            return full;
+
+        Penumbra.Log.Warning($"[PathDataHandler] Encoded animation path exceeds the maximum length, using the unprefixed path:\n\t{path}");
+        return new FullPath(path.ToString());
+    }
 
     /// <summary> Read an additional data blurb and parse it into usable data for all file types but Materials. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

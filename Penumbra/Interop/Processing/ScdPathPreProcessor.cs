@@ -7,16 +7,16 @@ using Penumbra.String.Classes;
 
 namespace Penumbra.Interop.Processing;
 
-public sealed class TmbPathPreProcessor(AnimationResourceCache cache) : IPathPreProcessor
+public sealed class ScdPathPreProcessor(AnimationResourceCache cache) : IPathPreProcessor
 {
     public ResourceType Type
-        => ResourceType.Tmb;
+        => ResourceType.Scd;
 
     public FullPath? PreProcess(ResolveData resolveData, CiByteString path, Utf8GamePath _, bool nonDefault, FullPath? resolved)
     {
         if (cache.Contains(resolved))
-            return PathDataHandler.CreateTmb(path, resolveData.ModCollection, cache.Generation);
+            return PathDataHandler.CreateScd(path, resolveData.ModCollection, cache.Generation);
 
-        return nonDefault ? PathDataHandler.CreateTmb(path, resolveData.ModCollection) : resolved;
+        return resolved;
     }
 }

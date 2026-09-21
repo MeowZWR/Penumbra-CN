@@ -4,6 +4,7 @@ using Penumbra.Api.Enums;
 using Penumbra.Collections;
 using Penumbra.Interop.Hooks.Resources;
 using Penumbra.Interop.PathResolving;
+using Penumbra.Interop.Processing;
 using Penumbra.Interop.Structs;
 using Penumbra.String;
 using Penumbra.String.Classes;
@@ -21,6 +22,7 @@ public unsafe class ResourceLoader : IDisposable, IService
     private readonly ModelSafetyCheck         _modelSafetyCheck;
     private readonly Configuration            _config;
     private readonly ResourceHandleDestructor _destructor;
+    private readonly PapPathPreProcessor      _papPreProcessor;
 
     private readonly ConcurrentDictionary<nint, Utf8GamePath> _ongoingLoads = [];
 
@@ -32,13 +34,14 @@ public unsafe class ResourceLoader : IDisposable, IService
 
     public ResourceLoader(ResourceService resources, FileReadService fileReadService, RsfService rsfService, Configuration config,
         PeSigScanner sigScanner,
-        ResourceHandleDestructor destructor)
+        ResourceHandleDestructor destructor, PapPathPreProcessor papPreProcessor)
     {
         _resources       = resources;
         _fileReadService = fileReadService;
         _rsfService      = rsfService;
         _config          = config;
         _destructor      = destructor;
+        _papPreProcessor = papPreProcessor;
         ResetResolvePath();
 
         _resources.ResourceRequested     += ResourceHandler;
@@ -61,13 +64,24 @@ public unsafe class ResourceLoader : IDisposable, IService
         if (!_config.Main.EnableMods || !Utf8GamePath.FromPointer(path, MetaDataComputation.CiCrc32, out var gamePath))
             return length;
 
-        var resolvedData = _resolvedData.Value;
-        var (resolvedPath, data) = _incMode.Value
-            ? (null, ResolveData.Invalid)
-            : resolvedData.Valid
-                ? (resolvedData.ModCollection.ResolvePath(gamePath), resolvedData)
-                : ResolvePath(gamePath, ResourceCategory.Chara, ResourceType.Pap);
-
+        FullPath?   resolvedPath;
+        ResolveData data;
+        var         resolvedData = _resolvedData.Value;
+        if (_incMode.Value)
+        {
+            resolvedPath = null;
+            data         = ResolveData.Invalid;
+        }
+        else if (resolvedData.Valid)
+        {
+            var resolved = resolvedData.ModCollection.ResolvePath(gamePath);
+            resolvedPath = _papPreProcessor.Apply(resolvedData, resolved);
+            data         = resolvedData;
+        }
+        else
+        {
+            (resolvedPath, data) = ResolvePath(gamePath, ResourceCategory.Chara, ResourceType.Pap);
+        }
 
         if (!resolvedPath.HasValue)
         {
@@ -76,9 +90,13 @@ public unsafe class ResourceLoader : IDisposable, IService
         }
 
         PapRequested?.Invoke(gamePath, resolvedPath.Value, data);
-        NativeMemory.Copy(resolvedPath.Value.InternalName.Path, path, (nuint)resolvedPath.Value.InternalName.Length);
-        path[resolvedPath.Value.InternalName.Length] = 0;
-        return resolvedPath.Value.InternalName.Length;
+        var name = resolvedPath.Value.InternalName;
+        if (name.Length is 0 or >= Utf8GamePath.MaxGamePathLength)
+            return length;
+
+        NativeMemory.Copy(name.Path, path, (nuint)name.Length);
+        path[name.Length] = 0;
+        return name.Length;
     }
 
     /// <summary> Load a resource for a given path and a specific collection. </summary>
