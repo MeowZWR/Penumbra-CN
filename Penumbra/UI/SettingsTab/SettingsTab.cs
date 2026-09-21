@@ -141,24 +141,23 @@ public sealed class SettingsTab(
         if (Im.Scroll.MaximumY > 0)
             xPos -= Im.Style.ScrollbarSize + Im.Style.FramePadding.X;
 
-        Im.Cursor.Position = new Vector2(xPos, Im.Style.FrameHeightWithSpacing);
-        UiHelpers.DrawSupportButton(penumbra);
-
         Im.Cursor.Position = new Vector2(xPos, 0);
-        SupportButton.Discord(Penumbra.Messager, width);
+        SupportButton.DiscordSplit(Penumbra.Messager, new Vector2(width, 0));
+
+        Im.Cursor.Position = new Vector2(xPos, 1 * Im.Style.FrameHeightWithSpacing);
+        SupportButton.ModSites(Penumbra.Messager, new Vector2(width, 0));
 
         Im.Cursor.Position = new Vector2(xPos, 2 * Im.Style.FrameHeightWithSpacing);
-        SupportButton.ReniGuide(Penumbra.Messager, width);
-
-        Im.Cursor.Position = new Vector2(xPos, 3 * Im.Style.FrameHeightWithSpacing);
-        if (Im.Button("重新开始教程"u8, new Vector2(width, 0)))
-        {
+        SupportButton.GuideTutorial(Penumbra.Messager, new Vector2(width, 0), () => {
             config.Ephemeral.TutorialStep = 0;
             config.Ephemeral.Save();
-        }
+        });
+
+        Im.Cursor.Position = new Vector2(xPos, 3 * Im.Style.FrameHeightWithSpacing);
+        UiHelpers.DrawSupportButton(penumbra);
 
         Im.Cursor.Position = new Vector2(xPos, 4 * Im.Style.FrameHeightWithSpacing);
-        if (Im.Button("显示更新日志"u8, new Vector2(width, 0)))
+        if (Im.Button("查看更新日志"u8, new Vector2(width, 0)))
             penumbra.ForceChangelogOpen();
 
         Im.Cursor.Position = new Vector2(xPos, 5 * Im.Style.FrameHeightWithSpacing);
