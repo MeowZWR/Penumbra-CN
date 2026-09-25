@@ -482,9 +482,33 @@ public class ModPanelSettingsTab(
         {
             var actual = collectionManager.Active.Current.GetActualSettings(selection.Mod!.Index).Settings;
             if (ImEx.Button("设为临时"u8, new Vector2(buttonSize, 0),
-                    "将当前设置复制到临时设置中以进行实验。"u8))
-                collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!,
-                    new TemporaryModSettings(selection.Mod!, actual));
+                    "将当前设置复制到临时设置中以进行实验。\n按住 Ctrl 点击可强制启用此模组，并尽可能将优先级设为最高值。"u8))
+            {
+                var temporarySettings = new TemporaryModSettings(selection.Mod!, actual);
+                if (Im.Io.KeyControl)
+                {
+                    var collection = collectionManager.Active.Current;
+                    var conflictPriorities = collection.Conflicts(selection.Mod!)
+                        .Where(c => !c.Mod2.Priority.IsHidden)
+                        .Select(c => c.Mod2.Index < 0
+                            ? c.Mod2.Priority
+                            : collection.GetActualSettings(c.Mod2.Index).Settings?.Priority ?? ModPriority.Default)
+                        .Where(p => !p.IsHidden)
+                        .ToArray();
+                    var maxPriority = conflictPriorities.Length > 0
+                        ? conflictPriorities.Max()
+                        : collection.ActualSettings
+                            .Where(s => s is { Enabled: true })
+                            .Select(s => s!.Priority)
+                            .Where(p => !p.IsHidden)
+                            .DefaultIfEmpty(ModPriority.Default)
+                            .Max();
+                    temporarySettings.ForceInherit = false;
+                    temporarySettings.Enabled      = true;
+                    temporarySettings.Priority     = maxPriority + 1;
+                }
+                collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!, temporarySettings);
+            }
         }
     }
 
