@@ -196,7 +196,8 @@ public sealed class ChangedItemsTab(
         table.NextColumn();
         drawer.DrawCategoryIcon(item.CategoryIcon, _buttonSize.Y);
         Im.Line.NoSpacing();
-        var clicked = Im.Selectable(item.ItemName, false, SelectableFlags.None, _buttonSize with { X = 0 });
+        var label   = drawer.GetEmoteDisplayLabel(item.Data, item.ItemName);
+        var clicked = Im.Selectable(label, false, SelectableFlags.None, _buttonSize with { X = 0 });
         drawer.ChangedItemHandling(item.Data, clicked);
 
         table.NextColumn();

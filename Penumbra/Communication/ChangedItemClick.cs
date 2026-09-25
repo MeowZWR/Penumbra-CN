@@ -16,6 +16,9 @@ public sealed class ChangedItemClick(LunaLogger log)
 
         /// <seealso cref="Penumbra.SetupApi"/>
         Link = 1,
+
+        /// <seealso cref="Penumbra.SetupApi"/>
+        Emote = 2,
     }
 
     /// <summary> The arguments for a changed item click event. </summary>

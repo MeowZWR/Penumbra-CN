@@ -352,7 +352,8 @@ public sealed class ModPanelChangedItemsTab(
         using var indent = Im.Indent(1, obj.Child);
         drawer.DrawCategoryIcon(obj.Icon, _buttonSize.Y);
         Im.Line.NoSpacing();
-        var clicked = Im.Selectable(obj.Text.Span, false, SelectableFlags.None, _buttonSize with { X = 0 });
+        var label   = drawer.GetEmoteDisplayLabel(obj.Data, obj.Text.Span);
+        var clicked = Im.Selectable(label, false, SelectableFlags.None, _buttonSize with { X = 0 });
         drawer.ChangedItemHandling(obj.Data, clicked);
         ChangedItemDrawer.DrawModelData(obj.ModelData.Span, _buttonSize.Y);
     }

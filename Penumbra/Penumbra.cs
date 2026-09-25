@@ -21,6 +21,7 @@ using Penumbra.Mods.Manager;
 using Penumbra.Services;
 using Penumbra.UI;
 using Penumbra.UI.AdvancedWindow;
+using Penumbra.UI.Classes;
 using Penumbra.UI.MainWindow;
 using ChangedItemClick = Penumbra.Communication.ChangedItemClick;
 using ChangedItemHover = Penumbra.Communication.ChangedItemHover;
@@ -128,6 +129,7 @@ public class Penumbra : IDalamudPlugin
     {
         _services.GetService<IpcProviders>();
         var itemSheet = _services.GetService<IDataManager>().GetExcelSheet<Item>();
+        var drawer    = _services.GetService<ChangedItemDrawer>();
         _communicatorService.ChangedItemHover.Subscribe((in args) =>
         {
             if (args.Data is IdentifiedItem { Item.Id.IsItem: true })
@@ -139,6 +141,22 @@ public class Penumbra : IDalamudPlugin
             if (args is { Button: MouseButton.Left, Data: IdentifiedItem item } && itemSheet.GetRow(item.Item.ItemId.Id) is { } i)
                 Messager.LinkItem(i);
         }, ChangedItemClick.Priority.Link);
+
+        _communicatorService.ChangedItemHover.Subscribe((in args) =>
+        {
+            if (args.Data is not IdentifiedEmote emote)
+                return;
+
+            Im.Text(drawer.IsEmoteUnlocked(emote.Emote.RowId)
+                ? "右键单击让角色使用此情感动作。"u8
+                : "此情感动作尚未解锁。"u8);
+        }, ChangedItemHover.Priority.Emote);
+
+        _communicatorService.ChangedItemClick.Subscribe((in args) =>
+        {
+            if (args is { Button: MouseButton.Right, Data: IdentifiedEmote emote })
+                ChangedItemDrawer.TryExecuteEmote(emote.Emote.RowId);
+        }, ChangedItemClick.Priority.Emote);
     }
 
     private void SetupInterface()

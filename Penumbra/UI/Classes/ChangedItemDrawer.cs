@@ -1,8 +1,11 @@
+using System.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using ImSharp;
 using Lumina.Data.Files;
 using Luna;
@@ -17,6 +20,9 @@ public class ChangedItemDrawer : IDisposable, IUiService
 {
     private static readonly string[] LowerNames =
         ChangedItemFlagExtensions.Order.Select(f => f.ToNameU8().ToString().ToLowerInvariant()).ToArray();
+
+    private readonly Dictionary<uint, bool>     _emoteUnlocked      = [];
+    private readonly Dictionary<uint, StringU8> _emoteLockedDisplay = [];
 
     public static bool TryParseIndex(ReadOnlySpan<char> input, out ChangedItemIconFlag slot)
     {
@@ -81,6 +87,64 @@ public class ChangedItemDrawer : IDisposable, IUiService
         foreach (var wrap in _icons.Values.Distinct())
             wrap.Dispose();
         _icons.Clear();
+        _emoteUnlocked.Clear();
+        _emoteLockedDisplay.Clear();
+    }
+
+    /// <summary> Cached unlock lookup: each emote id is queried from the game at most once. </summary>
+    public bool IsEmoteUnlocked(uint emoteId)
+    {
+        if (_emoteUnlocked.TryGetValue(emoteId, out var unlocked))
+            return unlocked;
+
+        unlocked = QueryEmoteUnlocked(emoteId);
+        _emoteUnlocked[emoteId] = unlocked;
+        return unlocked;
+    }
+
+    /// <summary> Base label, or a once-built 「…（未解锁）」 label for locked emotes. </summary>
+    public ReadOnlySpan<byte> GetEmoteDisplayLabel(IIdentifiedObjectData data, ReadOnlySpan<byte> baseLabel)
+    {
+        if (data is not IdentifiedEmote emote)
+            return baseLabel;
+
+        var id = emote.Emote.RowId;
+        if (IsEmoteUnlocked(id))
+            return baseLabel;
+
+        if (_emoteLockedDisplay.TryGetValue(id, out var cached))
+            return cached;
+
+        var labeled = new StringU8($"{Encoding.UTF8.GetString(baseLabel)}（未解锁）");
+        _emoteLockedDisplay[id] = labeled;
+        return labeled;
+    }
+
+    public static unsafe bool TryExecuteEmote(uint emoteId)
+    {
+        var manager = EmoteManager.Instance();
+        if (manager == null)
+            return false;
+
+        var id = (ushort)emoteId;
+        if (!manager->CanExecuteEmote(id))
+            return false;
+
+        var targetSystem = TargetSystem.Instance();
+        var target       = targetSystem != null ? targetSystem->GetHardTarget() : null;
+        if (target == null && targetSystem != null)
+            target = targetSystem->GPoseTarget;
+        if (target == null)
+            return manager->ExecuteEmote(id);
+
+        var option = new EmoteController.PlayEmoteOption { TargetId = target->GetGameObjectId() };
+        return manager->ExecuteEmote(id, &option);
+    }
+
+    private static unsafe bool QueryEmoteUnlocked(uint emoteId)
+    {
+        var ui = UIState.Instance();
+        return ui != null && ui->IsEmoteUnlocked((ushort)emoteId);
     }
 
     /// <summary> Check if a changed item should be drawn based on its category. </summary>
