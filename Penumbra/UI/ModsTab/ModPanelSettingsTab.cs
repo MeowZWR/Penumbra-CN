@@ -286,7 +286,7 @@ public class ModPanelSettingsTab(
             return;
 
         using var id = Im.Id.Push("presets"u8);
-        if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "尝试从剪贴板导入设置预设。"u8))
+        if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "尝试从剪贴板导入设置预设。"u8, _locked))
             if (SettingPresetData.FromClipboard(out var data))
                 collectionManager.Editor.ApplyPreset(collectionManager.Active.Current, selection.Mod!, data,
                     config.Main.DefaultTemporaryMode || _temporary);

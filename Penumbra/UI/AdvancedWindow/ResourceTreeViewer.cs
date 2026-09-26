@@ -154,7 +154,7 @@ public class ResourceTreeViewer(
         if (!gameData.HasModifiedGameDataFiles)
             return;
 
-        using var style = ImGuiColor.Text.Push(ImGuiColors.DalamudOrange);
+        using var style = ImGuiColor.Text.Push(ImGuiColors.WarningForeground);
 
         Im.TextWrapped(
             "Dalamud 检测到您的 FFXIV 安装目录存在被修改的游戏文件。任何通过 TexTools 安装的模组都会导致此提示。"u8);

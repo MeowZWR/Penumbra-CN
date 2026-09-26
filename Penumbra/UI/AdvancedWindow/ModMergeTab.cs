@@ -10,6 +10,7 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
 {
     public readonly ModMerger ModMerger   = modMerger;
     private         string    _newModName = string.Empty;
+    private         int       _newPage    = 1;
 
     public void Draw()
     {
@@ -68,11 +69,13 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
         Im.Line.Same();
         DrawCombo(size - Im.Item.Size.X - Im.Style.ItemSpacing.X);
 
+        var pageDragWidth = 60 * Im.Style.GlobalScale;
+        var pageWidth     = Im.Font.CalculateSize("in page"u8, false).X + 2 * Im.Style.ItemSpacing.X + pageDragWidth;
         using (Im.Group())
         {
-            using var disabled    = Im.Disabled(ModMerger.MergeFromMod.HasOptions);
-            var       buttonWidth = (size - Im.Style.ItemSpacing.X) / 2;
-            var       group       = ModMerger.MergeToMod?.Groups.FirstOrDefault(g => g.Name == ModMerger.OptionGroupName);
+            using var disabled      = Im.Disabled(ModMerger.MergeFromMod.HasOptions);
+            var       buttonWidth   = (size - Im.Style.ItemSpacing.X - pageWidth) / 2;
+            var       group         = ModMerger.MergeToMod?.Groups.FirstOrDefault(g => g.Name == ModMerger.OptionGroupName);
             var color = group is not null || ModMerger.OptionGroupName.Length is 0 && ModMerger.OptionName.Length is 0
                 ? Colors.PressEnterWarningBg
                 : LunaStyle.DiscordColor;
@@ -83,7 +86,6 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
                 "这是合并到目标模组中现有的或新建的选项组名称。将选项组和选项名称都留空则会将其合并到默认选项中。\n"u8
               + "红色边框表示现有的选项组，蓝色边框表示新的选项组。"u8);
             Im.Line.Same();
-
 
             color = color == LunaStyle.DiscordColor
                 ? LunaStyle.DiscordColor
@@ -102,9 +104,18 @@ public sealed class ModMergeTab(ModMerger modMerger, ModComboWithoutCurrent comb
             Im.Tooltip.OnHover("如果被合并模组没有真正的选项（默认选项或者只有一个单选项都不算），你必须为其在目标模组中分配一个选项。"u8,
                 HoveredFlags.AllowWhenDisabled);
 
+        Im.Line.Same();
+        Im.Text("in page"u8);
+        Im.Line.Same();
+        Im.Item.SetNextWidth(pageDragWidth);
+        Im.Drag("##newPage"u8, ref _newPage, speed: 0.02f);
+
+        if (ModMerger.MergeToMod?.PageNames.TryGetValue(_newPage - 1, out var pageName) ?? false)
+            Im.Tooltip.OnHover(pageName);
+
         if (ImEx.Button("合并"u8, new Vector2(size, 0),
                 ModMerger.CanMerge ? StringU8.Empty : "请选择一个不同于当前模组的目标模组。"u8, !ModMerger.CanMerge))
-            ModMerger.Merge();
+            ModMerger.Merge(_newPage - 1);
     }
 
     private void DrawMergeIntoDesc()

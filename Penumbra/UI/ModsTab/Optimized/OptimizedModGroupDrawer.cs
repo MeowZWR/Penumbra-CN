@@ -458,10 +458,13 @@ public sealed class OptimizedModGroupDrawer(
         if (!context)
             return;
 
-        if (Im.Menu.Item("启用所有子选项"u8))
-            SetMultiState(group.Group, true);
-        if (Im.Menu.Item("禁用所有子选项"u8))
-            SetMultiState(group.Group, false);
+        using (Im.Disabled(_locked))
+        {
+            if (Im.Menu.Item("启用所有子选项"u8))
+                SetMultiState(group.Group, true);
+            if (Im.Menu.Item("禁用所有子选项"u8))
+                SetMultiState(group.Group, false);
+        }
     }
 
     private void SetMultiState(IModGroup group, bool state)
