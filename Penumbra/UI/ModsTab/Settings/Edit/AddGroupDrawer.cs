@@ -55,12 +55,12 @@ public class AddGroupDrawer : Luna.IUiService
         DrawMultiGroupButton(mod, buttonWidth);
         DrawCombiningGroupButton(mod, buttonWidth);
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(buttonWidth.X - Im.Style.ItemInnerSpacing.X - Im.Font.CalculateSize("Page"u8, false).X);
+        Im.Item.SetNextWidth(buttonWidth.X - Im.Style.ItemInnerSpacing.X - Im.Font.CalculateSize("页码"u8, false).X);
         if (mod.PageNames.TryGetValue(_defaultPage - 1, out var name))
-            Im.Drag("Page##new"u8, ref _defaultPage, name, null, null, 0.02f);
+            Im.Drag("页码##new"u8, ref _defaultPage, name, null, null, 0.02f);
         else
-            Im.Drag("Page##new"u8, ref _defaultPage, null, null, 0.02f);
-        Im.Tooltip.OnHover("The page any newly created group should be placed in. When editing as text, enter the page number, not the name."u8);
+            Im.Drag("页码##new"u8, ref _defaultPage, null, null, 0.02f);
+        Im.Tooltip.OnHover("新创建的组应放入的页面。请填页码，勿填名称。"u8);
     }
 
     private void DrawSingleGroupButton(Mod mod, Vector2 width)
