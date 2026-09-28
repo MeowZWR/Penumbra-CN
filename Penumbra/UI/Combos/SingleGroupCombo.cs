@@ -28,6 +28,9 @@ public sealed class SingleGroupCombo : FilterComboBase<ModSettingOption>, IUiSer
     private          Vector4                        _currentColor;
 
     public void Draw(ModGroupDrawer parent, ModSettingGroup group, Setting currentOption, float width)
+        => Draw(group, currentOption, width, s => parent.SetModSetting(group.Group, s)); // 合并上游时检查对传统UI的影响
+
+    public void Draw(ModSettingGroup group, Setting currentOption, float width, Action<Setting> setSetting) // 合并上游时检查对传统UI的影响
     {
         if (!group.IsCombo)
             return;
@@ -38,7 +41,7 @@ public sealed class SingleGroupCombo : FilterComboBase<ModSettingOption>, IUiSer
         _currentColor = currentValue.Color;
         _group.SetTarget(group);
         if (base.Draw(StringU8.Empty, currentValue.Name, StringU8.Empty, width, out var newOption))
-            parent.SetModSetting(group.Group, Setting.Single(newOption.Data.Index));
+            setSetting(Setting.Single(newOption.Data.Index)); // 合并上游时检查对传统UI的影响
         var textTooLong = currentValue.Width > width - Im.Style.FrameHeight - 2 * Im.Style.FramePadding.X;
         if ((!currentValue.Description.IsEmpty || textTooLong) && Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
         {

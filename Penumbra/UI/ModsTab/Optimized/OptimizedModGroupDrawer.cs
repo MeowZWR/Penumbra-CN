@@ -15,7 +15,8 @@ namespace Penumbra.UI.ModsTab.Optimized;
 public sealed class OptimizedModGroupDrawer(
     Configuration config,
     CollectionManager collectionManager,
-    CommunicatorService communicator)
+    CommunicatorService communicator,
+    SingleGroupCombo combo)
     : IUiService
 {
     private ModSettingContext     _context;
@@ -224,34 +225,17 @@ public sealed class OptimizedModGroupDrawer(
         if (options.Count is 0)
             return Im.Cursor.ScreenPosition;
 
-        var current    = group.AllOptions[setting.AsIndex];
         var comboWidth = nesting.InsideCard
             ? RemainingWidth(_pageLayout.InCardComboWidth, 0, 0)
             : RemainingWidth(_pageLayout.ComboWidth, nesting.Offset, 0);
-        Im.Item.SetNextWidth(comboWidth);
-        using (ImGuiColor.Text.Push(current.Color))
         using (Im.Disabled(group.Disabled || _locked))
-        using (var combo = Im.Combo.Begin("##value"u8, current.Name))
         {
-            if (combo)
-            {
-                foreach (var option in options)
-                {
-                    using var optionId = Im.Id.Push(option.Data.Index);
-                    using var color    = ImGuiColor.Text.Push(option.Color);
-                    using var disabled = Im.Disabled(option.Disabled);
-                    if (Im.Selectable(option.Name, option.Data.Index == setting.AsIndex))
-                        SetModSetting(group.Group, Setting.Single(option.Data.Index));
-                    DrawOptionHelpMarker(option, aligned: false);
-                }
-            }
+            combo.PreviewAlignment = new Vector2(_cache.ComboAlignment);
+            combo.Draw(group, setting, comboWidth, s => SetModSetting(group.Group, s));
         }
 
         var comboMin = Im.Item.UpperLeftCorner;
         var comboMax = Im.Item.LowerRightCorner;
-        if (!current.Description.IsEmpty)
-            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, current.Description);
-        ModSettingDrawNode.AddUniqueNameTooltip(current);
         HandleComboMouseWheel(group, options, setting);
         Im.Line.SameInner();
         Im.Text(group.Name);
