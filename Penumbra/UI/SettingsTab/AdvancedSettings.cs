@@ -16,7 +16,8 @@ public sealed class AdvancedSettings(
     DalamudConfigService dalamudConfig,
     FontReloader fontReloader,
     ResidentResourceManager residentResources,
-    CharacterUtility characterUtility) : IUiService
+    CharacterUtility characterUtility,
+    SphereDArrayReloader sphereDArrayReloader) : IUiService // 合并上游时保留：球面贴图重载依赖
 {
     [UsedImplicitly]
     private readonly bool _initializedCompactor = InitializeCompactor(config, compactor);
@@ -212,7 +213,10 @@ public sealed class AdvancedSettings(
         if (SettingsTab.Checkbox("启用扩展功能"u8,
                 "[DEBUG] 启用扩展功能选项卡，包含一些额外的功能和设置。"u8,
                 config.EnableExtendedFeatures))
+        {
             config.EnableExtendedFeatures ^= true;
+            sphereDArrayReloader.Reload(); // 合并上游时保留：开关切换时立即应用/还原球面贴图
+        }
     }
 
     /// <summary> Draw a button that reloads resident resources. </summary>
@@ -222,6 +226,17 @@ public sealed class AdvancedSettings(
                 "重新加载一些始终保留在内存中的游戏特定文件。\n通常不需要执行此操作。"u8,
                 !characterUtility.Ready))
             residentResources.Reload();
+
+        // 合并上游时保留：球面贴图重载按钮仅在扩展功能下显示
+        if (config.EnableExtendedFeatures)
+        {
+            Im.Line.Same();
+            if (ImEx.Button("重新加载球面贴图阵列"u8, Vector2.Zero,
+                    "通过基础合集重新解析并替换 chara/common/texture/sphere_d_array.tex。\n"u8
+                  + "材质编辑器预览与全局球面贴图会使用替换后的纹理。"u8,
+                    !characterUtility.Ready))
+                sphereDArrayReloader.Reload();
+        }
     }
 
     /// <summary> Draw a button that reloads fonts. </summary>

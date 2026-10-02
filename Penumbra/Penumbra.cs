@@ -38,17 +38,18 @@ public class Penumbra : IDalamudPlugin
     public static          PenumbraMessager Messager { get; private set; } = null!;
     public static          DynamisIpc     Dynamis  { get; private set; } = null!;
 
-    private readonly ValidityChecker         _validityChecker     = null!;
-    private readonly ResidentResourceManager _residentResources   = null!;
-    private readonly TempModManager          _tempMods            = null!;
-    private readonly TempCollectionManager   _tempCollections     = null!;
-    private readonly ModManager              _modManager          = null!;
-    private readonly CollectionManager       _collectionManager   = null!;
-    private readonly Configuration           _config              = null!;
-    private readonly CharacterUtility        _characterUtility    = null!;
-    private readonly RedrawService           _redrawService       = null!;
-    private readonly CommunicatorService     _communicatorService = null!;
-    private readonly IDataManager            _gameData            = null!;
+    private readonly ValidityChecker         _validityChecker      = null!;
+    private readonly ResidentResourceManager _residentResources    = null!;
+    private readonly SphereDArrayReloader    _sphereDArrayReloader = null!; // 合并上游时保留：球面贴图重载服务
+    private readonly TempModManager          _tempMods             = null!;
+    private readonly TempCollectionManager   _tempCollections      = null!;
+    private readonly ModManager              _modManager           = null!;
+    private readonly CollectionManager       _collectionManager    = null!;
+    private readonly Configuration           _config               = null!;
+    private readonly CharacterUtility        _characterUtility     = null!;
+    private readonly RedrawService           _redrawService        = null!;
+    private readonly CommunicatorService     _communicatorService  = null!;
+    private readonly IDataManager            _gameData             = null!;
     private          PenumbraWindowSystem?   _windowSystem;
     private          bool                    _disposed;
 
@@ -83,6 +84,7 @@ public class Penumbra : IDalamudPlugin
             _characterUtility        =  _services.GetService<CharacterUtility>();
             _tempMods                =  _services.GetService<TempModManager>();
             _residentResources       =  _services.GetService<ResidentResourceManager>();
+            _sphereDArrayReloader    =  _services.GetService<SphereDArrayReloader>(); // 合并上游时保留
             _modManager              =  _services.GetService<ModManager>();
             _collectionManager       =  _services.GetService<CollectionManager>();
             _tempCollections         =  _services.GetService<TempCollectionManager>();
@@ -106,8 +108,10 @@ public class Penumbra : IDalamudPlugin
             Log.Information($"Loading native OtterTex assembly from {OtterTex.NativeDll.Directory}.");
 
             if (_characterUtility.Ready)
+            {
                 _residentResources.Reload();
-
+                _sphereDArrayReloader.Reload(); // 合并上游时保留：启动时重载球面贴图
+            }
             if (pluginInterface.Reason is PluginLoadReason.Update)
                 Messager.AddMessage(
                     new Notification(
@@ -211,6 +215,7 @@ public class Penumbra : IDalamudPlugin
             if (_characterUtility.Ready)
             {
                 _residentResources.Reload();
+                _sphereDArrayReloader.Reload(); // 合并上游时保留：启用模组时重载球面贴图
                 _redrawService.RedrawAll(RedrawType.Redraw);
             }
         }
@@ -219,6 +224,7 @@ public class Penumbra : IDalamudPlugin
             if (_characterUtility.Ready)
             {
                 _residentResources.Reload();
+                _sphereDArrayReloader.Reload(); // 合并上游时保留：禁用模组时还原球面贴图
                 _redrawService.RedrawAll(RedrawType.Redraw);
             }
         }

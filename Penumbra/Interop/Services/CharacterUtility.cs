@@ -32,6 +32,7 @@ public unsafe class CharacterUtility : IDisposable, Luna.IRequiredService
     public nint DefaultSkinShpkResource               { get; private set; }
     public nint DefaultCharacterStockingsShpkResource { get; private set; }
     public nint DefaultCharacterLegacyShpkResource    { get; private set; }
+    public nint DefaultSphereDArrayResource           { get; private set; } // 合并上游时保留：球面贴图默认资源
 
     /// <summary>
     /// The relevant indices depend on which meta manipulations we allow for.
@@ -128,6 +129,13 @@ public unsafe class CharacterUtility : IDisposable, Luna.IRequiredService
             anyMissing                         |= DefaultCharacterLegacyShpkResource == nint.Zero;
         }
 
+        // 合并上游时保留：缓存默认球面贴图资源
+        if (DefaultSphereDArrayResource == nint.Zero)
+        {
+            DefaultSphereDArrayResource =  (nint)Address->SphereDArrayTexResource;
+            anyMissing                  |= DefaultSphereDArrayResource == nint.Zero;
+        }
+
         if (anyMissing)
             return;
 
@@ -149,6 +157,7 @@ public unsafe class CharacterUtility : IDisposable, Luna.IRequiredService
         Address->SkinShpkResource               = (ResourceHandle*)DefaultSkinShpkResource;
         Address->CharacterStockingsShpkResource = (ResourceHandle*)DefaultCharacterStockingsShpkResource;
         Address->CharacterLegacyShpkResource    = (ResourceHandle*)DefaultCharacterLegacyShpkResource;
+        Address->SphereDArrayTexResource        = (TextureResourceHandle*)DefaultSphereDArrayResource; // 合并上游时保留
     }
 
     public void Dispose()

@@ -17,5 +17,8 @@ public sealed class CharacterUtilityFinished(LunaLogger log) : EventBase<Charact
 
         /// <seealso cref="Collections.Cache.CollectionCacheManager"/>
         CollectionCacheManager = 0,
+
+        /// <seealso cref="SphereDArrayReloader"/>
+        SphereDArrayReloader = -1, // 合并上游时保留：球面贴图阵列重载优先级
     }
 }
