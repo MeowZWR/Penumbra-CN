@@ -281,6 +281,9 @@ public partial class MaterialEditor
         ColorTableRowHighlightButton(rowIdx, disabled, false);
 
         Im.Line.Same();
+        if (_config.Advanced.EnableExtendedFeatures) // 合并上游时保留：颜色表行预设
+            return ret | DrawRowPresetHeader(rowIdx, disabled);
+
         var titleMin    = Im.Cursor.ScreenPosition;
         var titleRect   = new Rectangle(titleMin, titleMin + Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
         var windowShape = Im.Window.DrawList.Shape;

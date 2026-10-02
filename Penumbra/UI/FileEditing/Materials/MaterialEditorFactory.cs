@@ -21,7 +21,8 @@ public sealed class MaterialEditorFactory(
     FileDialogService fileDialog,
     ShaderIdPicker shaderIdPicker,
     TextureArraySlicePickers textureArraySlicePickers,
-    Configuration config) : BaseFileEditorFactory(gameData), IUiService
+    Configuration config,
+    ColorTableRowPresets rowPresets) : BaseFileEditorFactory(gameData), IUiService // 合并上游时保留：颜色表行预设
 {
     public override string Identifier
         => typeof(MaterialEditor).FullName!;
@@ -38,5 +39,8 @@ public sealed class MaterialEditorFactory(
     public override IFileEditor CreateForData(ReadOnlySpan<byte> data, string path, bool writable, string? gamePath,
         FileEditingContext? context)
         => new MaterialEditor(GameData, framework, objects, characterBaseDestructor, stainService, resourceTreeFactory, fileDialog,
-            shaderIdPicker, textureArraySlicePickers, config, context, new MtrlFile(data), path, writable);
+            shaderIdPicker, textureArraySlicePickers, config, context, new MtrlFile(data), path, writable)
+        {
+            RowPresets = rowPresets, // 合并上游时保留：颜色表行预设
+        };
 }

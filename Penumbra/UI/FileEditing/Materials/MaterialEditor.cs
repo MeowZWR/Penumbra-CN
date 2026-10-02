@@ -226,6 +226,7 @@ public sealed partial class MaterialEditor : IFileEditor
 
     public byte[] Write()
     {
+        _rowPresetUndo.Clear(); // 合并上游时保留：保存后不再允许撤销行预设
         var output = Mtrl.Clone();
         output.GarbageCollect(_associatedShpk, TextureIds);
 
