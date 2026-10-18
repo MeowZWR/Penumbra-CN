@@ -1,12 +1,12 @@
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.System.Resource;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using Luna;
-using Penumbra.Api.Enums;
+using TerraFX.Interop.DirectX;
+using TerraFX.Interop.Windows;
 using Penumbra.Communication;
 using Penumbra.GameData.Data;
 using Penumbra.Import.Textures;
-using Penumbra.Interop.Hooks.ResourceLoading;
 using Penumbra.Interop.PathResolving;
 using Penumbra.Mods;
 using Penumbra.Mods.Manager;
@@ -24,8 +24,6 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     private readonly ModManager          _modManager;
     private readonly Configuration       _config;
     private readonly IFramework          _framework;
-    private readonly IDataManager        _gameData;
-    private readonly ResourceService     _resources;
     private readonly TextureManager      _textures;
     private readonly CharacterUtility    _utility;
     private readonly CommunicatorService _communicator;
@@ -35,24 +33,22 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     private readonly ConcurrentDictionary<nint, byte>                      _ownTextures = new();
     private readonly Dictionary<string, Task>                              _imports     = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string>                            _errors      = new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<(SafeResourceHandle Handle, nint Texture, long Frame)> _pendingReleases = [];
+    private readonly List<(SafeTextureHandle Handle, nint Preview, nint Texture, long Frame)> _pendingReleases = [];
 
     private byte[]?                    _vanilla;
     private ModSphereMaps.ArrayLayout? _layout;
-    private bool                       _layoutLoaded;
+    private string?                    _layoutError;
     private volatile string            _basePath = string.Empty;
     private volatile int               _generation;
     private long                       _frame;
     private volatile bool              _active;
 
-    public ModSphereMapManager(ModManager modManager, Configuration config, IFramework framework, IDataManager gameData,
-        ResourceService resources, TextureManager textures, CharacterUtility utility, CommunicatorService communicator)
+    public ModSphereMapManager(ModManager modManager, Configuration config, IFramework framework, TextureManager textures,
+        CharacterUtility utility, CommunicatorService communicator)
     {
         _modManager   = modManager;
         _config       = config;
         _framework    = framework;
-        _gameData     = gameData;
-        _resources    = resources;
         _textures     = textures;
         _utility      = utility;
         _communicator = communicator;
@@ -79,8 +75,8 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         _materials.Clear();
         lock (_pendingReleases)
         {
-            foreach (var (handle, _, _) in _pendingReleases)
-                handle.Dispose();
+            foreach (var (handle, preview, _, _) in _pendingReleases)
+                Free(handle, preview);
             _pendingReleases.Clear();
         }
 
@@ -98,22 +94,27 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     {
         get
         {
-            if (_layoutLoaded)
+            if (_layout is not null || _layoutError is not null)
                 return _layout;
 
-            _layoutLoaded = true;
+            // Read back from the loaded GPU texture; Lumina fails to read this array from SqPack.
+            var handle = (TextureResourceHandle*)_utility.DefaultSphereDArrayResource;
+            if (handle is null || handle->Texture is null)
+                return null;
+
             try
             {
-                _vanilla = _gameData.GetFile(GamePaths.Tex.SphereDArray)?.Data;
-                _layout  = _vanilla is null ? null : ModSphereMaps.ReadLayout(_vanilla);
+                _vanilla = ReadVanilla(handle);
+                _layout  = ModSphereMaps.ReadLayout(_vanilla);
+                if (_layout is null)
+                    throw new InvalidOperationException("回读的原版球面贴图布局无法识别。");
             }
             catch (Exception ex)
             {
+                _layoutError = ex is InvalidOperationException ? ex.Message : "无法读取原版球面贴图数组。";
                 Penumbra.Log.Error($"Could not read vanilla {GamePaths.Tex.SphereDArray}:\n{ex}");
             }
 
-            if (_layout is null)
-                Penumbra.Log.Error($"Unsupported layout of vanilla {GamePaths.Tex.SphereDArray}, mod sphere maps are unavailable.");
             return _layout;
         }
     }
@@ -143,7 +144,7 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     {
         entry.LastUse   = _frame;
         entry.Requested = true;
-        return entry.Handle is { IsInvalid: false } handle ? (TextureResourceHandle*)handle.ResourceHandle : null;
+        return entry.Preview;
     }
 
     public void Import(Mod mod, int slot, string pngPath)
@@ -154,7 +155,7 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         var layout = Layout;
         if (layout is null)
         {
-            _errors[mod.Identifier] = "无法读取原版球面贴图数组。";
+            _errors[mod.Identifier] = _layoutError ?? "原版球面贴图尚未加载。";
             return;
         }
 
@@ -295,15 +296,24 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
 
     private void Release(Entry entry)
     {
-        var handle = entry.Handle;
+        var handle  = entry.TextureHandle;
+        var preview = entry.Preview;
         var texture = entry.Texture;
-        entry.Texture = nint.Zero;
-        entry.Handle  = null;
-        if (handle is null)
+        entry.Texture       = nint.Zero;
+        entry.Preview       = null;
+        entry.TextureHandle = null;
+        if (handle is null && preview is null)
             return;
 
         lock (_pendingReleases)
-            _pendingReleases.Add((handle, texture, _frame + ReleaseDelayFrames));
+            _pendingReleases.Add((handle ?? SafeTextureHandle.CreateInvalid(), (nint)preview, texture, _frame + ReleaseDelayFrames));
+    }
+
+    private static void Free(SafeTextureHandle handle, nint preview)
+    {
+        handle.Dispose();
+        if (preview != nint.Zero)
+            NativeMemory.Free((void*)preview);
     }
 
     private void OnFrameworkUpdate(IFramework framework)
@@ -313,9 +323,9 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         _active = enabled && !_entries.IsEmpty;
         foreach (var entry in _entries.Values)
         {
-            if (!enabled || entry.Handle is not null && _frame - entry.LastUse > IdleFrames)
+            if (!enabled || entry.TextureHandle is not null && _frame - entry.LastUse > IdleFrames)
                 Release(entry);
-            else if (entry is { Handle: null, Loading: false, Requested: true, LoadError: null })
+            else if (entry is { TextureHandle: null, Loading: false, Requested: true, LoadError: null })
                 StartLoad(entry);
         }
 
@@ -323,15 +333,88 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         {
             for (var i = _pendingReleases.Count - 1; i >= 0; --i)
             {
-                var (handle, texture, frame) = _pendingReleases[i];
+                var (handle, preview, texture, frame) = _pendingReleases[i];
                 if (frame > _frame)
                     continue;
 
                 _ownTextures.TryRemove(texture, out _);
-                handle.Dispose();
+                Free(handle, preview);
                 _pendingReleases.RemoveAt(i);
             }
         }
+    }
+
+    /// <summary> Copy every mip of every slice out of the vanilla GPU texture into a .tex file. </summary>
+    private static byte[] ReadVanilla(TextureResourceHandle* handle)
+    {
+        var template = ModSphereMaps.CreateTemplate(new ReadOnlySpan<byte>(&handle->Header, 0x50));
+        if (template is null)
+            throw new InvalidOperationException("原版球面贴图文件头无法识别。");
+
+        var (file, layout) = template.Value;
+        var texture = handle->Texture;
+        using var srv = new ComPtr<ID3D11ShaderResourceView>((ID3D11ShaderResourceView*)texture->D3D11ShaderResourceView);
+        if (srv.Get() is null)
+            throw new InvalidOperationException("原版球面贴图没有 GPU 资源。");
+
+        using var resource = new ComPtr<ID3D11Resource>();
+        srv.Get()->GetResource(resource.GetAddressOf());
+        using var source = new ComPtr<ID3D11Texture2D>();
+        Marshal.ThrowExceptionForHR(resource.As(&source));
+
+        D3D11_TEXTURE2D_DESC desc;
+        source.Get()->GetDesc(&desc);
+        if (desc.Width != (uint)layout.Width
+         || desc.Height != (uint)layout.Height
+         || desc.ArraySize != (uint)layout.ArraySize
+         || desc.MipLevels < (uint)layout.MipCount
+         || desc.Format is not DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM and not DXGI_FORMAT.DXGI_FORMAT_BC1_TYPELESS)
+            throw new InvalidOperationException(
+                $"原版球面贴图 GPU 资源与文件头不符：{desc.Width}x{desc.Height} 层 {desc.ArraySize} Mip {desc.MipLevels} 格式 {desc.Format}。");
+
+        desc.Usage          = D3D11_USAGE.D3D11_USAGE_STAGING;
+        desc.BindFlags      = 0;
+        desc.CPUAccessFlags = (uint)D3D11_CPU_ACCESS_FLAG.D3D11_CPU_ACCESS_READ;
+        desc.MiscFlags      = 0;
+
+        using var device = new ComPtr<ID3D11Device>();
+        srv.Get()->GetDevice(device.GetAddressOf());
+        using var staging = new ComPtr<ID3D11Texture2D>();
+        Marshal.ThrowExceptionForHR(device.Get()->CreateTexture2D(&desc, null, staging.GetAddressOf()));
+        using var context = new ComPtr<ID3D11DeviceContext>();
+        device.Get()->GetImmediateContext(context.GetAddressOf());
+        context.Get()->CopyResource((ID3D11Resource*)staging.Get(), (ID3D11Resource*)source.Get());
+
+        for (var mip = 0; mip < layout.MipCount; ++mip)
+        {
+            var blocksH  = Math.Max(1, (Math.Max(1, layout.Height >> mip) + 3) / 4);
+            var rowBytes = layout.SliceSizes[mip] / blocksH;
+            if (rowBytes * blocksH != layout.SliceSizes[mip])
+                throw new InvalidOperationException($"原版球面贴图第 {mip} 级 Mip 的大小无法按 BC1 分行。");
+
+            for (var slice = 0; slice < layout.ArraySize; ++slice)
+            {
+                var sub = (uint)(mip + slice * desc.MipLevels);
+                D3D11_MAPPED_SUBRESOURCE mapped;
+                Marshal.ThrowExceptionForHR(context.Get()->Map((ID3D11Resource*)staging.Get(), sub, D3D11_MAP.D3D11_MAP_READ, 0, &mapped));
+                try
+                {
+                    if ((int)mapped.RowPitch < rowBytes)
+                        throw new InvalidOperationException($"原版球面贴图第 {mip} 级 Mip 的行距过小。");
+
+                    var dst = layout.MipOffsets[mip] + slice * layout.SliceSizes[mip];
+                    for (var row = 0; row < blocksH; ++row)
+                        new ReadOnlySpan<byte>((byte*)mapped.pData + row * (int)mapped.RowPitch, rowBytes)
+                            .CopyTo(file.AsSpan(dst + row * rowBytes));
+                }
+                finally
+                {
+                    context.Get()->Unmap((ID3D11Resource*)staging.Get(), sub);
+                }
+            }
+        }
+
+        return file;
     }
 
     private void StartLoad(Entry entry)
@@ -339,46 +422,19 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         var layout = Layout;
         if (layout is null || _vanilla is null)
         {
-            entry.LoadError = "无法读取原版球面贴图数组。";
+            if (_layoutError is not null)
+                entry.LoadError = _layoutError;
             return;
         }
 
         entry.Loading   = true;
         entry.Requested = false;
         var vanilla = _vanilla;
-        Task.Run(() => WriteArray(entry, vanilla, layout)).ContinueWith(t => _framework.RunOnFrameworkThread(() => FinishLoad(entry, t)),
-            TaskScheduler.Default);
+        Task.Run(() => ModSphereMaps.BuildArray(vanilla, layout, entry.ModPath, entry.Slots))
+            .ContinueWith(t => _framework.RunOnFrameworkThread(() => FinishLoad(entry, t)), TaskScheduler.Default);
     }
 
-    /// <summary> Write the composite array into the hidden directory, reusing an identical existing file. </summary>
-    private static string WriteArray(Entry entry, byte[] vanilla, ModSphereMaps.ArrayLayout layout)
-    {
-        var data     = ModSphereMaps.BuildArray(vanilla, layout, entry.ModPath, entry.Slots);
-        var dir      = ModSphereMaps.GetDirectory(entry.ModPath);
-        var existing = dir.EnumerateFiles($"{ModSphereMaps.ArrayPrefix}*.tex").ToList();
-        var target   = existing.FirstOrDefault(f => f.Length == data.Length && File.ReadAllBytes(f.FullName).AsSpan().SequenceEqual(data));
-        if (target is null)
-        {
-            target = new FileInfo(Path.Combine(dir.FullName, $"{ModSphereMaps.ArrayPrefix}{DateTime.UtcNow.Ticks:X}.tex"));
-            File.WriteAllBytes(target.FullName, data);
-        }
-
-        foreach (var file in existing.Where(f => f.FullName != target.FullName))
-        {
-            try
-            {
-                file.Delete();
-            }
-            catch (Exception ex)
-            {
-                Penumbra.Log.Debug($"Could not delete outdated sphere map array {file.FullName}:\n{ex}");
-            }
-        }
-
-        return target.FullName;
-    }
-
-    private void FinishLoad(Entry entry, Task<string> task)
+    private void FinishLoad(Entry entry, Task<byte[]> task)
     {
         entry.Loading = false;
         if (task.Exception is { } ex)
@@ -391,21 +447,69 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         if (entry.Removed || !Enabled || !_utility.Ready)
             return;
 
-        var handle  = _resources.GetSafeResource(ResourceCategory.Chara, ResourceType.Tex, new FullPath(task.Result).InternalName);
-        var texture = handle.IsInvalid ? null : ((TextureResourceHandle*)handle.ResourceHandle)->Texture;
-        if (texture is null || texture->ArraySize != Layout!.ArraySize)
+        var layout = Layout;
+        if (layout is null)
+            return;
+
+        SafeTextureHandle? handle = null;
+        TextureResourceHandle* preview = null;
+        try
         {
-            handle.Dispose();
-            Penumbra.Log.Error($"Could not load sphere map array {task.Result}.");
-            entry.LoadError = "无法加载球面贴图数组。";
+            handle  = CreateArrayTexture(task.Result, layout);
+            preview = (TextureResourceHandle*)NativeMemory.AllocZeroed((nuint)sizeof(TextureResourceHandle));
+            preview->Texture = handle.Texture;
+        }
+        catch (Exception createEx)
+        {
+            if (preview is not null)
+                NativeMemory.Free(preview);
+            handle?.Dispose();
+            Penumbra.Log.Error($"Could not create sphere map array for {entry.ModPath.Name}:\n{createEx}");
+            entry.LoadError = "无法创建球面贴图数组。";
             return;
         }
 
-        entry.Handle             = handle;
-        _ownTextures[(nint)texture] = 0;
-        entry.Texture            = (nint)texture;
-        entry.LastUse            = _frame;
-        Penumbra.Log.Debug($"Loaded sphere map array for {entry.ModPath.Name} with slots {string.Join(", ", entry.Slots.Keys)}.");
+        var texture = (nint)handle.Texture;
+        _ownTextures[texture] = 0;
+        entry.TextureHandle   = handle;
+        entry.Preview         = preview;
+        entry.Texture         = texture;
+        entry.LastUse         = _frame;
+        Penumbra.Log.Debug($"Created sphere map array for {entry.ModPath.Name} with slots {string.Join(", ", entry.Slots.Keys)}.");
+    }
+
+    /// <summary>
+    ///   CreateTexture2D only creates 2D textures; the array type and layer count are patched in before InitializeContents uploads the pixels.
+    /// </summary>
+    private static SafeTextureHandle CreateArrayTexture(byte[] file, ModSphereMaps.ArrayLayout layout)
+    {
+        if (layout.MipOffsets.Length is 0 || layout.MipOffsets[0] >= file.Length || layout.ArraySize is < 1 or > byte.MaxValue)
+            throw new InvalidOperationException("球面贴图像素数据不完整。");
+
+        var size = stackalloc int[2];
+        size[0] = layout.Width;
+        size[1] = layout.Height;
+        var created = Device.Instance()->CreateTexture2D(size, (byte)layout.MipCount, TextureFormat.BC1_UNORM,
+            TextureFlags.TextureNoSwizzle | TextureFlags.Immutable | TextureFlags.Managed, 7);
+        if (created is null)
+            throw new InvalidOperationException("游戏未能分配球面贴图纹理。");
+
+        var handle = new SafeTextureHandle(created, false);
+        var texture = handle.Texture;
+        texture->Flags     = texture->Flags & ~TextureFlags.TextureTypeMask | TextureFlags.TextureType2DArray;
+        texture->ArraySize = (byte)layout.ArraySize;
+        fixed (byte* pixels = file)
+        {
+            if (!texture->InitializeContents(pixels + layout.MipOffsets[0])
+             || texture->D3D11ShaderResourceView is null
+             || texture->ArraySize != layout.ArraySize)
+            {
+                handle.Dispose();
+                throw new InvalidOperationException("游戏未能写入球面贴图数组。");
+            }
+        }
+
+        return handle;
     }
 
     private sealed class Entry(DirectoryInfo modPath, IReadOnlyDictionary<int, string> slots)
@@ -417,8 +521,9 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         public volatile bool        Requested;
         public volatile nint        Texture;
         public          long        LastUse;
-        public          bool        Loading;
-        public          string?     LoadError;
-        public          SafeResourceHandle? Handle;
+        public          bool                    Loading;
+        public          string?                 LoadError;
+        public          SafeTextureHandle?      TextureHandle;
+        public          TextureResourceHandle*  Preview;
     }
 }

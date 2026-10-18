@@ -13,7 +13,6 @@ public static class ModSphereMaps
 {
     public const string DirectoryName = ".spheremaps";
     public const string TableFileName = "slots.json";
-    public const string ArrayPrefix   = "array_";
     public const int    FirstSlot     = 6;
     public const int    LastSlot      = 25;
 
@@ -100,6 +99,66 @@ public static class ModSphereMaps
         EnsureHidden(modPath);
         File.WriteAllText(file, JsonConvert.SerializeObject(table, Formatting.Indented));
     }
+
+    /// <summary>
+    ///   Allocate a vanilla-sized file and write its header. Offsets are rebuilt when the source header does not already
+    ///   describe a mip-major BC1 array, which is the case for the header stored on the loaded resource handle.
+    /// </summary>
+    public static unsafe (byte[] File, ArrayLayout Layout)? CreateTemplate(ReadOnlySpan<byte> headerBytes)
+    {
+        if (headerBytes.Length < 0x50)
+            return null;
+
+        using var stream = new MemoryStream(headerBytes.ToArray());
+        using var reader = new BinaryReader(stream);
+        var       header = reader.ReadStructure<TexFile.TexHeader>();
+        if (header.Format is not TexFile.TextureFormat.BC1 || header.ArraySize is 0 || header.MipCount is 0)
+            return null;
+
+        var mipCount = Math.Min(header.MipCount, 13);
+        var slices   = new int[mipCount];
+        for (var i = 0; i < mipCount; ++i)
+            slices[i] = Bc1Size(Math.Max(1, header.Width >> i), Math.Max(1, header.Height >> i));
+
+        var cursor  = (int)header.OffsetToSurface[0];
+        var matches = cursor > 0;
+        for (var i = 0; matches && i < mipCount; ++i)
+        {
+            matches = (int)header.OffsetToSurface[i] == cursor;
+            cursor += slices[i] * header.ArraySize;
+        }
+
+        var pixelBytes = 0;
+        for (var i = 0; i < mipCount; ++i)
+            pixelBytes += slices[i] * header.ArraySize;
+        var file = new byte[matches ? cursor : 0x50 + pixelBytes];
+        if (matches)
+        {
+            headerBytes[..0x50].CopyTo(file);
+        }
+        else
+        {
+            cursor = 0x50;
+            for (var i = 0; i < mipCount; ++i)
+            {
+                header.OffsetToSurface[i] = (uint)cursor;
+                cursor += slices[i] * header.ArraySize;
+            }
+
+            for (var i = mipCount; i < 13; ++i)
+                header.OffsetToSurface[i] = 0;
+
+            using var output = new MemoryStream(file);
+            using var writer = new BinaryWriter(output);
+            header.Write(writer);
+        }
+
+        var layout = ReadLayout(file);
+        return layout is null ? null : (file, layout);
+    }
+
+    private static int Bc1Size(int width, int height)
+        => Math.Max(1, (width + 3) / 4) * Math.Max(1, (height + 3) / 4) * 8;
 
     public static ArrayLayout? ReadLayout(byte[] data)
     {
