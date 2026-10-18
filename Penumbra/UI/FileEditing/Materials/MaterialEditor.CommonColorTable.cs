@@ -554,10 +554,14 @@ public partial class MaterialEditor
         return true;
     }
 
-    private bool CtSphereMapIndexPicker(ReadOnlySpan<byte> label, ReadOnlySpan<byte> description, ushort value, bool compact,
+    private unsafe bool CtSphereMapIndexPicker(ReadOnlySpan<byte> label, ReadOnlySpan<byte> description, ushort value, bool compact,
         Action<ushort> setter)
     {
-        if (!_textureArraySlicePickers.DrawSphereMapIndexPicker(label, description, ref value, compact))
+        // 合并上游时保留：模组级球面贴图预览
+        var modArray = _context?.Mod is not null && _config.Advanced.EnableExtendedFeatures ? SphereMaps?.GetPreview(FilePath) : null;
+        if (modArray is not null
+                ? !_textureArraySlicePickers.DrawTextureArrayIndexPicker(label, description, ref value, compact, [modArray])
+                : !_textureArraySlicePickers.DrawSphereMapIndexPicker(label, description, ref value, compact))
             return false;
 
         setter(value);

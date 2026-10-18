@@ -16,6 +16,9 @@ public sealed unsafe class ResourceHandleDestructor : EventBase<ResourceHandleDe
         /// <seealso cref="PostProcessing.ShaderReplacementFixer"/>
         ShaderReplacementFixer,
 
+        /// <seealso cref="PostProcessing.ModSphereMapBinder"/>
+        ModSphereMapBinder, // 合并上游时保留：模组级球面贴图
+
         /// <seealso cref="ResourceLoading.ResourceLoader"/>
         ResourceLoader,
 

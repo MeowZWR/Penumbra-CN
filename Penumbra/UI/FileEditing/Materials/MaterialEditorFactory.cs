@@ -22,7 +22,8 @@ public sealed class MaterialEditorFactory(
     ShaderIdPicker shaderIdPicker,
     TextureArraySlicePickers textureArraySlicePickers,
     Configuration config,
-    ColorTableRowPresets rowPresets) : BaseFileEditorFactory(gameData), IUiService // 合并上游时保留：颜色表行预设
+    ColorTableRowPresets rowPresets,                // 合并上游时保留：颜色表行预设
+    Interop.Services.ModSphereMapManager sphereMaps) : BaseFileEditorFactory(gameData), IUiService // 合并上游时保留：模组级球面贴图
 {
     public override string Identifier
         => typeof(MaterialEditor).FullName!;
@@ -42,5 +43,6 @@ public sealed class MaterialEditorFactory(
             shaderIdPicker, textureArraySlicePickers, config, context, new MtrlFile(data), path, writable)
         {
             RowPresets = rowPresets, // 合并上游时保留：颜色表行预设
+            SphereMaps = sphereMaps, // 合并上游时保留：模组级球面贴图
         };
 }

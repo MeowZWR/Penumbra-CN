@@ -2,7 +2,9 @@ using Dalamud.Interface.DragDrop;
 using Dalamud.Plugin.Services;
 using Luna;
 using Penumbra.Collections.Manager;
+using Penumbra.GameData.Gui;
 using Penumbra.Interop.ResourceTree;
+using Penumbra.Interop.Services;
 using Penumbra.Meta;
 using Penumbra.Mods;
 using Penumbra.Mods.Editor;
@@ -34,7 +36,9 @@ public sealed class ModEditWindowFactory(
     CombiningTextureEditorFactory textureEditorFactory,
     ModMergerFactory modMergerFactory,
     TextureOptimization textureOptimization,
-    ModSelection modSelection) : WindowFactory<ModEditWindow>(log, windowSystem), IUiService, IDisposable
+    ModSelection modSelection,
+    ModSphereMapManager sphereMaps, // 合并上游时保留：模组级球面贴图
+    TextureArraySlicePickers slicePickers) : WindowFactory<ModEditWindow>(log, windowSystem), IUiService, IDisposable
 {
     public const string UnpinnedWindowLabel = "//UnpinnedWindow";
 
@@ -100,6 +104,7 @@ public sealed class ModEditWindowFactory(
             activeCollections, modMergerFactory.CreateTab(editor), communicator, dragDropManager, resourceTreeViewerFactory, framework,
             CreateMetaDrawers(editor.MetaEditor), fileEditorRegistry, textureEditorFactory,
             textureOptimization,
+            new ModEditSphereMapTab(editor, sphereMaps, slicePickers, fileDialog, dragDropManager, config), // 合并上游时保留：模组级球面贴图
             index, this);
     }
 

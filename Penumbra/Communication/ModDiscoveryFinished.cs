@@ -21,5 +21,8 @@ public sealed class ModDiscoveryFinished(LunaLogger log) : EventBase<ModDiscover
 
         /// <seealso cref="Mods.Manager.ModFileSystem.Reload"/>
         ModFileSystem = 0,
+
+        /// <seealso cref="Interop.Services.ModSphereMapManager"/>
+        ModSphereMapManager = 0, // 合并上游时保留：模组级球面贴图
     }
 }

@@ -9,6 +9,8 @@ public partial class MaterialEditor
 {
     internal ColorTableRowPresets? RowPresets { private get; init; }
 
+    internal Interop.Services.ModSphereMapManager? SphereMaps { private get; init; } // 合并上游时保留：模组级球面贴图
+
     /// <summary> Row values before the first preset was applied since the last save, and the name of the last applied preset. </summary>
     private readonly Dictionary<int, (ColorTableRow Row, string Name)> _rowPresetUndo = [];
 

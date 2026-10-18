@@ -50,6 +50,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
     private readonly CombiningTextureEditor        _textureEditor;
     private readonly ModEditTextureOptimizationTab _textureOptimizationTab;
+    private readonly ModEditSphereMapTab           _sphereMapTab; // 合并上游时保留：模组级球面贴图
 
     private Vector2 _iconSize = Vector2.Zero;
     private bool    _allowReduplicate;
@@ -254,6 +255,8 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         DrawMissingFilesTab();
         DrawMaterialReassignmentTab();
+        if (_config.Advanced.EnableExtendedFeatures)
+            _sphereMapTab.Draw(); // 合并上游时保留：模组级球面贴图
     }
 
     private static readonly FrozenDictionary<GenderRace, StringU8> RaceCodeNames = GenderRace.Values.ToFrozenDictionary(v => v, v =>
@@ -605,6 +608,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
         ResourceTreeViewerFactory resourceTreeViewerFactory, IFramework framework,
         MetaDrawers metaDrawers, FileEditorRegistry fileEditorRegistry, CombiningTextureEditorFactory textureEditorFactory,
         TextureOptimization textureOptimization,
+        ModEditSphereMapTab sphereMapTab, // 合并上游时保留：模组级球面贴图
         int index, ModEditWindowFactory parent)
         : base(WindowBaseLabel, index)
     {
@@ -631,6 +635,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         _textureEditor = textureEditorFactory.CreateForModEditWindow(new ModEditFileEditingContext(activeCollections, editor, null));
         _textureOptimizationTab = new ModEditTextureOptimizationTab(editor, textureOptimization);
+        _sphereMapTab           = sphereMapTab;
 
         _resourceTreeFactory = resourceTreeFactory;
         _quickImportViewer   = resourceTreeViewerFactory.Create(1, OnQuickImportRefresh, DrawQuickImportActions);
