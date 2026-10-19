@@ -7,6 +7,7 @@ using Luna;
 using Penumbra.Communication;
 using Penumbra.GameData;
 using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.Interop.Hooks.ResourceLoading;
 using Penumbra.Interop.Hooks.Resources;
 using Penumbra.Interop.Structs;
 using Penumbra.Services;
@@ -63,6 +64,7 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
     private readonly Hook<MaterialResourceHandle.Delegates.PrepareColorTable>? _prepareColorTableHook;
 
     private readonly ResourceHandleDestructor _resourceHandleDestructor;
+    private readonly ResourceService          _resources;
     private readonly CommunicatorService      _communicator;
     private readonly HumanSetupScalingHook    _humanSetupScalingHook;
 
@@ -105,10 +107,12 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
     public uint ModdedHairMaskShpkCount
         => _hairMaskState.MaterialCount;
 
-    public ShaderReplacementFixer(ResourceHandleDestructor resourceHandleDestructor, CharacterUtility utility, ModelRenderer modelRenderer,
-        CommunicatorService communicator, HookManager hooks, CharacterBaseVTables vTables, HumanSetupScalingHook humanSetupScalingHook)
+    public ShaderReplacementFixer(ResourceHandleDestructor resourceHandleDestructor, ResourceService resources, CharacterUtility utility,
+        ModelRenderer modelRenderer, CommunicatorService communicator, HookManager hooks, CharacterBaseVTables vTables,
+        HumanSetupScalingHook humanSetupScalingHook)
     {
         _resourceHandleDestructor = resourceHandleDestructor;
+        _resources                = resources;
         _communicator             = communicator;
         _humanSetupScalingHook    = humanSetupScalingHook;
 
@@ -153,13 +157,25 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
 
     public void Dispose()
     {
+        _communicator.MtrlLoaded.Unsubscribe(OnMtrlLoaded);
+
+        // Materials must reference the default package once the per-draw swap hooks are gone.
+        _skinState.RestoreMaterials(_resources);
+        _characterStockingsState.RestoreMaterials(_resources);
+        _characterLegacyState.RestoreMaterials(_resources);
+        _irisState.RestoreMaterials(_resources);
+        _characterGlassState.RestoreMaterials(_resources);
+        _characterTransparencyState.RestoreMaterials(_resources);
+        _characterTattooState.RestoreMaterials(_resources);
+        _characterOcclusionState.RestoreMaterials(_resources);
+        _hairMaskState.RestoreMaterials(_resources);
+
         _prepareColorTableHook?.Dispose();
         _modelRendererUnkFuncHook?.Dispose();
         _modelRendererOnRenderMaterialHook?.Dispose();
         _humanOnRenderMaterialHook?.Dispose();
         _humanSetupScalingHook.SetupReplacements -= SetupHssReplacements;
 
-        _communicator.MtrlLoaded.Unsubscribe(OnMtrlLoaded);
         _resourceHandleDestructor.Unsubscribe(OnResourceHandleDestructor);
 
         _hairMaskState.ClearMaterials();
@@ -548,6 +564,31 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
         {
             _materials.Clear();
             _materialCount = 0;
+        }
+
+        public void RestoreMaterials(ResourceService resources)
+        {
+            var defaultPackage = DefaultShaderPackage;
+            if (defaultPackage == null)
+                return;
+
+            lock (this)
+            {
+                foreach (var handle in _materials.Keys)
+                {
+                    var material = (MaterialResourceHandle*)handle;
+                    if (material == null || material->RefCount == 0)
+                        continue;
+
+                    var current = material->ShaderPackageResourceHandle;
+                    if (current == null || current == defaultPackage)
+                        continue;
+
+                    // The old package keeps its reference since shader keys point into it; the material releases the default package instead.
+                    resources.IncRef((Structs.ResourceHandle*)defaultPackage);
+                    material->ShaderPackageResourceHandle = defaultPackage;
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
