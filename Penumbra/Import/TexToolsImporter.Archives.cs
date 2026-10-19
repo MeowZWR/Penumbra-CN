@@ -131,6 +131,12 @@ public partial class TexToolsImporter
 
     private void HandleFileMigrationsAndWrite(ArchiveUtility.ReaderShim reader)
     {
+        if (ModSphereMaps.IsManagedPath(reader.Entry.Key))
+        {
+            reader.WriteEntryToDirectory(_currentModDirectory!.FullName);
+            return;
+        }
+
         switch (Path.GetExtension(reader.Entry.Key))
         {
             case ".mdl":  _migrationManager.MigrateMdlDuringExtraction(reader, _currentModDirectory!.FullName); break;

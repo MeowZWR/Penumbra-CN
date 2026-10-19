@@ -22,6 +22,20 @@ public static class ModSphereMaps
     public static bool IsEditableSlot(int slot)
         => slot is >= FirstSlot and <= LastSlot;
 
+    public static bool IsManagedPath(string? relativePath)
+    {
+        if (string.IsNullOrEmpty(relativePath))
+            return false;
+
+        foreach (var part in relativePath.Replace('\\', '/').Split('/'))
+        {
+            if (part.Equals(DirectoryName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
     public static DirectoryInfo GetDirectory(DirectoryInfo modPath)
         => new(Path.Combine(modPath.FullName, DirectoryName));
 
@@ -228,7 +242,7 @@ public static class ModSphereMaps
                 continue;
             }
 
-            for (var i = 0; i < layout.MipCount; ++i)
+            for (var i = 0; i < mips.Length; ++i)
                 Buffer.BlockCopy(data, mips[i], ret, layout.MipOffsets[i] + slot * layout.SliceSizes[i], layout.SliceSizes[i]);
         }
 
@@ -243,19 +257,26 @@ public static class ModSphereMaps
         if (header.Format is not TexFile.TextureFormat.BC1
          || header.Width != layout.Width
          || header.Height != layout.Height
-         || header.MipCount < layout.MipCount)
+         || header.MipCount < 1)
             return null;
 
         var mips = ReadMips(header, data.Length, 1);
         if (mips is null)
             return null;
 
-        for (var i = 0; i < layout.MipCount; ++i)
+        var count = Math.Min(Math.Min(header.MipCount, layout.MipCount), mips.MipOffsets.Length);
+        for (var i = 0; i < count; ++i)
         {
             if (mips.SliceSizes[i] < layout.SliceSizes[i])
                 return null;
         }
 
-        return mips.MipOffsets;
+        if (count < 1)
+            return null;
+
+        if (count < layout.MipCount)
+            Penumbra.Log.Debug($"Sphere map {header.Width}x{header.Height} has {count}/{layout.MipCount} mips; remaining levels keep vanilla.");
+
+        return mips.MipOffsets[..count];
     }
 }
