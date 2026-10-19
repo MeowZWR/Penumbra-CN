@@ -18,7 +18,6 @@ public class MetaFileManager : IService
     internal readonly Configuration           Config;
     internal readonly CharacterUtility        CharacterUtility;
     internal readonly ResidentResourceManager ResidentResources;
-    internal readonly SphereDArrayReloader    SphereDArrayReloader; // 合并上游时保留：球面贴图重载
     internal readonly IDataManager            GameData;
     internal readonly ActiveCollectionData    ActiveCollections;
     internal readonly ValidityChecker         ValidityChecker;
@@ -31,24 +30,22 @@ public class MetaFileManager : IService
     internal readonly IFileAllocator          XivDefaultAllocator;
 
 
-    public MetaFileManager(CharacterUtility characterUtility, ResidentResourceManager residentResources,
-        SphereDArrayReloader sphereDArrayReloader, IDataManager gameData, ActiveCollectionData activeCollections, Configuration config, // 合并上游时保留构造参数
-        ValidityChecker validityChecker, ObjectIdentification identifier, FileCompactor compactor, HookManager interop,
-        AtchManager atchManager)
+    public MetaFileManager(CharacterUtility characterUtility, ResidentResourceManager residentResources, IDataManager gameData,
+        ActiveCollectionData activeCollections, Configuration config, ValidityChecker validityChecker, ObjectIdentification identifier,
+        FileCompactor compactor, HookManager interop, AtchManager atchManager)
     {
-        CharacterUtility     = characterUtility;
-        ResidentResources    = residentResources;
-        SphereDArrayReloader = sphereDArrayReloader; // 合并上游时保留
-        GameData             = gameData;
-        ActiveCollections    = activeCollections;
-        Config               = config;
-        ValidityChecker      = validityChecker;
-        Identifier           = identifier;
-        Compactor            = compactor;
-        AtchManager          = atchManager;
-        ImcChecker           = new ImcChecker(this);
-        XivFileAllocator     = new XivFileAllocator(interop);
-        XivDefaultAllocator  = new XivDefaultAllocator();
+        CharacterUtility    = characterUtility;
+        ResidentResources   = residentResources;
+        GameData            = gameData;
+        ActiveCollections   = activeCollections;
+        Config              = config;
+        ValidityChecker     = validityChecker;
+        Identifier          = identifier;
+        Compactor           = compactor;
+        AtchManager         = atchManager;
+        ImcChecker          = new ImcChecker(this);
+        XivFileAllocator    = new XivFileAllocator(interop);
+        XivDefaultAllocator = new XivDefaultAllocator();
     }
 
     public void WriteAllTexToolsMeta(Mod mod)
@@ -88,6 +85,5 @@ public class MetaFileManager : IService
             return;
 
         ResidentResources.Reload();
-        SphereDArrayReloader.Reload(); // 合并上游时保留：基础合集变更时重载球面贴图
     }
 }
