@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using Luna;
 using TerraFX.Interop.DirectX;
 using TerraFX.Interop.Windows;
+using Penumbra.Collections.Manager;
 using Penumbra.Communication;
 using Penumbra.GameData.Data;
 using Penumbra.Import.Textures;
@@ -28,12 +29,18 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     private readonly CharacterUtility    _utility;
     private readonly CommunicatorService _communicator;
 
-    private readonly ConcurrentDictionary<string, Entry>                   _entries     = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Entry>                       _entries     = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<nint, (Entry? Entry, int Generation)> _materials   = new();
-    private readonly ConcurrentDictionary<nint, byte>                      _ownTextures = new();
-    private readonly Dictionary<string, Task>                              _imports     = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, string>                            _errors      = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<nint, byte>                          _ownTextures = new();
+    private readonly Dictionary<string, Task>                                  _imports     = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string>                                _errors      = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<(SafeTextureHandle Handle, nint Preview, nint Texture, long Frame)> _pendingReleases = [];
+    private readonly Lock                                                       _temporaryLock      = new();
+    private readonly Dictionary<TemporaryRegistrationKey, TemporaryRegistration> _temporaryRegistrations = [];
+
+    private IReadOnlyDictionary<TemporaryMaterialKey, Entry> _temporaryMaterials =
+        new Dictionary<TemporaryMaterialKey, Entry>();
+    private Entry[] _temporaryEntries = [];
 
     private byte[]?                    _vanilla;
     private ModSphereMaps.ArrayLayout? _layout;
@@ -41,6 +48,7 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     private volatile string            _basePath = string.Empty;
     private volatile int               _generation;
     private long                       _frame;
+    private long                       _temporaryOrder;
     private volatile bool              _active;
 
     public ModSphereMapManager(ModManager modManager, Configuration config, IFramework framework, TextureManager textures,
@@ -72,6 +80,18 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         }
 
         _entries.Clear();
+        lock (_temporaryLock)
+        {
+            foreach (var entry in _temporaryEntries)
+            {
+                entry.Removed = true;
+                Release(entry);
+            }
+
+            _temporaryRegistrations.Clear();
+            _temporaryMaterials = new Dictionary<TemporaryMaterialKey, Entry>();
+            _temporaryEntries   = [];
+        }
         _materials.Clear();
         lock (_pendingReleases)
         {
@@ -125,6 +145,98 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
 
     public IReadOnlyDictionary<int, string>? GetSlots(Mod mod)
         => _entries.TryGetValue(mod.Identifier, out var entry) ? entry.Slots : null;
+
+    /// <summary> Get absolute sphere-map slot files for a material supplied by a regular mod. </summary>
+    public IReadOnlyDictionary<int, string>? GetSlotFiles(string materialPath)
+    {
+        if (PathDataHandler.Split(materialPath.AsSpan(), out var actualPath, out _))
+            materialPath = actualPath.ToString();
+
+        return FindEntry(materialPath.Replace('\\', '/'))?.Files;
+    }
+
+    /// <summary> Get absolute sphere-map slot files for a currently loaded material resource. </summary>
+    public IReadOnlyDictionary<int, string>? GetSlotFiles(nint materialResourceHandle)
+        => materialResourceHandle == nint.Zero ? null : FindEntry((MaterialResourceHandle*)materialResourceHandle)?.Files;
+
+    /// <summary> Replace one temporary sphere-map registration for a collection. </summary>
+    public bool SetTemporary(string tag, LocalCollectionId collection, IReadOnlyDictionary<int, Dictionary<int, string>> materials,
+        int priority)
+    {
+        if (string.IsNullOrWhiteSpace(tag) || collection.Id == 0)
+            return false;
+
+        Dictionary<int, IReadOnlyDictionary<int, string>> normalized = [];
+        try
+        {
+            foreach (var (materialCrc, slots) in materials)
+            {
+                Dictionary<int, string> files = [];
+                foreach (var (slot, path) in slots)
+                {
+                    if (!ModSphereMaps.IsEditableSlot(slot) || string.IsNullOrWhiteSpace(path))
+                        return false;
+
+                    var fullPath = Path.GetFullPath(path);
+                    if (!File.Exists(fullPath))
+                        return false;
+                    files[slot] = fullPath;
+                }
+
+                if (files.Count > 0)
+                    normalized[materialCrc] = files;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        var key = new TemporaryRegistrationKey(tag, collection.Id, priority);
+        lock (_temporaryLock)
+        {
+            RemoveTemporaryRegistration(key);
+            if (normalized.Count > 0)
+            {
+                var order       = ++_temporaryOrder;
+                var bySignature = new Dictionary<string, Entry>(StringComparer.Ordinal);
+                Dictionary<int, Entry> entries = [];
+                var entryIndex = 0;
+                foreach (var (materialCrc, files) in normalized)
+                {
+                    var signature = string.Join('\n', files.OrderBy(static pair => pair.Key)
+                        .Select(static pair => $"{pair.Key}:{pair.Value}"));
+                    if (!bySignature.TryGetValue(signature, out var entry))
+                    {
+                        entry = new Entry($"temporary sphere maps {tag}/{collection.Id}/{priority}/{entryIndex++}", files, files);
+                        bySignature.Add(signature, entry);
+                    }
+
+                    entries[materialCrc] = entry;
+                }
+
+                _temporaryRegistrations.Add(key, new TemporaryRegistration(priority, order, entries));
+            }
+
+            RebuildTemporarySnapshots();
+        }
+
+        Invalidate();
+        return true;
+    }
+
+    /// <summary> Remove all temporary sphere-map registrations for a deleted collection. </summary>
+    public void RemoveTemporary(LocalCollectionId collection)
+    {
+        lock (_temporaryLock)
+        {
+            foreach (var key in _temporaryRegistrations.Keys.Where(key => key.CollectionId == collection.Id).ToArray())
+                RemoveTemporaryRegistration(key);
+            RebuildTemporarySnapshots();
+        }
+
+        Invalidate();
+    }
 
     public bool IsBusy(Mod mod)
         => _imports.TryGetValue(mod.Identifier, out var task) && !task.IsCompleted;
@@ -232,8 +344,15 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     private Entry? FindEntry(MaterialResourceHandle* material)
     {
         ReadOnlySpan<byte> name = material->FileName.AsSpan();
-        if (PathDataHandler.Split(name, out var actualPath, out _))
+        if (PathDataHandler.Split(name, out var actualPath, out var additionalData))
+        {
+            if (PathDataHandler.ReadMtrl(additionalData, out var data)
+             && data.Discriminator == PathDataHandler.Discriminator
+             && Volatile.Read(ref _temporaryMaterials).TryGetValue(
+                    new TemporaryMaterialKey(data.Collection.Id, data.OriginalPathCrc32), out var temporary))
+                return temporary;
             name = actualPath;
+        }
         if (!Utf8GamePath.IsRooted(name))
             return null;
 
@@ -277,14 +396,47 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
 
         var table = ModSphereMaps.LoadTable(modPath);
         if (table.Count > 0)
-            _entries[modPath.Name] = new Entry(modPath, table);
+            _entries[modPath.Name] = Entry.ForMod(modPath, table);
         Invalidate();
+    }
+
+    private void RemoveTemporaryRegistration(TemporaryRegistrationKey key)
+    {
+        if (!_temporaryRegistrations.Remove(key, out var registration))
+            return;
+
+        foreach (var entry in registration.Materials.Values.Distinct())
+        {
+            entry.Removed = true;
+            Release(entry);
+        }
+    }
+
+    private void RebuildTemporarySnapshots()
+    {
+        Dictionary<TemporaryMaterialKey, (Entry Entry, int Priority, long Order)> winners = [];
+        foreach (var (key, registration) in _temporaryRegistrations)
+        {
+            foreach (var (materialCrc, entry) in registration.Materials)
+            {
+                var materialKey = new TemporaryMaterialKey(key.CollectionId, materialCrc);
+                if (!winners.TryGetValue(materialKey, out var current)
+                 || registration.Priority > current.Priority
+                 || registration.Priority == current.Priority && registration.Order > current.Order)
+                    winners[materialKey] = (entry, registration.Priority, registration.Order);
+            }
+        }
+
+        Volatile.Write(ref _temporaryMaterials,
+            winners.ToDictionary(static pair => pair.Key, static pair => pair.Value.Entry));
+        Volatile.Write(ref _temporaryEntries, _temporaryRegistrations.Values
+            .SelectMany(static registration => registration.Materials.Values).Distinct().ToArray());
     }
 
     private void RemoveEntry(Entry entry)
     {
         entry.Removed = true;
-        _entries.TryRemove(new KeyValuePair<string, Entry>(entry.ModPath.Name, entry));
+        _entries.TryRemove(new KeyValuePair<string, Entry>(entry.Name, entry));
         Release(entry);
     }
 
@@ -320,9 +472,13 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
     {
         ++_frame;
         var enabled = Enabled && _utility.Ready;
-        _active = enabled && !_entries.IsEmpty;
-        foreach (var entry in _entries.Values)
+        var temporaryEntries = Volatile.Read(ref _temporaryEntries);
+        _active = enabled && (!_entries.IsEmpty || temporaryEntries.Length > 0);
+        foreach (var entry in _entries.Values.Concat(temporaryEntries))
         {
+            if (entry.Removed)
+                continue;
+
             if (!enabled || entry.TextureHandle is not null && _frame - entry.LastUse > IdleFrames)
                 Release(entry);
             else if (entry is { TextureHandle: null, Loading: false, Requested: true, LoadError: null })
@@ -430,7 +586,7 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         entry.Loading   = true;
         entry.Requested = false;
         var vanilla = _vanilla;
-        Task.Run(() => ModSphereMaps.BuildArray(vanilla, layout, entry.ModPath, entry.Slots))
+        Task.Run(() => ModSphereMaps.BuildArray(vanilla, layout, entry.Files))
             .ContinueWith(t => _framework.RunOnFrameworkThread(() => FinishLoad(entry, t)), TaskScheduler.Default);
     }
 
@@ -439,7 +595,7 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         entry.Loading = false;
         if (task.Exception is { } ex)
         {
-            Penumbra.Log.Error($"Could not build sphere map array for {entry.ModPath.Name}:\n{ex}");
+            Penumbra.Log.Error($"Could not build sphere map array for {entry.Name}:\n{ex}");
             entry.LoadError = $"生成球面贴图数组失败：{ex.InnerException?.Message ?? ex.Message}";
             return;
         }
@@ -464,7 +620,7 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
             if (preview is not null)
                 NativeMemory.Free(preview);
             handle?.Dispose();
-            Penumbra.Log.Error($"Could not create sphere map array for {entry.ModPath.Name}:\n{createEx}");
+            Penumbra.Log.Error($"Could not create sphere map array for {entry.Name}:\n{createEx}");
             entry.LoadError = "无法创建球面贴图数组。";
             return;
         }
@@ -475,7 +631,7 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         entry.Preview         = preview;
         entry.Texture         = texture;
         entry.LastUse         = _frame;
-        Penumbra.Log.Debug($"Created sphere map array for {entry.ModPath.Name} with slots {string.Join(", ", entry.Slots.Keys)}.");
+        Penumbra.Log.Debug($"Created sphere map array for {entry.Name} with slots {string.Join(", ", entry.Slots.Keys)}.");
     }
 
     /// <summary>
@@ -512,10 +668,19 @@ public sealed unsafe class ModSphereMapManager : IRequiredService, IDisposable
         return handle;
     }
 
-    private sealed class Entry(DirectoryInfo modPath, IReadOnlyDictionary<int, string> slots)
+    private readonly record struct TemporaryRegistrationKey(string Tag, int CollectionId, int Priority);
+    private readonly record struct TemporaryMaterialKey(int CollectionId, int MaterialCrc);
+    private sealed record TemporaryRegistration(int Priority, long Order, IReadOnlyDictionary<int, Entry> Materials);
+
+    private sealed class Entry(string name, IReadOnlyDictionary<int, string> slots, IReadOnlyDictionary<int, string> files)
     {
-        public readonly DirectoryInfo                    ModPath = modPath;
+        public readonly string                           Name    = name;
         public readonly IReadOnlyDictionary<int, string> Slots   = slots;
+        public readonly IReadOnlyDictionary<int, string> Files   = files;
+
+        public static Entry ForMod(DirectoryInfo modPath, IReadOnlyDictionary<int, string> slots)
+            => new(modPath.Name, slots,
+                slots.ToDictionary(static pair => pair.Key, pair => ModSphereMaps.ResolvePath(modPath, pair.Value)));
 
         public volatile bool        Removed;
         public volatile bool        Requested;

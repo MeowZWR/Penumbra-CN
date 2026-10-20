@@ -229,11 +229,15 @@ public static class ModSphereMaps
 
     /// <summary> Copy all mips of the declared slots over a copy of the vanilla array. </summary>
     public static byte[] BuildArray(byte[] vanilla, ArrayLayout layout, DirectoryInfo modPath, IReadOnlyDictionary<int, string> table)
+        => BuildArray(vanilla, layout,
+            table.ToDictionary(static pair => pair.Key, pair => ResolvePath(modPath, pair.Value)));
+
+    /// <summary> Copy all mips of the declared absolute slot files over a copy of the vanilla array. </summary>
+    public static byte[] BuildArray(byte[] vanilla, ArrayLayout layout, IReadOnlyDictionary<int, string> files)
     {
         var ret = (byte[])vanilla.Clone();
-        foreach (var (slot, relativePath) in table)
+        foreach (var (slot, file) in files)
         {
-            var file = ResolvePath(modPath, relativePath);
             var data = File.ReadAllBytes(file);
             var mips = ReadSlotMips(data, layout);
             if (mips is null)

@@ -3,6 +3,7 @@ using Penumbra.Collections;
 using Penumbra.Collections.Manager;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
+using Penumbra.Interop.Services;
 using Penumbra.Mods.Manager;
 using Penumbra.Mods.Settings;
 using Penumbra.String.Classes;
@@ -16,7 +17,8 @@ public class TemporaryApi(
     CollectionManager collectionManager,
     TempModManager tempMods,
     ApiHelpers apiHelpers,
-    ModManager modManager) : IPenumbraApiTemporary, Luna.IApiService
+    ModManager modManager,
+    ModSphereMapManager sphereMaps) : IPenumbraApiTemporary, Luna.IApiService
 {
     public (PenumbraApiEc, Guid) CreateTemporaryCollection(string identity, string name)
     {
@@ -30,9 +32,15 @@ public class TemporaryApi(
     }
 
     public PenumbraApiEc DeleteTemporaryCollection(Guid collectionId)
-        => tempCollections.RemoveTemporaryCollection(collectionId)
-            ? PenumbraApiEc.Success
-            : PenumbraApiEc.CollectionMissing;
+    {
+        if (!tempCollections.CollectionById(collectionId, out var collection))
+            return PenumbraApiEc.CollectionMissing;
+        if (!tempCollections.RemoveTemporaryCollection(collectionId))
+            return PenumbraApiEc.UnknownError;
+
+        sphereMaps.RemoveTemporary(collection.Identity.LocalId);
+        return PenumbraApiEc.Success;
+    }
 
     public PenumbraApiEc AssignTemporaryCollection(Guid collectionId, int actorIndex, bool forceAssignment)
     {
@@ -105,6 +113,23 @@ public class TemporaryApi(
             RedirectResult.Success => PenumbraApiEc.Success,
             _                      => PenumbraApiEc.UnknownError,
         };
+        return ApiHelpers.Return(ret, args);
+    }
+
+    public PenumbraApiEc SetTemporarySphereMaps(string tag, Guid collectionId,
+        Dictionary<int, Dictionary<int, string>> materials, int priority)
+    {
+        var args = ApiHelpers.Args("Tag", tag, "CollectionId", collectionId, "#Materials", materials.Count, "Priority", priority);
+        if (collectionId == Guid.Empty || string.IsNullOrWhiteSpace(tag))
+            return ApiHelpers.Return(PenumbraApiEc.InvalidArgument, args);
+
+        if (!tempCollections.CollectionById(collectionId, out var collection)
+         && !collectionManager.Storage.ById(collectionId, out collection))
+            return ApiHelpers.Return(PenumbraApiEc.CollectionMissing, args);
+
+        var ret = sphereMaps.SetTemporary(tag, collection.Identity.LocalId, materials, priority)
+            ? PenumbraApiEc.Success
+            : PenumbraApiEc.InvalidArgument;
         return ApiHelpers.Return(ret, args);
     }
 

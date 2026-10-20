@@ -113,6 +113,7 @@ public sealed class IpcProviders : IDisposable, IApiService, IRequiredService
             IpcSubscribers.ResolvePaths.Provider(pi, api.Resolve),
 
             IpcSubscribers.GetGameObjectResourcePaths.Provider(pi, api.ResourceTree),
+            IpcSubscribers.GetGameObjectSphereMapPaths.Provider(pi, api.ResourceTree),
             IpcSubscribers.GetPlayerResourcePaths.Provider(pi, api.ResourceTree),
             IpcSubscribers.GetGameObjectResourcesOfType.Provider(pi, api.ResourceTree),
             IpcSubscribers.GetPlayerResourcesOfType.Provider(pi, api.ResourceTree),
@@ -124,6 +125,7 @@ public sealed class IpcProviders : IDisposable, IApiService, IRequiredService
             IpcSubscribers.AssignTemporaryCollection.Provider(pi, api.Temporary),
             IpcSubscribers.AddTemporaryModAll.Provider(pi, InternalCallers, api.Temporary),
             IpcSubscribers.AddTemporaryMod.Provider(pi, InternalCallers, api.Temporary),
+            IpcSubscribers.SetTemporarySphereMaps.Provider(pi, api.Temporary),
             IpcSubscribers.RemoveTemporaryModAll.Provider(pi, api.Temporary),
             IpcSubscribers.RemoveTemporaryMod.Provider(pi, api.Temporary),
             IpcSubscribers.SetTemporaryModSettings.Provider(pi, api.Temporary),
