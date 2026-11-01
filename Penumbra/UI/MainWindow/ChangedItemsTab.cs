@@ -177,8 +177,8 @@ public sealed class ChangedItemsTab(
           - Im.Style.ItemSpacing.X;
         const TableColumnFlags flags = TableColumnFlags.NoResize | TableColumnFlags.WidthFixed;
         table.SetupColumn("items"u8, flags, 450 * Im.Style.GlobalScale);
-        table.SetupColumn("mods"u8,  flags, varWidth - 140 * Im.Style.GlobalScale);
-        table.SetupColumn("id"u8,    flags, 140 * Im.Style.GlobalScale);
+        table.SetupColumn("mods"u8,  flags, varWidth - 240 * Im.Style.GlobalScale);
+        table.SetupColumn("id"u8,    flags, 240 * Im.Style.GlobalScale);
 
         var cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current,
             () => new Cache(collectionManager.Active, communicator, _filter));
