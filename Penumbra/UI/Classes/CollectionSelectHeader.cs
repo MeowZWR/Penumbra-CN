@@ -46,7 +46,7 @@ public class CollectionSelectHeader(
         tutorial.OpenTutorial(BasicTutorialSteps.CollectionSelectors);
 
         if (!_activeCollections.CurrentCollectionInUse)
-            ImEx.TextFramed("当前选中的合集未在任何地方使用。"u8, Im.ContentRegion.Available with { Y = 0 },
+            ImEx.TextFramed("当前选中的合集未在任何地方使用。"u8, Im.ContentRegion.Width(),
                 Colors.PressEnterWarningBg);
     }
 
@@ -184,7 +184,7 @@ public class CollectionSelectHeader(
         tutorial.OpenTutorial(BasicTutorialSteps.CollectionSelectors);
 
         if (!_activeCollections.CurrentCollectionInUse)
-            ImEx.TextFramed("当前选中的合集未在任何地方使用。"u8, Im.ContentRegion.Available with { Y = 0 },
+            ImEx.TextFramed("当前选中的合集未在任何地方使用。"u8, Im.ContentRegion.Width(),
                 Colors.PressEnterWarningBg);
     }
 }

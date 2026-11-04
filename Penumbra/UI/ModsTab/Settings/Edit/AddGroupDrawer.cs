@@ -10,6 +10,7 @@ using Penumbra.Mods.Manager;
 using Penumbra.Mods.Manager.OptionEditor;
 using Penumbra.UI.AdvancedWindow.Meta;
 using Penumbra.UI.Classes;
+using MouseButton = ImSharp.MouseButton;
 
 namespace Penumbra.UI.ModsTab.Settings;
 
@@ -55,12 +56,23 @@ public class AddGroupDrawer : Luna.IUiService
         DrawMultiGroupButton(mod, buttonWidth);
         DrawCombiningGroupButton(mod, buttonWidth);
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(buttonWidth.X - Im.Style.ItemInnerSpacing.X - Im.Font.CalculateSize("页码"u8, false).X);
-        if (mod.PageNames.TryGetValue(_defaultPage - 1, out var name))
+        var pageWidth = buttonWidth.X - Im.Style.ItemInnerSpacing.X - Im.Font.CalculateSize("页码"u8, false).X;
+        Im.Item.SetNextWidth(pageWidth);
+        if (mod.PageNames.TryGetValue(_defaultPage - 1, out var name) && !Im.Id.IsActive(Im.Id.Get("页码##new"u8)) && !EnteringInput(pageWidth))
             Im.Drag("页码##new"u8, ref _defaultPage, name, null, null, 0.02f);
         else
             Im.Drag("页码##new"u8, ref _defaultPage, null, null, 0.02f);
         Im.Tooltip.OnHover("新创建的组应放入的页面。请填页码，勿填名称。"u8);
+    }
+
+    private static bool EnteringInput(float width)
+    {
+        // Double-Click or Control-Click activation.
+        if (!Im.Mouse.IsDoubleClicked(MouseButton.Left) && !(Im.Io.KeyControl && Im.Mouse.IsClicked(MouseButton.Left)))
+            return false;
+
+        // Hovering item.
+        return Im.Mouse.IsHoveringRectangle(Rectangle.FromSize(Im.Cursor.ScreenPosition, new Vector2(width, Im.Style.FrameHeight)));
     }
 
     private void DrawSingleGroupButton(Mod mod, Vector2 width)

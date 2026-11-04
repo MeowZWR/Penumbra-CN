@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Luna;
 using Penumbra.Files;
-using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.GameData.Files.Materials;
 using Penumbra.Services;
 
 namespace Penumbra.UI.FileEditing.Materials;

@@ -174,7 +174,7 @@ public class ModPanelSettingsTab(
 
         using var color =
             ImGuiColor.Button.Push(Rgba32.TintColor(Im.Style[ImGuiColor.Button], ColorId.TemporaryModSettingsTint.Vector));
-        var width = Im.ContentRegion.Available with { Y = 0 };
+        var width = Im.ContentRegion.Width();
         if (ImEx.Button($"这些设置由 {selection.TemporarySettings!.Source} 临时设定{(_locked ? "，且已锁定。" : "。")}",
                 width, _locked))
             collectionManager.Editor.SetTemporarySettings(collectionManager.Active.Current, selection.Mod!, null);
@@ -190,7 +190,7 @@ public class ModPanelSettingsTab(
             return;
 
         using var color = ImGuiColor.Button.Push(Colors.PressEnterWarningBg);
-        var       width = Im.ContentRegion.Available with { Y = 0 };
+        var       width = Im.ContentRegion.Width();
         if (ImEx.Button($"这些设置继承自 {selection.Collection.Identity.Name}。", width, _locked))
         {
             if (_temporary)
@@ -783,8 +783,7 @@ public class ModPanelSettingsTab(
             Im.Cursor.Y += Im.Style.ItemSpacing.Y;
             var id = new ModObjectIdentifier(_optionIdentifierInput, _optionNameInput);
             if (SettingPresetData.DrawAddOption(size.AddX(-Im.Style.IndentSpacing), groupData, ref _optionIdentifierInput, ref _optionNameInput,
-                    out var option,
-                    id.FindOption(actualGroup) is { } o ? ModObjectIdentifier.From(o) : null))
+                    out var option, id.FindOption(actualGroup) is { } o ? ModObjectIdentifier.From(o) : null))
                 presets.PresetManager.ChangeOption(presets.ModIdentifier, preset, groupIdentifier, option, OptionState.Ignored);
         }
 
