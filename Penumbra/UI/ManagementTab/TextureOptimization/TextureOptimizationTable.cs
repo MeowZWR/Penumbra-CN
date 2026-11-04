@@ -17,7 +17,8 @@ public sealed class TextureOptimizationTable(
     TextureOptimization optimization,
     UiNavigator navigator,
     EditingConfig config,
-    ManagementLog<TextureOptimization> log)
+    ManagementLog<TextureOptimization> log,
+    ModComboWithAll combo)
     : TableBase<TextureOptimizationCacheObject, TextureOptimizationTable.Cache>(new StringU8("##tot"u8),
         new ActionColumn(config, textures, optimization),
         new FileColumn<TextureOptimizationCacheObject, OptimizableTexture> { Label = new StringU8("文件"u8) },
@@ -30,6 +31,8 @@ public sealed class TextureOptimizationTable(
         new SolidColorColumn { Label                                               = new StringU8("颜色"u8) }
     )
 {
+    private readonly ModComboWithAll _combo = combo;
+
     protected override void PreDraw(in Cache cache)
     {
         Im.Item.SetNextWidthScaled(100);
@@ -43,6 +46,7 @@ public sealed class TextureOptimizationTable(
         if (ImEx.LogarithmicInput("显示较大分辨率的纹理，即使已被压缩"u8, config.LargeTextureDimensionLimit,
                 out var newLargeLimit, 0))
             config.LargeTextureDimensionLimit = newLargeLimit;
+        _combo.Draw("Mod Restriction"u8, 100 * Im.Style.GlobalScale + (Im.Style.ItemInnerSpacing.X + Im.Style.FrameHeight) * 3);
         cache.DrawScanButtons();
         LunaStyle.DrawSeparator();
         if (Im.Checkbox("在执行破坏性操作前创建备份"u8, config.CreateTextureBackups))
@@ -65,7 +69,7 @@ public sealed class TextureOptimizationTable(
 
     public sealed class Cache(TextureOptimizationTable parent, EditingConfig config, ModManager mods, ManagementLog<TextureOptimization> log)
         : ScannerTabCache<TextureOptimizationCacheObject, OptimizableTexture>(parent,
-            new TextureOptimizationScanner(mods, config, log))
+            new TextureOptimizationScanner(mods, config, parent._combo, log))
     {
         protected override TextureOptimizationCacheObject Convert(OptimizableTexture obj)
             => new(obj);

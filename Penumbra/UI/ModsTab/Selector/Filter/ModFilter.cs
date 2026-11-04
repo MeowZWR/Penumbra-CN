@@ -74,13 +74,12 @@ public sealed class ModFilter : TokenizedFilter<ModFilterTokenType, ModFileSyste
         Im.BulletText("并且要么有名称中包含 'camise' 的变更物品，要么模组名称中包含 'top'。"u8);
     }
 
+    public override ColorParameter ActiveBorderColor
+        => ColorId.ModTextFilterBorder.Value;
+
     public override bool DrawFilter(ReadOnlySpan<byte> label, Vector2 availableRegion)
     {
-        bool ret;
-        using (ImStyleBorder.Frame.Push(ColorId.ModTextFilterBorder.Vector, Im.Style.GlobalScale, Text.Length > 0))
-        {
-            ret = base.DrawFilter(label, availableRegion with { X = availableRegion.X - Im.Style.FrameHeight });
-        }
+        var ret = base.DrawFilter(label, availableRegion with { X = availableRegion.X - Im.Style.FrameHeight });
 
         Im.Line.NoSpacing();
         ret |= DrawFilterCombo();

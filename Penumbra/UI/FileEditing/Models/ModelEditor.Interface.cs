@@ -3,7 +3,7 @@ using ImSharp;
 using Lumina.Data.Parsing;
 using Luna;
 using Penumbra.GameData;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.Models;
 using Penumbra.Import.Models.Import;
 using Penumbra.String.Classes;
 using Penumbra.UI.Classes;
@@ -67,7 +67,7 @@ public partial class ModelEditor
         if (disabled || Mdl.Version is not MdlFile.V5)
             return;
 
-        if (!ImEx.Button("将 MDL 版本从 V5 更新至 V6"u8, Colors.PressEnterWarningBg, default, Im.ContentRegion.Available with { Y = 0 },
+        if (!ImEx.Button("将 MDL 版本从 V5 更新至 V6"u8, Colors.PressEnterWarningBg, default, Im.ContentRegion.Width(),
                 "如果发现 7.0 版本之前的模型骨骼权重显示异常，请尝试使用此功能。\n\n注意：此操作不可撤销。"u8))
             return;
 
@@ -173,7 +173,7 @@ public partial class ModelEditor
         if (IoExceptions.Count is 0)
             return;
 
-        var size = Im.ContentRegion.Available with { Y = 0 };
+        var size = Im.ContentRegion.Width();
         using var frame = ImEx.FramedGroup("异常"u8, LunaStyle.ErrorIcon, default, StringU8.Empty, ColorParameter.Default,
             LunaStyle.ErrorForeground, size);
 
@@ -200,7 +200,7 @@ public partial class ModelEditor
         if (IoWarnings.Count is 0)
             return;
 
-        var size = Im.ContentRegion.Available with { Y = 0 };
+        var size = Im.ContentRegion.Width();
         using var frame = ImEx.FramedGroup("警告"u8, LunaStyle.WarningIcon, default, StringU8.Empty, ColorParameter.Default,
             LunaStyle.WarningForeground, size);
 

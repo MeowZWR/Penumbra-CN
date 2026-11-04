@@ -1,8 +1,7 @@
 using Dalamud.Plugin.Services;
 using ImSharp;
 using Luna;
-using Penumbra.GameData.Files;
-using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.GameData.Files.Materials;
 using Penumbra.GameData.Gui;
 using Penumbra.GameData.Interop;
 using Penumbra.Interop.Hooks.Objects;
@@ -83,7 +82,7 @@ public sealed partial class MaterialEditor : IFileEditor
         if (disabled || Mtrl.IsDawntrail)
             return false;
 
-        if (!ImEx.Button("将 MTRL 版本更新至「金曦之遗辉」"u8, Colors.PressEnterWarningBg, default, Im.ContentRegion.Available with { Y = 0 },
+        if (!ImEx.Button("将 MTRL 版本更新至「金曦之遗辉」"u8, Colors.PressEnterWarningBg, default, Im.ContentRegion.Width(),
                 "如果材质无法加载或应该使用旧版着色器，可尝试使用此方法。\n\n此操作不可逆。"u8))
             return false;
 

@@ -6,7 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using Luna;
 using Penumbra.Communication;
 using Penumbra.GameData;
-using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.GameData.Files.Materials;
 using Penumbra.Interop.Hooks.ResourceLoading;
 using Penumbra.Interop.Hooks.Resources;
 using Penumbra.Interop.Structs;
@@ -20,33 +20,6 @@ namespace Penumbra.Interop.Hooks.PostProcessing;
 
 public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredService
 {
-    public static ReadOnlySpan<byte> SkinShpkName
-        => "skin.shpk"u8;
-
-    public static ReadOnlySpan<byte> CharacterStockingsShpkName
-        => "characterstockings.shpk"u8;
-
-    public static ReadOnlySpan<byte> CharacterLegacyShpkName
-        => "characterlegacy.shpk"u8;
-
-    public static ReadOnlySpan<byte> IrisShpkName
-        => "iris.shpk"u8;
-
-    public static ReadOnlySpan<byte> CharacterGlassShpkName
-        => "characterglass.shpk"u8;
-
-    public static ReadOnlySpan<byte> CharacterTransparencyShpkName
-        => "charactertransparency.shpk"u8;
-
-    public static ReadOnlySpan<byte> CharacterTattooShpkName
-        => "charactertattoo.shpk"u8;
-
-    public static ReadOnlySpan<byte> CharacterOcclusionShpkName
-        => "characterocclusion.shpk"u8;
-
-    public static ReadOnlySpan<byte> HairMaskShpkName
-        => "hairmask.shpk"u8;
-
     private delegate nint CharacterBaseOnRenderMaterialDelegate(CharacterBase* drawObject, CSModelRenderer.OnRenderMaterialParams* param);
 
     private delegate ushort* ModelRendererOnRenderMaterialDelegate(CSModelRenderer* modelRenderer,
@@ -232,40 +205,40 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
     }
 
     private ModdedShaderPackageState? GetStateForHumanSetup(MaterialResourceHandle* mtrlResource)
-        => mtrlResource == null ? null : GetStateForHumanSetup(mtrlResource->ShpkName.AsSpan());
+        => mtrlResource is null ? null : GetStateForHumanSetup(mtrlResource->ShpkName.AsSpan());
 
     private ModdedShaderPackageState? GetStateForHumanSetup(ReadOnlySpan<byte> shpkName)
-        => CharacterStockingsShpkName.SequenceEqual(shpkName) ? _characterStockingsState : null;
+        => ShaderFamily.CharacterStockings.Matches(shpkName) ? _characterStockingsState : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private uint GetTotalMaterialCountForHumanSetup()
         => _characterStockingsState.MaterialCount;
 
     private ModdedShaderPackageState? GetStateForHumanRender(MaterialResourceHandle* mtrlResource)
-        => mtrlResource == null ? null : GetStateForHumanRender(mtrlResource->ShpkName.AsSpan());
+        => mtrlResource is null ? null : GetStateForHumanRender(mtrlResource->ShpkName.AsSpan());
 
     private ModdedShaderPackageState? GetStateForHumanRender(ReadOnlySpan<byte> shpkName)
-        => SkinShpkName.SequenceEqual(shpkName) ? _skinState : null;
+        => ShaderFamily.Skin.Matches(shpkName) ? _skinState : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private uint GetTotalMaterialCountForHumanRender()
         => _skinState.MaterialCount;
 
     private ModdedShaderPackageState? GetStateForModelRendererRender(MaterialResourceHandle* mtrlResource)
-        => mtrlResource == null ? null : GetStateForModelRendererRender(mtrlResource->ShpkName.AsSpan());
+        => mtrlResource is null ? null : GetStateForModelRendererRender(mtrlResource->ShpkName.AsSpan());
 
     private ModdedShaderPackageState? GetStateForModelRendererRender(ReadOnlySpan<byte> shpkName)
     {
-        if (CharacterGlassShpkName.SequenceEqual(shpkName))
+        if (ShaderFamily.CharacterGlass.Matches(shpkName))
             return _characterGlassState;
 
-        if (CharacterTransparencyShpkName.SequenceEqual(shpkName))
+        if (ShaderFamily.CharacterTransparency.Matches(shpkName))
             return _characterTransparencyState;
 
-        if (CharacterTattooShpkName.SequenceEqual(shpkName))
+        if (ShaderFamily.CharacterTattoo.Matches(shpkName))
             return _characterTattooState;
 
-        if (HairMaskShpkName.SequenceEqual(shpkName))
+        if (ShaderFamily.HairMask.Matches(shpkName))
             return _hairMaskState;
 
         return null;
@@ -283,13 +256,13 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
 
     private ModdedShaderPackageState? GetStateForModelRendererUnk(ReadOnlySpan<byte> shpkName)
     {
-        if (IrisShpkName.SequenceEqual(shpkName))
+        if (ShaderFamily.Iris.Matches(shpkName))
             return _irisState;
 
-        if (CharacterOcclusionShpkName.SequenceEqual(shpkName))
+        if (ShaderFamily.CharacterOcclusion.Matches(shpkName))
             return _characterOcclusionState;
 
-        if (CharacterStockingsShpkName.SequenceEqual(shpkName))
+        if (ShaderFamily.CharacterStockings.Matches(shpkName))
             return _characterStockingsState;
 
         return null;
@@ -302,7 +275,7 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
           + _characterStockingsState.MaterialCount;
 
     private ModdedShaderPackageState? GetStateForColorTable(ReadOnlySpan<byte> shpkName)
-        => CharacterLegacyShpkName.SequenceEqual(shpkName) ? _characterLegacyState : null;
+        => ShaderFamily.CharacterLegacy.Matches(shpkName) ? _characterLegacyState : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private uint GetTotalMaterialCountForColorTable()
@@ -312,7 +285,7 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
         ref int numReplacements, ref IDisposable? pbdDisposable, ref object? shpkLock)
     {
         // If we don't have any on-screen instances of modded characterstockings.shpk, we don't need the slow path at all.
-        if (!Enabled || GetTotalMaterialCountForHumanSetup() == 0)
+        if (!Enabled || GetTotalMaterialCountForHumanSetup() is 0)
             return;
 
         var model = drawObject->Models[slotIndex];
@@ -323,18 +296,18 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
         ModdedShaderPackageState? shpkState    = null;
         foreach (var material in model->MaterialsSpan)
         {
-            if (material.Value == null)
+            if (material.Value is null)
                 continue;
 
             mtrlResource = material.Value->MaterialResourceHandle;
             shpkState    = GetStateForHumanSetup(mtrlResource);
             // Despite this function being called with what designates a model (and therefore potentially many materials),
             // we currently don't need to handle more than one modded ShPk.
-            if (shpkState != null)
+            if (shpkState is not null)
                 break;
         }
 
-        if (shpkState == null || shpkState.MaterialCount == 0)
+        if (shpkState is null || shpkState.MaterialCount is 0)
             return;
 
         shpkState.IncrementSlowPathCallDelta();
@@ -357,7 +330,7 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
         var material     = param->Model->Materials[index];
         var mtrlResource = material->MaterialResourceHandle;
         var shpkState    = GetStateForHumanRender(mtrlResource);
-        if (shpkState == null || shpkState.MaterialCount is 0)
+        if (shpkState is null || shpkState.MaterialCount is 0)
             return _humanOnRenderMaterialHook!.Original(human, param);
 
         shpkState.IncrementSlowPathCallDelta();
@@ -423,7 +396,7 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
 
         var mtrlResource = GetMaterialResourceHandle(unkPayload);
         var shpkState    = GetStateForModelRendererUnk(mtrlResource);
-        if (shpkState == null || shpkState.MaterialCount is 0)
+        if (shpkState is null || shpkState.MaterialCount is 0)
         {
             _modelRendererUnkFuncHook!.Original(modelRenderer, unkPayload, unk2, unk3, unk4, unk5);
             return;
@@ -524,7 +497,7 @@ public sealed unsafe class ShaderReplacementFixer : IDisposable, IRequiredServic
         private readonly ConcurrentSet<nint> _materials = new();
 
         // ConcurrentDictionary.Count uses a lock in its current implementation.
-        private uint _materialCount;
+        private uint  _materialCount;
         private ulong _slowPathCallDelta;
 
         public uint MaterialCount

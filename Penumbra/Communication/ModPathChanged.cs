@@ -52,6 +52,9 @@ public sealed class ModPathChanged(LunaLogger log)
         /// <seealso cref="Interop.Services.ModSphereMapManager"/>
         ModSphereMapManager = 0, // 合并上游时保留：模组级球面贴图
 
+        /// <seealso cref="UI.Classes.ModComboWithAll.OnModPathChange"/>
+        ModComboWithAll = 0,
+
         /// <seealso cref="Collections.Manager.CollectionStorage.OnModPathChange"/>
         CollectionStorage = 10,
 

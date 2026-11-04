@@ -39,7 +39,7 @@ public sealed class AdvancedSettings(
         if (SettingsTab.Checkbox("PMP导入时自动重复复制UI文件"u8,
                 "从PMP文件导入时自动重复复制并规范化与UI有关的文件。强烈建议启用此选项，因为UI文件导入时去重会导致游戏崩溃。"u8,
                 config.AutoReduplicateUiOnImport))
-            config.AutoDeduplicateOnImport ^= true;
+            config.AutoReduplicateUiOnImport ^= true;
         DrawCompressionBox();
         if (SettingsTab.Checkbox("导入时保持默认的元数据修改"u8,
                 "通常情况下，元数据修改的值（有时是由TexTools导出的）与游戏默认的值相同时，将被抛弃。"u8
