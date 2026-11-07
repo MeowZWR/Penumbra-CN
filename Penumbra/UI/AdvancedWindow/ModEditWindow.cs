@@ -42,6 +42,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
     private readonly FileEditor _modelTab;
     private readonly FileEditor _materialTab;
+    private readonly MaterialTextureReplaceState _texturePathReplace = new();
     private readonly FileEditor _shaderPackageTab;
     private readonly FileEditor _pbdTab;
 #if false
@@ -189,6 +190,7 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
     public override void OnClose()
     {
         base.OnClose();
+        _texturePathReplace.Clear();
         _parent.UnpinWindow(this, false);
         _parent.SaveWindows();
         AppendTask(() =>
@@ -640,9 +642,13 @@ public sealed partial class ModEditWindow : IndexedWindow, IDisposable
 
         FileEditor CreateFileEditor(string tabName, string fileType, ResourceType type)
         {
+            var texturePathReplace = type == ResourceType.Mtrl ? _texturePathReplace : null;
             return new FileEditor(this, communicator, config, editor.Compactor, fileDialog, framework, tabName, fileType,
                 () => PopulateIsOnPlayer(_editor.Files.GetByType(type), type), () => Mod?.ModPath.FullName ?? string.Empty, fileEditorRegistry,
-                () => new ModEditFileEditingContext(activeCollections, editor, editor.Mod));
+                () => new ModEditFileEditingContext(activeCollections, editor, editor.Mod)
+                {
+                    TexturePathReplace = texturePathReplace,
+                });
         }
     }
 

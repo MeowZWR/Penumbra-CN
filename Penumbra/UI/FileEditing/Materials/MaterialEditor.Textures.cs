@@ -16,8 +16,10 @@ public partial class MaterialEditor
     public readonly HashSet<uint> SamplerIds       = new(16);
     public          float         TextureLabelWidth;
     private         bool          _samplersPinned;
-    private string _texturePathReplaceSearch  = string.Empty;
-    private string _texturePathReplaceReplace = string.Empty;
+    private readonly MaterialTextureReplaceState _texturePathReplaceFallback = new();
+
+    private MaterialTextureReplaceState TexturePathReplace
+        => _context?.TexturePathReplace ?? _texturePathReplaceFallback;
 
     private void UpdateTextures()
     {
@@ -173,12 +175,13 @@ public partial class MaterialEditor
         foreach (var (_, textureIndex, _, _, _) in Textures)
             textureIndices.Add(textureIndex);
 
-        var matchCount = 0;
-        if (_texturePathReplaceSearch.Length > 0)
+        var replaceState = TexturePathReplace;
+        var matchCount   = 0;
+        if (replaceState.Search.Length > 0)
         {
             foreach (var textureIndex in textureIndices)
             {
-                if (Mtrl.Textures[textureIndex].Path.Contains(_texturePathReplaceSearch))
+                if (Mtrl.Textures[textureIndex].Path.Contains(replaceState.Search))
                     ++matchCount;
             }
         }
@@ -188,10 +191,10 @@ public partial class MaterialEditor
         var flags       = disabled ? InputTextFlags.ReadOnly : InputTextFlags.None;
         var width       = (Im.ContentRegion.Available.X - buttonWidth - 2 * Im.Style.ItemSpacing.X) * 0.5f;
         Im.Item.SetNextWidth(width);
-        Im.Input.Text("##TexturePathReplaceSearch"u8, ref _texturePathReplaceSearch, "查找..."u8, flags: flags);
+        Im.Input.Text("##TexturePathReplaceSearch"u8, ref replaceState.Search, "查找..."u8, flags: flags);
         Im.Line.Same();
         Im.Item.SetNextWidth(width);
-        Im.Input.Text("##TexturePathReplaceReplace"u8, ref _texturePathReplaceReplace, "替换为..."u8, flags: flags);
+        Im.Input.Text("##TexturePathReplaceReplace"u8, ref replaceState.Replace, "替换为..."u8, flags: flags);
         Im.Line.Same();
         using var dis = Im.Disabled(disabled || matchCount == 0);
         if (!Im.Button(buttonLabel))
@@ -201,7 +204,7 @@ public partial class MaterialEditor
         foreach (var textureIndex in textureIndices)
         {
             var path    = Mtrl.Textures[textureIndex].Path;
-            var newPath = path.Replace(_texturePathReplaceSearch, _texturePathReplaceReplace);
+            var newPath = path.Replace(replaceState.Search, replaceState.Replace);
             if (newPath == path)
                 continue;
 
