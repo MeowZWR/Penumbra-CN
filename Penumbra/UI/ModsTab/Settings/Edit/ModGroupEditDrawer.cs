@@ -22,7 +22,8 @@ public sealed class ModGroupEditDrawer(
     DescriptionEditPopup descriptionPopup,
     LayoutEditPopup layoutPopup,
     ConditionEditPopup conditionPopup,
-    ImcChecker imcChecker) : IUiService
+    ImcChecker imcChecker,
+    AdvancedConfig config) : IUiService
 {
     private static ReadOnlySpan<byte> AcrossGroupsLabel
         => "##DragOptionAcross"u8;
@@ -54,6 +55,8 @@ public sealed class ModGroupEditDrawer(
     private IModOption? _dragDropOption;
     private bool        _draggingAcross;
 
+    private readonly ConditionalWeakTable<IModGroup, CardState> _cardStates = new();
+
     private IModObject?                    _dragDropCondition;
     private ICondition<ModSettingContext>? _copiedCondition;
 
@@ -76,10 +79,61 @@ public sealed class ModGroupEditDrawer(
 
     private void DrawGroup(GroupNameCache cache, IModGroup group, int idx)
     {
-        using var id    = Im.Id.Push(idx);
-        using var frame = ImEx.FramedGroup($"组 #{idx + 1}");
+        using var id = Im.Id.Push(idx);
+        if (!config.EnableExtendedFeatures)
+        {
+            using var plain = ImEx.FramedGroup($"组 #{idx + 1}");
+            DrawGroupBody(cache, group, idx);
+            return;
+        }
+
+        var state = _cardStates.GetOrCreateValue(group);
+        var icon  = state.Collapsed ? LunaStyle.TreeExpandIcon : LunaStyle.TreeCollapseIcon;
+        using (ImEx.FramedGroup($"组 #{idx + 1}", icon, icon))
+        {
+            using (Im.Group())
+            {
+                var startX = Im.Cursor.ScreenPosition.X;
+                DrawGroupNameRow(cache, group, idx);
+                if (state.Collapsed)
+                    PadToWidth(startX, state.Width);
+                else
+                    group.EditDrawer(this).Draw();
+            }
+
+            if (!state.Collapsed)
+                state.Width = Im.Item.LowerRightCorner.X - Im.Item.UpperLeftCorner.X;
+        }
+
+        var cardMin   = Im.Item.UpperLeftCorner;
+        var cardMax   = Im.Item.LowerRightCorner;
+        var headerMax = new Vector2(cardMax.X, cardMin.Y + Im.Style.FrameHeight);
+        if (Im.InvisibleButton("##header"u8, new Rectangle(new Vector2(cardMin.X, cardMin.Y), headerMax)))
+            state.Collapsed = !state.Collapsed;
+        Im.Tooltip.OnHover(state.Collapsed ? "展开此选项组。"u8 : "折叠此选项组。"u8);
+    }
+
+    private void DrawGroupBody(GroupNameCache cache, IModGroup group, int idx)
+    {
         DrawGroupNameRow(cache, group, idx);
         group.EditDrawer(this).Draw();
+    }
+
+    private static void PadToWidth(float startX, float width)
+    {
+        if (width <= 0)
+            return;
+
+        Im.Line.NoSpacing();
+        var used = Im.Cursor.ScreenPosition.X - startX;
+        if (width > used)
+            Im.Dummy(new Vector2(width - used, Im.Style.FrameHeight));
+    }
+
+    private sealed class CardState
+    {
+        public bool  Collapsed;
+        public float Width;
     }
 
     private void DrawGroupNameRow(GroupNameCache cache, IModGroup group, int idx)
