@@ -7,8 +7,22 @@ using Penumbra.String.Classes;
 
 namespace Penumbra.UI.FileEditing;
 
+public sealed class MaterialTextureReplaceState
+{
+    public string Search  = string.Empty;
+    public string Replace = string.Empty;
+
+    public void Clear()
+    {
+        Search  = string.Empty;
+        Replace = string.Empty;
+    }
+}
+
 public abstract class FileEditingContext
 {
+    public MaterialTextureReplaceState? TexturePathReplace { get; init; }
+
     protected abstract ModCollection? Collection { get; }
 
     public abstract ModEditor? Editor { get; }
