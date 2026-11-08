@@ -154,13 +154,13 @@ public sealed class TextureOptimization(ModGroupEditor groupEditor, TextureManag
         });
     }
 
-    public Task Compress(string filePath, Mod mod, bool backup)
+    public Task Compress(string filePath, Mod mod, bool backup, bool mipMaps = true)
     {
         var target  = GetTargetFormat(filePath, mod);
         var tmpPath = filePath + ".tmp";
 
         log.Information($"Compressing texture {filePath} in {mod.Name} to {target}...");
-        return textures.SaveAs(target, true, true, filePath, tmpPath).ContinueWith(state =>
+        return textures.SaveAs(target, mipMaps, true, filePath, tmpPath).ContinueWith(state =>
         {
             if (state.IsCompletedSuccessfully)
             {

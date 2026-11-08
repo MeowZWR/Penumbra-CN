@@ -11,17 +11,29 @@ using Penumbra.UI.ManagementTab;
 
 namespace Penumbra.UI.AdvancedWindow;
 
-/// <summary> Advanced editor tab: scan and batch-restrict texture dimensions for the current mod. </summary>
+/// <summary> Advanced editor tab: scan and batch-restrict or compress textures for the current mod. </summary>
 public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptimization optimization)
 {
+    private enum ScanMode
+    {
+        Oversized,
+        Uncompressed,
+        OversizedOrUncompressed,
+    }
+
     private readonly List<Candidate> _candidates = [];
     private readonly HashSet<string> _selected   = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string>    _log        = [];
     private readonly Lock            _logLock    = new();
 
-    private string                   _pathFilter     = string.Empty;
-    private int                      _dimensionLimit = 2048;
-    private bool                     _createBackups  = false;
+    private string   _pathFilter       = string.Empty;
+    private ScanMode _scanMode         = ScanMode.Oversized;
+    private ScanMode _scannedMode      = ScanMode.Oversized;
+    private int      _scannedLimit     = 2048;
+    private bool     _onlyUncompressed;
+    private int      _dimensionLimit = 2048;
+    private bool     _createBackups  = false;
+    private bool     _addMipMaps;
     private Task?                    _scanTask;
     private CancellationTokenSource? _scanCts;
     private Task?                    _processTask;
@@ -66,14 +78,23 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
 
         Im.Item.SetNextWidthScaled(100);
         ImEx.LogarithmicInput("纹理分辨率限制"u8, ref _dimensionLimit, 4);
-        Im.Tooltip.OnHover("宽或高超过此值的纹理会作为候选。处理时将反复减半直到两边都不超过此上限。"u8);
+        Im.Tooltip.OnHover("超限扫描会收集宽或高超过此值的纹理。限制分辨率时会反复减半，直到两边都不超过此上限。"u8);
 
         Im.Line.Same();
         Im.Checkbox("创建备份"u8, ref _createBackups);
         Im.Tooltip.OnHover("处理前将原文件重命名为 .bak。"u8);
 
         Im.Line.Same();
-        if (ImEx.Button("扫描当前模组"u8, Vector2.Zero, "扫描当前模组中宽或高超过分辨率限制的 .tex / .atex。"u8, busy || editor.Mod is null))
+        DrawScanModeCombo();
+
+        Im.Line.Same();
+        Utf8StringHandler<TextStringHandlerBuffer> scanTt = _scanMode switch
+        {
+            ScanMode.Uncompressed            => "扫描当前模组中未压缩的 .tex / .atex，不限分辨率。",
+            ScanMode.OversizedOrUncompressed => "扫描当前模组中超限或未压缩的 .tex / .atex。",
+            _                                => "扫描当前模组中宽或高超过分辨率限制的 .tex / .atex。",
+        };
+        if (ImEx.Button("扫描当前模组"u8, Vector2.Zero, scanTt, busy || editor.Mod is null))
             StartScan();
 
         Im.Line.Same();
@@ -83,6 +104,10 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
         Im.Item.SetNextWidthScaled(200);
         Im.Input.Text("##pathFilter"u8, ref _pathFilter, "路径筛选（如 _d）"u8);
         Im.Tooltip.OnHover("不区分大小写，按相对路径包含匹配过滤列表；「全选当前筛选」只作用于可见项。"u8);
+
+        Im.Line.Same();
+        Im.Checkbox("仅未压缩"u8, ref _onlyUncompressed);
+        Im.Tooltip.OnHover("只显示未压缩纹理，例如 B8G8R8A8。"u8);
 
         Im.Line.Same();
         if (ImEx.Button("全选当前筛选"u8, Vector2.Zero, "选中当前筛选条件下的全部候选。"u8, busy || _candidates.Count is 0))
@@ -102,10 +127,56 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
             ? "请先扫描并选中要处理的纹理。"
             : !modifierOk
                 ? $"按住 {LunaStyle.Modifier.Destructive} 键以处理选中纹理。"
-                : $"将选中纹理分辨率限制为 {_dimensionLimit}×{_dimensionLimit}（保持原压缩格式）。";
+                : $"将选中的超限纹理分辨率限制为 {_dimensionLimit}×{_dimensionLimit}。未超限的纹理会跳过。";
         if (ImEx.Button($"处理选中 ({_selected.Count})", Vector2.Zero, processTt, !canProcess || !modifierOk))
             StartProcess();
+
+        var compressible = CountSelected(static c => !c.Format.IsCompressed());
+        var canCompress  = !busy && compressible > 0 && editor.Mod is not null;
+        Utf8StringHandler<TextStringHandlerBuffer> compressTt = !canCompress
+            ? "请先选中未压缩纹理。"
+            : !modifierOk
+                ? $"按住 {LunaStyle.Modifier.Destructive} 键以压缩选中纹理。"
+                : "将未压缩纹理压缩为 BC7，_id 贴图压缩为 BC5。";
+        Im.Line.Same();
+        Im.Checkbox("MipMaps"u8, ref _addMipMaps);
+        Im.Tooltip.OnHover("为文件添加适当数量的 MipMaps。"u8);
+        Im.Line.Same();
+        if (ImEx.Button($"压缩选中 ({compressible})", Vector2.Zero, compressTt, !canCompress || !modifierOk))
+            StartCompress();
     }
+
+    private void DrawScanModeCombo()
+    {
+        Im.Item.SetNextWidthScaled(140);
+        using (var combo = Im.Combo.Begin("##scanMode"u8, ScanModeName(_scanMode)))
+        {
+            if (combo)
+            {
+                if (Im.Selectable("超限分辨率"u8, _scanMode is ScanMode.Oversized))
+                    _scanMode = ScanMode.Oversized;
+                Im.Tooltip.OnHover("只收集宽或高超过分辨率限制的纹理。"u8);
+
+                if (Im.Selectable("未压缩"u8, _scanMode is ScanMode.Uncompressed))
+                    _scanMode = ScanMode.Uncompressed;
+                Im.Tooltip.OnHover("只收集未压缩纹理，例如 B8G8R8A8，不限分辨率。"u8);
+
+                if (Im.Selectable("超限或未压缩"u8, _scanMode is ScanMode.OversizedOrUncompressed))
+                    _scanMode = ScanMode.OversizedOrUncompressed;
+                Im.Tooltip.OnHover("收集超限纹理，以及任意分辨率的未压缩纹理。"u8);
+            }
+        }
+
+        Im.Tooltip.OnHover("选择扫描时收集哪些纹理。更改后需要重新扫描。"u8);
+    }
+
+    private static ReadOnlySpan<byte> ScanModeName(ScanMode mode)
+        => mode switch
+        {
+            ScanMode.Uncompressed            => "未压缩"u8,
+            ScanMode.OversizedOrUncompressed => "超限或未压缩"u8,
+            _                                => "超限分辨率"u8,
+        };
 
     private void DrawCandidateList()
     {
@@ -182,10 +253,24 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
 
     private IEnumerable<Candidate> FilteredCandidates()
     {
-        if (_pathFilter.Length is 0)
-            return _candidates;
+        IEnumerable<Candidate> result = _candidates;
+        if (_onlyUncompressed)
+            result = result.Where(static c => !c.Format.IsCompressed());
+        if (_pathFilter.Length is not 0)
+            result = result.Where(c => c.RelPath.Contains(_pathFilter, StringComparison.OrdinalIgnoreCase));
+        return result;
+    }
 
-        return _candidates.Where(c => c.RelPath.Contains(_pathFilter, StringComparison.OrdinalIgnoreCase));
+    private int CountSelected(Func<Candidate, bool> predicate)
+    {
+        var count = 0;
+        foreach (var candidate in _candidates)
+        {
+            if (_selected.Contains(candidate.FullPath) && predicate(candidate))
+                ++count;
+        }
+
+        return count;
     }
 
     private void StartScan()
@@ -196,14 +281,17 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
         CancelScan();
         _candidates.Clear();
         _selected.Clear();
-        AppendLog($"开始扫描模组「{editor.Mod.Name}」，分辨率限制 {_dimensionLimit}…");
 
         var files = editor.Files.GetByType(ResourceType.Tex)
             .Concat(editor.Files.GetByType(ResourceType.Atex))
             .Select(f => (f.File.FullName, f.RelPath.ToString(), f.FileSize))
             .ToList();
         var limit = _dimensionLimit;
-        _scanCts  = new CancellationTokenSource();
+        var mode  = _scanMode;
+        AppendLog($"开始扫描模组「{editor.Mod.Name}」，范围 {ScanModeLabel(mode)}，分辨率限制 {limit}…");
+        _scannedMode  = mode;
+        _scannedLimit = limit;
+        _scanCts      = new CancellationTokenSource();
         var token = _scanCts.Token;
 
         _scanTask = Task.Run(() =>
@@ -217,7 +305,7 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
                     if (!TryReadMeta(fullPath, out var width, out var height, out var format))
                         continue;
 
-                    if (width <= limit && height <= limit)
+                    if (!MatchesScan(width, height, format, mode, limit))
                         continue;
 
                     found.Add(new Candidate(fullPath, relPath, width, height, format, size));
@@ -246,7 +334,7 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
             _candidates.Clear();
             _candidates.AddRange(t.Result);
             _candidates.Sort((a, b) => string.Compare(a.RelPath, b.RelPath, StringComparison.OrdinalIgnoreCase));
-            AppendLog($"扫描完成：找到 {_candidates.Count} 个超限纹理。");
+            AppendLog($"扫描完成：找到 {_candidates.Count} 个{ScanModeLabel(mode)}纹理。");
         }, TaskScheduler.Default);
     }
 
@@ -274,11 +362,19 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
         _processTask = Task.Run(async () =>
         {
             var succeeded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var skipped   = 0;
             foreach (var item in selected)
             {
                 token.ThrowIfCancellationRequested();
                 try
                 {
+                    if (item.Width <= limit && item.Height <= limit)
+                    {
+                        ++skipped;
+                        AppendLog($"跳过：{item.RelPath}（未超过分辨率限制）");
+                        continue;
+                    }
+
                     var saveType = item.Format.ToTexFormat() is TexFile.TextureFormat.B8G8R8A8
                         ? optimization.GetTargetFormat(item.FullPath, mod)
                         : CombinedTexture.TextureSaveType.AsIs;
@@ -297,7 +393,7 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
                 }
             }
 
-            return succeeded;
+            return (Succeeded: succeeded, Skipped: skipped);
         }, token).ContinueWith(t =>
         {
             _busy = false;
@@ -313,14 +409,121 @@ public sealed class ModEditTextureOptimizationTab(ModEditor editor, TextureOptim
                 return;
             }
 
-            var ok = t.Result;
+            var (ok, skipped) = t.Result;
             _candidates.RemoveAll(c => ok.Contains(c.FullPath));
             foreach (var path in ok)
                 _selected.Remove(path);
 
-            AppendLog($"处理结束：成功 {ok.Count} / {_processTotal}。");
+            AppendLog(skipped is 0
+                ? $"处理结束：成功 {ok.Count} / {_processTotal}。"
+                : $"处理结束：成功 {ok.Count}，跳过 {skipped}，共 {_processTotal}。");
         }, TaskScheduler.Default);
     }
+
+    private void StartCompress()
+    {
+        if (editor.Mod is not { } mod || _processTask is { IsCompleted: false })
+            return;
+
+        var selected = _candidates.Where(c => _selected.Contains(c.FullPath) && !c.Format.IsCompressed()).ToList();
+        if (selected.Count is 0)
+            return;
+
+        CancelProcess();
+        _processDone  = 0;
+        _processTotal = selected.Count;
+        _busy         = true;
+        var backup  = _createBackups;
+        var mipMaps = _addMipMaps;
+        _processCts = new CancellationTokenSource();
+        var token = _processCts.Token;
+
+        AppendLog($"开始压缩 {selected.Count} 个纹理…");
+
+        _processTask = Task.Run(async () =>
+        {
+            var succeeded = new List<(string Path, DXGIFormat Format, long Size)>();
+            foreach (var item in selected)
+            {
+                token.ThrowIfCancellationRequested();
+                try
+                {
+                    var target = optimization.GetTargetFormat(item.FullPath, mod);
+                    await optimization.Compress(item.FullPath, mod, backup, mipMaps).ConfigureAwait(false);
+                    if (!TryReadMeta(item.FullPath, out _, out _, out var format) || !format.IsCompressed())
+                        throw new InvalidOperationException("压缩未生效，文件格式未改变。");
+
+                    var size = new FileInfo(item.FullPath).Length;
+                    succeeded.Add((item.FullPath, format, size));
+                    AppendLog($"成功：{item.RelPath}（{item.Format} -> {target}）");
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"失败：{item.RelPath} — {ex.Message}");
+                }
+                finally
+                {
+                    Interlocked.Increment(ref _processDone);
+                }
+            }
+
+            return succeeded;
+        }, token).ContinueWith(t =>
+        {
+            _busy = false;
+            if (t.IsCanceled)
+            {
+                AppendLog("压缩已取消。");
+                return;
+            }
+
+            if (t.IsFaulted)
+            {
+                AppendLog($"压缩失败: {t.Exception?.GetBaseException().Message}");
+                return;
+            }
+
+            ApplyCompressed(t.Result);
+            AppendLog($"压缩结束：成功 {t.Result.Count} / {_processTotal}。");
+        }, TaskScheduler.Default);
+    }
+
+    private void ApplyCompressed(List<(string Path, DXGIFormat Format, long Size)> results)
+    {
+        foreach (var (path, format, size) in results)
+        {
+            _selected.Remove(path);
+            var index = _candidates.FindIndex(c => c.FullPath.Equals(path, StringComparison.OrdinalIgnoreCase));
+            if (index < 0)
+                continue;
+
+            var updated = _candidates[index] with { Format = format, Size = size };
+            if (MatchesScan(updated.Width, updated.Height, updated.Format, _scannedMode, _scannedLimit))
+                _candidates[index] = updated;
+            else
+                _candidates.RemoveAt(index);
+        }
+    }
+
+    private static bool MatchesScan(int width, int height, DXGIFormat format, ScanMode mode, int limit)
+    {
+        var oversized    = width > limit || height > limit;
+        var uncompressed = !format.IsCompressed();
+        return mode switch
+        {
+            ScanMode.Uncompressed            => uncompressed,
+            ScanMode.OversizedOrUncompressed => oversized || uncompressed,
+            _                                => oversized,
+        };
+    }
+
+    private static string ScanModeLabel(ScanMode mode)
+        => mode switch
+        {
+            ScanMode.Uncompressed            => "未压缩",
+            ScanMode.OversizedOrUncompressed => "超限或未压缩",
+            _                                => "超限",
+        };
 
     private static (int Width, int Height) ComputeRestrictedSize(int width, int height, int maxWidth, int maxHeight)
     {
